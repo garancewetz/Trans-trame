@@ -1,0 +1,31 @@
+{
+  "nodes": [
+    { "id": "1", "title": "Le Deuxième Sexe", "author": "Simone de Beauvoir", "year": 1949, "axes": ["QUEER", "HISTOIRE"], "description": "L'oeuvre qui a défini que la féminité est une construction sociale." },
+    { "id": "2", "title": "Sister Outsider", "author": "Audre Lorde", "year": 1984, "axes": ["AFRO-FÉMINISTE", "RADICALE"], "description": "Essais sur l'intersectionnalité et la force de la différence." },
+    { "id": "3", "title": "Women, Race & Class", "author": "Angela Davis", "year": 1981, "axes": ["AFRO-FÉMINISTE", "RADICALE", "ÉCOFÉMINISTE"], "description": "L'histoire des luttes américaines sous le prisme triple de l'oppression." },
+    { "id": "4", "title": "Ain't I a Woman", "author": "bell hooks", "year": 1981, "axes": ["AFRO-FÉMINISTE", "RADICALE"], "description": "Analyse du sexisme spécifique subi par les femmes noires." },
+    { "id": "5", "title": "La Pensée féministe noire", "author": "Patricia Hill Collins", "year": 1990, "axes": ["AFRO-FÉMINISTE", "HISTOIRE"], "description": "Théorisation de la matrice de domination." },
+    { "id": "6", "title": "La Politique du mâle", "author": "Kate Millett", "year": 1970, "axes": ["RADICALE", "ÉCOFÉMINISTE"], "description": "Analyse du patriarcat comme système politique." },
+    { "id": "11", "title": "La Pensée Straight", "author": "Monique Wittig", "year": 1980, "axes": ["QUEER", "RADICALE"], "description": "Déconstruit l'hétérosexualité comme régime politique. « Les lesbiennes ne sont pas des femmes. »" },
+    { "id": "12", "title": "Le Féminisme ou la Mort", "author": "Françoise d'Eaubonne", "year": 1974, "axes": ["ÉCOFÉMINISTE", "RADICALE"], "description": "Texte fondateur de l'écoféminisme reliant destruction de la nature et oppression des femmes." },
+    { "id": "13", "title": "Trouble dans le genre", "author": "Judith Butler", "year": 1990, "axes": ["QUEER", "AFRO-FÉMINISTE"], "description": "Introduction de la performativité du genre." },
+    { "id": "14", "title": "Ne suis-je pas une femme ?", "author": "Sojourner Truth", "year": 1851, "axes": ["HISTOIRE", "AFRO-FÉMINISTE", "RADICALE"], "description": "Le discours fondateur de l'intersectionnalité (Akron, Ohio)." },
+    { "id": "15", "title": "Ouvrir la voix", "author": "Amandine Gay", "year": 2017, "axes": ["AFRO-FÉMINISTE", "HISTOIRE"], "description": "Donner la parole aux femmes noires en France sur leur identité." },
+    { "id": "16", "title": "Théorie King Kong", "author": "Virginie Despentes", "year": 2006, "axes": ["QUEER", "RADICALE"], "description": "Manifeste brut sur la sexualité, le viol et la prostitution." }
+  ],
+  "links": [
+    { "source": "11", "target": "1", "citation_text": "Wittig critique le concept de 'Femme' de Beauvoir pour montrer qu'il n'existe que dans un cadre hétérosexuel.", "page": "p. 45", "context": "Rupture avec le féminisme différentialiste." },
+    { "source": "13", "target": "11", "citation_text": "Butler s'appuie sur la matérialité de Wittig pour théoriser que le genre est une performance répétée.", "page": "p. 112", "context": "Filiation entre féminisme radical lesbien et théorie queer." },
+    { "source": "13", "target": "1", "citation_text": "Butler radicalise le 'on ne naît pas femme' en l'étendant au sexe biologique lui-même.", "page": "p. 10", "context": "Prolongement de l'existentialisme de Beauvoir." },
+    { "source": "15", "target": "4", "citation_text": "Amandine Gay inscrit son travail dans la lignée directe de bell hooks pour le contexte francophone.", "page": "Intro", "context": "Adaptation de la pensée afro-américaine en France." },
+    { "source": "16", "target": "6", "citation_text": "Despentes reprend la violence de l'analyse politique du mâle mais avec une esthétique punk.", "page": "p. 12", "context": "Évolution du ton militant du féminisme radical." },
+    { "source": "12", "target": "1", "citation_text": "D'Eaubonne utilise les bases de Beauvoir pour expliquer que l'homme a asservi la femme comme il a asservi la terre.", "page": "p. 88", "context": "Naissance de l'écoféminisme." },
+    { "source": "3", "target": "14", "citation_text": "Davis cite Truth pour rappeler que les femmes esclaves étaient déjà au coeur de la production économique.", "page": "p. 5", "context": "Ancrage historique de l'afro-féminisme." },
+    { "source": "5", "target": "14", "citation_text": "Collins utilise le discours de Truth comme l'exemple primaire du 'savoir situé'.", "page": "p. 22", "context": "Épistémologie féministe noire." },
+    { "source": "2", "target": "5", "citation_text": "« Les outils du maître ne démantèleront jamais la maison du maître. » — Audre Lorde, citée par Collins.", "page": "p. 37", "context": "Collins s'appuie sur Lorde pour théoriser le savoir situé des femmes noires." },
+    { "source": "2", "target": "4", "citation_text": "Lorde et hooks partagent une vision du féminisme où la poésie et la colère sont des actes politiques.", "page": "p. 89", "context": "Dialogue intellectuel entre deux penseuses de l'afro-féminisme." },
+    { "source": "4", "target": "14", "citation_text": "hooks relie son travail à l'héritage historique de Sojourner Truth, dont elle reprend le titre.", "page": "p. 159", "context": "Filiation directe titre-discours." },
+    { "source": "1", "target": "6", "citation_text": "Beauvoir a posé les bases d'une critique existentialiste du patriarcat que Millett transformera en analyse politique systémique.", "page": "p. 23-25", "context": "Millett cite Le Deuxième Sexe pour étayer sa thèse." },
+    { "source": "6", "target": "3", "citation_text": "L'analyse de classe de Millett prépare le terrain que Davis enrichira avec les dimensions de race.", "page": "p. 78", "context": "Du féminisme radical vers l'intersectionnalité." }
+  ]
+}
