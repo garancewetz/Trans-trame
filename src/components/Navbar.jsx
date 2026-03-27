@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRef } from 'react'
 import { BookPlus, Link2, BookOpen, Search, X } from 'lucide-react'
 import Button from './ui/Button'
 import SearchInput from './ui/SearchInput'
 import Logo from './Logo'
-import { authorName, authorSortKey } from '../authorUtils'
+import { authorName } from '../authorUtils'
 
 export default function Navbar({
   searchRef,
@@ -20,40 +20,23 @@ export default function Navbar({
   setPreviousPanelTab,
   setSelectedNode,
   setSelectedLink,
+  onOpenTextsPanel,
   graphData,
 }) {
-  const [ouvragesOpen, setOuvragesOpen] = useState(false)
   const ouvragesRef = useRef(null)
 
-  const sortedBooks = useMemo(
-    () =>
-      [...graphData.nodes].sort((a, b) =>
-        authorSortKey(a).localeCompare(authorSortKey(b), 'fr', { sensitivity: 'base' }),
-      ),
-    [graphData.nodes],
-  )
-
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (ouvragesRef.current && !ouvragesRef.current.contains(e.target)) {
-        setOuvragesOpen(false)
-      }
-    }
-    if (ouvragesOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [ouvragesOpen])
-
   return (
-    <header className="pointer-events-none fixed inset-x-0 top-0 z-20 flex items-center justify-between bg-linear-to-b from-[rgba(6,3,15,0.85)] to-transparent px-6 py-3.5 *:pointer-events-auto">
-      <h1 className="flex items-center gap-2 text-[1.1rem] font-bold uppercase tracking-[3px] text-white/85 [text-shadow:0_0_20px_rgba(160,80,255,0.4)]">
-        <Logo />
-        TRANS TRAME
-      </h1>
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-20 border-b border-white/10 bg-[rgba(5,9,28,0.9)] px-4 py-2.5 backdrop-blur-xl *:pointer-events-auto">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="flex items-center gap-2 text-[0.95rem] font-semibold text-white/90">
+            <Logo />
+            Trame
+          </h1>
+        </div>
 
-      {/* Global search */}
-      <div className="relative w-80 shrink-0" ref={searchRef}>
+        {/* Global search */}
+        <div className="relative w-72 shrink-0" ref={searchRef}>
         <div className="pointer-events-none absolute left-3 top-1/2 flex -translate-y-1/2 text-white/25">
           <Search size={15} />
         </div>
@@ -123,17 +106,16 @@ export default function Navbar({
             )}
           </div>
         )}
-      </div>
+        </div>
 
-      {/* Ouvrages catalogue */}
-      <div className="relative" ref={ouvragesRef}>
+        {/* Ouvrages catalogue */}
+        <div className="relative" ref={ouvragesRef}>
         <button
           className={[
             'cursor-pointer rounded-lg border border-white/15 bg-white/5 px-[18px] py-[7px] text-[0.78rem] font-semibold text-white/70 backdrop-blur-lg transition-all',
             'hover:border-[rgba(130,200,255,0.5)] hover:bg-[rgba(130,200,255,0.2)] hover:text-white',
-            ouvragesOpen ? 'border-[rgba(130,200,255,0.6)] bg-[rgba(130,200,255,0.25)] text-white' : '',
           ].join(' ')}
-          onClick={() => setOuvragesOpen((v) => !v)}
+          onClick={onOpenTextsPanel}
         >
           <span className="inline-flex items-center gap-2">
             <BookOpen size={14} />
@@ -143,39 +125,9 @@ export default function Navbar({
             </span>
           </span>
         </button>
-
-        {ouvragesOpen && (
-          <div className="absolute right-0 top-[calc(100%+8px)] z-50 max-h-[420px] w-[340px] overflow-y-auto rounded-xl border border-white/10 bg-[rgba(12,6,28,0.95)] p-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
-            <p className="px-3 py-2 text-[0.7rem] font-semibold uppercase tracking-wider text-white/30">
-              {graphData.nodes.length} ouvrages — par auteur·ice
-            </p>
-            {sortedBooks.map((node) => (
-              <Button
-                key={node.id}
-                className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg bg-transparent px-3 py-2.5 text-left text-white transition-colors hover:bg-[rgba(168,130,255,0.12)]"
-                onClick={() => {
-                  handleSearchSelect(node)
-                  setOuvragesOpen(false)
-                }}
-                type="button"
-              >
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ background: axesGradient(node.axes) }}
-                />
-                <span className="flex min-w-0 flex-col gap-px">
-                  <strong className="truncate text-[0.84rem] font-semibold">{authorName(node)}</strong>
-                  <span className="text-[0.72rem] text-white/35">
-                    {node.title}{node.year ? ` (${node.year})` : ''}
-                  </span>
-                </span>
-              </Button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="flex gap-2">
+        </div>
+     
+        <div className="flex gap-2">
         <button
           className={[
             'cursor-pointer rounded-lg border border-white/15 bg-white/5 px-[18px] py-[7px] text-[0.78rem] font-semibold text-white/70 backdrop-blur-lg transition-all',
@@ -219,6 +171,7 @@ export default function Navbar({
             <Link2 size={14} /> Ajouter un lien
           </span>
         </button>
+        </div>
       </div>
     </header>
   )

@@ -91,17 +91,22 @@ export default function Timeline({ graphData, timelineYear, onYearChange }) {
   const progress = maxYear === minYear ? 100 : ((timelineYear - minYear) / (maxYear - minYear)) * 100
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-auto">
+    <div className="pointer-events-auto absolute bottom-0 left-0 right-0 z-20">
       <div
-        className="w-full flex items-center gap-3 px-6 py-3 backdrop-blur-xl"
+        className="w-full px-3 pb-3"
         style={{
           background: 'linear-gradient(to top, rgba(6, 3, 15, 0.6), rgba(6, 3, 15, 0))',
         }}
       >
+        <div className="mb-1 flex items-center justify-between px-2 text-[0.68rem] text-white/45">
+          <span>Début</span>
+          <span>Fin</span>
+        </div>
+        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[rgba(8,12,30,0.86)] px-3 py-2 backdrop-blur-xl">
         {/* Play/pause */}
         <button
           onClick={togglePlay}
-          className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full transition-all duration-200 cursor-pointer"
+          className="h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full transition-all duration-200 flex"
           style={{
             background: 'rgba(255, 255, 255, 0.06)',
             color: 'rgba(255, 255, 255, 0.5)',
@@ -122,7 +127,7 @@ export default function Timeline({ graphData, timelineYear, onYearChange }) {
 
         {/* Min year */}
         <span
-          className="flex-shrink-0 text-[11px] font-light tracking-wide"
+          className="shrink-0 text-[11px] font-light tracking-wide"
           style={{ color: 'rgba(255, 255, 255, 0.3)', minWidth: '32px' }}
         >
           {minYear}
@@ -191,7 +196,7 @@ export default function Timeline({ graphData, timelineYear, onYearChange }) {
 
         {/* Max year */}
         <span
-          className="flex-shrink-0 text-[11px] font-light tracking-wide"
+          className="shrink-0 text-[11px] font-light tracking-wide"
           style={{ color: 'rgba(255, 255, 255, 0.3)', minWidth: '32px', textAlign: 'right' }}
         >
           {maxYear}
@@ -199,11 +204,12 @@ export default function Timeline({ graphData, timelineYear, onYearChange }) {
 
         {/* Current year */}
         <span
-          className="flex-shrink-0 text-sm font-light tracking-wider tabular-nums"
+          className="shrink-0 text-sm font-light tracking-wider tabular-nums"
           style={{ color: 'rgba(255, 255, 255, 0.6)', minWidth: '40px', textAlign: 'right' }}
         >
-          {timelineYear}
+          {Math.round(progress)}%
         </span>
+        </div>
       </div>
     </div>
   )

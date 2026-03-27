@@ -64,6 +64,59 @@ export default function useGraphData({ defaultData, axesColors }) {
     [axesColors]
   )
 
+  const handleDeleteBook = useCallback((nodeId) => {
+    if (!nodeId) return false
+    let deleted = false
+    setGraphData((prev) => {
+      if (!prev.nodes.some((n) => n.id === nodeId)) return prev
+      deleted = true
+      const next = {
+        nodes: prev.nodes.filter((n) => n.id !== nodeId),
+        links: prev.links.filter((l) => {
+          const srcId = typeof l.source === 'object' ? l.source.id : l.source
+          const tgtId = typeof l.target === 'object' ? l.target.id : l.target
+          return srcId !== nodeId && tgtId !== nodeId
+        }),
+      }
+      persistGraphDataToLocalStorage(next, STORAGE_KEY)
+      return next
+    })
+    return deleted
+  }, [])
+
+  const handleMergeBooks = useCallback((fromNodeId, intoNodeId) => {
+    if (!fromNodeId || !intoNodeId || fromNodeId === intoNodeId) return false
+    let merged = false
+    setGraphData((prev) => {
+      const fromExists = prev.nodes.some((n) => n.id === fromNodeId)
+      const intoExists = prev.nodes.some((n) => n.id === intoNodeId)
+      if (!fromExists || !intoExists) return prev
+      merged = true
+
+      const dedupe = new Set()
+      const remappedLinks = []
+      prev.links.forEach((link) => {
+        const srcIdRaw = typeof link.source === 'object' ? link.source.id : link.source
+        const tgtIdRaw = typeof link.target === 'object' ? link.target.id : link.target
+        const srcId = srcIdRaw === fromNodeId ? intoNodeId : srcIdRaw
+        const tgtId = tgtIdRaw === fromNodeId ? intoNodeId : tgtIdRaw
+        if (!srcId || !tgtId || srcId === tgtId) return
+        const key = `${srcId}|${tgtId}|${link.citation_text || ''}|${link.page || ''}|${link.edition || ''}`
+        if (dedupe.has(key)) return
+        dedupe.add(key)
+        remappedLinks.push({ ...link, source: srcId, target: tgtId })
+      })
+
+      const next = {
+        nodes: prev.nodes.filter((n) => n.id !== fromNodeId),
+        links: remappedLinks,
+      }
+      persistGraphDataToLocalStorage(next, STORAGE_KEY)
+      return next
+    })
+    return merged
+  }, [])
+
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       try {
@@ -84,5 +137,14 @@ export default function useGraphData({ defaultData, axesColors }) {
     setGraphData({ nodes: [...defaultData.nodes], links: [...defaultData.links] })
   }, [defaultData.links, defaultData.nodes])
 
-  return { graphData, setGraphData, handleAddBook, handleAddLink, handleUpdateBook, resetToDefault }
+  return {
+    graphData,
+    setGraphData,
+    handleAddBook,
+    handleAddLink,
+    handleUpdateBook,
+    handleDeleteBook,
+    handleMergeBooks,
+    resetToDefault,
+  }
 }

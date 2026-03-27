@@ -8,6 +8,8 @@ export default function AddBookForm({
   onAddBook,
   onAddLink,
   onUpdateBook,
+  onDeleteBook,
+  onMergeBooks,
   mode,
   editNode,
   prefilledSourceId,
@@ -142,6 +144,10 @@ export default function AddBookForm({
           description={description}
           setDescription={setDescription}
           possibleDuplicates={possibleDuplicates}
+          editNode={editNode}
+          nodes={nodes}
+          onDeleteBook={onDeleteBook}
+          onMergeBooks={onMergeBooks}
         />
       )}
 

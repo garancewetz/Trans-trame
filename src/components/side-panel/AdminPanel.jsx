@@ -10,6 +10,8 @@ export default function AdminPanel({
   handleAddBook,
   handleAddLink,
   handleUpdateBook,
+  handleDeleteBook,
+  handleMergeBooks,
   setPrefilledSourceId,
   setPrefilledTargetId,
   setPanelTab,
@@ -29,6 +31,8 @@ export default function AdminPanel({
           setPrefilledTargetId(null)
         }}
         onUpdateBook={handleUpdateBook}
+        onDeleteBook={handleDeleteBook}
+        onMergeBooks={handleMergeBooks}
         mode={panelTab}
         editNode={panelTab === 'edit' ? selectedNode : null}
         prefilledSourceId={prefilledSourceId}

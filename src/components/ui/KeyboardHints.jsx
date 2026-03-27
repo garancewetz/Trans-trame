@@ -61,10 +61,8 @@ export default function KeyboardHints() {
         userSelect: 'none',
       }}
     >
-      <HintRow keys={['↑']} label="Avancer" />
-      <HintRow keys={['↓']} label="Reculer" />
-      <HintRow keys={['←']} label="Pivoter gauche" />
-      <HintRow keys={['→']} label="Pivoter droite" />
+      <HintRow keys={['↑', '↓', '←', '→']} label="Déplacer la caméra (dans l’espace)" />
+      <HintRow keys={['+', '-', 'Z', 'S']} label="Zoom / dézoom" />
       <div
         style={{
           height: 1,

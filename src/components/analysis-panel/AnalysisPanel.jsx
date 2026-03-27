@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react'
 import { BarChart3, X, Network, Crown, EyeOff, Activity } from 'lucide-react'
 import { AXES_COLORS } from '../../categories'
 import { authorName } from '../../authorUtils'
@@ -12,7 +12,7 @@ import {
   computeWikiGaps,
 } from './analysisMetrics'
 
-export default function AnalysisPanel({ graphData, activeFilter, onFilterChange }) {
+const AnalysisPanel = forwardRef(function AnalysisPanel({ graphData, activeFilter, onFilterChange }, ref) {
   const [open, setOpen] = useState(false)
   const { nodes: bookNodes, links } = graphData
 
@@ -30,6 +30,12 @@ export default function AnalysisPanel({ graphData, activeFilter, onFilterChange 
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [])
+
+  useImperativeHandle(ref, () => ({
+    openPanel() {
+      setOpen(true)
+    },
+  }))
 
   return (
     <>
@@ -174,4 +180,6 @@ export default function AnalysisPanel({ graphData, activeFilter, onFilterChange 
       </Panel>
     </>
   )
-}
+})
+
+export default AnalysisPanel

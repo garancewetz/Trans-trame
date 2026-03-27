@@ -9,6 +9,7 @@ export default function NodeDetails({
   setPanelTab,
   setSelectedNode,
   setSelectedLink,
+  setLinkContextNode,
   setPrefilledSourceId,
   setPrefilledTargetId,
   setPreviousPanelTab,
@@ -58,6 +59,7 @@ export default function NodeDetails({
                   type="button"
                   className="w-full cursor-pointer rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 text-left transition-all hover:border-white/20 hover:bg-white/8"
                   onClick={() => {
+                    setLinkContextNode(null)
                     setSelectedLink(null)
                     setSelectedNode(n)
                     setPanelTab('details')
@@ -111,7 +113,7 @@ export default function NodeDetails({
                 key={i}
                 className="cursor-pointer rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 transition-all hover:border-[rgba(140,220,255,0.25)] hover:bg-[rgba(140,220,255,0.08)]"
                 onClick={() => {
-                  setSelectedNode(null)
+                  setLinkContextNode(selectedNode)
                   setSelectedLink(link)
                 }}
               >
@@ -137,7 +139,7 @@ export default function NodeDetails({
                 key={i}
                 className="cursor-pointer rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 transition-all hover:border-[rgba(255,171,64,0.25)] hover:bg-[rgba(255,171,64,0.08)]"
                 onClick={() => {
-                  setSelectedNode(null)
+                  setLinkContextNode(selectedNode)
                   setSelectedLink(link)
                 }}
               >

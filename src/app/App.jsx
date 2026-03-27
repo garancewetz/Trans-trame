@@ -5,6 +5,7 @@ import Legend from '../components/Legend'
 import Navbar from '../components/Navbar'
 import SidePanel from '../components/SidePanel'
 import Timeline from '../components/Timeline'
+import TextsPanel from '../components/texts-panel/TextsPanel'
 import ViewSelector from '../components/ViewSelector'
 import defaultData from '../data.json'
 import { AXES_COLORS, axesGradient } from '../categories'
@@ -15,7 +16,15 @@ import { computeSameAuthorBooks, getIncomingRefs, getLinkNodes, getOutgoingRefs 
 import { constellationLayout, genealogyLayout } from '../layouts/layoutEngine'
 
 export default function App() {
-  const { graphData, handleAddBook, handleAddLink, handleUpdateBook, resetToDefault } = useGraphData({
+  const {
+    graphData,
+    handleAddBook,
+    handleAddLink,
+    handleUpdateBook,
+    handleDeleteBook,
+    handleMergeBooks,
+    resetToDefault,
+  } = useGraphData({
     defaultData,
     axesColors: AXES_COLORS,
   })
@@ -24,15 +33,17 @@ export default function App() {
 
   const [selectedNode, setSelectedNode] = useState(null)
   const [selectedLink, setSelectedLink] = useState(null)
+  const [linkContextNode, setLinkContextNode] = useState(null)
   const [panelTab, setPanelTab] = useState('details')
   const [previousPanelTab, setPreviousPanelTab] = useState('details')
   const [prefilledSourceId, setPrefilledSourceId] = useState(null)
   const [prefilledTargetId, setPrefilledTargetId] = useState(null)
+  const [textsPanelOpen, setTextsPanelOpen] = useState(false)
 
   const [activeFilter, setActiveFilter] = useState(null)
   const [hoveredFilter, setHoveredFilter] = useState(null)
 
-  // View mode: 'constellation' | 'genealogy' | 'resonance'
+  // View mode: 'constellation' | 'genealogy'
   const [viewMode, setViewMode] = useState('constellation')
 
   // Timeline state — default to max year so all books are visible initially
@@ -78,20 +89,31 @@ export default function App() {
   const handleClosePanel = useCallback(() => {
     setSelectedNode(null)
     setSelectedLink(null)
+    setLinkContextNode(null)
     setPanelTab('details')
     setPrefilledSourceId(null)
     setPrefilledTargetId(null)
   }, [])
 
   const handleNodeClick = useCallback((node) => {
+    setLinkContextNode(null)
     setSelectedLink(null)
     setSelectedNode((prev) => (prev?.id === node.id ? null : node))
     setPanelTab('details')
   }, [])
 
+  const handleSelectTextFromPanel = useCallback((node) => {
+    setLinkContextNode(null)
+    setSelectedLink(null)
+    setSelectedNode(node)
+    setPanelTab('details')
+    setTextsPanelOpen(false)
+  }, [])
+
   const handleLinkClick = useCallback((link) => {
     setSelectedNode(null)
     setSelectedLink(link)
+    setLinkContextNode(null)
     setPanelTab('details')
   }, [])
 
@@ -110,6 +132,7 @@ export default function App() {
     useGlobalSearch({
       nodes: graphData.nodes,
       onSelect: (node) => {
+        setLinkContextNode(null)
         setSelectedLink(null)
         setSelectedNode(node)
         setPanelTab('details')
@@ -129,6 +152,7 @@ export default function App() {
           onLinkClick={handleLinkClick}
           layoutPositions={layoutPositions}
           viewMode={viewMode}
+          is2D={true}
         />
       </div>
 
@@ -147,6 +171,7 @@ export default function App() {
         setPreviousPanelTab={setPreviousPanelTab}
         setSelectedNode={setSelectedNode}
         setSelectedLink={setSelectedLink}
+        onOpenTextsPanel={() => setTextsPanelOpen(true)}
         exportJSON={exportJSON}
         graphData={graphData}
         resetToDefault={resetToDefault}
@@ -166,6 +191,7 @@ export default function App() {
         panelTab={panelTab}
         selectedNode={selectedNode}
         selectedLink={selectedLink}
+        linkContextNode={linkContextNode}
         sameAuthorBooks={sameAuthorBooks}
         prefilledSourceId={prefilledSourceId}
         prefilledTargetId={prefilledTargetId}
@@ -187,19 +213,49 @@ export default function App() {
           setSelectedNode((prevSel) => (prevSel?.id === n.id ? { ...prevSel, ...n } : n))
           setPanelTab('details')
         }}
+        handleDeleteBook={(nodeId) => {
+          const deleted = handleDeleteBook(nodeId)
+          if (!deleted) return
+          setSelectedNode(null)
+          setSelectedLink(null)
+          setLinkContextNode(null)
+          setPanelTab('details')
+        }}
+        handleMergeBooks={(fromNodeId, intoNodeId) => {
+          const merged = handleMergeBooks(fromNodeId, intoNodeId)
+          if (!merged) return
+          const intoNode = graphData.nodes.find((n) => n.id === intoNodeId)
+          setSelectedLink(null)
+          setLinkContextNode(null)
+          setSelectedNode(intoNode || null)
+          setPanelTab('details')
+        }}
         setPrefilledSourceId={setPrefilledSourceId}
         setPrefilledTargetId={setPrefilledTargetId}
         setPreviousPanelTab={setPreviousPanelTab}
         setPanelTab={setPanelTab}
         setSelectedNode={setSelectedNode}
         setSelectedLink={setSelectedLink}
+        setLinkContextNode={setLinkContextNode}
       />
 
       <Timeline graphData={graphData} timelineYear={timelineYear} onYearChange={setTimelineYear} />
 
       <ViewSelector currentView={viewMode} onViewChange={handleViewChange} />
 
-      <AnalysisPanel graphData={filteredGraphData} activeFilter={activeFilter} onFilterChange={toggleFilter} onAddLink={handleAddLink} />
+      <AnalysisPanel
+        graphData={filteredGraphData}
+        activeFilter={activeFilter}
+        onFilterChange={toggleFilter}
+        onAddLink={handleAddLink}
+      />
+
+      <TextsPanel
+        open={textsPanelOpen}
+        onClose={() => setTextsPanelOpen(false)}
+        nodes={graphData.nodes}
+        onSelectNode={handleSelectTextFromPanel}
+      />
     </div>
   )
 }
