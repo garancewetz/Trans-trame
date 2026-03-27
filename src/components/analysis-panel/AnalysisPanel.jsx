@@ -80,7 +80,7 @@ const AnalysisPanel = forwardRef(function AnalysisPanel({ graphData, activeFilte
                   type="button"
                   onClick={() => onFilterChange(activeFilter === axis ? null : axis)}
                   className={[
-                    'group cursor-pointer rounded border bg-transparent px-2 py-1.5 text-left transition-all',
+                    'group cursor-pointer rounded border bg-transparent px-2 py-1.5 text-left transition-all backdrop-blur-lg',
                     activeFilter === axis
                       ? 'border-white/20 bg-white/5'
                       : 'border-transparent hover:border-white/10 hover:bg-white/3',
@@ -105,7 +105,7 @@ const AnalysisPanel = forwardRef(function AnalysisPanel({ graphData, activeFilte
             </div>
           </section>
 
-          <section className="mb-6 rounded border border-white/10 bg-white/5 p-3">
+          <section className="mb-6 rounded border border-white/10 bg-white/5 p-3 backdrop-blur-xl">
             <h3 className="mb-2 text-[0.68rem] font-bold uppercase tracking-[2px] text-white/40">
               <Network size={12} className="inline" /> Densité du Maillage
             </h3>
@@ -127,7 +127,7 @@ const AnalysisPanel = forwardRef(function AnalysisPanel({ graphData, activeFilte
               {superNodes.map((node, i) => (
                 <div
                   key={node.id}
-                  className="flex items-center gap-2 rounded border border-white/10 bg-white/5 px-2.5 py-2"
+                  className="flex items-center gap-2 rounded border border-white/10 bg-white/5 px-2.5 py-2 backdrop-blur-xl"
                 >
                   <span className="text-[0.9rem] font-bold text-white/40">
                     {String(i + 1).padStart(2, '0')}
@@ -151,7 +151,7 @@ const AnalysisPanel = forwardRef(function AnalysisPanel({ graphData, activeFilte
               {wikiGaps.map(({ a, b, count }) => (
                 <div
                   key={`${a}-${b}`}
-                  className="flex items-center justify-between rounded border border-white/10 bg-white/5 px-2.5 py-2"
+                  className="flex items-center justify-between rounded border border-white/10 bg-white/5 px-2.5 py-2 backdrop-blur-xl"
                 >
                   <div className="flex items-center gap-1.5 text-[0.65rem]">
                     <span style={{ color: AXES_COLORS[a] }}>{a}</span>
@@ -166,7 +166,7 @@ const AnalysisPanel = forwardRef(function AnalysisPanel({ graphData, activeFilte
             </div>
           </section>
 
-          <section className="mb-5 rounded border border-white/10 bg-white/5 p-3">
+          <section className="mb-5 rounded border border-white/10 bg-white/5 p-3 backdrop-blur-xl">
             <h3 className="mb-2 text-[0.68rem] font-bold uppercase tracking-[2px] text-white/40">
               <Activity size={12} className="inline" /> Activité de la Trame
             </h3>

@@ -26,7 +26,7 @@ export default function Navbar({
   const ouvragesRef = useRef(null)
 
   return (
-    <header className="pointer-events-none fixed inset-x-0 top-0 z-20 border-b border-white/10 bg-[rgba(5,9,28,0.9)] px-4 py-2.5 backdrop-blur-xl *:pointer-events-auto">
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-20 border-b border-white/10 bg-[rgba(5,9,28,0.75)] px-4 py-2.5 backdrop-blur-xl *:pointer-events-auto">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="flex items-center gap-2 text-[0.95rem] font-semibold text-white/90">

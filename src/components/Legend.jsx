@@ -16,7 +16,7 @@ export default function Legend({
           <button
             key={axis}
             className={[
-              'flex cursor-pointer items-center gap-2.5 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-left text-[0.72rem] font-medium uppercase tracking-[0.5px] transition-all',
+              'flex cursor-pointer items-center gap-2.5 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-left text-[0.72rem] font-medium uppercase tracking-[0.5px] transition-all backdrop-blur-lg',
               isActive ? 'border-white/20 bg-white/10 text-white' : 'text-white/50 hover:bg-white/5 hover:text-white/80',
             ].join(' ')}
             onClick={() => toggleFilter(axis)}
@@ -25,7 +25,7 @@ export default function Legend({
             type="button"
           >
             <span
-              className="h-2.5 w-2.5 shrink-0 rounded-full transition-all"
+              className="h-2.5 w-2.5 shrink-0 rounded-full transition-all backdrop-blur-md"
               style={{
                 backgroundColor: color,
                 boxShadow: isActive || isHovered ? `0 0 10px 2px ${color}` : 'none',
@@ -37,7 +37,7 @@ export default function Legend({
       })}
       {activeFilter && (
         <button
-          className="mt-1 cursor-pointer rounded-md bg-white/5 px-2 py-1 text-[0.68rem] text-white/40 transition-colors hover:bg-white/10 hover:text-white/70"
+          className="mt-1 cursor-pointer rounded-md bg-white/5 px-2 py-1 text-[0.68rem] text-white/40 backdrop-blur-lg transition-colors hover:bg-white/10 hover:text-white/70"
           onClick={clearFilter}
           type="button"
         >

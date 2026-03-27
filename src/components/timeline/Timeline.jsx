@@ -93,7 +93,7 @@ export default function Timeline({ graphData, timelineYear, onYearChange }) {
   return (
     <div className="pointer-events-auto absolute bottom-0 left-0 right-0 z-20">
       <div
-        className="w-full px-3 pb-3"
+        className="w-full px-3 pb-3 backdrop-blur-xl"
         style={{
           background: 'linear-gradient(to top, rgba(6, 3, 15, 0.6), rgba(6, 3, 15, 0))',
         }}
@@ -102,7 +102,7 @@ export default function Timeline({ graphData, timelineYear, onYearChange }) {
           <span>Début</span>
           <span>Fin</span>
         </div>
-        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[rgba(8,12,30,0.86)] px-3 py-2 backdrop-blur-xl">
+        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[rgba(8,12,30,0.72)] px-3 py-2 backdrop-blur-xl">
         {/* Play/pause */}
         <button
           onClick={togglePlay}

@@ -76,12 +76,12 @@ export default function TextsPanel({ open, onClose, nodes, onSelectNode }) {
               <button
                 key={n.id}
                 type="button"
-                className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-left transition-all hover:border-white/20 hover:bg-white/8"
+                className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-left backdrop-blur-xl transition-all hover:border-white/20 hover:bg-white/8"
                 onClick={() => onSelectNode?.(n)}
               >
                 <div className="flex min-w-0 items-center gap-2.5">
                   <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    className="h-2.5 w-2.5 shrink-0 rounded-full backdrop-blur-md"
                     style={{ background: axesGradient(n.axes) }}
                   />
                   <div className="min-w-0">

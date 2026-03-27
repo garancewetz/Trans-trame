@@ -2,13 +2,56 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
+:root {
+  --bg-base: #06030f;
+  --bg-surface: rgba(18, 12, 34, 0.55);
+  --text-main: #ece9ff;
+  --accent-soft: rgba(140, 220, 255, 0.2);
+}
+
 html, body, #root {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #06030f;
+  background:
+    radial-gradient(60% 60% at 15% 20%, rgba(121, 82, 255, 0.2) 0%, rgba(6, 3, 15, 0) 70%),
+    radial-gradient(40% 45% at 85% 25%, rgba(140, 220, 255, 0.16) 0%, rgba(6, 3, 15, 0) 75%),
+    radial-gradient(35% 35% at 50% 80%, rgba(255, 122, 198, 0.12) 0%, rgba(6, 3, 15, 0) 80%),
+    var(--bg-base);
   font-family: 'Inter', 'Space Grotesk', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  color: #e0e0e0;
+  color: var(--text-main);
+}
+
+body {
+  position: relative;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: -15%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::before {
+  background: radial-gradient(circle at 22% 28%, rgba(141, 98, 255, 0.35), transparent 48%);
+  filter: blur(70px);
+  opacity: 0.5;
+}
+
+body::after {
+  background: radial-gradient(circle at 78% 24%, rgba(140, 220, 255, 0.26), transparent 45%);
+  filter: blur(95px);
+  opacity: 0.45;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
 }
 
 /* Scrollbar styling — cyber-punk */
@@ -16,19 +59,20 @@ html, body, #root {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(6, 3, 15, 0.5);
+  background: rgba(6, 3, 15, 0.36);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(140, 220, 255, 0.2);
+  background: linear-gradient(180deg, rgba(140, 220, 255, 0.45), rgba(141, 98, 255, 0.4));
   border-radius: 3px;
+  box-shadow: 0 0 10px rgba(140, 220, 255, 0.28);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(140, 220, 255, 0.4);
+  background: linear-gradient(180deg, rgba(140, 220, 255, 0.58), rgba(141, 98, 255, 0.5));
 }
 
 
 /* Select option background for dark theme */
 option {
-  background: #0c061c;
-  color: #e0e0e0;
+  background: #100827;
+  color: var(--text-main);
 }

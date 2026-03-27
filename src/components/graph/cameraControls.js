@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 
-export function setupKeyboardHandlers({ keysRef, selectedNodeRef, fgRef }) {
+export function setupKeyboardHandlers({ keysRef, selectedNodeRef, fgRef, isFlatMode = false }) {
   const BLOCKED = [
     'arrowup',
     'arrowdown',
@@ -30,7 +30,11 @@ export function setupKeyboardHandlers({ keysRef, selectedNodeRef, fgRef }) {
       const node = selectedNodeRef.current
       if (node?.x != null && fgRef.current) {
         const { x, y, z } = node
-        fgRef.current.cameraPosition({ x: x + 100, y: y + 30, z: z + 100 }, { x, y, z }, 900)
+        if (isFlatMode) {
+          fgRef.current.cameraPosition({ x, y, z: 240 }, { x, y, z: 0 }, 900)
+        } else {
+          fgRef.current.cameraPosition({ x: x + 100, y: y + 30, z: z + 100 }, { x, y, z }, 900)
+        }
       }
     }
   }
@@ -73,8 +77,8 @@ export function setupMousePanHandlers({ containerRef, velRef }) {
     // Inject drag movement into the same pan velocity used by arrow keys.
     const DRAG_TO_VEL = 0.08
     const vel = velRef.current
-    vel.moveX = (vel.moveX ?? 0) + dx * DRAG_TO_VEL
-    vel.moveY = (vel.moveY ?? 0) - dy * DRAG_TO_VEL
+    vel.moveX = (vel.moveX ?? 0) - dx * DRAG_TO_VEL
+    vel.moveY = (vel.moveY ?? 0) + dy * DRAG_TO_VEL
   }
 
   const stopDragging = () => {

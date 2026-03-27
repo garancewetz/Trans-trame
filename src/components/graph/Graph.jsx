@@ -24,7 +24,7 @@ const Graph = forwardRef(function Graph({
   viewMode,
   is2D,
 }, ref) {
-  const isFlatMode = is2D || viewMode === 'genealogy'
+  const isFlatMode = true
   const fgRef = useRef()
   const containerRef = useRef(null)
 
@@ -46,7 +46,7 @@ const Graph = forwardRef(function Graph({
     selectedNodeRef.current = selectedNode
   }, [selectedNode])
 
-  useEffect(() => setupKeyboardHandlers({ keysRef, selectedNodeRef, fgRef }), [])
+  useEffect(() => setupKeyboardHandlers({ keysRef, selectedNodeRef, fgRef, isFlatMode }), [])
   useEffect(() => setupMousePanHandlers({ containerRef, velRef }), [])
   useEffect(() => setupWheelZoomHandlers({ containerRef, fgRef, velRef, lastCameraStateRef }), [])
 
@@ -315,7 +315,7 @@ const Graph = forwardRef(function Graph({
         backgroundColor="#06030f"
         onInit={handleInit}
         showNavInfo={false}
-        numDimensions={isFlatMode ? 2 : 3}
+        numDimensions={2}
       />
       <KeyboardHints />
     </div>

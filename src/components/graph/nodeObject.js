@@ -20,10 +20,10 @@ export function createNodeThreeObject({
   const matchesHover = hoveredFilter && nodeAxes.includes(hoveredFilter)
   const dimmedByHover = hoveredFilter && !matchesHover
 
-  const opacity = dimmedByHover ? 0.06 : isActive ? 1 : 0.1
+  const opacity = dimmedByHover ? 0.06 : isActive ? 1 : 0.22
   const glowIntensity = matchesHover ? 0.35 : 0.15
   const baseRadius = 4
-  const citationBoost = Math.min(Math.sqrt(citationCount) * 1.8, 8)
+  const citationBoost = Math.min(Math.sqrt(citationCount) * 2.6, 14)
   const nodeRadius = baseRadius + citationBoost
   const glowRadius = nodeRadius + (matchesHover ? 4.5 : 2.5)
 
@@ -54,9 +54,11 @@ export function createNodeThreeObject({
     }
   }
 
-  const label = new SpriteText(`${node.title}\n${authorName(node)}`)
-  label.color = isActive || matchesHover ? '#ffffff' : 'rgba(255,255,255,0.1)'
-  label.textHeight = 2.8
+  const label = new SpriteText(`${(authorName(node) || '').toUpperCase()}\n${node.title}`)
+  label.color = isActive || matchesHover ? '#ffffff' : 'rgba(255,255,255,0.18)'
+  const baseTextHeight = 3.1
+  const citationTextBoost = Math.min(Math.sqrt(citationCount) * 0.55, 4)
+  label.textHeight = baseTextHeight + citationTextBoost
   label.fontFace = "'Space Grotesk', system-ui, sans-serif"
   label.backgroundColor = isActive || matchesHover ? 'rgba(0, 0, 0, 0.65)' : 'transparent'
   label.padding = 1.5
