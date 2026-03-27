@@ -46,15 +46,26 @@ export default function App() {
   // View mode: 'constellation' | 'genealogy'
   const [viewMode, setViewMode] = useState('constellation')
 
-  // Timeline state — default to max year so all books are visible initially
+  // Timeline state — default to full range so all books are visible initially
   const allYears = useMemo(() => graphData.nodes.map((n) => n.year).filter(Boolean), [graphData.nodes])
   const maxYear = useMemo(() => Math.max(...allYears, 2025), [allYears])
-  const [timelineYear, setTimelineYear] = useState(maxYear)
+  const minYear = useMemo(() => Math.min(...allYears, 1800), [allYears])
+  const [timelineRange, setTimelineRange] = useState(() => ({ start: minYear, end: maxYear }))
 
-  // Filtered graph data based on timeline year
+  const clampedTimelineRange = useMemo(() => {
+    const start = timelineRange?.start ?? minYear
+    const end = timelineRange?.end ?? maxYear
+    const safeStart = Math.max(minYear, Math.min(start, end, maxYear))
+    const safeEnd = Math.min(maxYear, Math.max(end, start, minYear))
+    return { start: safeStart, end: safeEnd }
+  }, [timelineRange, minYear, maxYear])
+
+  // Filtered graph data based on timeline range
   const filteredGraphData = useMemo(() => {
+    const start = clampedTimelineRange.start
+    const end = clampedTimelineRange.end
     const visibleNodeIds = new Set(
-      graphData.nodes.filter((n) => !n.year || n.year <= timelineYear).map((n) => n.id)
+      graphData.nodes.filter((n) => !n.year || (n.year >= start && n.year <= end)).map((n) => n.id)
     )
     return {
       nodes: graphData.nodes.filter((n) => visibleNodeIds.has(n.id)),
@@ -64,7 +75,7 @@ export default function App() {
         return visibleNodeIds.has(srcId) && visibleNodeIds.has(tgtId)
       }),
     }
-  }, [graphData, timelineYear])
+  }, [graphData, clampedTimelineRange])
 
   // Compute layout positions based on view mode
   const layoutPositions = useMemo(() => {
@@ -152,7 +163,6 @@ export default function App() {
           onLinkClick={handleLinkClick}
           layoutPositions={layoutPositions}
           viewMode={viewMode}
-          is2D={true}
         />
       </div>
 
@@ -239,7 +249,7 @@ export default function App() {
         setLinkContextNode={setLinkContextNode}
       />
 
-      <Timeline graphData={graphData} timelineYear={timelineYear} onYearChange={setTimelineYear} />
+      <Timeline graphData={graphData} timelineRange={clampedTimelineRange} onRangeChange={setTimelineRange} />
 
       <ViewSelector currentView={viewMode} onViewChange={handleViewChange} />
 

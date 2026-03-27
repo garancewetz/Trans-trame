@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-export default function Timeline({ graphData, timelineYear, onYearChange }) {
+export default function Timeline({ graphData, timelineRange, onRangeChange }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const playRef = useRef(null)
   const trackRef = useRef(null)
+  const dragTargetRef = useRef('end') // 'start' | 'end'
 
   const { minYear, maxYear, booksByYear } = useMemo(() => {
     const years = graphData.nodes.map((n) => n.year).filter(Boolean).sort((a, b) => a - b)
@@ -27,25 +28,25 @@ export default function Timeline({ graphData, timelineYear, onYearChange }) {
       return
     }
     playRef.current = setInterval(() => {
-      onYearChange((prev) => {
-        if (prev >= maxYear) {
+      onRangeChange((prev) => {
+        if (prev.end >= maxYear) {
           setIsPlaying(false)
-          return maxYear
+          return { ...prev, end: maxYear }
         }
-        return prev + 1
+        return { ...prev, end: Math.min(maxYear, prev.end + 1) }
       })
     }, 120)
     return () => clearInterval(playRef.current)
-  }, [isPlaying, maxYear, onYearChange])
+  }, [isPlaying, maxYear, onRangeChange])
 
   const togglePlay = useCallback(() => {
     setIsPlaying((prev) => {
-      if (!prev && timelineYear >= maxYear) {
-        onYearChange(minYear)
+      if (!prev && timelineRange.end >= maxYear) {
+        onRangeChange({ start: minYear, end: minYear })
       }
       return !prev
     })
-  }, [timelineYear, maxYear, minYear, onYearChange])
+  }, [timelineRange.end, maxYear, minYear, onRangeChange])
 
   // Tick marks for years that have books
   const ticks = useMemo(() => {
@@ -85,24 +86,54 @@ export default function Timeline({ graphData, timelineYear, onYearChange }) {
     if (!rect) return
     const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
     const year = Math.round(minYear + ratio * (maxYear - minYear))
-    onYearChange(year)
+
+    const start = timelineRange?.start ?? minYear
+    const end = timelineRange?.end ?? maxYear
+
+    if (!isDragging) {
+      const distStart = Math.abs(year - start)
+      const distEnd = Math.abs(year - end)
+      dragTargetRef.current = distStart <= distEnd ? 'start' : 'end'
+    }
+
+    const target = dragTargetRef.current
+    if (target === 'start') {
+      const nextStart = Math.min(year, end)
+      onRangeChange({ start: nextStart, end })
+    } else {
+      const nextEnd = Math.max(year, start)
+      onRangeChange({ start, end: nextEnd })
+    }
   }
 
-  const progress = maxYear === minYear ? 100 : ((timelineYear - minYear) / (maxYear - minYear)) * 100
+  const startYear = timelineRange?.start ?? minYear
+  const endYear = timelineRange?.end ?? maxYear
+
+  const clampPercent = (p) => Math.max(0, Math.min(100, Number.isFinite(p) ? p : 0))
+
+  const startProgressRaw = maxYear === minYear ? 0 : ((startYear - minYear) / (maxYear - minYear)) * 100
+  const endProgressRaw = maxYear === minYear ? 100 : ((endYear - minYear) / (maxYear - minYear)) * 100
+  const startProgress = clampPercent(startProgressRaw)
+  const endProgress = clampPercent(endProgressRaw)
+
+  const thumbTransform = (p) => {
+    if (p <= 0) return 'translate(0, -50%)'
+    if (p >= 100) return 'translate(-100%, -50%)'
+    return 'translate(-50%, -50%)'
+  }
 
   return (
     <div className="pointer-events-auto absolute bottom-0 left-0 right-0 z-20">
       <div
         className="w-full px-3 pb-3 backdrop-blur-xl"
         style={{
-          background: 'linear-gradient(to top, rgba(6, 3, 15, 0.6), rgba(6, 3, 15, 0))',
+    
         }}
       >
-        <div className="mb-1 flex items-center justify-between px-2 text-[0.68rem] text-white/45">
-          <span>Début</span>
-          <span>Fin</span>
-        </div>
-        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[rgba(8,12,30,0.72)] px-3 py-2 backdrop-blur-xl">
+       
+        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[rgba(8,12,30,0.72)] px-3 py-2 backdrop-blur-xl"
+          style={{ background: 'rgba(8, 12, 30, 0.35)', backdropFilter: 'blur(18px)' }}
+        >
         {/* Play/pause */}
         <button
           onClick={togglePlay}
@@ -145,7 +176,7 @@ export default function Timeline({ graphData, timelineYear, onYearChange }) {
           {/* Background line */}
           <div
             className="absolute top-1/2 -translate-y-1/2 w-full rounded-full"
-            style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)' }}
+            style={{ height: '1px', background: 'rgba(255, 255, 255, 0.06)' }}
           />
 
           {/* Filled line */}
@@ -153,8 +184,9 @@ export default function Timeline({ graphData, timelineYear, onYearChange }) {
             className="absolute top-1/2 -translate-y-1/2 rounded-full transition-[width] duration-75"
             style={{
               height: '1px',
-              width: `${progress}%`,
-              background: 'rgba(255, 255, 255, 0.25)',
+              left: `${startProgress}%`,
+              width: `${Math.max(0, endProgress - startProgress)}%`,
+              background: 'rgba(255, 255, 255, 0.22)',
             }}
           />
 
@@ -165,12 +197,12 @@ export default function Timeline({ graphData, timelineYear, onYearChange }) {
               className="absolute top-1/2"
               style={{
                 left: `${tick.left}%`,
-                width: '1px',
-                height: tick.count > 1 ? '10px' : '6px',
+                width: '2px',
+                height: tick.count > 1 ? '12px' : '8px',
                 background:
-                  tick.year <= timelineYear
-                    ? 'rgba(255, 255, 255, 0.3)'
-                    : 'rgba(255, 255, 255, 0.08)',
+                  tick.year >= startYear && tick.year <= endYear
+                    ? 'rgba(255, 255, 255, 0.38)'
+                    : 'rgba(255, 255, 255, 0.12)',
                 transform: 'translate(-50%, -50%)',
                 transition: 'background 0.3s',
                 borderRadius: '1px',
@@ -178,17 +210,32 @@ export default function Timeline({ graphData, timelineYear, onYearChange }) {
             />
           ))}
 
-          {/* Thumb */}
+          {/* Thumb start */}
           <div
             className="absolute top-1/2"
             style={{
-              left: `${progress}%`,
-              width: '10px',
-              height: '10px',
-              background: 'rgba(255, 255, 255, 0.7)',
+              left: `${startProgress}%`,
+              width: '8px',
+              height: '8px',
+              background: 'rgba(255, 255, 255, 0.55)',
               borderRadius: '50%',
-              transform: 'translate(-50%, -50%)',
-              boxShadow: '0 0 10px rgba(255, 255, 255, 0.15)',
+              transform: thumbTransform(startProgress),
+              boxShadow: '0 0 10px rgba(255, 255, 255, 0.08)',
+              transition: isDragging ? 'none' : 'left 0.075s ease-out',
+            }}
+          />
+
+          {/* Thumb end */}
+          <div
+            className="absolute top-1/2"
+            style={{
+              left: `${endProgress}%`,
+              width: '8px',
+              height: '8px',
+              background: 'rgba(255, 255, 255, 0.55)',
+              borderRadius: '50%',
+              transform: thumbTransform(endProgress),
+              boxShadow: '0 0 10px rgba(255, 255, 255, 0.08)',
               transition: isDragging ? 'none' : 'left 0.075s ease-out',
             }}
           />
@@ -207,7 +254,7 @@ export default function Timeline({ graphData, timelineYear, onYearChange }) {
           className="shrink-0 text-sm font-light tracking-wider tabular-nums"
           style={{ color: 'rgba(255, 255, 255, 0.6)', minWidth: '40px', textAlign: 'right' }}
         >
-          {Math.round(progress)}%
+          {startYear}–{endYear}
         </span>
         </div>
       </div>

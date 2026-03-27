@@ -1,43 +1,47 @@
-import * as THREE from 'three'
-import SpriteText from 'three-spritetext'
+const HALF_WIDTH = 800
 
-/**
- * Create a faint baseline for the Arc Diagram (Généalogie view).
- */
-export function createGenealogyOverlay() {
-  const group = new THREE.Group()
-  group.name = 'genealogy-overlay'
-
+export function drawGenealogyOverlay(ctx, globalScale) {
   // Horizontal baseline
-  const HALF_WIDTH = 800
-  const points = [
-    new THREE.Vector3(-HALF_WIDTH, 0, 0),
-    new THREE.Vector3(HALF_WIDTH, 0, 0),
-  ]
-  const geometry = new THREE.BufferGeometry().setFromPoints(points)
-  const material = new THREE.LineBasicMaterial({
-    color: 0xffffff,
-    transparent: true,
-    opacity: 0.06,
-  })
-  group.add(new THREE.Line(geometry, material))
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'
+  ctx.lineWidth = 1 / globalScale
+  ctx.beginPath()
+  ctx.moveTo(-HALF_WIDTH, 0)
+  ctx.lineTo(HALF_WIDTH, 0)
+  ctx.stroke()
 
-  // Time arrow labels
-  const pastLabel = new SpriteText('PASSÉ', 6, 'rgba(255,255,255,0.18)')
-  pastLabel.fontWeight = 'bold'
-  pastLabel.backgroundColor = 'rgba(6,3,15,0.4)'
-  pastLabel.padding = 2
-  pastLabel.borderRadius = 2
-  pastLabel.position.set(-HALF_WIDTH + 40, -25, 0)
-  group.add(pastLabel)
+  // Time labels
+  const fontSize = Math.max(6, 6 / globalScale)
+  ctx.font = `bold ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
+  ctx.textBaseline = 'top'
 
-  const futureLabel = new SpriteText('PRÉSENT', 6, 'rgba(255,255,255,0.18)')
-  futureLabel.fontWeight = 'bold'
-  futureLabel.backgroundColor = 'rgba(6,3,15,0.4)'
-  futureLabel.padding = 2
-  futureLabel.borderRadius = 2
-  futureLabel.position.set(HALF_WIDTH - 40, -25, 0)
-  group.add(futureLabel)
+  const labelY = 15 / globalScale
+  const padX = 4 / globalScale
+  const padY = 2 / globalScale
+  const radius = 2 / globalScale
 
-  return group
+  // PASSÉ (left)
+  drawLabel(ctx, 'PASSÉ', -HALF_WIDTH + 40, labelY, fontSize, padX, padY, radius)
+
+  // PRÉSENT (right)
+  ctx.textAlign = 'right'
+  drawLabel(ctx, 'PRÉSENT', HALF_WIDTH - 40, labelY, fontSize, padX, padY, radius)
+  ctx.textAlign = 'left'
+}
+
+function drawLabel(ctx, text, x, y, fontSize, padX, padY, radius) {
+  const metrics = ctx.measureText(text)
+  const w = metrics.width + padX * 2
+  const h = fontSize + padY * 2
+
+  const align = ctx.textAlign
+  const bgX = align === 'right' ? x - metrics.width - padX : x - padX
+
+  ctx.fillStyle = 'rgba(6,3,15,0.4)'
+  ctx.beginPath()
+  ctx.roundRect?.(bgX, y - padY, w, h, radius) ??
+    ctx.rect(bgX, y - padY, w, h)
+  ctx.fill()
+
+  ctx.fillStyle = 'rgba(255,255,255,0.18)'
+  ctx.fillText(text, x, y)
 }
