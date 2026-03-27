@@ -47,7 +47,7 @@ export default function KeyboardHints() {
     <div
       style={{
         position: 'absolute',
-        bottom: 56,
+        bottom: 96,
         right: 24,
         display: 'flex',
         flexDirection: 'column',

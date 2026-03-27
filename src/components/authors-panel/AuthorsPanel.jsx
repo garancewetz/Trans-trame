@@ -43,7 +43,7 @@ export default function AuthorsPanel({ open, onClose, nodes, selectedAuthor, onS
   return (
     <aside
       className={[
-        'fixed left-0 top-0 z-40 h-screen w-[380px] overflow-hidden border-r border-white/10 bg-[rgba(8,4,20,0.92)] backdrop-blur-2xl transition-transform duration-300 ease-in-out',
+        'fixed left-0 top-0 z-50 h-screen w-[380px] overflow-hidden border-r border-white/10 bg-[rgba(8,4,20,0.92)] backdrop-blur-2xl transition-transform duration-300 ease-in-out',
         open ? 'translate-x-0' : '-translate-x-[420px]',
       ].join(' ')}
     >

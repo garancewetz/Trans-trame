@@ -52,7 +52,7 @@ export default function SidePanel(props) {
   return (
     <aside
       className={[
-        'fixed right-0 top-0 z-30 h-screen w-[760px] overflow-hidden border-l border-white/10 bg-[rgba(8,4,20,0.92)] backdrop-blur-2xl',
+        'fixed right-0 top-0 z-50 h-screen w-[760px] overflow-hidden border-l border-white/10 bg-[rgba(8,4,20,0.92)] backdrop-blur-2xl',
         'transform transition-transform duration-300 [transition-timing-function:cubic-bezier(0.4,0,0.2,1)]',
         panelTranslateClass,
       ].join(' ')}

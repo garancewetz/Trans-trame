@@ -42,6 +42,19 @@ export function computeSuperNodes(bookNodes, links) {
     .map((n) => ({ ...n, degree: degreeMap[n.id] || 0 }))
 }
 
+export function computeMostCitedWorks(bookNodes, links) {
+  const citedByCount = {}
+  for (const node of bookNodes) citedByCount[node.id] = 0
+  for (const link of links) {
+    const tgtId = typeof link.target === 'object' ? link.target.id : link.target
+    if (citedByCount[tgtId] !== undefined) citedByCount[tgtId]++
+  }
+  return [...bookNodes]
+    .sort((a, b) => (citedByCount[b.id] || 0) - (citedByCount[a.id] || 0))
+    .slice(0, 3)
+    .map((n) => ({ ...n, citedBy: citedByCount[n.id] || 0 }))
+}
+
 export function computeWikiGaps(bookNodes, links) {
   const pairCounts = {}
   for (let i = 0; i < AXES.length; i++) {

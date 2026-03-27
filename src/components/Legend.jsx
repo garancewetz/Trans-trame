@@ -1,3 +1,5 @@
+import { Tags } from 'lucide-react'
+
 export default function Legend({
   axesColors,
   activeFilter,
@@ -7,8 +9,11 @@ export default function Legend({
   clearFilter,
 }) {
   return (
-    <div className="fixed left-5 top-[122px] z-20 flex flex-col gap-2 rounded-[10px] border border-white/10 bg-[rgba(6,3,15,0.45)] px-4 py-3 backdrop-blur-2xl">
-      <span className="text-[0.62rem] font-bold uppercase tracking-[2px] text-white/30">Catégories</span>
+    <div className="fixed bottom-24 left-3 z-20 flex flex-col gap-2 rounded-[10px] border border-white/10 bg-[rgba(6,3,15,0.45)] px-4 py-3 backdrop-blur-2xl">
+      <span className="inline-flex items-center gap-1.5 text-[0.62rem] font-bold uppercase tracking-[2px] text-white/30">
+        <Tags size={12} />
+        Catégories
+      </span>
       {Object.entries(axesColors).map(([axis, color]) => {
         const isActive = activeFilter === axis
         const isHovered = hoveredFilter === axis

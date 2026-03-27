@@ -7,7 +7,6 @@ import SidePanel from '../components/SidePanel'
 import Timeline from '../components/Timeline'
 import TextsPanel from '../components/texts-panel/TextsPanel'
 import AuthorsPanel from '../components/authors-panel/AuthorsPanel'
-import ViewSelector from '../components/ViewSelector'
 import defaultData from '../data.json'
 import { AXES_COLORS, axesGradient } from '../categories'
 import { authorName } from '../authorUtils'
@@ -32,6 +31,7 @@ export default function App() {
   })
 
   const graphRef = useRef(null)
+  const analysisPanelRef = useRef(null)
 
   const [selectedNode, setSelectedNode] = useState(null)
   const [selectedLink, setSelectedLink] = useState(null)
@@ -150,6 +150,7 @@ export default function App() {
   }, [])
 
   const toggleFilter = useCallback((axis) => setActiveFilter((prev) => (prev === axis ? null : axis)), [])
+  const clearActiveFilter = useCallback(() => setActiveFilter(null), [])
 
   useEffect(() => {
     function onKeyDown(e) {
@@ -205,17 +206,29 @@ export default function App() {
         searchResults={searchResults}
         handleSearchSelect={handleSearchSelect}
         axesGradient={axesGradient}
+        activeFilter={activeFilter}
+        clearActiveFilter={clearActiveFilter}
         panelTab={panelTab}
         setPanelTab={setPanelTab}
         handleClosePanel={handleClosePanel}
         setPreviousPanelTab={setPreviousPanelTab}
         setSelectedNode={setSelectedNode}
         setSelectedLink={setSelectedLink}
-        onOpenTextsPanel={() => setTextsPanelOpen(true)}
-        onOpenAuthorsPanel={() => setAuthorsPanelOpen(true)}
+        onOpenTextsPanel={() => {
+          setAuthorsPanelOpen(false)
+          setTextsPanelOpen(true)
+        }}
+        onOpenAuthorsPanel={() => {
+          setTextsPanelOpen(false)
+          setAuthorsPanelOpen(true)
+        }}
         graphData={graphData}
         selectedAuthor={selectedAuthor}
+        clearSelectedAuthor={() => setSelectedAuthor(null)}
         authorCount={authorCount}
+        onOpenAnalysisPanel={() => analysisPanelRef.current?.openPanel()}
+        viewMode={viewMode}
+        onViewChange={handleViewChange}
       />
 
       <Legend
@@ -224,7 +237,7 @@ export default function App() {
         hoveredFilter={hoveredFilter}
         toggleFilter={toggleFilter}
         setHoveredFilter={setHoveredFilter}
-        clearFilter={() => setActiveFilter(null)}
+        clearFilter={clearActiveFilter}
       />
 
       <SidePanel
@@ -282,13 +295,13 @@ export default function App() {
 
       <Timeline graphData={graphData} timelineRange={clampedTimelineRange} onRangeChange={setTimelineRange} />
 
-      <ViewSelector currentView={viewMode} onViewChange={handleViewChange} />
-
       <AnalysisPanel
+        ref={analysisPanelRef}
         graphData={filteredGraphData}
         activeFilter={activeFilter}
         onFilterChange={toggleFilter}
         onAddLink={handleAddLink}
+        showTrigger={false}
       />
 
       <TextsPanel
