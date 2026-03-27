@@ -4,12 +4,15 @@ import Graph from '../components/Graph'
 import Legend from '../components/Legend'
 import Navbar from '../components/Navbar'
 import SidePanel from '../components/SidePanel'
+import Timeline from '../components/Timeline'
+import ViewSelector from '../components/ViewSelector'
 import defaultData from '../data.json'
 import { AXES_COLORS, axesGradient } from '../categories'
 import { exportJSON } from '../api/graphStorage'
 import useGlobalSearch from '../hooks/useGlobalSearch'
 import useGraphData from '../hooks/useGraphData'
 import { computeSameAuthorBooks, getIncomingRefs, getLinkNodes, getOutgoingRefs } from './graphRelations'
+import { constellationLayout, genealogyLayout } from '../layouts/layoutEngine'
 
 export default function App() {
   const { graphData, handleAddBook, handleAddLink, handleUpdateBook, resetToDefault } = useGraphData({
@@ -28,6 +31,43 @@ export default function App() {
 
   const [activeFilter, setActiveFilter] = useState(null)
   const [hoveredFilter, setHoveredFilter] = useState(null)
+
+  // View mode: 'constellation' | 'genealogy' | 'resonance'
+  const [viewMode, setViewMode] = useState('constellation')
+
+  // Timeline state — default to max year so all books are visible initially
+  const allYears = useMemo(() => graphData.nodes.map((n) => n.year).filter(Boolean), [graphData.nodes])
+  const maxYear = useMemo(() => Math.max(...allYears, 2025), [allYears])
+  const [timelineYear, setTimelineYear] = useState(maxYear)
+
+  // Filtered graph data based on timeline year
+  const filteredGraphData = useMemo(() => {
+    const visibleNodeIds = new Set(
+      graphData.nodes.filter((n) => !n.year || n.year <= timelineYear).map((n) => n.id)
+    )
+    return {
+      nodes: graphData.nodes.filter((n) => visibleNodeIds.has(n.id)),
+      links: graphData.links.filter((l) => {
+        const srcId = typeof l.source === 'object' ? l.source.id : l.source
+        const tgtId = typeof l.target === 'object' ? l.target.id : l.target
+        return visibleNodeIds.has(srcId) && visibleNodeIds.has(tgtId)
+      }),
+    }
+  }, [graphData, timelineYear])
+
+  // Compute layout positions based on view mode
+  const layoutPositions = useMemo(() => {
+    switch (viewMode) {
+      case 'genealogy':
+        return genealogyLayout(filteredGraphData)
+      default:
+        return constellationLayout()
+    }
+  }, [viewMode, filteredGraphData])
+
+  const handleViewChange = useCallback((mode) => {
+    setViewMode(mode)
+  }, [])
 
   const sameAuthorBooks = useMemo(() => computeSameAuthorBooks(graphData, selectedNode), [graphData, selectedNode])
 
@@ -81,12 +121,14 @@ export default function App() {
       <div className="absolute inset-0 z-0">
         <Graph
           ref={graphRef}
-          graphData={graphData}
+          graphData={filteredGraphData}
           selectedNode={selectedNode}
           activeFilter={activeFilter}
           hoveredFilter={hoveredFilter}
           onNodeClick={handleNodeClick}
           onLinkClick={handleLinkClick}
+          layoutPositions={layoutPositions}
+          viewMode={viewMode}
         />
       </div>
 
@@ -153,7 +195,11 @@ export default function App() {
         setSelectedLink={setSelectedLink}
       />
 
-      <AnalysisPanel graphData={graphData} activeFilter={activeFilter} onFilterChange={toggleFilter} onAddLink={handleAddLink} />
+      <Timeline graphData={graphData} timelineYear={timelineYear} onYearChange={setTimelineYear} />
+
+      <ViewSelector currentView={viewMode} onViewChange={handleViewChange} />
+
+      <AnalysisPanel graphData={filteredGraphData} activeFilter={activeFilter} onFilterChange={toggleFilter} onAddLink={handleAddLink} />
     </div>
   )
 }

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { BookPlus, Link2, BookOpen } from 'lucide-react'
+import { BookPlus, Link2, BookOpen, Search, X } from 'lucide-react'
 import Button from './ui/Button'
 import SearchInput from './ui/SearchInput'
 import Logo from './Logo'
+import { authorName, authorSortKey } from '../authorUtils'
 
 export default function Navbar({
   searchRef,
@@ -27,7 +28,7 @@ export default function Navbar({
   const sortedBooks = useMemo(
     () =>
       [...graphData.nodes].sort((a, b) =>
-        (a.author || '').localeCompare(b.author || '', 'fr', { sensitivity: 'base' }),
+        authorSortKey(a).localeCompare(authorSortKey(b), 'fr', { sensitivity: 'base' }),
       ),
     [graphData.nodes],
   )
@@ -54,19 +55,7 @@ export default function Navbar({
       {/* Global search */}
       <div className="relative w-80 shrink-0" ref={searchRef}>
         <div className="pointer-events-none absolute left-3 top-1/2 flex -translate-y-1/2 text-white/25">
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
+          <Search size={15} />
         </div>
         <SearchInput
           className="w-full rounded-[10px] border border-white/10 bg-white/5 px-9 py-[9px] text-[0.82rem] text-white outline-none backdrop-blur-lg transition-all placeholder:text-white/25 focus:border-[rgba(168,130,255,0.4)] focus:bg-white/10 focus:shadow-[0_0_0_3px_rgba(168,130,255,0.08)]"
@@ -78,14 +67,14 @@ export default function Navbar({
         />
         {globalSearch && (
           <Button
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 cursor-pointer bg-transparent px-1.5 py-0.5 text-[18px] leading-none text-white/30 hover:text-white"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 cursor-pointer bg-transparent px-1.5 py-0.5 text-white/30 hover:text-white"
             onClick={() => {
               setGlobalSearch('')
               setSearchFocused(false)
             }}
             type="button"
           >
-            &times;
+            <X size={16} />
           </Button>
         )}
 
@@ -126,7 +115,7 @@ export default function Navbar({
                   <span className="flex min-w-0 flex-col gap-px">
                     <strong className="truncate text-[0.84rem] font-semibold">{node.title}</strong>
                     <span className="text-[0.72rem] text-white/35">
-                      {node.author}, {node.year}
+                      {authorName(node)}, {node.year}
                     </span>
                   </span>
                 </Button>
@@ -175,7 +164,7 @@ export default function Navbar({
                   style={{ background: axesGradient(node.axes) }}
                 />
                 <span className="flex min-w-0 flex-col gap-px">
-                  <strong className="truncate text-[0.84rem] font-semibold">{node.author}</strong>
+                  <strong className="truncate text-[0.84rem] font-semibold">{authorName(node)}</strong>
                   <span className="text-[0.72rem] text-white/35">
                     {node.title}{node.year ? ` (${node.year})` : ''}
                   </span>

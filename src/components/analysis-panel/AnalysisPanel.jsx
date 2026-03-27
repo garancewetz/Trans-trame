@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
+import { BarChart3, X, Network, Crown, EyeOff, Activity } from 'lucide-react'
 import { AXES_COLORS } from '../../categories'
+import { authorName } from '../../authorUtils'
 import Button from '../ui/Button'
 import Panel from '../ui/Panel'
-import SuggestLinkForm from './SuggestLinkForm'
 import {
   computeAxisStats,
   computeCommunityActivity,
@@ -11,7 +12,7 @@ import {
   computeWikiGaps,
 } from './analysisMetrics'
 
-export default function AnalysisPanel({ graphData, activeFilter, onFilterChange, onAddLink }) {
+export default function AnalysisPanel({ graphData, activeFilter, onFilterChange }) {
   const [open, setOpen] = useState(false)
   const { nodes: bookNodes, links } = graphData
 
@@ -38,7 +39,7 @@ export default function AnalysisPanel({ graphData, activeFilter, onFilterChange,
         className="fixed right-0 top-1/2 z-20 -translate-y-1/2 cursor-pointer rounded-l-lg border border-r-0 border-white/15 bg-[rgba(8,4,20,0.85)] px-2 py-4 text-[0.7rem] font-semibold uppercase tracking-[1.5px] text-white/70 backdrop-blur-md transition-all hover:bg-white/10 hover:text-white"
         style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
       >
-        ANALYSE
+        <span className="inline-flex items-center gap-1.5"><BarChart3 size={13} /> ANALYSE</span>
       </Button>
 
       <Panel
@@ -56,15 +57,15 @@ export default function AnalysisPanel({ graphData, activeFilter, onFilterChange,
             <Button
               type="button"
               onClick={() => setOpen(false)}
-              className="cursor-pointer bg-transparent text-[22px] leading-none text-white/30 transition-colors hover:text-white"
+              className="cursor-pointer bg-transparent text-white/30 transition-colors hover:text-white"
             >
-              &times;
+              <X size={18} />
             </Button>
           </div>
 
           <section className="mb-6">
             <h3 className="mb-3 text-[0.68rem] font-bold uppercase tracking-[2px] text-white/40">
-              &gt; Répartition des Pôles
+              <BarChart3 size={12} className="inline" /> Répartition des Pôles
             </h3>
             <div className="flex flex-col gap-2">
               {axisStats.map(({ axis, count, pct, color }) => (
@@ -100,7 +101,7 @@ export default function AnalysisPanel({ graphData, activeFilter, onFilterChange,
 
           <section className="mb-6 rounded border border-white/10 bg-white/5 p-3">
             <h3 className="mb-2 text-[0.68rem] font-bold uppercase tracking-[2px] text-white/40">
-              &gt; Densité du Maillage
+              <Network size={12} className="inline" /> Densité du Maillage
             </h3>
             <div className="mb-1 flex items-baseline gap-2">
               <span className="text-[1.4rem] font-bold text-white/85">{density.ratio}</span>
@@ -114,7 +115,7 @@ export default function AnalysisPanel({ graphData, activeFilter, onFilterChange,
 
           <section className="mb-6">
             <h3 className="mb-3 text-[0.68rem] font-bold uppercase tracking-[2px] text-white/40">
-              &gt; Les Centrales (Super-Nodes)
+              <Crown size={12} className="inline" /> Les Centrales (Super-Nodes)
             </h3>
             <div className="flex flex-col gap-1.5">
               {superNodes.map((node, i) => (
@@ -128,7 +129,7 @@ export default function AnalysisPanel({ graphData, activeFilter, onFilterChange,
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[0.72rem] font-semibold text-white/80">{node.title}</p>
                     <p className="text-[0.62rem] text-white/30">
-                      {node.author} — {node.degree} connexion{node.degree > 1 ? 's' : ''}
+                      {authorName(node)} — {node.degree} connexion{node.degree > 1 ? 's' : ''}
                     </p>
                   </div>
                 </div>
@@ -138,7 +139,7 @@ export default function AnalysisPanel({ graphData, activeFilter, onFilterChange,
 
           <section className="mb-6">
             <h3 className="mb-3 text-[0.68rem] font-bold uppercase tracking-[2px] text-white/40">
-              &gt; Zones d'Ombre (Wiki-Gap)
+              <EyeOff size={12} className="inline" /> Zones d'Ombre (Wiki-Gap)
             </h3>
             <div className="flex flex-col gap-1.5">
               {wikiGaps.map(({ a, b, count }) => (
@@ -161,7 +162,7 @@ export default function AnalysisPanel({ graphData, activeFilter, onFilterChange,
 
           <section className="mb-5 rounded border border-white/10 bg-white/5 p-3">
             <h3 className="mb-2 text-[0.68rem] font-bold uppercase tracking-[2px] text-white/40">
-              &gt; Activité de la Trame
+              <Activity size={12} className="inline" /> Activité de la Trame
             </h3>
             <p className="text-[0.75rem] text-white/50">
               <span className="text-[1.1rem] font-bold text-white/80">{communityActivity}</span>{' '}
@@ -169,7 +170,6 @@ export default function AnalysisPanel({ graphData, activeFilter, onFilterChange,
             </p>
           </section>
 
-          <SuggestLinkForm bookNodes={bookNodes} onAddLink={onAddLink} />
         </div>
       </Panel>
     </>

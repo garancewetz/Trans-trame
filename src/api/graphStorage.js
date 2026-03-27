@@ -36,7 +36,8 @@ export function serializeGraphData(data) {
     nodes: nodes.map((n) => ({
       id: n.id,
       title: n.title,
-      author: n.author,
+      firstName: n.firstName,
+      lastName: n.lastName,
       year: n.year,
       axes: n.axes,
       description: n.description,
@@ -45,6 +46,7 @@ export function serializeGraphData(data) {
       source: normalizeId(l.source),
       target: normalizeId(l.target),
       citation_text: l.citation_text,
+      edition: l.edition,
       page: l.page,
       context: l.context,
     })),
@@ -76,6 +78,20 @@ export function loadGraphData({ defaultData, axesColors, storageKey = STORAGE_KE
         const needsAxesMigration = parsed.nodes.some((n) => (n.axes || []).some((a) => a in AXES_MIGRATION))
         if (needsAxesMigration) {
           parsed.nodes = parsed.nodes.map((n) => ({ ...n, axes: migrateAxes(n.axes) }))
+        }
+
+        // Migrate old "author" field to firstName/lastName
+        const needsAuthorMigration = parsed.nodes.some((n) => n.author && !n.lastName)
+        if (needsAuthorMigration) {
+          parsed.nodes = parsed.nodes.map((n) => {
+            if (n.author && !n.lastName) {
+              const parts = n.author.trim().split(/\s+/)
+              const lastName = parts.pop() || ''
+              const firstName = parts.join(' ')
+              return { ...n, firstName, lastName, author: undefined }
+            }
+            return n
+          })
         }
 
         return {

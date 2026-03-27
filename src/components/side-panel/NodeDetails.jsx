@@ -1,3 +1,6 @@
+import { Pencil, ArrowRight, ArrowLeft, LinkIcon, Plus } from 'lucide-react'
+import { authorName } from '../../authorUtils'
+
 export default function NodeDetails({
   selectedNode,
   AXES_COLORS,
@@ -32,12 +35,12 @@ export default function NodeDetails({
           className="cursor-pointer rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.75rem] font-semibold text-white/60 transition-all hover:border-[rgba(168,85,247,0.5)] hover:bg-[rgba(168,85,247,0.2)] hover:text-white"
           onClick={() => setPanelTab('edit')}
         >
-          &#9998; Modifier
+          <span className="inline-flex items-center gap-1.5"><Pencil size={12} /> Modifier</span>
         </button>
       </div>
 
       <h2 className="mb-1 text-[1.3rem] font-bold leading-snug text-white">{selectedNode.title}</h2>
-      <p className="mb-0.5 text-[0.95rem] italic text-white/55">{selectedNode.author}</p>
+      <p className="mb-0.5 text-[0.95rem] italic text-white/55">{authorName(selectedNode)}</p>
       <p className="mb-3.5 text-[0.85rem] text-white/35">{selectedNode.year}</p>
       {selectedNode.description && (
         <p className="mb-4 text-[0.88rem] leading-relaxed text-white/60">{selectedNode.description}</p>
@@ -46,7 +49,7 @@ export default function NodeDetails({
       {sameAuthorBooks.length > 0 && (
         <>
           <h3 className="mb-3 mt-5 text-[0.78rem] font-semibold uppercase tracking-[1.5px] text-white/35">
-            Autres ouvrages de {selectedNode.author} ({sameAuthorBooks.length})
+            Autres ouvrages de {authorName(selectedNode)} ({sameAuthorBooks.length})
           </h3>
           <ul className="mb-5 flex list-none flex-col gap-2 border-b border-white/10 pb-5">
             {sameAuthorBooks.map((n) => (
@@ -80,7 +83,7 @@ export default function NodeDetails({
             setPanelTab('link')
           }}
         >
-          Ajouter un lien vers…
+          <span className="inline-flex items-center gap-1.5"><Plus size={12} /> Lien vers…</span>
         </button>
         <button
           type="button"
@@ -92,14 +95,14 @@ export default function NodeDetails({
             setPanelTab('link')
           }}
         >
-          Ajouter un lien depuis…
+          <span className="inline-flex items-center gap-1.5"><Plus size={12} /> Lien depuis…</span>
         </button>
       </div>
 
       {getOutgoingRefs(selectedNode).length > 0 && (
         <>
           <h3 className="mb-3 mt-5 text-[0.78rem] font-semibold uppercase tracking-[1.5px] text-white/35">
-            <span className="inline-block text-[0.85rem] font-bold text-[rgba(140,220,255,0.8)]">&rarr;</span>
+            <ArrowRight size={14} className="inline text-[rgba(140,220,255,0.8)]" />
             {' '}Références citées ({getOutgoingRefs(selectedNode).length})
           </h3>
           <ul className="flex list-none flex-col gap-2">
@@ -112,7 +115,7 @@ export default function NodeDetails({
                   setSelectedLink(link)
                 }}
               >
-                <span className="mb-1 inline-block text-[0.68rem] font-bold uppercase tracking-[0.5px] text-[rgba(140,220,255,0.7)]">&rarr; cite</span>
+                <span className="mb-1 inline-flex items-center gap-1 text-[0.68rem] font-bold uppercase tracking-[0.5px] text-[rgba(140,220,255,0.7)]"><LinkIcon size={10} /> cite</span>
                 <strong className="mb-0.5 block text-[0.88rem] text-white">{other?.title}</strong>
                 <span className="text-[0.75rem] text-white/30">{link.page}</span>
                 <p className="mt-1.5 text-[0.8rem] italic leading-relaxed text-white/45">{link.citation_text}</p>
@@ -125,7 +128,7 @@ export default function NodeDetails({
       {getIncomingRefs(selectedNode).length > 0 && (
         <>
           <h3 className="mb-3 mt-5 text-[0.78rem] font-semibold uppercase tracking-[1.5px] text-white/35">
-            <span className="inline-block text-[0.85rem] font-bold text-[rgba(255,171,64,0.8)]">&larr;</span>
+            <ArrowLeft size={14} className="inline text-[rgba(255,171,64,0.8)]" />
             {' '}Cité par ({getIncomingRefs(selectedNode).length})
           </h3>
           <ul className="flex list-none flex-col gap-2">
@@ -138,7 +141,7 @@ export default function NodeDetails({
                   setSelectedLink(link)
                 }}
               >
-                <span className="mb-1 inline-block text-[0.68rem] font-bold uppercase tracking-[0.5px] text-[rgba(255,171,64,0.7)]">&larr; cité par</span>
+                <span className="mb-1 inline-flex items-center gap-1 text-[0.68rem] font-bold uppercase tracking-[0.5px] text-[rgba(255,171,64,0.7)]"><LinkIcon size={10} /> cité par</span>
                 <strong className="mb-0.5 block text-[0.88rem] text-white">{other?.title}</strong>
                 <span className="text-[0.75rem] text-white/30">{link.page}</span>
                 <p className="mt-1.5 text-[0.8rem] italic leading-relaxed text-white/45">{link.citation_text}</p>

@@ -1,3 +1,5 @@
+import { ArrowDown, ArrowLeft } from 'lucide-react'
+import { authorName } from '../../authorUtils'
 import NodePicker from './NodePicker'
 
 export default function LinkForm({
@@ -23,6 +25,8 @@ export default function LinkForm({
   setPage,
   context,
   setContext,
+  edition,
+  setEdition,
 }) {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-[18px]">
@@ -30,9 +34,9 @@ export default function LinkForm({
         <button
           type="button"
           onClick={() => onRequestBack()}
-          className="cursor-pointer bg-transparent text-left text-[0.78rem] font-semibold text-white/50 transition-colors hover:text-white"
+          className="inline-flex items-center gap-1.5 cursor-pointer bg-transparent text-left text-[0.78rem] font-semibold text-white/50 transition-colors hover:text-white"
         >
-          &larr; Retour
+          <ArrowLeft size={14} /> Retour
         </button>
       )}
       <h3 className="border-b border-white/10 pb-2.5 text-[0.82rem] font-bold uppercase tracking-[2px] text-white/50">
@@ -45,7 +49,7 @@ export default function LinkForm({
 
       <NodePicker
         label="Ce livre cite..."
-        value={sourceSearch || (selectedSource ? `${selectedSource.title} — ${selectedSource.author}` : '')}
+        value={sourceSearch || (selectedSource ? `${selectedSource.title} — ${authorName(selectedSource)}` : '')}
         query={sourceSearch}
         onChange={(e) => {
           if (sourceId) setSourceId('')
@@ -61,13 +65,13 @@ export default function LinkForm({
         onRequestAddBook={onRequestAddBook}
       />
 
-      <div className="-my-2 text-center text-[1.2rem] tracking-[2px] text-[rgba(140,220,255,0.5)]">
-        &darr;
+      <div className="-my-2 flex justify-center text-[rgba(140,220,255,0.5)]">
+        <ArrowDown size={20} />
       </div>
 
       <NodePicker
         label="...ce livre"
-        value={targetSearch || (selectedTarget ? `${selectedTarget.title} — ${selectedTarget.author}` : '')}
+        value={targetSearch || (selectedTarget ? `${selectedTarget.title} — ${authorName(selectedTarget)}` : '')}
         query={targetSearch}
         onChange={(e) => {
           if (targetId) setTargetId('')
@@ -93,6 +97,18 @@ export default function LinkForm({
           placeholder="&laquo; L'extrait qui justifie le lien... &raquo;"
           value={citationText}
           onChange={(e) => setCitationText(e.target.value)}
+        />
+      </label>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
+          &Eacute;dition cit&eacute;e
+        </span>
+        <input
+          className={inputClass}
+          placeholder="Ex : Gallimard, coll. Folio, 1976"
+          value={edition}
+          onChange={(e) => setEdition(e.target.value)}
         />
       </label>
 

@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import AdminPanel from './AdminPanel'
 import EmptyState from './EmptyState'
 import LinkDetails from './LinkDetails'
@@ -17,10 +18,10 @@ export default function SidePanel(props) {
     >
       <button
         type="button"
-        className="sticky top-0 float-right z-1 mr-3 mt-3 cursor-pointer bg-transparent text-[26px] leading-none text-white/40 transition-colors hover:text-white"
+        className="sticky top-0 float-right z-1 mr-3 mt-3 cursor-pointer bg-transparent text-white/40 transition-colors hover:text-white"
         onClick={handleClosePanel}
       >
-        &times;
+        <X size={20} />
       </button>
 
       {panelTab === 'details' && selectedNode && <NodeDetails {...props} />}

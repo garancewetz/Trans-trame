@@ -1,4 +1,6 @@
+import { Search, X } from 'lucide-react'
 import { axesGradient } from '../../categories'
+import { authorName } from '../../authorUtils'
 
 export default function NodePicker({
   label,
@@ -16,19 +18,7 @@ export default function NodePicker({
       <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">{label}</span>
       <div className="relative flex items-center">
         <div className="pointer-events-none absolute left-3.5 text-white/25">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
+          <Search size={16} />
         </div>
         <input
           className="w-full rounded-xl border border-white/10 bg-white/5 px-10 py-3.5 text-[0.85rem] text-white outline-none transition-all placeholder:text-white/25 focus:border-[rgba(140,220,255,0.4)] focus:bg-white/10 focus:shadow-[0_0_0_3px_rgba(140,220,255,0.08)]"
@@ -39,11 +29,11 @@ export default function NodePicker({
         />
         {query && (
           <button
-            className="absolute right-2.5 cursor-pointer bg-transparent px-2 py-1 text-[20px] leading-none text-white/30 hover:text-white"
+            className="absolute right-2.5 cursor-pointer bg-transparent px-2 py-1 text-white/30 hover:text-white"
             onClick={() => onChange({ target: { value: '' } })}
             type="button"
           >
-            &times;
+            <X size={16} />
           </button>
         )}
       </div>
@@ -83,7 +73,7 @@ export default function NodePicker({
                     <span className="min-w-0">
                       <strong className="block text-[0.85rem] font-semibold text-white">{n.title}</strong>
                       <span className="mt-0.5 block text-[0.75rem] text-white/35">
-                        {n.author}, {n.year}
+                        {authorName(n)}, {n.year}
                       </span>
                     </span>
                   </button>

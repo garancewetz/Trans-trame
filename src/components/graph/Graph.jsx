@@ -4,6 +4,7 @@ import KeyboardHints from '../ui/KeyboardHints'
 import { createStarField } from './scene'
 import { restoreCamera, setupKeyboardHandlers, startTankLoop } from './cameraControls'
 import { createNodeThreeObject } from './nodeObject'
+import { createGenealogyOverlay } from './axisLabels'
 
 const Graph = forwardRef(function Graph({
   graphData,
@@ -12,6 +13,8 @@ const Graph = forwardRef(function Graph({
   hoveredFilter,
   onNodeClick,
   onLinkClick,
+  layoutPositions,
+  viewMode,
 }, ref) {
   const fgRef = useRef()
 
@@ -19,7 +22,8 @@ const Graph = forwardRef(function Graph({
     centerCamera() {
       const fg = fgRef.current
       if (!fg) return
-      fg.cameraPosition({ x: 0, y: 0, z: 600 }, { x: 0, y: 0, z: 0 }, 1200)
+      const z = viewMode === 'constellation' ? 600 : 900
+      fg.cameraPosition({ x: 0, y: 0, z }, { x: 0, y: 0, z: 0 }, 1200)
     },
   }))
   const keysRef = useRef(new Set())
@@ -43,13 +47,69 @@ const Graph = forwardRef(function Graph({
     restoreCamera({ fgRef, lastCameraStateRef })
   }, [graphData.nodes.length, graphData.links.length])
 
+  // Apply layout positions when view mode changes
+  const prevViewRef = useRef(viewMode)
+  useEffect(() => {
+    const fg = fgRef.current
+    if (!fg) return
+
+    // Use a small delay to ensure the force simulation is ready
+    const timer = setTimeout(() => {
+      if (layoutPositions) {
+        // 2D mode: fix node positions and flatten Z
+        graphData.nodes.forEach((node) => {
+          const pos = layoutPositions.get(node.id)
+          if (pos) {
+            node.fx = pos.fx
+            node.fy = pos.fy
+            node.fz = pos.fz
+          }
+        })
+        // Weaken forces for fixed layouts
+        const charge = fg.d3Force('charge')
+        if (charge) charge.strength(-30)
+        const link = fg.d3Force('link')
+        if (link) link.distance(80)
+
+        // Move camera to 2D viewing angle
+        const maxR = Math.max(...[...layoutPositions.values()].map((p) => Math.hypot(p.fx, p.fy)), 300)
+        fg.cameraPosition({ x: 0, y: 0, z: maxR * 1.8 }, { x: 0, y: 0, z: 0 }, 1200)
+      } else {
+        // Constellation mode: release fixed positions
+        graphData.nodes.forEach((node) => {
+          node.fx = undefined
+          node.fy = undefined
+          node.fz = undefined
+        })
+        const charge = fg.d3Force('charge')
+        if (charge) charge.strength(-250).distanceMax(500)
+        const link = fg.d3Force('link')
+        if (link) link.distance(100)
+
+        if (prevViewRef.current !== 'constellation') {
+          fg.cameraPosition({ x: 0, y: 0, z: 600 }, { x: 0, y: 0, z: 0 }, 1200)
+        }
+      }
+      prevViewRef.current = viewMode
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [layoutPositions, viewMode, graphData.nodes])
+
   useEffect(() => {
     if (!selectedNode || !fgRef.current) return
-    const distance = 120
+    const distance = viewMode === 'constellation' ? 120 : 200
     const { x, y, z } = selectedNode
     if (x == null) return
-    fgRef.current.cameraPosition({ x: x + distance, y: y + distance / 3, z: z + distance }, { x, y, z }, 1200)
-  }, [selectedNode])
+    if (viewMode === 'constellation') {
+      fgRef.current.cameraPosition({ x: x + distance, y: y + distance / 3, z: z + distance }, { x, y, z }, 1200)
+    } else {
+      // For 2D views, keep camera above the plane
+      const fx = selectedNode.fx ?? x
+      const fy = selectedNode.fy ?? y
+      fgRef.current.cameraPosition({ x: fx, y: fy, z: distance }, { x: fx, y: fy, z: 0 }, 1200)
+    }
+  }, [selectedNode, viewMode])
 
   const connectedLinks = useMemo(() => {
     if (!selectedNode) return new Set()
@@ -132,6 +192,32 @@ const Graph = forwardRef(function Graph({
     [selectedNode, isLinkActive]
   )
 
+  // Manage view-mode overlays (axis labels, guide lines)
+  const overlayRef = useRef(null)
+  useEffect(() => {
+    const fg = fgRef.current
+    if (!fg) return
+
+    // Remove previous overlay
+    if (overlayRef.current) {
+      fg.scene().remove(overlayRef.current)
+      overlayRef.current = null
+    }
+
+    // Add new overlay based on view mode
+    if (viewMode === 'genealogy') {
+      overlayRef.current = createGenealogyOverlay()
+      fg.scene().add(overlayRef.current)
+    }
+
+    return () => {
+      if (overlayRef.current && fg) {
+        fg.scene().remove(overlayRef.current)
+        overlayRef.current = null
+      }
+    }
+  }, [viewMode])
+
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <ForceGraph3D
@@ -143,7 +229,21 @@ const Graph = forwardRef(function Graph({
         linkColor={linkColor}
         linkWidth={linkWidth}
         linkOpacity={1}
-        linkCurvature={0.15}
+        linkCurvature={(link) => {
+          if (viewMode !== 'genealogy') return 0.15
+          // Arc height proportional to horizontal distance between nodes
+          const sx = link.source?.fx ?? link.source?.x ?? 0
+          const tx = link.target?.fx ?? link.target?.x ?? 0
+          const dist = Math.abs(tx - sx)
+          return Math.min(0.4 + dist / 1200, 1.2)
+        }}
+        linkCurveRotation={(link) => {
+          if (viewMode !== 'genealogy') return 0
+          // Always arc upward (negative Y in screen = above the baseline)
+          const sx = link.source?.fx ?? link.source?.x ?? 0
+          const tx = link.target?.fx ?? link.target?.x ?? 0
+          return sx < tx ? Math.PI / 2 : -Math.PI / 2
+        }}
         linkDirectionalArrowLength={(link) => (!selectedNode ? 4 : isLinkActive(link) ? 7 : 3)}
         linkDirectionalArrowRelPos={0.88}
         linkDirectionalArrowColor={arrowColor}

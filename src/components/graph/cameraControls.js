@@ -37,6 +37,8 @@ export function startTankLoop({ fgRef, keysRef, velRef, animFrameRef, lastCamera
   const DAMP = 0.82
   const BOUNDS = 1400
 
+  const yawAxis = new THREE.Vector3(0, 1, 0)
+
   const animate = () => {
     animFrameRef.current = requestAnimationFrame(animate)
     const fg = fgRef.current
@@ -44,16 +46,19 @@ export function startTankLoop({ fgRef, keysRef, velRef, animFrameRef, lastCamera
     const camera = fg.camera()
     if (!camera) return
 
-    camera.rotation.order = 'YXZ'
-
     const keys = keysRef.current
     const vel = velRef.current
 
+    // Yaw: orbit camera position around the Y axis through the scene center
     if (keys.has('arrowleft')) vel.yaw = Math.min(vel.yaw + YAW_ACCEL, MAX_YAW)
     else if (keys.has('arrowright')) vel.yaw = Math.max(vel.yaw - YAW_ACCEL, -MAX_YAW)
     else vel.yaw *= DAMP
-    camera.rotation.y += vel.yaw
 
+    if (Math.abs(vel.yaw) > 0.0001) {
+      camera.position.applyAxisAngle(yawAxis, vel.yaw)
+    }
+
+    // Forward/backward: move along the direction the camera is looking
     if (keys.has('arrowup')) vel.forward = Math.min(vel.forward + FWD_ACCEL, MAX_FWD)
     else if (keys.has('arrowdown')) vel.forward = Math.max(vel.forward - FWD_ACCEL, -MAX_FWD)
     else vel.forward *= DAMP

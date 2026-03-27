@@ -2,6 +2,7 @@ import SpriteText from 'three-spritetext'
 import * as THREE from 'three'
 import { blendAxesColors } from '../../categories'
 import { getGradientTexture } from './scene'
+import { authorName } from '../../authorUtils'
 
 export function createNodeThreeObject({ node, selectedNode, connectedNodes, isNodeVisible, hoveredFilter }) {
   const isSelectedContext = !selectedNode || connectedNodes.has(node.id)
@@ -43,7 +44,7 @@ export function createNodeThreeObject({ node, selectedNode, connectedNodes, isNo
     }
   }
 
-  const label = new SpriteText(`${node.title}\n${node.author}`)
+  const label = new SpriteText(`${node.title}\n${authorName(node)}`)
   label.color = isActive || matchesHover ? '#ffffff' : 'rgba(255,255,255,0.1)'
   label.textHeight = 2.8
   label.fontFace = "'Space Grotesk', system-ui, sans-serif"

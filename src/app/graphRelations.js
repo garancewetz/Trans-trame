@@ -29,12 +29,17 @@ export function getLinkNodes(graphData, link) {
 }
 
 export function computeSameAuthorBooks(graphData, selectedNode) {
-  if (!selectedNode?.author) return []
-  const author = selectedNode.author.trim().toLowerCase()
-  if (!author) return []
+  if (!selectedNode?.lastName) return []
+  const last = selectedNode.lastName.trim().toLowerCase()
+  const first = (selectedNode.firstName || '').trim().toLowerCase()
+  if (!last) return []
   return graphData.nodes
     .filter((n) => n.id !== selectedNode.id)
-    .filter((n) => (n.author || '').trim().toLowerCase() === author)
+    .filter((n) => {
+      const nLast = (n.lastName || '').trim().toLowerCase()
+      const nFirst = (n.firstName || '').trim().toLowerCase()
+      return nLast === last && nFirst === first
+    })
     .sort((a, b) => {
       const ay = Number(a.year) || 0
       const by = Number(b.year) || 0

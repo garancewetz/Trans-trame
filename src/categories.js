@@ -1,10 +1,11 @@
 // Les 5 Catégories — TRANS TRAME
 export const AXES_COLORS = {
-  'ÉCOFÉMINISTE': '#39FF14',
-  'QUEER':        '#FF00E5',
-  'AFRO-FÉMINISTE': '#FFD300',
-  'HISTOIRE':     '#00E5FF',
-}
+  'ÉCOFÉMINISTE':   '#00FF87', // Vert Menthe Électrique (plus saturé, évoque la sève)
+  'QUEER':          '#FF2E97', // Rose Fuchsia Vibrant (beaucoup plus de caractère)
+  'AFRO-FÉMINISTE': '#FFD700', // Or Pur (plus chaud, comme une étoile jeune)
+  'HISTOIRE':       '#00D1FF', // Bleu Cyan Solaire (plus lumineux)
+  'INSTITUTIONNEL': '#B0B0CC', // Gris Lavande Givré (plus clair pour ne pas disparaître)
+};
 
 export const AXES = Object.keys(AXES_COLORS)
 

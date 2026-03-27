@@ -7,8 +7,10 @@ export default function BookForm({
   onSubmit,
   title,
   setTitle,
-  author,
-  setAuthor,
+  firstName,
+  setFirstName,
+  lastName,
+  setLastName,
   year,
   setYear,
   selectedAxes,
@@ -36,18 +38,33 @@ export default function BookForm({
         />
       </label>
 
-      <label className="flex flex-col gap-1.5">
-        <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
-          Autrice
-        </span>
-        <input
-          className={inputClass}
-          placeholder="Ex : bell hooks"
-          value={author}
-          onChange={(e) => setAuthor(e.target.value)}
-          required
-        />
-      </label>
+      <div className="flex gap-3">
+        <label className="flex flex-1 flex-col gap-1.5">
+          <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
+            Pr&eacute;nom
+          </span>
+          <input
+            className={inputClass}
+            placeholder="Ex : bell"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+          />
+        </label>
+
+        <label className="flex flex-1 flex-col gap-1.5">
+          <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
+            Nom
+          </span>
+          <input
+            className={inputClass}
+            placeholder="Ex : hooks"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required
+          />
+        </label>
+      </div>
 
       <DuplicateWarning possibleDuplicates={possibleDuplicates} />
 

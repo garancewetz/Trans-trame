@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { authorName } from '../authorUtils'
 
 export default function useGlobalSearch({ nodes, onSelect }) {
   const [globalSearch, setGlobalSearch] = useState('')
@@ -8,7 +9,7 @@ export default function useGlobalSearch({ nodes, onSelect }) {
   const searchResults = useMemo(() => {
     const q = globalSearch.toLowerCase().trim()
     if (!q) return []
-    return nodes.filter((n) => n.title.toLowerCase().includes(q) || n.author.toLowerCase().includes(q))
+    return nodes.filter((n) => n.title.toLowerCase().includes(q) || authorName(n).toLowerCase().includes(q))
   }, [globalSearch, nodes])
 
   const handleSearchSelect = useCallback(
