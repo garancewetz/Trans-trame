@@ -6,9 +6,11 @@ import Navbar from '../components/Navbar'
 import SidePanel from '../components/SidePanel'
 import Timeline from '../components/Timeline'
 import TextsPanel from '../components/texts-panel/TextsPanel'
+import AuthorsPanel from '../components/authors-panel/AuthorsPanel'
 import ViewSelector from '../components/ViewSelector'
 import defaultData from '../data.json'
 import { AXES_COLORS, axesGradient } from '../categories'
+import { authorName } from '../authorUtils'
 import { exportJSON } from '../api/graphStorage'
 import useGlobalSearch from '../hooks/useGlobalSearch'
 import useGraphData from '../hooks/useGraphData'
@@ -39,9 +41,11 @@ export default function App() {
   const [prefilledSourceId, setPrefilledSourceId] = useState(null)
   const [prefilledTargetId, setPrefilledTargetId] = useState(null)
   const [textsPanelOpen, setTextsPanelOpen] = useState(false)
+  const [authorsPanelOpen, setAuthorsPanelOpen] = useState(false)
 
   const [activeFilter, setActiveFilter] = useState(null)
   const [hoveredFilter, setHoveredFilter] = useState(null)
+  const [selectedAuthor, setSelectedAuthor] = useState(null)
 
   // View mode: 'constellation' | 'genealogy'
   const [viewMode, setViewMode] = useState('constellation')
@@ -91,6 +95,15 @@ export default function App() {
     setViewMode(mode)
   }, [])
 
+  const authorCount = useMemo(() => {
+    const names = new Set()
+    graphData.nodes.forEach((n) => {
+      const name = authorName(n)
+      if (name) names.add(name)
+    })
+    return names.size
+  }, [graphData.nodes])
+
   const sameAuthorBooks = useMemo(() => computeSameAuthorBooks(graphData, selectedNode), [graphData, selectedNode])
 
   const hasSelection = selectedNode || selectedLink
@@ -109,23 +122,31 @@ export default function App() {
   const handleNodeClick = useCallback((node) => {
     setLinkContextNode(null)
     setSelectedLink(null)
+    setSelectedAuthor(null)
     setSelectedNode((prev) => (prev?.id === node.id ? null : node))
     setPanelTab('details')
+  }, [])
+
+  const handleSelectAuthorFromPanel = useCallback((author) => {
+    setLinkContextNode(null)
+    setSelectedLink(null)
+    setSelectedNode(null)
+    setPanelTab('details')
+    setSelectedAuthor((prev) => (prev === author ? null : author))
   }, [])
 
   const handleSelectTextFromPanel = useCallback((node) => {
     setLinkContextNode(null)
     setSelectedLink(null)
+    setSelectedAuthor(null)
     setSelectedNode(node)
     setPanelTab('details')
     setTextsPanelOpen(false)
   }, [])
 
-  const handleLinkClick = useCallback((link) => {
-    setSelectedNode(null)
-    setSelectedLink(link)
-    setLinkContextNode(null)
-    setPanelTab('details')
+  const handleLinkClick = useCallback((_link) => {
+    // Ne pas ouvrir le panneau "lien" au clic sur une arête du graphe.
+    // (Les détails de lien restent accessibles via le panneau d'un ouvrage.)
   }, [])
 
   const toggleFilter = useCallback((axis) => setActiveFilter((prev) => (prev === axis ? null : axis)), [])
@@ -142,11 +163,19 @@ export default function App() {
   const { searchRef, globalSearch, setGlobalSearch, searchFocused, setSearchFocused, searchResults, handleSearchSelect } =
     useGlobalSearch({
       nodes: graphData.nodes,
-      onSelect: (node) => {
+      onSelectNode: (node) => {
         setLinkContextNode(null)
         setSelectedLink(null)
+        setSelectedAuthor(null)
         setSelectedNode(node)
         setPanelTab('details')
+      },
+      onSelectAuthor: (author) => {
+        setLinkContextNode(null)
+        setSelectedLink(null)
+        setSelectedNode(null)
+        setPanelTab('details')
+        setSelectedAuthor((prev) => (prev === author ? null : author))
       },
     })
 
@@ -157,6 +186,7 @@ export default function App() {
           ref={graphRef}
           graphData={filteredGraphData}
           selectedNode={selectedNode}
+          selectedAuthor={selectedAuthor}
           activeFilter={activeFilter}
           hoveredFilter={hoveredFilter}
           onNodeClick={handleNodeClick}
@@ -182,9 +212,10 @@ export default function App() {
         setSelectedNode={setSelectedNode}
         setSelectedLink={setSelectedLink}
         onOpenTextsPanel={() => setTextsPanelOpen(true)}
-        exportJSON={exportJSON}
+        onOpenAuthorsPanel={() => setAuthorsPanelOpen(true)}
         graphData={graphData}
-        resetToDefault={resetToDefault}
+        selectedAuthor={selectedAuthor}
+        authorCount={authorCount}
       />
 
       <Legend
@@ -265,6 +296,14 @@ export default function App() {
         onClose={() => setTextsPanelOpen(false)}
         nodes={graphData.nodes}
         onSelectNode={handleSelectTextFromPanel}
+      />
+
+      <AuthorsPanel
+        open={authorsPanelOpen}
+        onClose={() => setAuthorsPanelOpen(false)}
+        nodes={graphData.nodes}
+        selectedAuthor={selectedAuthor}
+        onSelectAuthor={handleSelectAuthorFromPanel}
       />
     </div>
   )

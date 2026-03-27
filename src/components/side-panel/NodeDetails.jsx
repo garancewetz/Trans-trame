@@ -16,6 +16,17 @@ export default function NodeDetails({
   getOutgoingRefs,
   getIncomingRefs,
 }) {
+  const refMeta = (other, link) => {
+    const parts = []
+    if (other) {
+      const a = authorName(other)
+      if (a) parts.push(a)
+      if (other.year) parts.push(other.year)
+    }
+    if (link?.page) parts.push(link.page)
+    return parts.join(' — ')
+  }
+
   return (
     <div className="px-6 pb-8 pt-12">
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -119,7 +130,7 @@ export default function NodeDetails({
               >
                 <span className="mb-1 inline-flex items-center gap-1 text-[0.68rem] font-bold uppercase tracking-[0.5px] text-[rgba(140,220,255,0.7)]"><LinkIcon size={10} /> cite</span>
                 <strong className="mb-0.5 block text-[0.88rem] text-white">{other?.title}</strong>
-                <span className="text-[0.75rem] text-white/30">{link.page}</span>
+                <span className="text-[0.75rem] text-white/30">{refMeta(other, link)}</span>
                 <p className="mt-1.5 text-[0.8rem] italic leading-relaxed text-white/45">{link.citation_text}</p>
               </li>
             ))}
@@ -145,7 +156,7 @@ export default function NodeDetails({
               >
                 <span className="mb-1 inline-flex items-center gap-1 text-[0.68rem] font-bold uppercase tracking-[0.5px] text-[rgba(255,171,64,0.7)]"><LinkIcon size={10} /> cité par</span>
                 <strong className="mb-0.5 block text-[0.88rem] text-white">{other?.title}</strong>
-                <span className="text-[0.75rem] text-white/30">{link.page}</span>
+                <span className="text-[0.75rem] text-white/30">{refMeta(other, link)}</span>
                 <p className="mt-1.5 text-[0.8rem] italic leading-relaxed text-white/45">{link.citation_text}</p>
               </li>
             ))}

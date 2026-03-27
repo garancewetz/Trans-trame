@@ -99,10 +99,16 @@ export default function Timeline({ graphData, timelineRange, onRangeChange }) {
     const target = dragTargetRef.current
     if (target === 'start') {
       const nextStart = Math.min(year, end)
-      onRangeChange({ start: nextStart, end })
+      onRangeChange((prev) => {
+        const prevEnd = prev?.end ?? end
+        return { start: Math.min(nextStart, prevEnd), end: prevEnd }
+      })
     } else {
       const nextEnd = Math.max(year, start)
-      onRangeChange({ start, end: nextEnd })
+      onRangeChange((prev) => {
+        const prevStart = prev?.start ?? start
+        return { start: prevStart, end: Math.max(nextEnd, prevStart) }
+      })
     }
   }
 

@@ -5,7 +5,7 @@ import { authorName } from '../../authorUtils'
 const hoverAnimById = new Map()
 
 export function drawNode(node, ctx, globalScale, opts) {
-  const { selectedNode, hoveredNode, connectedNodes, isNodeVisible, hoveredFilter, citationCount = 0 } = opts
+  const { selectedNode, selectedAuthor, hoveredNode, connectedNodes, isNodeVisible, hoveredFilter, citationCount = 0 } = opts
 
   // Force-graph can call nodeCanvasObject before layout stabilizes (x/y can be undefined/NaN).
   // Canvas APIs (e.g. createRadialGradient) require finite numbers.
@@ -17,16 +17,18 @@ export function drawNode(node, ctx, globalScale, opts) {
   const prevHover = hoverAnimById.get(node.id) ?? 0
   const hover = prevHover + (hoverTarget - prevHover) * 0.22
   hoverAnimById.set(node.id, hover)
-  const isSelectedContext = !selectedNode || connectedNodes.has(node.id)
+  const hasAnySelection = selectedNode || selectedAuthor
+  const isSelectedContext = !hasAnySelection || connectedNodes.has(node.id)
   const isFiltered = isNodeVisible(node)
   const isActive = isSelectedContext && isFiltered
 
   const nodeAxes = node.axes || []
   const matchesHover = hoveredFilter && nodeAxes.includes(hoveredFilter)
   const dimmedByHover = hoveredFilter && !matchesHover
+  const matchesSelectedAuthor = selectedAuthor && normalize(authorName(node)) === normalize(selectedAuthor)
 
-  const opacity = hover > 0.01 ? 1 : dimmedByHover ? 0.06 : isActive ? 1 : 0.22
-  const glowIntensity = hover > 0.01 ? 0.42 : matchesHover ? 0.35 : 0.15
+  const opacity = hover > 0.01 ? 1 : dimmedByHover ? 0.06 : matchesSelectedAuthor ? 1 : isActive ? 1 : 0.22
+  const glowIntensity = hover > 0.01 ? 0.42 : matchesSelectedAuthor ? 0.4 : matchesHover ? 0.35 : 0.15
   const baseRadius = 6
   const safeCitationCount = Number.isFinite(citationCount) ? citationCount : 0
   const citationBoost = Math.min(Math.sqrt(Math.max(0, safeCitationCount)) * 5.2, 34)
@@ -40,7 +42,7 @@ export function drawNode(node, ctx, globalScale, opts) {
   ctx.save()
 
   // Glow
-  if (isActive || matchesHover) {
+  if (isActive || matchesHover || matchesSelectedAuthor) {
     const grad = ctx.createRadialGradient(node.x, node.y, nodeRadius, node.x, node.y, glowRadius)
     grad.addColorStop(0, withAlpha(blendedColor, glowIntensity))
     grad.addColorStop(1, withAlpha(blendedColor, 0))
@@ -104,10 +106,10 @@ export function drawNode(node, ctx, globalScale, opts) {
     const labelY = node.y - nodeRadius - fontSize * 3.0
     const lineHeight = fontSize * 1.25
 
-    const textColor = hover > 0.01 || isActive || matchesHover ? '#ffffff' : 'rgba(255,255,255,0.18)'
+    const textColor = hover > 0.01 || isActive || matchesHover || matchesSelectedAuthor ? '#ffffff' : 'rgba(255,255,255,0.18)'
 
     // Background
-    if (hover > 0.01 || isActive || matchesHover) {
+    if (hover > 0.01 || isActive || matchesHover || matchesSelectedAuthor) {
       const nameW = ctx.measureText(name).width
       const titleW = ctx.measureText(title).width
       const maxW = Math.max(nameW, titleW)
@@ -138,6 +140,14 @@ export function getNodeRadius(_node, citationCount) {
   const safeCitationCount = Number.isFinite(citationCount) ? citationCount : 0
   const citationBoost = Math.min(Math.sqrt(Math.max(0, safeCitationCount)) * 5.2, 34)
   return baseRadius + citationBoost
+}
+
+function normalize(s) {
+  return String(s || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .trim()
 }
 
 function withAlpha(hex, alpha) {

@@ -10,12 +10,15 @@ import {
 } from './cameraControls'
 import { drawNode, getNodeRadius } from './nodeObject'
 import { drawGenealogyOverlay } from './axisLabels'
+import { blendAxesColors } from '../../categories'
+import { authorName } from '../../authorUtils'
 
 const SHOW_STARFIELD = false
 
 const Graph = forwardRef(function Graph({
   graphData,
   selectedNode,
+  selectedAuthor,
   activeFilter,
   hoveredFilter,
   onNodeClick,
@@ -128,28 +131,38 @@ const Graph = forwardRef(function Graph({
     fgRef.current.zoom(2.8, 1200)
   }, [selectedNode, viewMode])
 
+  // IDs of all nodes belonging to selectedAuthor
+  const authorNodeIds = useMemo(() => {
+    if (!selectedAuthor) return new Set()
+    const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim()
+    const target = norm(selectedAuthor)
+    return new Set(graphData.nodes.filter((n) => norm(authorName(n)) === target).map((n) => n.id))
+  }, [selectedAuthor, graphData.nodes])
+
   const connectedLinks = useMemo(() => {
-    if (!selectedNode) return new Set()
+    const anchor = selectedNode ? new Set([selectedNode.id]) : authorNodeIds.size ? authorNodeIds : null
+    if (!anchor) return new Set()
     const set = new Set()
     graphData.links.forEach((link) => {
       const srcId = typeof link.source === 'object' ? link.source.id : link.source
       const tgtId = typeof link.target === 'object' ? link.target.id : link.target
-      if (srcId === selectedNode.id || tgtId === selectedNode.id) set.add(`${srcId}-${tgtId}`)
+      if (anchor.has(srcId) || anchor.has(tgtId)) set.add(`${srcId}-${tgtId}`)
     })
     return set
-  }, [selectedNode, graphData.links])
+  }, [selectedNode, authorNodeIds, graphData.links])
 
   const connectedNodes = useMemo(() => {
-    if (!selectedNode) return new Set()
-    const set = new Set([selectedNode.id])
+    const anchor = selectedNode ? new Set([selectedNode.id]) : authorNodeIds.size ? authorNodeIds : null
+    if (!anchor) return new Set()
+    const set = new Set(anchor)
     graphData.links.forEach((link) => {
       const srcId = typeof link.source === 'object' ? link.source.id : link.source
       const tgtId = typeof link.target === 'object' ? link.target.id : link.target
-      if (srcId === selectedNode.id) set.add(tgtId)
-      if (tgtId === selectedNode.id) set.add(srcId)
+      if (anchor.has(srcId)) set.add(tgtId)
+      if (anchor.has(tgtId)) set.add(srcId)
     })
     return set
-  }, [selectedNode, graphData.links])
+  }, [selectedNode, authorNodeIds, graphData.links])
 
   const citationsByNodeId = useMemo(() => {
     const counts = new Map()
@@ -159,6 +172,32 @@ const Graph = forwardRef(function Graph({
       counts.set(targetId, (counts.get(targetId) || 0) + 1)
     })
     return counts
+  }, [graphData.links])
+
+  // Count links between same source-target pair for "strong" link detection
+  const linkWeights = useMemo(() => {
+    const counts = new Map()
+    graphData.links.forEach((link) => {
+      const srcId = typeof link.source === 'object' ? link.source.id : link.source
+      const tgtId = typeof link.target === 'object' ? link.target.id : link.target
+      const key = [srcId, tgtId].sort().join('-')
+      counts.set(key, (counts.get(key) || 0) + 1)
+    })
+    return counts
+  }, [graphData.links])
+
+  // Links connected to hovered node
+  const hoveredLinksRef = useRef(new Set())
+  const updateHoveredLinks = useCallback((node) => {
+    hoveredLinksRef.current.clear()
+    if (!node) return
+    graphData.links.forEach((link) => {
+      const srcId = typeof link.source === 'object' ? link.source.id : link.source
+      const tgtId = typeof link.target === 'object' ? link.target.id : link.target
+      if (srcId === node.id || tgtId === node.id) {
+        hoveredLinksRef.current.add(`${srcId}-${tgtId}`)
+      }
+    })
   }, [graphData.links])
 
   const handleInit = useCallback((fg) => {
@@ -192,6 +231,7 @@ const Graph = forwardRef(function Graph({
     (node, ctx, globalScale) => {
       drawNode(node, ctx, globalScale, {
         selectedNode,
+        selectedAuthor,
         hoveredNode: hoveredNodeRef.current,
         connectedNodes,
         isNodeVisible,
@@ -199,7 +239,7 @@ const Graph = forwardRef(function Graph({
         citationCount: citationsByNodeId.get(node.id) || 0,
       })
     },
-    [selectedNode, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId]
+    [selectedNode, selectedAuthor, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId]
   )
 
   const nodePointerAreaPaint = useCallback(
@@ -216,46 +256,125 @@ const Graph = forwardRef(function Graph({
 
   const isLinkActive = useCallback(
     (link) => {
-      if (!selectedNode) return false
+      if (!selectedNode && !authorNodeIds.size) return false
       const srcId = typeof link.source === 'object' ? link.source.id : link.source
       const tgtId = typeof link.target === 'object' ? link.target.id : link.target
       return connectedLinks.has(`${srcId}-${tgtId}`)
     },
-    [selectedNode, connectedLinks]
+    [selectedNode, authorNodeIds, connectedLinks]
   )
+
+  const isLinkHovered = useCallback(
+    (link) => {
+      const srcId = typeof link.source === 'object' ? link.source.id : link.source
+      const tgtId = typeof link.target === 'object' ? link.target.id : link.target
+      return hoveredLinksRef.current.has(`${srcId}-${tgtId}`)
+    },
+    []
+  )
+
+  const getLinkWeight = useCallback(
+    (link) => {
+      const srcId = typeof link.source === 'object' ? link.source.id : link.source
+      const tgtId = typeof link.target === 'object' ? link.target.id : link.target
+      const key = [srcId, tgtId].sort().join('-')
+      return linkWeights.get(key) || 1
+    },
+    [linkWeights]
+  )
+
+  const hasSelection = selectedNode || authorNodeIds.size > 0
 
   const linkColor = useCallback(
     (link) => {
+      // Hovered links are drawn by linkCanvasObject — return transparent to avoid double-draw
+      if (hoveredNodeRef.current && isLinkHovered(link)) return 'rgba(0,0,0,0)'
+
       if (viewMode === 'genealogy') {
-        if (!selectedNode) return 'rgba(190, 210, 255, 0.6)'
+        if (!hasSelection) return 'rgba(190, 210, 255, 0.6)'
         if (isLinkActive(link)) return 'rgba(220, 238, 255, 0.95)'
         return 'rgba(160, 185, 235, 0.35)'
       }
-      if (!selectedNode && !activeFilter) return 'rgba(140, 220, 255, 0.35)'
+      if (!hasSelection && !activeFilter) return 'rgba(140, 220, 255, 0.35)'
       if (isLinkActive(link)) return 'rgba(190, 240, 255, 0.85)'
       return 'rgba(140, 220, 255, 0.14)'
     },
-    [selectedNode, activeFilter, isLinkActive, viewMode]
+    [hasSelection, activeFilter, isLinkActive, isLinkHovered, viewMode]
   )
 
   const linkWidth = useCallback(
     (link) => {
+      const weight = getLinkWeight(link)
+      const isStrong = weight > 1
+
       if (viewMode === 'genealogy') {
-        if (!selectedNode) return 1.4
-        return isLinkActive(link) ? 2.6 : 1
+        if (!hasSelection) return isStrong ? 1.8 : 1.4
+        return isLinkActive(link) ? (isStrong ? 3.0 : 2.6) : 1
       }
-      if (!selectedNode) return 0.9
-      return isLinkActive(link) ? 2.2 : 0.5
+      if (!hasSelection && !hoveredNodeRef.current) return isStrong ? 1.0 : 0.5
+      if (isLinkActive(link)) return isStrong ? 2.8 : 2.2
+      if (hoveredNodeRef.current && isLinkHovered(link)) return isStrong ? 1.5 : 1.0
+      return 0.5
     },
-    [selectedNode, isLinkActive, viewMode]
+    [hasSelection, isLinkActive, isLinkHovered, getLinkWeight, viewMode]
+  )
+
+  // Custom canvas drawing for hovered links — gradient from source to target color
+  const linkCanvasObject = useCallback(
+    (link, ctx, globalScale) => {
+      // Only draw gradient for links connected to hovered node (and not selected, to not conflict)
+      if (!hoveredNodeRef.current || hasSelection) return
+      if (!isLinkHovered(link)) return
+
+      const src = link.source
+      const tgt = link.target
+      if (!src || !tgt || !Number.isFinite(src.x) || !Number.isFinite(tgt.x)) return
+
+      const srcColor = blendAxesColors(src.axes || [])
+      const tgtColor = blendAxesColors(tgt.axes || [])
+
+      const weight = getLinkWeight(link)
+      const isStrong = weight > 1
+      const lineWidth = (isStrong ? 2.2 : 1.4) / globalScale
+
+      // Build the path (respecting curvature via __controlPoints)
+      ctx.beginPath()
+      ctx.moveTo(src.x, src.y)
+      const cp = link.__controlPoints
+      if (!cp) {
+        ctx.lineTo(tgt.x, tgt.y)
+      } else if (cp.length === 2) {
+        ctx.quadraticCurveTo(cp[0], cp[1], tgt.x, tgt.y)
+      } else {
+        ctx.bezierCurveTo(cp[0], cp[1], cp[2], cp[3], tgt.x, tgt.y)
+      }
+
+      // Create gradient along the link direction
+      // Source (the book that cites) is bright and opaque, fading toward target
+      const grad = ctx.createLinearGradient(src.x, src.y, tgt.x, tgt.y)
+      grad.addColorStop(0, withAlpha(srcColor, isStrong ? 1.0 : 0.9))
+      grad.addColorStop(0.25, withAlpha(srcColor, 0.7))
+      grad.addColorStop(0.6, withAlpha(tgtColor, 0.35))
+      grad.addColorStop(1, withAlpha(tgtColor, isStrong ? 0.45 : 0.2))
+
+      ctx.strokeStyle = grad
+      ctx.lineWidth = lineWidth
+      ctx.stroke()
+    },
+    [hasSelection, isLinkHovered, getLinkWeight]
   )
 
   const arrowColor = useCallback(
     (link) => {
-      if (!selectedNode) return 'rgba(140, 220, 255, 0.5)'
+      // When hovering a node, color arrows by source node color
+      if (hoveredNodeRef.current && !hasSelection && isLinkHovered(link)) {
+        const src = typeof link.source === 'object' ? link.source : null
+        if (src) return withAlpha(blendAxesColors(src.axes || []), 0.8)
+      }
+      if (!hasSelection) return 'rgba(140, 220, 255, 0.5)'
       return isLinkActive(link) ? '#b4e6ff' : 'rgba(255,255,255,0.05)'
     },
-    [selectedNode, isLinkActive]
+    [hasSelection, isLinkActive, isLinkHovered]
   )
 
   const onRenderFramePre = useCallback(
@@ -273,6 +392,7 @@ const Graph = forwardRef(function Graph({
       if (!selectedNodeRef.current) return
       drawNode(selectedNodeRef.current, ctx, globalScale, {
         selectedNode: selectedNodeRef.current,
+        selectedAuthor,
         hoveredNode: hoveredNodeRef.current,
         connectedNodes,
         isNodeVisible,
@@ -280,7 +400,7 @@ const Graph = forwardRef(function Graph({
         citationCount: citationsByNodeId.get(selectedNodeRef.current.id) || 0,
       })
     },
-    [connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId]
+    [selectedAuthor, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId]
   )
 
   return (
@@ -294,10 +414,13 @@ const Graph = forwardRef(function Graph({
         nodePointerAreaPaint={nodePointerAreaPaint}
         onNodeHover={(node) => {
           hoveredNodeRef.current = node || null
+          updateHoveredLinks(node || null)
           fgRef.current?.refresh?.()
         }}
         onNodeClick={onNodeClick}
         onLinkClick={onLinkClick}
+        linkCanvasObjectMode={() => 'after'}
+        linkCanvasObject={linkCanvasObject}
         linkColor={linkColor}
         linkWidth={linkWidth}
         linkCurvature={(link) => {
@@ -308,38 +431,43 @@ const Graph = forwardRef(function Graph({
           return Math.min(0.55 + dist / 700, 1.4)
         }}
         linkDirectionalArrowLength={(link) => {
-          return !selectedNode ? 4 : isLinkActive(link) ? 7 : 3
+          return !hasSelection ? 4 : isLinkActive(link) ? 7 : 3
         }}
         linkDirectionalArrowRelPos={0.88}
         linkDirectionalArrowColor={arrowColor}
         linkDirectionalParticles={(link) => {
           if (viewMode === 'genealogy') {
-            if (!selectedNode) return 2
+            if (!hasSelection) return 2
             return isLinkActive(link) ? 6 : 2
           }
-          return !selectedNode ? 2 : isLinkActive(link) ? 5 : 0
+          return !hasSelection ? 2 : isLinkActive(link) ? 5 : 0
         }}
         linkDirectionalParticleWidth={(link) => {
           if (viewMode === 'genealogy') {
-            if (!selectedNode) return 1
+            if (!hasSelection) return 1
             return isLinkActive(link) ? 2 : 1
           }
-          return !selectedNode ? 1 : isLinkActive(link) ? 2 : 0
+          return !hasSelection ? 1 : isLinkActive(link) ? 2 : 0
         }}
         linkDirectionalParticleSpeed={0.004}
-        linkDirectionalParticleColor={(link) =>
-          viewMode === 'genealogy'
-            ? !selectedNode
+        linkDirectionalParticleColor={(link) => {
+          // Hovered links: particles take the source node color
+          if (hoveredNodeRef.current && !hasSelection && isLinkHovered(link)) {
+            const src = typeof link.source === 'object' ? link.source : null
+            if (src) return withAlpha(blendAxesColors(src.axes || []), 0.9)
+          }
+          return viewMode === 'genealogy'
+            ? !hasSelection
               ? 'rgba(140, 220, 255, 0.6)'
               : isLinkActive(link)
                 ? '#b4e6ff'
                 : 'rgba(140, 220, 255, 0.22)'
-            : !selectedNode
+            : !hasSelection
               ? 'rgba(140, 220, 255, 0.6)'
               : isLinkActive(link)
                 ? '#b4e6ff'
                 : 'rgba(255,255,255,0.05)'
-        }
+        }}
         backgroundColor="#06030f"
         onEngineInit={handleInit}
         onRenderFramePre={onRenderFramePre}
@@ -349,5 +477,12 @@ const Graph = forwardRef(function Graph({
     </div>
   )
 })
+
+function withAlpha(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r},${g},${b},${alpha})`
+}
 
 export default Graph
