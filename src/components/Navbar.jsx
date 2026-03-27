@@ -20,6 +20,9 @@ export default function Navbar({
   axesGradient,
   activeFilter,
   clearActiveFilter,
+  timelineRange,
+  hasTimelineFilter,
+  clearTimelineFilter,
   panelTab,
   setPanelTab,
   handleClosePanel,
@@ -38,12 +41,39 @@ export default function Navbar({
 }) {
   const groupsRef = useRef(null)
   const [openGroup, setOpenGroup] = useState(null)
-  const activeFilterLabel = activeFilter ? activeFilter : selectedAuthor ? `Auteur·ice: ${selectedAuthor}` : null
+  const [openFiltersMenu, setOpenFiltersMenu] = useState(false)
+  const timelineFilterLabel = hasTimelineFilter ? `Période: ${timelineRange.start}-${timelineRange.end}` : null
+  const activeFilterItems = [
+    activeFilter
+      ? {
+          key: 'category',
+          label: `Catégorie: ${activeFilter}`,
+          clear: () => clearActiveFilter?.(),
+        }
+      : null,
+    selectedAuthor
+      ? {
+          key: 'author',
+          label: `Auteur·ice: ${selectedAuthor}`,
+          clear: () => clearSelectedAuthor?.(),
+        }
+      : null,
+    timelineFilterLabel
+      ? {
+          key: 'timeline',
+          label: timelineFilterLabel,
+          clear: () => clearTimelineFilter?.(),
+        }
+      : null,
+  ].filter(Boolean)
+  const activeFilterLabels = activeFilterItems.map((item) => item.label)
+  const hasAnyFilter = activeFilterLabels.length > 0
 
   useEffect(() => {
     function onPointerDown(e) {
       if (!groupsRef.current?.contains(e.target)) {
         setOpenGroup(null)
+        setOpenFiltersMenu(false)
       }
     }
     document.addEventListener('pointerdown', onPointerDown)
@@ -163,7 +193,10 @@ export default function Navbar({
               'hover:border-[rgba(130,200,255,0.5)] hover:bg-[rgba(130,200,255,0.2)] hover:text-white',
               openGroup === 'catalogue' ? 'border-[rgba(130,200,255,0.6)] bg-[rgba(130,200,255,0.25)] text-white' : '',
             ].join(' ')}
-            onClick={() => setOpenGroup((prev) => (prev === 'catalogue' ? null : 'catalogue'))}
+            onClick={() => {
+              setOpenFiltersMenu(false)
+              setOpenGroup((prev) => (prev === 'catalogue' ? null : 'catalogue'))
+            }}
             type="button"
           >
             <span className="inline-flex items-center gap-2">
@@ -177,7 +210,10 @@ export default function Navbar({
               'hover:border-[rgba(168,85,247,0.5)] hover:bg-[rgba(168,85,247,0.25)] hover:text-white',
               openGroup === 'actions' ? 'border-[rgba(168,85,247,0.6)] bg-[rgba(168,85,247,0.3)] text-white' : '',
             ].join(' ')}
-            onClick={() => setOpenGroup((prev) => (prev === 'actions' ? null : 'actions'))}
+            onClick={() => {
+              setOpenFiltersMenu(false)
+              setOpenGroup((prev) => (prev === 'actions' ? null : 'actions'))
+            }}
             type="button"
           >
             <span className="inline-flex items-center gap-2">
@@ -303,26 +339,62 @@ export default function Navbar({
           <button
             className={[
               'flex items-center gap-2 rounded-[10px] border border-white/10 bg-white/5 px-3 py-2 text-[0.75rem] font-semibold backdrop-blur-lg transition-colors',
-              activeFilterLabel ? 'cursor-pointer text-white/70 hover:bg-white/10 hover:text-white' : 'cursor-default text-white/35',
+              hasAnyFilter ? 'cursor-pointer text-white/70 hover:bg-white/10 hover:text-white' : 'cursor-default text-white/35',
             ].join(' ')}
             onClick={() => {
-              if (!activeFilterLabel) return
-              if (activeFilter) clearActiveFilter?.()
-              else clearSelectedAuthor?.()
+              if (!hasAnyFilter) return
+              setOpenGroup(null)
+              setOpenFiltersMenu((prev) => !prev)
             }}
             type="button"
-            title={activeFilterLabel ? 'Retirer le filtre' : 'Aucun filtre actif'}
-            disabled={!activeFilterLabel}
+            title={hasAnyFilter ? 'Gérer les filtres actifs' : 'Aucun filtre actif'}
+            disabled={!hasAnyFilter}
           >
             <span className="inline-flex items-center gap-2">
               <span
                 className="h-2.5 w-2.5 shrink-0 rounded-full"
                 style={{ background: activeFilter ? axesGradient([activeFilter]) : 'rgba(255,255,255,0.18)' }}
               />
-              Filtre&nbsp;: {activeFilterLabel || 'aucun'}
+              Filtres&nbsp;({activeFilterItems.length})
             </span>
-            {activeFilterLabel && <X size={14} className="text-white/40" />}
+            {hasAnyFilter && <X size={14} className="text-white/40" />}
           </button>
+
+          {openFiltersMenu && hasAnyFilter && (
+            <div className="absolute right-0 top-[calc(100%+6px)] z-50 flex min-w-[320px] flex-col gap-1 rounded-xl border border-white/10 bg-[rgba(12,6,28,0.95)] p-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+              {activeFilterItems.map((item) => (
+                <div
+                  key={item.key}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 text-[0.74rem] text-white/75"
+                >
+                  <span className="truncate">{item.label}</span>
+                  <button
+                    className="cursor-pointer rounded-md border border-white/10 bg-transparent p-1 text-white/45 transition-colors hover:border-white/20 hover:bg-white/8 hover:text-white"
+                    onClick={() => {
+                      item.clear()
+                    }}
+                    type="button"
+                    title={`Retirer ${item.label}`}
+                    aria-label={`Retirer ${item.label}`}
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+              <button
+                className="mt-1 cursor-pointer rounded-md bg-white/5 px-2 py-1.5 text-[0.7rem] text-white/50 transition-colors hover:bg-white/10 hover:text-white/80"
+                onClick={() => {
+                  clearActiveFilter?.()
+                  clearSelectedAuthor?.()
+                  clearTimelineFilter?.()
+                  setOpenFiltersMenu(false)
+                }}
+                type="button"
+              >
+                Tout retirer
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

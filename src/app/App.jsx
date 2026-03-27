@@ -151,6 +151,10 @@ export default function App() {
 
   const toggleFilter = useCallback((axis) => setActiveFilter((prev) => (prev === axis ? null : axis)), [])
   const clearActiveFilter = useCallback(() => setActiveFilter(null), [])
+  const hasTimelineFilter = clampedTimelineRange.start !== minYear || clampedTimelineRange.end !== maxYear
+  const clearTimelineFilter = useCallback(() => {
+    setTimelineRange({ start: minYear, end: maxYear })
+  }, [minYear, maxYear])
 
   useEffect(() => {
     function onKeyDown(e) {
@@ -208,6 +212,9 @@ export default function App() {
         axesGradient={axesGradient}
         activeFilter={activeFilter}
         clearActiveFilter={clearActiveFilter}
+        timelineRange={clampedTimelineRange}
+        hasTimelineFilter={hasTimelineFilter}
+        clearTimelineFilter={clearTimelineFilter}
         panelTab={panelTab}
         setPanelTab={setPanelTab}
         handleClosePanel={handleClosePanel}
