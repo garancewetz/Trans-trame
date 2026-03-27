@@ -31,7 +31,7 @@ export default function Navbar({
         <div className="min-w-0">
           <h1 className="flex items-center gap-2 text-[0.95rem] font-semibold text-white/90">
             <Logo />
-            Trame
+            Trans-Trame
           </h1>
         </div>
 

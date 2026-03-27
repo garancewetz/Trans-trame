@@ -47,7 +47,26 @@ const Graph = forwardRef(function Graph({
     selectedNodeRef.current = selectedNode
   }, [selectedNode])
 
-  useEffect(() => setupKeyboardHandlers({ keysRef, selectedNodeRef, fgRef }), [])
+  const resetToOverview = useCallback(() => {
+    const fg = fgRef.current
+    if (!fg) return
+
+    if (layoutPositions) {
+      const radiusSource = [...layoutPositions.values()]
+      const maxR = Math.max(...radiusSource.map((p) => Math.hypot(p.fx ?? 0, p.fy ?? 0)), 300)
+      const zoom = 400 / maxR
+      camRef.current = { x: 0, y: 0, zoom }
+      fg.centerAt(0, 0, 900)
+      fg.zoom(zoom, 900)
+      return
+    }
+
+    camRef.current = { x: 0, y: 0, zoom: 0.7 }
+    fg.centerAt(0, 0, 900)
+    fg.zoom(0.7, 900)
+  }, [layoutPositions])
+
+  useEffect(() => setupKeyboardHandlers({ keysRef, selectedNodeRef, fgRef, onSpace: resetToOverview }), [resetToOverview])
   useEffect(() => setupMouseDragHandlers({ containerRef, velRef }), [])
   useEffect(() => setupWheelZoomHandlers({ containerRef, fgRef, velRef, camRef }), [])
   useEffect(() => startPanZoomLoop({ fgRef, keysRef, velRef, animFrameRef, camRef }), [])
@@ -249,6 +268,21 @@ const Graph = forwardRef(function Graph({
     [viewMode]
   )
 
+  const onRenderFramePost = useCallback(
+    (ctx, globalScale) => {
+      if (!selectedNodeRef.current) return
+      drawNode(selectedNodeRef.current, ctx, globalScale, {
+        selectedNode: selectedNodeRef.current,
+        hoveredNode: hoveredNodeRef.current,
+        connectedNodes,
+        isNodeVisible,
+        hoveredFilter,
+        citationCount: citationsByNodeId.get(selectedNodeRef.current.id) || 0,
+      })
+    },
+    [connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId]
+  )
+
   return (
     <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
       <ForceGraph2D
@@ -309,6 +343,7 @@ const Graph = forwardRef(function Graph({
         backgroundColor="#06030f"
         onEngineInit={handleInit}
         onRenderFramePre={onRenderFramePre}
+        onRenderFramePost={onRenderFramePost}
       />
       <KeyboardHints />
     </div>

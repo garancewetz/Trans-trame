@@ -70,7 +70,7 @@ export default function KeyboardHints() {
           margin: '4px 0',
         }}
       />
-      <HintRow keys={['Espace']} label="Fly-to sélection" />
+      <HintRow keys={['Espace']} label="Recentrer (vue d’ensemble)" />
     </div>
   )
 }

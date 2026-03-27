@@ -1,4 +1,4 @@
-export function setupKeyboardHandlers({ keysRef, selectedNodeRef, fgRef }) {
+export function setupKeyboardHandlers({ keysRef, onSpace }) {
   const BLOCKED = [
     'arrowup', 'arrowdown', 'arrowleft', 'arrowright',
     ' ', 'keyz', 'keys', 'equal', 'minus', 'z', 's', '+', '-', '=',
@@ -13,13 +13,7 @@ export function setupKeyboardHandlers({ keysRef, selectedNodeRef, fgRef }) {
     if (BLOCKED.includes(codeKey) || BLOCKED.includes(charKey)) e.preventDefault()
 
     if (charKey === ' ') {
-      const node = selectedNodeRef.current
-      if (node?.x != null && fgRef.current) {
-        const x = node.fx ?? node.x
-        const y = node.fy ?? node.y
-        fgRef.current.centerAt(x, y, 900)
-        fgRef.current.zoom(2.5, 900)
-      }
+      onSpace?.()
     }
   }
 
