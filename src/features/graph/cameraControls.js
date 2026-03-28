@@ -91,13 +91,15 @@ export function startPanZoomLoop({ fgRef, keysRef, velRef, animFrameRef, camRef 
   return () => cancelAnimationFrame(animFrameRef.current)
 }
 
-export function setupMouseDragHandlers({ containerRef, velRef }) {
+export function setupMouseDragHandlers({ containerRef, velRef, hoveredNodeRef }) {
   let dragging = false
   let lastX = 0
   let lastY = 0
 
   const onPointerDown = (e) => {
     if (e.button !== 0) return
+    // If the cursor is over a node, let force-graph handle the drag — don't pan
+    if (hoveredNodeRef?.current) return
     dragging = true
     lastX = e.clientX
     lastY = e.clientY

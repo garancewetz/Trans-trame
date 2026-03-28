@@ -102,7 +102,7 @@ const Graph = forwardRef(function Graph({
   }, [layoutPositions])
 
   useEffect(() => setupKeyboardHandlers({ keysRef, selectedNodeRef, fgRef, onSpace: resetToOverview }), [resetToOverview])
-  useEffect(() => setupMouseDragHandlers({ containerRef, velRef }), [])
+  useEffect(() => setupMouseDragHandlers({ containerRef, velRef, hoveredNodeRef }), [])
   useEffect(() => setupWheelZoomHandlers({ containerRef, fgRef, velRef, camRef }), [])
   useEffect(() => startPanZoomLoop({ fgRef, keysRef, velRef, animFrameRef, camRef }), [])
 

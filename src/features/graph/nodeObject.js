@@ -12,7 +12,13 @@ export function drawNode(node, ctx, globalScale, opts) {
   if (!Number.isFinite(node?.x) || !Number.isFinite(node?.y)) return
   if (!Number.isFinite(globalScale)) globalScale = 1
   if (labelOnly) {
-    drawLabel(node, ctx, globalScale, opts)
+    // Reuse the current hover animation value so the label position/visibility matches the node
+    const hover = hoverAnimById.get(node.id) ?? 1
+    const safeCitationCount = Number.isFinite(citationCount) ? citationCount : 0
+    const citationBoost = Math.min(Math.sqrt(Math.max(0, safeCitationCount)) * 5.2, 34)
+    const minHoveredRadius = hover > 0.01 ? 11 / Math.max(globalScale, 0.08) : 0
+    const nodeRadius = Math.max(6 + citationBoost + hover * 12, minHoveredRadius)
+    drawLabel(node, ctx, globalScale, { ...opts, hover, nodeRadius, safeCitationCount })
     return
   }
 
