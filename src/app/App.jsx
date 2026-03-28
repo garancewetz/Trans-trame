@@ -1,21 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import AnalysisPanel from '../components/AnalysisPanel'
-import Graph from '../components/Graph'
-import Legend from '../components/Legend'
-import Navbar from '../components/Navbar'
-import SidePanel from '../components/SidePanel'
-import Timeline from '../components/Timeline'
-import TextsPanel from '../components/texts-panel/TextsPanel'
-import AuthorsPanel from '../components/authors-panel/AuthorsPanel'
-import defaultData from '../data.json'
+import AnalysisPanel from '../features/analysis-panel/AnalysisPanel'
+import Graph from '../features/graph/Graph'
+import Legend from '../features/graph/Legend'
+import Navbar from '../features/shell/Navbar'
+import SidePanel from '../features/side-panel/SidePanel'
+import TableView from '../features/table/TableView'
+import Timeline from '../features/timeline/Timeline'
+import TextsPanel from '../features/texts-panel/TextsPanel'
+import AuthorsPanel from '../features/authors-panel/AuthorsPanel'
 import { AXES_COLORS, axesGradient } from '../categories'
 import { authorName } from '../authorUtils'
-import { exportJSON } from '../api/graphStorage'
-import useGlobalSearch from '../hooks/useGlobalSearch'
-import useGraphData from '../hooks/useGraphData'
-import { computeSameAuthorBooks, getIncomingRefs, getLinkNodes, getOutgoingRefs } from './graphRelations'
-import { constellationLayout, genealogyLayout } from '../layouts/layoutEngine'
-
+import useGlobalSearch from '../features/shell/hooks/useGlobalSearch'
+import useGraphData from '../features/graph/hooks/useGraphData'
+import { computeSameAuthorBooks, getIncomingRefs, getLinkNodes, getOutgoingRefs } from '../features/graph/graphRelations'
+import { constellationLayout, genealogyLayout } from '../features/graph/layoutEngine'
 export default function App() {
   const {
     graphData,
@@ -23,10 +21,10 @@ export default function App() {
     handleAddLink,
     handleUpdateBook,
     handleDeleteBook,
+    handleDeleteLink,
+    handleUpdateLink,
     handleMergeBooks,
-    resetToDefault,
   } = useGraphData({
-    defaultData,
     axesColors: AXES_COLORS,
   })
 
@@ -38,10 +36,9 @@ export default function App() {
   const [linkContextNode, setLinkContextNode] = useState(null)
   const [panelTab, setPanelTab] = useState('details')
   const [previousPanelTab, setPreviousPanelTab] = useState('details')
-  const [prefilledSourceId, setPrefilledSourceId] = useState(null)
-  const [prefilledTargetId, setPrefilledTargetId] = useState(null)
   const [textsPanelOpen, setTextsPanelOpen] = useState(false)
   const [authorsPanelOpen, setAuthorsPanelOpen] = useState(false)
+  const [peekNodeId, setPeekNodeId] = useState(null)
 
   const [activeFilter, setActiveFilter] = useState(null)
   const [hoveredFilter, setHoveredFilter] = useState(null)
@@ -49,6 +46,13 @@ export default function App() {
 
   // View mode: 'constellation' | 'genealogy'
   const [viewMode, setViewMode] = useState('constellation')
+
+  // Table mode
+  const [tableMode, setTableMode] = useState(false)
+  const [tableInitialTab, setTableInitialTab] = useState('books')
+  const [tableLinkSourceId, setTableLinkSourceId] = useState(null)
+  const [lastEditedNodeId, setLastEditedNodeId] = useState(null)
+  const [flashNodeIds, setFlashNodeIds] = useState(null)
 
   // Timeline state — default to full range so all books are visible initially
   const allYears = useMemo(() => graphData.nodes.map((n) => n.year).filter(Boolean), [graphData.nodes])
@@ -106,8 +110,8 @@ export default function App() {
 
   const sameAuthorBooks = useMemo(() => computeSameAuthorBooks(graphData, selectedNode), [graphData, selectedNode])
 
+  const isAdminTab = panelTab === 'edit'
   const hasSelection = selectedNode || selectedLink
-  const isAdminTab = panelTab === 'book' || panelTab === 'link' || panelTab === 'edit'
   const panelOpen = hasSelection || isAdminTab
 
   const handleClosePanel = useCallback(() => {
@@ -115,14 +119,20 @@ export default function App() {
     setSelectedLink(null)
     setLinkContextNode(null)
     setPanelTab('details')
-    setPrefilledSourceId(null)
-    setPrefilledTargetId(null)
+    setPeekNodeId(null)
+  }, [])
+
+  const handleOpenTable = useCallback((tab = 'books', linkSourceId = null) => {
+    setTableInitialTab(tab)
+    setTableLinkSourceId(linkSourceId)
+    setTableMode(true)
   }, [])
 
   const handleNodeClick = useCallback((node) => {
     setLinkContextNode(null)
     setSelectedLink(null)
     setSelectedAuthor(null)
+    setPeekNodeId(null)
     setSelectedNode((prev) => (prev?.id === node.id ? null : node))
     setPanelTab('details')
   }, [])
@@ -130,6 +140,7 @@ export default function App() {
   const handleSelectAuthorFromPanel = useCallback((author) => {
     setLinkContextNode(null)
     setSelectedLink(null)
+    setPeekNodeId(null)
     setSelectedNode(null)
     setPanelTab('details')
     setSelectedAuthor((prev) => (prev === author ? null : author))
@@ -139,14 +150,23 @@ export default function App() {
     setLinkContextNode(null)
     setSelectedLink(null)
     setSelectedAuthor(null)
+    setPeekNodeId(null)
     setSelectedNode(node)
     setPanelTab('details')
     setTextsPanelOpen(false)
   }, [])
 
-  const handleLinkClick = useCallback((_link) => {
+  const handlePeekTextOnGraph = useCallback((node) => {
+    setPeekNodeId(node.id)
+    setSelectedAuthor(null)
+    setSelectedNode(null)
+    setSelectedLink(null)
+    setLinkContextNode(null)
+    setPanelTab('details')
+  }, [])
+
+  const handleLinkClick = useCallback(() => {
     // Ne pas ouvrir le panneau "lien" au clic sur une arête du graphe.
-    // (Les détails de lien restent accessibles via le panneau d'un ouvrage.)
   }, [])
 
   const toggleFilter = useCallback((axis) => setActiveFilter((prev) => (prev === axis ? null : axis)), [])
@@ -160,6 +180,7 @@ export default function App() {
     function onKeyDown(e) {
       if (e.key !== 'Escape') return
       if (panelOpen) handleClosePanel()
+      else setPeekNodeId((prev) => (prev ? null : prev))
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
@@ -172,12 +193,14 @@ export default function App() {
         setLinkContextNode(null)
         setSelectedLink(null)
         setSelectedAuthor(null)
+        setPeekNodeId(null)
         setSelectedNode(node)
         setPanelTab('details')
       },
       onSelectAuthor: (author) => {
         setLinkContextNode(null)
         setSelectedLink(null)
+        setPeekNodeId(null)
         setSelectedNode(null)
         setPanelTab('details')
         setSelectedAuthor((prev) => (prev === author ? null : author))
@@ -192,50 +215,57 @@ export default function App() {
           graphData={filteredGraphData}
           selectedNode={selectedNode}
           selectedAuthor={selectedAuthor}
+          peekNodeId={peekNodeId}
           activeFilter={activeFilter}
           hoveredFilter={hoveredFilter}
           onNodeClick={handleNodeClick}
           onLinkClick={handleLinkClick}
           layoutPositions={layoutPositions}
           viewMode={viewMode}
+          flashNodeIds={flashNodeIds}
         />
       </div>
 
       <Navbar
-        searchRef={searchRef}
-        globalSearch={globalSearch}
-        setGlobalSearch={setGlobalSearch}
-        searchFocused={searchFocused}
-        setSearchFocused={setSearchFocused}
-        searchResults={searchResults}
-        handleSearchSelect={handleSearchSelect}
-        axesGradient={axesGradient}
-        activeFilter={activeFilter}
-        clearActiveFilter={clearActiveFilter}
-        timelineRange={clampedTimelineRange}
-        hasTimelineFilter={hasTimelineFilter}
-        clearTimelineFilter={clearTimelineFilter}
-        panelTab={panelTab}
-        setPanelTab={setPanelTab}
-        handleClosePanel={handleClosePanel}
-        setPreviousPanelTab={setPreviousPanelTab}
-        setSelectedNode={setSelectedNode}
-        setSelectedLink={setSelectedLink}
-        onOpenTextsPanel={() => {
-          setAuthorsPanelOpen(false)
-          setTextsPanelOpen(true)
+        search={{
+          ref: searchRef,
+          query: globalSearch,
+          setQuery: setGlobalSearch,
+          focused: searchFocused,
+          setFocused: setSearchFocused,
+          results: searchResults,
+          onSelect: handleSearchSelect,
+          axesGradient,
+          onOpenTable: handleOpenTable,
         }}
-        onOpenAuthorsPanel={() => {
-          setTextsPanelOpen(false)
-          setAuthorsPanelOpen(true)
+        filters={{
+          category: activeFilter,
+          clearCategory: clearActiveFilter,
+          timelineRange: clampedTimelineRange,
+          hasTimelineFilter,
+          clearTimelineFilter,
+          selectedAuthor,
+          clearSelectedAuthor: () => setSelectedAuthor(null),
         }}
-        graphData={graphData}
-        selectedAuthor={selectedAuthor}
-        clearSelectedAuthor={() => setSelectedAuthor(null)}
-        authorCount={authorCount}
-        onOpenAnalysisPanel={() => analysisPanelRef.current?.openPanel()}
-        viewMode={viewMode}
-        onViewChange={handleViewChange}
+        view={{
+          mode: viewMode,
+          onChange: handleViewChange,
+          tableMode,
+          onToggleTable: () => setTableMode((v) => !v),
+        }}
+        catalogue={{
+          onOpenTexts: () => {
+            setAuthorsPanelOpen(false)
+            setTextsPanelOpen(true)
+          },
+          onOpenAuthors: () => {
+            setTextsPanelOpen(false)
+            setAuthorsPanelOpen(true)
+          },
+          onOpenAnalysis: () => analysisPanelRef.current?.openPanel(),
+          graphData,
+          authorCount,
+        }}
       />
 
       <Legend
@@ -254,8 +284,6 @@ export default function App() {
         selectedLink={selectedLink}
         linkContextNode={linkContextNode}
         sameAuthorBooks={sameAuthorBooks}
-        prefilledSourceId={prefilledSourceId}
-        prefilledTargetId={prefilledTargetId}
         previousPanelTab={previousPanelTab}
         graphData={graphData}
         AXES_COLORS={AXES_COLORS}
@@ -291,13 +319,12 @@ export default function App() {
           setSelectedNode(intoNode || null)
           setPanelTab('details')
         }}
-        setPrefilledSourceId={setPrefilledSourceId}
-        setPrefilledTargetId={setPrefilledTargetId}
         setPreviousPanelTab={setPreviousPanelTab}
         setPanelTab={setPanelTab}
         setSelectedNode={setSelectedNode}
         setSelectedLink={setSelectedLink}
         setLinkContextNode={setLinkContextNode}
+        onOpenTable={handleOpenTable}
       />
 
       <Timeline graphData={graphData} timelineRange={clampedTimelineRange} onRangeChange={setTimelineRange} />
@@ -316,6 +343,8 @@ export default function App() {
         onClose={() => setTextsPanelOpen(false)}
         nodes={graphData.nodes}
         onSelectNode={handleSelectTextFromPanel}
+        onPeekNode={handlePeekTextOnGraph}
+        peekNodeId={peekNodeId}
       />
 
       <AuthorsPanel
@@ -324,8 +353,62 @@ export default function App() {
         nodes={graphData.nodes}
         selectedAuthor={selectedAuthor}
         onSelectAuthor={handleSelectAuthorFromPanel}
+        onAddWorkForAuthor={() => {
+          handleOpenTable('books')
+          setAuthorsPanelOpen(false)
+        }}
+        onOpenAddBookFromSearch={() => {
+          handleOpenTable('books')
+          setAuthorsPanelOpen(false)
+        }}
       />
+
+      {tableMode && (
+        <TableView
+          nodes={graphData.nodes}
+          links={graphData.links}
+          onAddBook={handleAddBook}
+          onAddLink={handleAddLink}
+          onUpdateBook={(n) => {
+            handleUpdateBook(n)
+            setLastEditedNodeId(n.id)
+          }}
+          onDeleteBook={(nodeId) => {
+            handleDeleteBook(nodeId)
+            if (selectedNode?.id === nodeId) setSelectedNode(null)
+          }}
+          onUpdateLink={handleUpdateLink}
+          onDeleteLink={handleDeleteLink}
+          onMergeBooks={(fromNodeId, intoNodeId) => {
+            const merged = handleMergeBooks(fromNodeId, intoNodeId)
+            if (!merged) return
+            const intoNode = graphData.nodes.find((n) => n.id === intoNodeId)
+            setSelectedNode(intoNode || null)
+            setPanelTab('details')
+          }}
+          onClose={() => {
+            setTableMode(false)
+            setTableInitialTab('books')
+            setTableLinkSourceId(null)
+            if (lastEditedNodeId) {
+              const node = graphData.nodes.find((n) => n.id === lastEditedNodeId)
+              if (node) {
+                setSelectedNode(node)
+                setPanelTab('details')
+              }
+              setLastEditedNodeId(null)
+            }
+          }}
+          onLastEdited={(nodeId) => setLastEditedNodeId(nodeId)}
+          onImportComplete={(nodeIds) => {
+            const ids = new Set(nodeIds)
+            setFlashNodeIds(ids)
+            setTimeout(() => setFlashNodeIds(null), 4000)
+          }}
+          initialTab={tableInitialTab}
+          initialLinkSourceId={tableLinkSourceId}
+        />
+      )}
     </div>
   )
 }
-

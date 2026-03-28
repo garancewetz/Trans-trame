@@ -1,1 +1,1 @@
-export { default } from './components/AnalysisPanel'
+export { default } from './features/analysis-panel/AnalysisPanel'

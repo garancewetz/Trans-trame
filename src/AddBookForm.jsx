@@ -1,1 +1,1 @@
-export { default } from './components/AddBookForm'
+export { default } from './features/add-book-form/AddBookForm'

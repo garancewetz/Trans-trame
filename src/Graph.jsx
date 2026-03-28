@@ -1,1 +1,1 @@
-export { default } from './components/Graph'
+export { default } from './features/graph/Graph'

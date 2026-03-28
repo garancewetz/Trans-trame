@@ -1,7 +1,8 @@
-export default function Panel({ as: Component = 'div', className, style, children, ...props }) {
+export default function Panel({ as = 'div', className, style, children, ...props }) {
+  const Tag = as
   return (
-    <Component className={className} style={style} {...props}>
+    <Tag className={className} style={style} {...props}>
       {children}
-    </Component>
+    </Tag>
   )
 }
