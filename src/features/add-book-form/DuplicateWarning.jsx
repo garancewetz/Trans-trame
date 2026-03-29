@@ -1,8 +1,8 @@
 import { TriangleAlert } from 'lucide-react'
 import { axesGradient } from '../../categories'
-import { authorName } from '../../authorUtils'
+import { bookAuthorDisplay } from '../../authorUtils'
 
-export default function DuplicateWarning({ possibleDuplicates }) {
+export default function DuplicateWarning({ possibleDuplicates, authorsMap }) {
   if (!possibleDuplicates || possibleDuplicates.length === 0) return null
 
   return (
@@ -18,7 +18,7 @@ export default function DuplicateWarning({ possibleDuplicates }) {
               style={{ background: axesGradient(n.axes) }}
             />
             <span>
-              <strong className="text-white/80">{n.title}</strong> {' '}&mdash; {authorName(n)}, {n.year}
+              <strong className="text-white/80">{n.title}</strong> {' '}&mdash; {bookAuthorDisplay(n, authorsMap)}, {n.year}
             </span>
           </li>
         ))}

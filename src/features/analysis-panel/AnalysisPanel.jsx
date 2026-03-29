@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react'
 import { BarChart3, X, Network, Quote, EyeOff, Activity } from 'lucide-react'
 import { AXES_COLORS } from '../../categories'
-import { authorName } from '../../authorUtils'
+import { bookAuthorDisplay } from '../../authorUtils'
 import Button from '../../components/ui/Button'
 import Panel from '../../components/ui/Panel'
 import {
@@ -12,7 +12,7 @@ import {
   computeWikiGaps,
 } from './analysisMetrics'
 
-const AnalysisPanel = forwardRef(function AnalysisPanel({ graphData, activeFilter, onFilterChange, showTrigger = true }, ref) {
+const AnalysisPanel = forwardRef(function AnalysisPanel({ graphData, activeFilter, onFilterChange, showTrigger = true, authorsMap }, ref) {
   const [open, setOpen] = useState(false)
   const { nodes: bookNodes, links } = graphData
 
@@ -142,7 +142,7 @@ const AnalysisPanel = forwardRef(function AnalysisPanel({ graphData, activeFilte
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[0.86rem] font-semibold text-white/85">{node.title}</p>
                     <p className="text-[0.72rem] text-white/35">
-                      {authorName(node)} — {node.citedBy} citation{node.citedBy > 1 ? 's' : ''}
+                      {bookAuthorDisplay(node, authorsMap)} — {node.citedBy} citation{node.citedBy > 1 ? 's' : ''}
                     </p>
                   </div>
                 </div>

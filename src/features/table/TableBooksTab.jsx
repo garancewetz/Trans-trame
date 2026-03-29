@@ -1,12 +1,13 @@
-import { Check, Link2, Plus } from 'lucide-react'
-import { authorName } from '../../authorUtils'
+import { useMemo, useState } from 'react'
+import { Check, Link2, Merge, Plus, Trash2 } from 'lucide-react'
+import { bookAuthorDisplay } from '../../authorUtils'
 import { INPUT, TD } from './tableConstants'
 import { AxisDots, AuthorPicker, TH } from './TableSubcomponents'
 
 export default function TableBooksTab({
   sortedNodes,
   search,
-  nodes,
+  authors,
   allSelected,
   someSelected,
   toggleAll,
@@ -18,10 +19,9 @@ export default function TableBooksTab({
   titleInputRef,
   inputTitle,
   setInputTitle,
-  inputFirstName,
-  setInputFirstName,
-  inputLastName,
-  setInputLastName,
+  inputAuthorIds,
+  setInputAuthorIds,
+  onAddAuthor,
   inputYear,
   setInputYear,
   inputAxes,
@@ -34,18 +34,77 @@ export default function TableBooksTab({
   setEditingValue,
   commitNodeEdit,
   setEditingCell,
-  editingAuthor,
-  setEditingAuthor,
-  commitAuthorEdit,
   linkCountByNode,
   onUpdateBook,
   onLastEdited,
+  handleBulkDelete,
+  bulkDeleteConfirm,
+  setBulkDeleteConfirm,
+  clearSelection,
+  mergeNodes,
+  setMergeKeepId,
+  setMergeConfirm,
+  setMergeModal,
   setTab,
   setLinkSourceNode,
   setLinkCheckedIds,
 }) {
+  const [editingAuthorsNodeId, setEditingAuthorsNodeId] = useState(null)
+
+  // Index des auteurs par id pour affichage rapide des badges
+  const authorsMap = useMemo(() => {
+    const m = new Map()
+    ;(authors || []).forEach((a) => m.set(a.id, a))
+    return m
+  }, [authors])
+
   return (
-    <div className="flex-1 overflow-auto">
+    <div className="flex flex-1 flex-col overflow-hidden">
+
+      {/* Barre de sélection */}
+      {selectedIds.size > 0 && (
+        <div className="flex shrink-0 items-center gap-3 border-b border-white/6 bg-white/[0.015] px-5 py-2">
+          <span className="font-mono text-[0.72rem] text-white/45">
+            {selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}
+          </span>
+          {selectedIds.size === 2 && (
+            <button
+              type="button"
+              onClick={() => {
+                setMergeKeepId(mergeNodes[0]?.id || null)
+                setMergeConfirm(false)
+                setMergeModal(true)
+              }}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[rgba(255,200,60,0.3)] bg-[rgba(255,200,60,0.07)] px-3 py-1.5 text-[0.7rem] font-semibold text-[rgba(255,210,100,0.75)] transition-all hover:bg-[rgba(255,200,60,0.14)]"
+            >
+              <Merge size={12} /> Fusionner
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleBulkDelete}
+            onBlur={() => setBulkDeleteConfirm(false)}
+            className={[
+              'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.7rem] font-semibold transition-all',
+              bulkDeleteConfirm
+                ? 'border-[rgba(255,70,70,0.55)] bg-[rgba(255,70,70,0.1)] text-[rgba(255,120,120,0.9)]'
+                : 'border-[rgba(255,70,70,0.22)] text-[rgba(255,90,90,0.55)] hover:bg-[rgba(255,70,70,0.07)]',
+            ].join(' ')}
+          >
+            <Trash2 size={11} />
+            {bulkDeleteConfirm ? `Confirmer (${selectedIds.size})` : `Supprimer (${selectedIds.size})`}
+          </button>
+          <button
+            type="button"
+            onClick={() => { clearSelection(); setBulkDeleteConfirm(false) }}
+            className="cursor-pointer text-[0.7rem] text-white/25 hover:text-white/60"
+          >
+            Annuler
+          </button>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-auto">
       <table className="w-full border-collapse">
         <thead className="sticky top-0 z-20 bg-[rgba(4,6,20,0.98)]">
           <tr className="border-b border-white/6">
@@ -96,11 +155,10 @@ export default function TableBooksTab({
             </td>
             <td className="px-2 py-1.5">
               <AuthorPicker
-                nodes={nodes}
-                firstName={inputFirstName}
-                setFirstName={setInputFirstName}
-                lastName={inputLastName}
-                setLastName={setInputLastName}
+                authors={authors}
+                selectedAuthorIds={inputAuthorIds}
+                onChange={setInputAuthorIds}
+                onAddAuthor={onAddAuthor}
               />
             </td>
             <td className="px-2 py-1.5">
@@ -132,7 +190,7 @@ export default function TableBooksTab({
                 <button
                   type="button"
                   onClick={handleAddBookRow}
-                  disabled={!inputTitle.trim() || !inputLastName.trim()}
+                  disabled={!inputTitle.trim()}
                   className="shrink-0 cursor-pointer rounded-md border border-[rgba(140,220,255,0.28)] bg-[rgba(140,220,255,0.07)] px-2 py-1 text-[0.65rem] font-semibold text-[rgba(140,220,255,0.75)] transition-all hover:bg-[rgba(140,220,255,0.14)] disabled:cursor-not-allowed disabled:opacity-25"
                 >
                   + Ajouter
@@ -148,14 +206,13 @@ export default function TableBooksTab({
             const isSelected = selectedIds.has(node.id)
             const isEditTitle = editingCell?.nodeId === node.id && editingCell?.field === 'title'
             const isEditYear = editingCell?.nodeId === node.id && editingCell?.field === 'year'
-            const isEditAuthor = editingAuthor?.nodeId === node.id
             return (
               <tr
                 key={node.id}
                 className={[
-                  'group border-b border-white/[0.04] transition-colors',
+                  'group border-b border-white/4 transition-colors',
                   isSelected ? 'bg-[rgba(0,255,135,0.025)]' : i % 2 === 0 ? 'bg-white/[0.003]' : '',
-                  'hover:bg-white/[0.025]',
+                  'hover:bg-white/2.5',
                 ].join(' ')}
               >
                 <td className="px-3 py-2">
@@ -187,33 +244,46 @@ export default function TableBooksTab({
                   )}
                 </td>
                 <td className={TD}>
-                  {isEditAuthor ? (
+                  {editingAuthorsNodeId === node.id ? (
+                    // Édition inline via AuthorPicker
                     <div
-                      className="flex gap-1"
-                      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) commitAuthorEdit() }}
+                      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setEditingAuthorsNodeId(null) }}
                     >
-                      <input
-                        autoFocus
-                        className={INPUT}
-                        placeholder="Prénom"
-                        value={editingAuthor.firstName}
-                        onChange={(e) => setEditingAuthor((prev) => ({ ...prev, firstName: e.target.value }))}
-                        onKeyDown={(e) => { if (e.key === 'Enter') commitAuthorEdit(); if (e.key === 'Escape') setEditingAuthor(null) }}
-                      />
-                      <input
-                        className={INPUT}
-                        placeholder="Nom"
-                        value={editingAuthor.lastName}
-                        onChange={(e) => setEditingAuthor((prev) => ({ ...prev, lastName: e.target.value }))}
-                        onKeyDown={(e) => { if (e.key === 'Enter') commitAuthorEdit(); if (e.key === 'Escape') setEditingAuthor(null) }}
+                      <AuthorPicker
+                        authors={authors}
+                        selectedAuthorIds={node.authorIds || []}
+                        onChange={(ids) => {
+                          onUpdateBook({ ...node, authorIds: ids })
+                          onLastEdited?.(node.id)
+                        }}
+                        onAddAuthor={onAddAuthor}
                       />
                     </div>
+                  ) : node.authorIds?.length > 0 ? (
+                    // Badges cliquables → ouvre le picker
+                    <div
+                      className="flex min-h-[1.5em] cursor-pointer flex-wrap items-center gap-1 rounded px-0.5 py-0.5 hover:bg-white/4"
+                      onClick={() => setEditingAuthorsNodeId(node.id)}
+                    >
+                      {node.authorIds.map((aid) => {
+                        const a = authorsMap.get(aid)
+                        return a ? (
+                          <span
+                            key={aid}
+                            className="inline-flex items-center rounded-full border border-white/14 bg-white/6 px-1.5 py-px text-[0.62rem] text-white/65"
+                          >
+                            {bookAuthorDisplay({ authorIds: [aid] }, authorsMap)}
+                          </span>
+                        ) : null
+                      })}
+                    </div>
                   ) : (
+                    // Pas encore d'auteur·ice — clic ouvre le picker
                     <span
                       className="block min-h-[1.2em] w-full cursor-text px-0.5 text-white/42 hover:text-white"
-                      onClick={() => setEditingAuthor({ nodeId: node.id, firstName: node.firstName || '', lastName: node.lastName || '' })}
+                      onClick={() => setEditingAuthorsNodeId(node.id)}
                     >
-                      {authorName(node) || <span className="text-white/18">—</span>}
+                      {bookAuthorDisplay(node, authorsMap) || <span className="text-white/18">—</span>}
                     </span>
                   )}
                 </td>
@@ -265,6 +335,7 @@ export default function TableBooksTab({
           </p>
         </div>
       )}
+      </div>
     </div>
   )
 }

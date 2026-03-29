@@ -1,4 +1,4 @@
-import { ArrowLeft, Merge, Search, Sparkles, Trash2, X, Zap } from 'lucide-react'
+import { ArrowLeft, Merge, Search, Sparkles, X, Zap } from 'lucide-react'
 
 export default function TableTopbar({
   onClose,
@@ -6,18 +6,13 @@ export default function TableTopbar({
   setTab,
   nodes,
   links,
+  authors,
   search,
   setSearch,
   linkSearch,
   setLinkSearch,
-  selectedIds,
-  mergeNodes,
-  setMergeKeepId,
-  setMergeConfirm,
-  setMergeModal,
-  handleBulkDelete,
-  bulkDeleteConfirm,
-  setBulkDeleteConfirm,
+  authorSearch,
+  setAuthorSearch,
   orphans,
   setOrphanModal,
   setOrphanConfirm,
@@ -39,12 +34,13 @@ export default function TableTopbar({
       <div className="flex rounded-lg border border-white/8 bg-white/3 p-0.5">
         {[
           { id: 'books', label: 'Ouvrages', count: nodes.length },
+          { id: 'authors', label: 'Auteur·ices', count: authors.length },
           { id: 'links', label: 'Liens', count: links.length },
         ].map((t) => (
           <button
             key={t.id}
             type="button"
-            onClick={() => { setTab(t.id); setSearch(''); setLinkSearch('') }}
+            onClick={() => { setTab(t.id); setSearch(''); setLinkSearch(''); setAuthorSearch('') }}
             className={[
               'cursor-pointer rounded-md px-3 py-1 text-[0.72rem] font-semibold transition-all',
               tab === t.id ? 'bg-white/10 text-white shadow-sm' : 'text-white/38 hover:text-white/70',
@@ -67,16 +63,14 @@ export default function TableTopbar({
         <Search size={12} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-white/22" />
         <input
           className="w-full rounded-lg border border-white/8 bg-white/4 py-1.5 pl-7 pr-6 font-mono text-[0.75rem] text-white outline-none placeholder:text-white/18 focus:border-[rgba(140,220,255,0.28)] focus:bg-white/6 transition-all"
-          placeholder={tab === 'books' ? 'Filtrer les ouvrages…' : 'Filtrer les liens…'}
-          value={tab === 'books' ? search : linkSearch}
-          onChange={(e) =>
-            tab === 'books' ? setSearch(e.target.value) : setLinkSearch(e.target.value)
-          }
+          placeholder={tab === 'books' ? 'Filtrer les ouvrages…' : tab === 'authors' ? 'Filtrer les auteur·ices…' : 'Filtrer les liens…'}
+          value={tab === 'books' ? search : tab === 'authors' ? authorSearch : linkSearch}
+          onChange={(e) => tab === 'books' ? setSearch(e.target.value) : tab === 'authors' ? setAuthorSearch(e.target.value) : setLinkSearch(e.target.value)}
         />
-        {(tab === 'books' ? search : linkSearch) && (
+        {(tab === 'books' ? search : tab === 'authors' ? authorSearch : linkSearch) && (
           <button
             className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-white/22 hover:text-white"
-            onClick={() => (tab === 'books' ? setSearch('') : setLinkSearch(''))}
+            onClick={() => tab === 'books' ? setSearch('') : tab === 'authors' ? setAuthorSearch('') : setLinkSearch('')}
             type="button"
           >
             <X size={11} />
@@ -92,37 +86,6 @@ export default function TableTopbar({
             className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[rgba(140,220,255,0.22)] bg-[rgba(140,220,255,0.05)] px-3 py-1.5 text-[0.7rem] font-semibold text-[rgba(140,220,255,0.6)] transition-all hover:border-[rgba(140,220,255,0.38)] hover:bg-[rgba(140,220,255,0.1)] hover:text-[rgba(140,220,255,0.9)]"
           >
             <Zap size={11} /> Import Magique
-          </button>
-        )}
-
-        {tab === 'books' && selectedIds.size === 2 && (
-          <button
-            onClick={() => {
-              setMergeKeepId(mergeNodes[0]?.id || null)
-              setMergeConfirm(false)
-              setMergeModal(true)
-            }}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[rgba(255,200,60,0.3)] bg-[rgba(255,200,60,0.07)] px-3 py-1.5 text-[0.7rem] font-semibold text-[rgba(255,210,100,0.75)] transition-all hover:bg-[rgba(255,200,60,0.14)]"
-            type="button"
-          >
-            <Merge size={12} /> Fusionner les identités
-          </button>
-        )}
-
-        {tab === 'books' && selectedIds.size > 0 && selectedIds.size !== 2 && (
-          <button
-            onClick={handleBulkDelete}
-            onBlur={() => setBulkDeleteConfirm(false)}
-            className={[
-              'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.7rem] font-semibold transition-all',
-              bulkDeleteConfirm
-                ? 'border-[rgba(255,70,70,0.55)] bg-[rgba(255,70,70,0.1)] text-[rgba(255,120,120,0.9)]'
-                : 'border-[rgba(255,70,70,0.22)] text-[rgba(255,90,90,0.55)] hover:bg-[rgba(255,70,70,0.07)]',
-            ].join(' ')}
-            type="button"
-          >
-            <Trash2 size={11} />
-            {bulkDeleteConfirm ? `Confirmer (${selectedIds.size})` : `Supprimer (${selectedIds.size})`}
           </button>
         )}
 

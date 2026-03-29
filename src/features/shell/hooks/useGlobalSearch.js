@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { authorName } from '../../../authorUtils'
+import { authorName, bookAuthorDisplay } from '../../../authorUtils'
 
 function normalize(s) {
   return String(s || '')
@@ -9,7 +9,7 @@ function normalize(s) {
     .trim()
 }
 
-export default function useGlobalSearch({ nodes, onSelectNode, onSelectAuthor }) {
+export default function useGlobalSearch({ nodes, authors = [], onSelectNode, onSelectAuthor }) {
   const [globalSearch, setGlobalSearch] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
   const searchRef = useRef(null)
@@ -19,25 +19,29 @@ export default function useGlobalSearch({ nodes, onSelectNode, onSelectAuthor })
     if (!q) return []
 
     const matchedNodes = nodes
-      .filter((n) => normalize(n.title).includes(q) || normalize(authorName(n)).includes(q))
+      .filter((n) => normalize(n.title).includes(q) || normalize(bookAuthorDisplay(n, authors)).includes(q))
       .map((node) => ({ kind: 'node', node }))
 
-    const authorCounts = new Map()
+    // Build author results from entity list
+    const bookCountByAuthor = new Map()
     nodes.forEach((n) => {
-      const name = authorName(n)
-      if (!name) return
-      const key = normalize(name)
-      if (!key) return
-      authorCounts.set(key, { name, count: (authorCounts.get(key)?.count || 0) + 1 })
+      ;(n.authorIds || []).forEach((aid) => {
+        bookCountByAuthor.set(aid, (bookCountByAuthor.get(aid) || 0) + 1)
+      })
     })
 
-    const matchedAuthors = [...authorCounts.entries()]
-      .filter(([key, v]) => key.includes(q) || normalize(v.name).includes(q))
-      .map(([, v]) => ({ kind: 'author', author: v.name, count: v.count }))
+    const matchedAuthors = authors
+      .filter((a) => normalize(authorName(a)).includes(q))
+      .map((a) => ({
+        kind: 'author',
+        authorId: a.id,
+        author: authorName(a),
+        count: bookCountByAuthor.get(a.id) || 0,
+      }))
       .sort((a, b) => b.count - a.count || a.author.localeCompare(b.author, 'fr'))
 
     return [...matchedAuthors, ...matchedNodes]
-  }, [globalSearch, nodes])
+  }, [globalSearch, nodes, authors])
 
   const closeSearch = useCallback(() => {
     setGlobalSearch('')
@@ -49,7 +53,7 @@ export default function useGlobalSearch({ nodes, onSelectNode, onSelectAuthor })
       closeSearch()
       if (!item) return
       if (item.kind === 'author') {
-        onSelectAuthor?.(item.author)
+        onSelectAuthor?.(item.authorId)
         return
       }
       if (item.kind === 'node') {

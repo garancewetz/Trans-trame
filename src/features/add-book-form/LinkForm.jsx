@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowLeft, X } from 'lucide-react'
-import { authorName } from '../../authorUtils'
+import { bookAuthorDisplay } from '../../authorUtils'
 import { axesGradient } from '../../categories'
 import NodePicker from './NodePicker'
 
@@ -21,6 +21,7 @@ export default function LinkForm({
   targetResults,
   onRequestAddBook,
   inputClass,
+  authorsMap,
 }) {
   const { register } = linkForm
   const removeTarget = (id) => setTargetIds((prev) => prev.filter((t) => t !== id))
@@ -48,7 +49,7 @@ export default function LinkForm({
 
       <NodePicker
         label="Ce livre cite..."
-        value={sourceSearch || (selectedSource ? `${selectedSource.title} — ${authorName(selectedSource)}` : '')}
+        value={sourceSearch || (selectedSource ? `${selectedSource.title} — ${bookAuthorDisplay(selectedSource, authorsMap)}` : '')}
         query={sourceSearch}
         onChange={(e) => {
           if (sourceId) setSourceId('')
@@ -62,6 +63,7 @@ export default function LinkForm({
         }}
         addButtonVisible
         onRequestAddBook={onRequestAddBook}
+        authorsMap={authorsMap}
       />
 
       <div className="-my-2 flex justify-center text-[rgba(140,220,255,0.5)]">
@@ -118,6 +120,7 @@ export default function LinkForm({
           }}
           addButtonVisible
           onRequestAddBook={onRequestAddBook}
+          authorsMap={authorsMap}
         />
       </div>
 

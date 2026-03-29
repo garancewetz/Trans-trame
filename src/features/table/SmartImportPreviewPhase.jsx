@@ -15,10 +15,11 @@ export default function SmartImportPreviewPhase({
   setEditingCell,
   commitAuthorEdit,
   handleMerge,
+  onAddCoAuthor,
+  onUpdateAxes,
   masterNode,
   selectedCount,
   injected,
-  handleInject,
   handleClose,
 }) {
   const exactCount = parsed.filter((r) => r.isDuplicate).length
@@ -53,13 +54,14 @@ export default function SmartImportPreviewPhase({
 
       {/* Table */}
       <div className="mb-4 overflow-hidden rounded-xl border border-white/8">
-        <div className="grid grid-cols-[28px_1fr_150px_64px] border-b border-white/6 bg-white/2.5 px-3 py-1.5 text-[0.58rem] font-semibold uppercase tracking-[1.3px] text-white/28">
+        <div className="grid grid-cols-[28px_1fr_150px_100px_64px] border-b border-white/6 bg-white/2.5 px-3 py-1.5 text-[0.58rem] font-semibold uppercase tracking-[1.3px] text-white/28">
           <span />
           <span>Titre</span>
           <span>Auteur·ice</span>
+          <span>Axes</span>
           <span>Année</span>
         </div>
-        <div className="max-h-[260px] overflow-y-auto">
+        <div className="max-h-[min(55vh,480px)] overflow-y-auto">
           {parsed.length === 0 && (
             <p className="p-4 text-center text-[0.73rem] text-white/30">Aucun ouvrage reconnu.</p>
           )}
@@ -79,6 +81,8 @@ export default function SmartImportPreviewPhase({
               setEditingCell={setEditingCell}
               commitAuthorEdit={commitAuthorEdit}
               handleMerge={handleMerge}
+              onAddCoAuthor={onAddCoAuthor}
+              onUpdateAxes={onUpdateAxes}
             />
           ))}
         </div>
@@ -94,8 +98,7 @@ export default function SmartImportPreviewPhase({
           Annuler
         </button>
         <button
-          type="button"
-          onClick={handleInject}
+          type="submit"
           disabled={selectedCount === 0 || injected}
           className={[
             'inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-[0.75rem] font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-30',

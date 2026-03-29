@@ -4,11 +4,47 @@ import { parseSmartInput } from './parseSmartInput'
 import SmartImportInputPhase from './SmartImportInputPhase'
 import SmartImportPreviewPhase from './SmartImportPreviewPhase'
 
+/** Normalise une chaîne pour la comparaison auteur */
+function normStr(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim()
+}
+
+/**
+ * Pour chaque auteur dans la liste, cherche un auteur existant (match prénom+nom normalisé).
+ * Si absent, crée un nouveau nœud auteur via onAddAuthor et retourne son id.
+ * Retourne un tableau d'ids auteurs résolus.
+ */
+function resolveOrCreateAuthors(authorList, existingAuthors, onAddAuthor) {
+  if (!authorList?.length) return []
+  const resolved = []
+  authorList.forEach(({ firstName, lastName }) => {
+    const fn = (firstName || '').trim()
+    const ln = (lastName || '').trim()
+    if (!fn && !ln) return
+    const existing = existingAuthors.find(
+      (a) => normStr(a.firstName) === normStr(fn) && normStr(a.lastName) === normStr(ln)
+    )
+    if (existing) {
+      resolved.push(existing.id)
+    } else {
+      const newId = crypto.randomUUID()
+      onAddAuthor({ id: newId, type: 'author', firstName: fn, lastName: ln, axes: [] })
+      // Ajouter à existingAuthors localement pour éviter les doublons dans le même batch
+      existingAuthors.push({ id: newId, firstName: fn, lastName: ln, axes: [] })
+      resolved.push(newId)
+    }
+  })
+  return resolved
+}
+
 export default function SmartImportModal({
   open,
   onClose,
   existingNodes,
+  existingAuthors = [],
+  authorsMap,
   onAddBook,
+  onAddAuthor,
   onAddLink,
   onUpdateBook,
   onQueued,
@@ -96,18 +132,74 @@ export default function SmartImportModal({
 
   const commitAuthorEdit = () => {
     if (!editingAuthor) return
-    const { id, firstName, lastName } = editingAuthor
+    const { id, authorIndex, firstName, lastName } = editingAuthor
+    const fn = (firstName || '').trim()
+    const ln = (lastName || '').trim()
     setParsed((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, firstName, lastName } : item))
+      prev.map((item) => {
+        if (item.id !== id) return item
+        if (authorIndex != null && item.authors?.length > authorIndex) {
+          let updatedAuthors
+          if (!fn && !ln) {
+            // Retirer l'auteur vide (sauf s'il n'en reste qu'un)
+            updatedAuthors = item.authors.filter((_, i) => i !== authorIndex)
+            if (updatedAuthors.length === 0) updatedAuthors = [{ firstName: '', lastName: '' }]
+          } else {
+            updatedAuthors = item.authors.map((a, i) =>
+              i === authorIndex ? { firstName: fn, lastName: ln } : a
+            )
+          }
+          const first = updatedAuthors[0] || {}
+          return { ...item, authors: updatedAuthors, firstName: first.firstName || '', lastName: first.lastName || '' }
+        }
+        return { ...item, firstName: fn, lastName: ln }
+      })
     )
     setEditingAuthor(null)
+  }
+
+  const handleUpdateAxes = (itemId, newAxes) => {
+    setParsed((prev) =>
+      prev.map((item) => (item.id === itemId ? { ...item, axes: newAxes } : item))
+    )
+  }
+
+  const handleAddCoAuthor = (itemId) => {
+    const item = parsed.find((i) => i.id === itemId)
+    if (!item) return
+    const currentAuthors = item.authors?.length > 0
+      ? item.authors
+      : [{ firstName: item.firstName || '', lastName: item.lastName || '' }]
+    const newIndex = currentAuthors.length
+    setParsed((prev) =>
+      prev.map((it) => {
+        if (it.id !== itemId) return it
+        return { ...it, authors: [...currentAuthors, { firstName: '', lastName: '' }] }
+      })
+    )
+    setEditingAuthor({ id: itemId, authorIndex: newIndex, firstName: '', lastName: '' })
   }
 
   const handleInject = () => {
     const toAdd = parsed.filter((r) => checked.has(r.id))
     const newIds = []
+    // Copie locale pour résoudre les doublons dans le même batch d'import
+    const localAuthors = [...existingAuthors]
     toAdd.forEach((r) => {
-      onAddBook({ id: r.id, title: r.title, firstName: r.firstName, lastName: r.lastName, year: r.year, axes: r.axes, description: '' })
+      // Résoudre ou créer les auteurs de ce livre
+      const authorIds = onAddAuthor
+        ? resolveOrCreateAuthors(r.authors || [], localAuthors, onAddAuthor)
+        : []
+      onAddBook({
+        id: r.id,
+        title: r.title,
+        firstName: r.firstName,   // legacy fallback
+        lastName: r.lastName,     // legacy fallback
+        authorIds,
+        year: r.year,
+        axes: r.axes,
+        description: '',
+      })
       newIds.push(r.id)
       if (masterNode) {
         onAddLink?.({ source: masterNode.id, target: r.id, citation_text: masterContext.trim(), edition: '', page: '', context: '' })
@@ -122,12 +214,19 @@ export default function SmartImportModal({
   const handleClose = () => { resetAll(); onClose() }
   const goBack = () => { setPhase('input'); setEditingCell(null); setEditingAuthor(null) }
 
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (phase === 'input' && rawText.trim()) handleAnalyze()
+    else if (phase === 'preview' && checked.size > 0 && !injected) handleInject()
+  }
+
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-sm">
-      <div
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-sm px-4">
+      <form
+        onSubmit={handleSubmit}
         className={[
           'w-full rounded-2xl border border-white/10 bg-[rgba(6,5,20,0.98)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.65)] transition-all duration-200',
-          phase === 'preview' ? 'max-w-2xl' : 'max-w-lg',
+          phase === 'preview' ? 'max-w-5xl' : 'max-w-4xl',
         ].join(' ')}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -162,7 +261,7 @@ export default function SmartImportModal({
             masterContext={masterContext}
             setMasterContext={setMasterContext}
             existingNodes={existingNodes}
-            onAnalyze={handleAnalyze}
+            authorsMap={authorsMap}
           />
         )}
 
@@ -181,14 +280,15 @@ export default function SmartImportModal({
             setEditingCell={setEditingCell}
             commitAuthorEdit={commitAuthorEdit}
             handleMerge={handleMerge}
+            onAddCoAuthor={handleAddCoAuthor}
+            onUpdateAxes={handleUpdateAxes}
             masterNode={masterNode}
             selectedCount={checked.size}
             injected={injected}
-            handleInject={handleInject}
             handleClose={handleClose}
           />
         )}
-      </div>
+      </form>
     </div>
   )
 }

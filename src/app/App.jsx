@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef } from 'react'
 import AnalysisPanel from '../features/analysis-panel/AnalysisPanel'
 import Graph from '../features/graph/Graph'
 import Legend from '../features/graph/Legend'
@@ -9,14 +9,17 @@ import Timeline from '../features/timeline/Timeline'
 import TextsPanel from '../features/texts-panel/TextsPanel'
 import AuthorsPanel from '../features/authors-panel/AuthorsPanel'
 import { AXES_COLORS, axesGradient } from '../categories'
-import { authorName } from '../authorUtils'
-import useGlobalSearch from '../features/shell/hooks/useGlobalSearch'
+import { authorName, buildAuthorsMap } from '../authorUtils'
 import useGraphData from '../features/graph/hooks/useGraphData'
 import { computeSameAuthorBooks, getIncomingRefs, getLinkNodes, getOutgoingRefs } from '../features/graph/graphRelations'
-import { constellationLayout, genealogyLayout } from '../features/graph/layoutEngine'
+import { useAppTimelineAndLayout } from './useAppTimelineAndLayout'
+import { useAppUiState } from './useAppUiState'
 export default function App() {
   const {
     graphData,
+    books,
+    authors,
+    links,
     handleAddBook,
     handleAddLink,
     handleUpdateBook,
@@ -24,6 +27,10 @@ export default function App() {
     handleDeleteLink,
     handleUpdateLink,
     handleMergeBooks,
+    handleAddAuthor,
+    handleUpdateAuthor,
+    handleDeleteAuthor,
+    handleMigrateData,
   } = useGraphData({
     axesColors: AXES_COLORS,
   })
@@ -31,181 +38,80 @@ export default function App() {
   const graphRef = useRef(null)
   const analysisPanelRef = useRef(null)
 
-  const [selectedNode, setSelectedNode] = useState(null)
-  const [selectedLink, setSelectedLink] = useState(null)
-  const [linkContextNode, setLinkContextNode] = useState(null)
-  const [panelTab, setPanelTab] = useState('details')
-  const [previousPanelTab, setPreviousPanelTab] = useState('details')
-  const [textsPanelOpen, setTextsPanelOpen] = useState(false)
-  const [authorsPanelOpen, setAuthorsPanelOpen] = useState(false)
-  const [peekNodeId, setPeekNodeId] = useState(null)
+  const {
+    selectedNode,
+    setSelectedNode,
+    selectedLink,
+    setSelectedLink,
+    linkContextNode,
+    setLinkContextNode,
+    panelTab,
+    setPanelTab,
+    previousPanelTab,
+    setPreviousPanelTab,
+    textsPanelOpen,
+    setTextsPanelOpen,
+    authorsPanelOpen,
+    setAuthorsPanelOpen,
+    openTextsPanel,
+    openAuthorsPanel,
+    peekNodeId,
+    activeFilter,
+    hoveredFilter,
+    setHoveredFilter,
+    selectedAuthor,
+    setSelectedAuthor,
+    tableMode,
+    setTableMode,
+    tableInitialTab,
+    setTableInitialTab,
+    tableLinkSourceId,
+    setTableLinkSourceId,
+    lastEditedNodeId,
+    setLastEditedNodeId,
+    flashNodeIds,
+    setFlashNodeIds,
+    panelOpen,
+    handleClosePanel,
+    handleOpenTable,
+    handleNodeClick,
+    handleSelectAuthorFromPanel,
+    handleSelectTextFromPanel,
+    handlePeekTextOnGraph,
+    handleLinkClick,
+    toggleFilter,
+    clearActiveFilter,
+    searchRef,
+    globalSearch,
+    setGlobalSearch,
+    searchFocused,
+    setSearchFocused,
+    searchResults,
+    handleSearchSelect,
+  } = useAppUiState(graphData, authors)
 
-  const [activeFilter, setActiveFilter] = useState(null)
-  const [hoveredFilter, setHoveredFilter] = useState(null)
-  const [selectedAuthor, setSelectedAuthor] = useState(null)
+  const {
+    viewMode,
+    handleViewChange,
+    setTimelineRange,
+    clampedTimelineRange,
+    filteredGraphData,
+    layoutPositions,
+    hasTimelineFilter,
+    clearTimelineFilter,
+  } = useAppTimelineAndLayout(graphData)
 
-  // View mode: 'constellation' | 'genealogy'
-  const [viewMode, setViewMode] = useState('constellation')
-
-  // Table mode
-  const [tableMode, setTableMode] = useState(false)
-  const [tableInitialTab, setTableInitialTab] = useState('books')
-  const [tableLinkSourceId, setTableLinkSourceId] = useState(null)
-  const [lastEditedNodeId, setLastEditedNodeId] = useState(null)
-  const [flashNodeIds, setFlashNodeIds] = useState(null)
-
-  // Timeline state — default to full range so all books are visible initially
-  const allYears = useMemo(() => graphData.nodes.map((n) => n.year).filter(Boolean), [graphData.nodes])
-  const maxYear = useMemo(() => Math.max(...allYears, 2025), [allYears])
-  const minYear = useMemo(() => Math.min(...allYears, 1800), [allYears])
-  const [timelineRange, setTimelineRange] = useState(() => ({ start: minYear, end: maxYear }))
-
-  const clampedTimelineRange = useMemo(() => {
-    const start = timelineRange?.start ?? minYear
-    const end = timelineRange?.end ?? maxYear
-    const safeStart = Math.max(minYear, Math.min(start, end, maxYear))
-    const safeEnd = Math.min(maxYear, Math.max(end, start, minYear))
-    return { start: safeStart, end: safeEnd }
-  }, [timelineRange, minYear, maxYear])
-
-  // Filtered graph data based on timeline range
-  const filteredGraphData = useMemo(() => {
-    const start = clampedTimelineRange.start
-    const end = clampedTimelineRange.end
-    const visibleNodeIds = new Set(
-      graphData.nodes.filter((n) => !n.year || (n.year >= start && n.year <= end)).map((n) => n.id)
-    )
-    return {
-      nodes: graphData.nodes.filter((n) => visibleNodeIds.has(n.id)),
-      links: graphData.links.filter((l) => {
-        const srcId = typeof l.source === 'object' ? l.source.id : l.source
-        const tgtId = typeof l.target === 'object' ? l.target.id : l.target
-        return visibleNodeIds.has(srcId) && visibleNodeIds.has(tgtId)
-      }),
-    }
-  }, [graphData, clampedTimelineRange])
-
-  // Compute layout positions based on view mode
-  const layoutPositions = useMemo(() => {
-    switch (viewMode) {
-      case 'genealogy':
-        return genealogyLayout(filteredGraphData)
-      default:
-        return constellationLayout()
-    }
-  }, [viewMode, filteredGraphData])
-
-  const handleViewChange = useCallback((mode) => {
-    setViewMode(mode)
-  }, [])
+  const authorsMap = useMemo(() => buildAuthorsMap(authors), [authors])
 
   const authorCount = useMemo(() => {
+    if (authors.length > 0) return authors.length
+    // Fallback legacy : compter les noms uniques sur les livres
     const names = new Set()
-    graphData.nodes.forEach((n) => {
-      const name = authorName(n)
-      if (name) names.add(name)
-    })
+    books.forEach((n) => { const name = authorName(n); if (name) names.add(name) })
     return names.size
-  }, [graphData.nodes])
+  }, [authors, books])
 
   const sameAuthorBooks = useMemo(() => computeSameAuthorBooks(graphData, selectedNode), [graphData, selectedNode])
-
-  const isAdminTab = panelTab === 'edit'
-  const hasSelection = selectedNode || selectedLink
-  const panelOpen = hasSelection || isAdminTab
-
-  const handleClosePanel = useCallback(() => {
-    setSelectedNode(null)
-    setSelectedLink(null)
-    setLinkContextNode(null)
-    setPanelTab('details')
-    setPeekNodeId(null)
-  }, [])
-
-  const handleOpenTable = useCallback((tab = 'books', linkSourceId = null) => {
-    setTableInitialTab(tab)
-    setTableLinkSourceId(linkSourceId)
-    setTableMode(true)
-  }, [])
-
-  const handleNodeClick = useCallback((node) => {
-    setLinkContextNode(null)
-    setSelectedLink(null)
-    setSelectedAuthor(null)
-    setPeekNodeId(null)
-    setSelectedNode((prev) => (prev?.id === node.id ? null : node))
-    setPanelTab('details')
-  }, [])
-
-  const handleSelectAuthorFromPanel = useCallback((author) => {
-    setLinkContextNode(null)
-    setSelectedLink(null)
-    setPeekNodeId(null)
-    setSelectedNode(null)
-    setPanelTab('details')
-    setSelectedAuthor((prev) => (prev === author ? null : author))
-  }, [])
-
-  const handleSelectTextFromPanel = useCallback((node) => {
-    setLinkContextNode(null)
-    setSelectedLink(null)
-    setSelectedAuthor(null)
-    setPeekNodeId(null)
-    setSelectedNode(node)
-    setPanelTab('details')
-    setTextsPanelOpen(false)
-  }, [])
-
-  const handlePeekTextOnGraph = useCallback((node) => {
-    setPeekNodeId(node.id)
-    setSelectedAuthor(null)
-    setSelectedNode(null)
-    setSelectedLink(null)
-    setLinkContextNode(null)
-    setPanelTab('details')
-  }, [])
-
-  const handleLinkClick = useCallback(() => {
-    // Ne pas ouvrir le panneau "lien" au clic sur une arête du graphe.
-  }, [])
-
-  const toggleFilter = useCallback((axis) => setActiveFilter((prev) => (prev === axis ? null : axis)), [])
-  const clearActiveFilter = useCallback(() => setActiveFilter(null), [])
-  const hasTimelineFilter = clampedTimelineRange.start !== minYear || clampedTimelineRange.end !== maxYear
-  const clearTimelineFilter = useCallback(() => {
-    setTimelineRange({ start: minYear, end: maxYear })
-  }, [minYear, maxYear])
-
-  useEffect(() => {
-    function onKeyDown(e) {
-      if (e.key !== 'Escape') return
-      if (panelOpen) handleClosePanel()
-      else setPeekNodeId((prev) => (prev ? null : prev))
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [panelOpen, handleClosePanel])
-
-  const { searchRef, globalSearch, setGlobalSearch, searchFocused, setSearchFocused, searchResults, handleSearchSelect } =
-    useGlobalSearch({
-      nodes: graphData.nodes,
-      onSelectNode: (node) => {
-        setLinkContextNode(null)
-        setSelectedLink(null)
-        setSelectedAuthor(null)
-        setPeekNodeId(null)
-        setSelectedNode(node)
-        setPanelTab('details')
-      },
-      onSelectAuthor: (author) => {
-        setLinkContextNode(null)
-        setSelectedLink(null)
-        setPeekNodeId(null)
-        setSelectedNode(null)
-        setPanelTab('details')
-        setSelectedAuthor((prev) => (prev === author ? null : author))
-      },
-    })
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
@@ -213,8 +119,9 @@ export default function App() {
         <Graph
           ref={graphRef}
           graphData={filteredGraphData}
+          authors={authors}
           selectedNode={selectedNode}
-          selectedAuthor={selectedAuthor}
+          selectedAuthorId={selectedAuthor}
           peekNodeId={peekNodeId}
           activeFilter={activeFilter}
           hoveredFilter={hoveredFilter}
@@ -236,6 +143,7 @@ export default function App() {
           results: searchResults,
           onSelect: handleSearchSelect,
           axesGradient,
+          authorsMap,
           onOpenTable: handleOpenTable,
         }}
         filters={{
@@ -244,7 +152,8 @@ export default function App() {
           timelineRange: clampedTimelineRange,
           hasTimelineFilter,
           clearTimelineFilter,
-          selectedAuthor,
+          selectedAuthorId: selectedAuthor,
+          selectedAuthorName: selectedAuthor ? authorName(authorsMap.get(selectedAuthor) || {}) : null,
           clearSelectedAuthor: () => setSelectedAuthor(null),
         }}
         view={{
@@ -254,14 +163,8 @@ export default function App() {
           onToggleTable: () => setTableMode((v) => !v),
         }}
         catalogue={{
-          onOpenTexts: () => {
-            setAuthorsPanelOpen(false)
-            setTextsPanelOpen(true)
-          },
-          onOpenAuthors: () => {
-            setTextsPanelOpen(false)
-            setAuthorsPanelOpen(true)
-          },
+          onOpenTexts: openTextsPanel,
+          onOpenAuthors: openAuthorsPanel,
           onOpenAnalysis: () => analysisPanelRef.current?.openPanel(),
           graphData,
           authorCount,
@@ -286,12 +189,15 @@ export default function App() {
         sameAuthorBooks={sameAuthorBooks}
         previousPanelTab={previousPanelTab}
         graphData={graphData}
+        authors={authors}
+        authorsMap={authorsMap}
         AXES_COLORS={AXES_COLORS}
         getOutgoingRefs={(node) => getOutgoingRefs(graphData, node)}
         getIncomingRefs={(node) => getIncomingRefs(graphData, node)}
         getLinkNodes={(link) => getLinkNodes(graphData, link)}
         handleClosePanel={handleClosePanel}
         handleAddBook={handleAddBook}
+        handleAddAuthor={handleAddAuthor}
         handleAddLink={(link) => {
           handleAddLink(link)
           handleClosePanel()
@@ -336,12 +242,14 @@ export default function App() {
         onFilterChange={toggleFilter}
         onAddLink={handleAddLink}
         showTrigger={false}
+        authorsMap={authorsMap}
       />
 
       <TextsPanel
         open={textsPanelOpen}
         onClose={() => setTextsPanelOpen(false)}
         nodes={graphData.nodes}
+        authors={authors}
         onSelectNode={handleSelectTextFromPanel}
         onPeekNode={handlePeekTextOnGraph}
         peekNodeId={peekNodeId}
@@ -350,8 +258,9 @@ export default function App() {
       <AuthorsPanel
         open={authorsPanelOpen}
         onClose={() => setAuthorsPanelOpen(false)}
-        nodes={graphData.nodes}
-        selectedAuthor={selectedAuthor}
+        authors={authors}
+        books={books}
+        selectedAuthorId={selectedAuthor}
         onSelectAuthor={handleSelectAuthorFromPanel}
         onAddWorkForAuthor={() => {
           handleOpenTable('books')
@@ -365,10 +274,15 @@ export default function App() {
 
       {tableMode && (
         <TableView
-          nodes={graphData.nodes}
-          links={graphData.links}
+          nodes={books}
+          links={links}
+          authors={authors}
           onAddBook={handleAddBook}
           onAddLink={handleAddLink}
+          onAddAuthor={handleAddAuthor}
+          onUpdateAuthor={handleUpdateAuthor}
+          onDeleteAuthor={handleDeleteAuthor}
+          onMigrateData={handleMigrateData}
           onUpdateBook={(n) => {
             handleUpdateBook(n)
             setLastEditedNodeId(n.id)
@@ -382,7 +296,7 @@ export default function App() {
           onMergeBooks={(fromNodeId, intoNodeId) => {
             const merged = handleMergeBooks(fromNodeId, intoNodeId)
             if (!merged) return
-            const intoNode = graphData.nodes.find((n) => n.id === intoNodeId)
+            const intoNode = books.find((n) => n.id === intoNodeId)
             setSelectedNode(intoNode || null)
             setPanelTab('details')
           }}
@@ -391,7 +305,7 @@ export default function App() {
             setTableInitialTab('books')
             setTableLinkSourceId(null)
             if (lastEditedNodeId) {
-              const node = graphData.nodes.find((n) => n.id === lastEditedNodeId)
+              const node = books.find((n) => n.id === lastEditedNodeId)
               if (node) {
                 setSelectedNode(node)
                 setPanelTab('details')

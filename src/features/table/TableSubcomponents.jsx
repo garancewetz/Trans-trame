@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp, Plus } from 'lucide-react'
-import { authorName } from '../../authorUtils'
+import { authorName, bookAuthorDisplay } from '../../authorUtils'
 import { AXES, AXES_COLORS, AXES_LABELS, axesGradient } from '../../categories'
 import { INPUT } from './tableConstants'
 
@@ -65,7 +65,9 @@ export function AxisDots({ axes = [], onChange }) {
   )
 }
 
-export function AuthorPicker({ nodes, firstName, setFirstName, lastName, setLastName }) {
+// authors: Author[], selectedAuthorIds: string[], onChange: (ids: string[]) => void, onAddAuthor?: (author) => void
+export function AuthorPicker({ authors = [], selectedAuthorIds = [], onChange, onAddAuthor }) {
+  const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -77,89 +79,119 @@ export function AuthorPicker({ nodes, firstName, setFirstName, lastName, setLast
     return () => document.removeEventListener('pointerdown', onDown)
   }, [])
 
-  const knownAuthors = useMemo(() => {
-    const seen = new Map()
-    ;(nodes || []).forEach((n) => {
-      const ln = (n.lastName || '').trim()
-      const fn = (n.firstName || '').trim()
-      if (!ln) return
-      const key = `${fn.toLowerCase()}||${ln.toLowerCase()}`
-      if (!seen.has(key)) seen.set(key, { firstName: fn, lastName: ln })
-    })
-    return Array.from(seen.values()).sort((a, b) => a.lastName.localeCompare(b.lastName))
-  }, [nodes])
-
-  const suggestions = useMemo(() => {
-    const q = lastName.toLowerCase().trim()
-    if (q.length < 2) return []
-    return knownAuthors
-      .filter(
-        (a) =>
-          a.lastName.toLowerCase().startsWith(q) ||
-          a.lastName.toLowerCase().includes(q) ||
-          `${a.firstName} ${a.lastName}`.toLowerCase().includes(q)
-      )
-      .slice(0, 5)
-  }, [knownAuthors, lastName])
-
-  const isKnown = useMemo(
-    () =>
-      lastName.trim().length > 1 &&
-      knownAuthors.some(
-        (a) =>
-          a.lastName.toLowerCase() === lastName.toLowerCase().trim() &&
-          (!firstName.trim() || a.firstName.toLowerCase() === firstName.toLowerCase().trim())
-      ),
-    [knownAuthors, firstName, lastName]
+  const selectedAuthors = useMemo(
+    () => selectedAuthorIds.map((id) => authors.find((a) => a.id === id)).filter(Boolean),
+    [selectedAuthorIds, authors]
   )
 
+  const suggestions = useMemo(() => {
+    const q = query.toLowerCase().trim()
+    if (q.length < 2) return []
+    return authors
+      .filter((a) => !selectedAuthorIds.includes(a.id))
+      .filter(
+        (a) =>
+          `${a.firstName} ${a.lastName}`.toLowerCase().includes(q) ||
+          a.lastName.toLowerCase().startsWith(q)
+      )
+      .slice(0, 6)
+  }, [authors, selectedAuthorIds, query])
+
+  const canCreate = query.trim().length > 1 && suggestions.length === 0 && !!onAddAuthor
+
+  const removeAuthor = (id) => onChange(selectedAuthorIds.filter((aid) => aid !== id))
+
+  const addAuthor = (author) => {
+    onChange([...selectedAuthorIds, author.id])
+    setQuery('')
+    setOpen(false)
+  }
+
+  const handleCreate = () => {
+    const parts = query.trim().split(/\s+/)
+    const firstName = parts.length > 1 ? parts.slice(0, -1).join(' ') : ''
+    const lastName = parts.length > 1 ? parts[parts.length - 1] : parts[0]
+    const newAuthor = {
+      id: `auth_${crypto.randomUUID().slice(0, 8)}`,
+      type: 'author',
+      firstName,
+      lastName,
+      axes: [],
+    }
+    onAddAuthor(newAuthor)
+    onChange([...selectedAuthorIds, newAuthor.id])
+    setQuery('')
+    setOpen(false)
+  }
+
   return (
-    <div className="flex gap-1.5" ref={ref}>
-      <input
-        className={INPUT}
-        style={{ width: '42%' }}
-        placeholder="Prénom"
-        value={firstName}
-        onChange={(e) => setFirstName(e.target.value)}
-        onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
-      />
-      <div className="relative" style={{ width: '58%' }}>
-        <input
-          className={INPUT + (isKnown ? ' pr-16' : '')}
-          placeholder="Nom *"
-          value={lastName}
-          onChange={(e) => { setLastName(e.target.value); setOpen(true) }}
-          onFocus={() => setOpen(true)}
-          onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
-        />
-        {isKnown && (
-          <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full bg-[rgba(0,255,135,0.12)] px-1.5 py-px text-[0.55rem] font-semibold text-[rgba(0,255,135,0.6)]">
-            exist.
+    <div ref={ref} className="relative">
+      <div className="flex min-h-[28px] flex-wrap items-center gap-1 rounded-md border border-white/12 bg-white/4 px-1.5 py-1">
+        {selectedAuthors.map((a) => (
+          <span
+            key={a.id}
+            className="inline-flex items-center gap-1 rounded-full border border-white/14 bg-white/8 px-1.5 py-px text-[0.62rem] text-white/75"
+          >
+            {authorName(a)}
+            <button
+              type="button"
+              onClick={() => removeAuthor(a.id)}
+              className="cursor-pointer leading-none text-white/35 hover:text-white/80"
+            >
+              ×
+            </button>
           </span>
-        )}
-        {open && suggestions.length > 0 && (
-          <ul className="absolute left-0 right-0 top-[calc(100%+3px)] z-50 list-none rounded-lg border border-white/10 bg-[rgba(6,4,20,0.98)] p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur-xl">
-            {suggestions.map((a) => (
-              <li key={`${a.firstName}||${a.lastName}`}>
-                <button
-                  type="button"
-                  className="flex w-full cursor-pointer items-center justify-between rounded-md px-2.5 py-1.5 text-left transition-colors hover:bg-white/8"
-                  onClick={() => { setFirstName(a.firstName); setLastName(a.lastName); setOpen(false) }}
-                >
-                  <span className="font-mono text-[0.74rem] text-white">
-                    {a.firstName} <strong>{a.lastName}</strong>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+        ))}
+        <input
+          className="min-w-[80px] flex-1 bg-transparent text-[0.76rem] text-white placeholder-white/25 outline-none"
+          placeholder={selectedAuthors.length === 0 ? 'Auteur·ice…' : ''}
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') { setOpen(false); setQuery('') }
+            if (e.key === 'Backspace' && !query && selectedAuthorIds.length > 0) {
+              onChange(selectedAuthorIds.slice(0, -1))
+            }
+          }}
+        />
       </div>
+      {open && (suggestions.length > 0 || canCreate) && (
+        <ul className="absolute left-0 right-0 top-[calc(100%+3px)] z-50 list-none rounded-lg border border-white/10 bg-[rgba(6,4,20,0.98)] p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+          {suggestions.map((a) => (
+            <li key={a.id}>
+              <button
+                type="button"
+                className="flex w-full cursor-pointer items-center rounded-md px-2.5 py-1.5 text-left transition-colors hover:bg-white/8"
+                onClick={() => addAuthor(a)}
+              >
+                <span className="font-mono text-[0.74rem] text-white">
+                  {a.firstName} <strong>{a.lastName}</strong>
+                </span>
+              </button>
+            </li>
+          ))}
+          {canCreate && (
+            <li>
+              <button
+                type="button"
+                className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors hover:bg-white/8"
+                onClick={handleCreate}
+              >
+                <Plus size={10} className="shrink-0 text-[rgba(140,220,255,0.6)]" />
+                <span className="font-mono text-[0.74rem] text-[rgba(140,220,255,0.75)]">
+                  Créer «&nbsp;{query.trim()}&nbsp;»
+                </span>
+              </button>
+            </li>
+          )}
+        </ul>
+      )}
     </div>
   )
 }
 
-export function NodeSearch({ nodes, value, onSelect, placeholder, exclude = [] }) {
+export function NodeSearch({ nodes, authorsMap, value, onSelect, placeholder, exclude = [] }) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -179,10 +211,10 @@ export function NodeSearch({ nodes, value, onSelect, placeholder, exclude = [] }
       .filter((n) => !exclude.includes(n.id))
       .filter(
         (n) =>
-          n.title.toLowerCase().includes(q) || authorName(n).toLowerCase().includes(q)
+          n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap || new Map()).toLowerCase().includes(q)
       )
       .slice(0, 8)
-  }, [query, nodes, exclude])
+  }, [query, nodes, exclude, authorsMap])
 
   return (
     <div className="relative" ref={ref}>
@@ -213,7 +245,7 @@ export function NodeSearch({ nodes, value, onSelect, placeholder, exclude = [] }
               <span>
                 <strong className="block font-mono text-[0.76rem] text-white">{n.title}</strong>
                 <span className="font-mono text-[0.63rem] text-white/30">
-                  {authorName(n)}{n.year ? `, ${n.year}` : ''}
+                  {bookAuthorDisplay(n, authorsMap || new Map())}{n.year ? `, ${n.year}` : ''}
                 </span>
               </span>
             </button>

@@ -1,9 +1,9 @@
 import { Eye, Search, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { authorName, authorSortKey } from '../../authorUtils'
+import { bookAuthorDisplay, buildAuthorsMap } from '../../authorUtils'
 import { axesGradient } from '../../categories'
 
-export default function TextsPanel({ open, onClose, nodes, onSelectNode, onPeekNode, peekNodeId }) {
+export default function TextsPanel({ open, onClose, nodes, authors = [], onSelectNode, onPeekNode, peekNodeId }) {
   const [q, setQ] = useState('')
 
   useEffect(() => {
@@ -11,18 +11,22 @@ export default function TextsPanel({ open, onClose, nodes, onSelectNode, onPeekN
     queueMicrotask(() => setQ(''))
   }, [open])
 
+  const authorsMap = useMemo(() => buildAuthorsMap(authors), [authors])
+
   const filtered = useMemo(() => {
     const query = q.toLowerCase().trim()
     const list = !query
       ? nodes
       : nodes.filter((n) => {
       const title = (n.title || '').toLowerCase()
-      const author = authorName(n).toLowerCase()
+      const author = bookAuthorDisplay(n, authorsMap).toLowerCase()
       const year = String(n.year ?? '')
       return title.includes(query) || author.includes(query) || year.includes(query)
     })
-    return [...list].sort((a, b) => authorSortKey(a).localeCompare(authorSortKey(b), 'fr', { sensitivity: 'base' }))
-  }, [q, nodes])
+    return [...list].sort((a, b) =>
+      bookAuthorDisplay(a, authorsMap).localeCompare(bookAuthorDisplay(b, authorsMap), 'fr', { sensitivity: 'base' })
+    )
+  }, [q, nodes, authorsMap])
 
   useEffect(() => {
     if (!open) return
@@ -96,7 +100,7 @@ export default function TextsPanel({ open, onClose, nodes, onSelectNode, onPeekN
                     <div className="min-w-0">
                       <div className="truncate text-[0.86rem] font-semibold text-white/85">{n.title}</div>
                       <div className="truncate text-[0.72rem] text-white/35">
-                        {authorName(n)}
+                        {bookAuthorDisplay(n, authorsMap)}
                         {n.year ? ` — ${n.year}` : ''}
                       </div>
                     </div>

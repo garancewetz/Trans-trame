@@ -1,6 +1,6 @@
 import { Search, X } from 'lucide-react'
 import { axesGradient } from '../../categories'
-import { authorName } from '../../authorUtils'
+import { bookAuthorDisplay } from '../../authorUtils'
 
 export default function NodePicker({
   label,
@@ -12,6 +12,7 @@ export default function NodePicker({
   addButtonVisible,
   onRequestAddBook,
   query,
+  authorsMap,
 }) {
   return (
     <label className="flex flex-col gap-1.5">
@@ -73,7 +74,7 @@ export default function NodePicker({
                     <span className="min-w-0">
                       <strong className="block text-[0.85rem] font-semibold text-white">{n.title}</strong>
                       <span className="mt-0.5 block text-[0.75rem] text-white/35">
-                        {authorName(n)}, {n.year}
+                        {bookAuthorDisplay(n, authorsMap)}, {n.year}
                       </span>
                     </span>
                   </button>

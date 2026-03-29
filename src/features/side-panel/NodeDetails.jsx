@@ -1,10 +1,11 @@
 import { Pencil, ArrowRight, ArrowLeft, LinkIcon, Plus } from 'lucide-react'
-import { authorName } from '../../authorUtils'
+import { bookAuthorDisplay } from '../../authorUtils'
 
 export default function NodeDetails({
   selectedNode,
   AXES_COLORS,
   sameAuthorBooks,
+  authorsMap,
   setPanelTab,
   setSelectedNode,
   setSelectedLink,
@@ -13,10 +14,12 @@ export default function NodeDetails({
   getOutgoingRefs,
   getIncomingRefs,
 }) {
+  const displayAuthor = (book) => bookAuthorDisplay(book, authorsMap || new Map())
+
   const refMeta = (other, link) => {
     const parts = []
     if (other) {
-      const a = authorName(other)
+      const a = displayAuthor(other)
       if (a) parts.push(a)
       if (other.year) parts.push(other.year)
     }
@@ -51,7 +54,7 @@ export default function NodeDetails({
       </div>
 
       <h2 className="mb-1 text-[1.3rem] font-bold leading-snug text-white">{selectedNode.title}</h2>
-      <p className="mb-0.5 text-[0.95rem] italic text-white/55">{authorName(selectedNode)}</p>
+      <p className="mb-0.5 text-[0.95rem] italic text-white/55">{displayAuthor(selectedNode)}</p>
       <p className="mb-3.5 text-[0.85rem] text-white/35">{selectedNode.year}</p>
       {selectedNode.description && (
         <p className="mb-4 text-[0.88rem] leading-relaxed text-white/60">{selectedNode.description}</p>
@@ -60,7 +63,7 @@ export default function NodeDetails({
       {sameAuthorBooks.length > 0 && (
         <>
           <h3 className="mb-3 mt-5 text-[0.78rem] font-semibold uppercase tracking-[1.5px] text-white/35">
-            Autres ouvrages de {authorName(selectedNode)} ({sameAuthorBooks.length})
+            Autres ouvrages de {displayAuthor(selectedNode)} ({sameAuthorBooks.length})
           </h3>
           <ul className="mb-5 flex list-none flex-col gap-2 border-b border-white/10 pb-5">
             {sameAuthorBooks.map((n) => (

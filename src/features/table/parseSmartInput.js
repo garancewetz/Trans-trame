@@ -1,5 +1,76 @@
 const CURRENT_YEAR = new Date().getFullYear()
 
+// ── Auto-tagging par mots-clés ──────────────────────────────────────────────
+
+const AXIS_KEYWORDS = {
+  ECOLOGY: [
+    'écologie', 'ecology', 'écologis', 'environnement', 'environment', 'climat',
+    'climate', 'écofémin', 'ecofem', 'anthropocène', 'anthropocene', 'nature',
+    'capitalocène', 'capitalocene', 'extractivi', 'biodiversi', 'durable',
+    'sustainable', 'terre', 'vivant',
+  ],
+  QUEER: [
+    'queer', 'trans ', 'transgenre', 'transgender', 'transidentit', 'non-binaire',
+    'nonbinary', 'non binaire', 'lgbtq', 'gender trouble', 'trouble dans le genre',
+    'sexualit', 'hétéronorm', 'heteronorm', 'homonorm', 'cisgenre', 'drag',
+    'homosexual', 'lesbien', 'lesbian', 'gay', 'bisexu',
+  ],
+  AFROFEMINIST: [
+    'afrofémin', 'afrofem', 'négritude', 'negritude', 'black feminis',
+    'womanism', 'bell hooks', 'audre lorde', 'angela davis', 'toni morrison',
+    'décolonial', 'decolonial', 'postcolonial', 'panafri', 'diaspora',
+    'afrodescend', 'néocolonial', 'neocolonial',
+  ],
+  ANTIRACISM: [
+    "afro", 'arabe','asiat','colonis', 'décolonis', 'race', 'blanc', 'racis', 'antiracis', 'anti-racis', 'racial', 'blanchité', 'whiteness',
+    'privilège blanc', 'white privilege', 'ségrégation', 'segregation',
+    'discriminat', 'islamophob', 'xénophob', 'xenophob', 'minorit',
+    'racisé', 'racialized', 'coloris',
+  ],
+  HEALTH: [
+    'santé', 'health', 'trauma', 'psychi', 'soin', 'care ', 'médical',
+    'medical', 'thérap', 'therap', 'guéri', 'healing', 'maladie', 'illness',
+    'douleur', 'pain', 'corps', 'body', 'violenc', 'abus', 'surviv',
+    'résilience', 'resilience', 'burn.?out', 'deuil', 'grief',
+  ],
+  CRIP: [
+    'handicap', 'disabilit', 'crip', 'validis', 'ableism', 'capacitis',
+    'accessibil', 'inclusion', 'neurodivergen', 'autis', 'surd', 'sourd',
+    'aveugle', 'blind', 'fauteuil', 'wheelchair', 'mad studies',
+  ],
+  HISTORY: [
+    'histoir', 'history', 'historical', 'historique', 'mémoir', 'memoir',
+    'archives', 'archéolog', 'archaeolog', 'généalog', 'genealog',
+    'antiquit', 'médiéval', 'medieval', 'révolution', 'revolution',
+    'guerre', 'war ', 'siècle', 'century', 'époque', 'colonial',
+  ],
+  INSTITUTIONAL: [
+    'institution', 'politique', 'politic', 'état', 'state', 'gouvern',
+    'govern', 'droit', 'law ', 'legal', 'juridiq', 'législat', 'legislat',
+    'universi', 'académi', 'academ', 'sociolog', 'économi', 'econom',
+    'néolibéral', 'neoliberal', 'capitalisme', 'capitalism', 'bureaucra',
+    'administrat', 'parlement', 'parliament',
+  ],
+}
+
+/**
+ * Détecte les axes pertinents à partir du texte brut d'une ligne bibliographique.
+ * Retourne un tableau d'axes (ex. ['QUEER', 'HEALTH']).
+ */
+function detectAxes(rawLine) {
+  const text = rawLine.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim()
+  const matched = []
+  for (const [axis, keywords] of Object.entries(AXIS_KEYWORDS)) {
+    for (const kw of keywords) {
+      if (text.includes(kw.normalize('NFD').replace(/\p{Diacritic}/gu, ''))) {
+        matched.push(axis)
+        break
+      }
+    }
+  }
+  return matched
+}
+
 function capitalize(str) {
   if (!str) return ''
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
@@ -7,6 +78,58 @@ function capitalize(str) {
 
 function isInitial(s) {
   return /^[A-ZÀ-Ü]\.?$/.test(s.trim())
+}
+
+const NAME_PARTICLES = new Set([
+  'de', 'du', 'des', 'von', 'van', 'di', 'da', 'le', 'la', 'el', 'al',
+  'ben', 'ibn', 'del', 'della', 'der', 'den', 'het', 'los', 'las',
+])
+
+/** Vérifie qu'une chaîne ressemble à un nom de personne (au moins un mot
+ *  capitalisé qui n'est pas une simple particule nobiliaire). */
+function looksLikeName(str) {
+  const words = str.trim().split(/[\s-]+/)
+  return words.some(
+    (w) => /^[A-ZÀ-ÖØ-Ý]/.test(w) && !NAME_PARTICLES.has(w.toLowerCase()),
+  )
+}
+
+/**
+ * Tente de décomposer une chaîne brute en {firstName, lastName}.
+ * Gère : "BEAUVOIR Simone", "bell hooks", "Ahmed", "J. Butler"
+ */
+function parseAuthorString(raw) {
+  const s = raw.trim()
+  if (!s) return { firstName: '', lastName: '' }
+
+  // ALL CAPS cluster = nom de famille
+  const capsMatch = s.match(
+    /\b([A-ZÀÁÂÃÄÇÈÉÊËÌÍÎÏÑÒÓÔÙÚÛÜÝ]{2,}(?:[- ][A-ZÀÁÂÃÄÇÈÉÊËÌÍÎÏÑÒÓÔÙÚÛÜÝ]{2,})*)\b/
+  )
+  if (capsMatch) {
+    const ln = capsMatch[1].split(/[\s-]+/).map(capitalize).join(' ')
+    const fn = s
+      .replace(capsMatch[1], '')
+      .replace(/^[,.\s]+|[,.\s]+$/g, '')
+      .trim()
+    return { firstName: fn, lastName: ln }
+  }
+
+  const words = s.split(/\s+/).filter(Boolean)
+  if (words.length === 1) return { firstName: '', lastName: words[0] }
+
+  // Première lettre minuscule → prénom (ex. "bell hooks")
+  if (/^[a-zàáâãäçèéêëìíîïñòóôùúûü]/.test(words[0])) {
+    return { firstName: words[0], lastName: words.slice(1).join(' ') }
+  }
+
+  // Initiale seule (J.) → initiale = prénom
+  if (isInitial(words[0])) {
+    return { firstName: words[0].replace('.', ''), lastName: words.slice(1).join(' ') }
+  }
+
+  // Défaut : premier mot = prénom, reste = nom
+  return { firstName: words[0], lastName: words.slice(1).join(' ') }
 }
 
 function parseLine(rawLine) {
@@ -34,26 +157,47 @@ function parseLine(rawLine) {
   let firstName = ''
   let lastName = ''
   let title = ''
+  let edition = ''
+  let authors = []
 
-  // ── 4. Multi-author: "Pardo et Delor" or "Smith & Jones" ─────────────────
-  // Detected before comma split: "Author1 et|& Author2, Title"
-  const multiAuthorMatch = cleaned.match(
-    /^([\w\sÀ-ÖØ-öø-ÿ]+?)\s+(?:et|&|and)\s+([\w\sÀ-ÖØ-öø-ÿ]+?)(?:,|$)/i
+  // ── 4. Multi-auteurs : "Pardo et Delor" / "Smith & Jones" / "A, B et C" ──
+  // Détecte une liste d'auteurs avant le titre (séparés par et|&|,)
+  const etMatch = cleaned.match(
+    /^([\w\s\-À-ÖØ-öø-ÿ]+?(?:,\s*[\w\s\-À-ÖØ-öø-ÿ]+?)*)\s+(?:et|&|and)\s+([\w\s\-À-ÖØ-öø-ÿ]+?)(?:,|$)/i
   )
 
-  if (multiAuthorMatch) {
-    const a1 = multiAuthorMatch[1].trim()
-    const a2 = multiAuthorMatch[2].trim()
-    const fullMatch = multiAuthorMatch[0]
-    lastName = `${a1} & ${a2}`
-    firstName = ''
-    // Title is everything after the full author match
-    const afterAuthors = cleaned.slice(fullMatch.length).replace(/^[,.\s]+/, '').trim()
-    title = afterAuthors.split(',')[0].replace(/\.$/, '').trim()
+  if (etMatch) {
+    // Tout ce qui est avant "et" peut contenir plusieurs auteurs séparés par ","
+    const beforeEt = etMatch[1]
+    const lastAuthor = etMatch[2].trim()
+    const fullMatch = etMatch[0]
+
+    // Segmenter les auteurs intermédiaires
+    const allRawAuthors = [
+      ...beforeEt.split(',').map((s) => s.trim()).filter(Boolean),
+      lastAuthor,
+    ]
+
+    // Vérifier que chaque partie ressemble à un auteur (court, pas de sous-titre)
+    const looksLikeAuthors = allRawAuthors.every(
+      (a) => a.split(/\s+/).length <= 5 && looksLikeName(a),
+    )
+
+    if (looksLikeAuthors) {
+      authors = allRawAuthors.map(parseAuthorString)
+      firstName = authors[0]?.firstName || ''
+      lastName = authors[0]?.lastName || ''
+
+      // Titre = tout ce qui suit le match auteurs
+      const afterAuthors = cleaned.slice(fullMatch.length).replace(/^[,.\s]+/, '').trim()
+      const afterParts = afterAuthors.split(',').map((p) => p.trim())
+      title = (afterParts[0] || '').replace(/\.$/, '').trim()
+      edition = afterParts.length > 1 ? afterParts.slice(1).join(', ').replace(/\.$/, '').trim() : ''
+    }
   }
 
   // ── 5. ALL CAPS cluster (French bib: "BEAUVOIR Simone de" or "DE BEAUVOIR") ─
-  else {
+  if (!authors.length) {
     const capsRe = /\b([A-ZÀÁÂÃÄÇÈÉÊËÌÍÎÏÑÒÓÔÙÚÛÜÝ]{2,}(?:[- ][A-ZÀÁÂÃÄÇÈÉÊËÌÍÎÏÑÒÓÔÙÚÛÜÝ]{2,})*)\b/
     const allCapsMatch = cleaned.match(capsRe)
 
@@ -62,7 +206,6 @@ function parseLine(rawLine) {
       const capsEnd = cleaned.indexOf(capsCluster) + capsCluster.length
       const afterCaps = cleaned.slice(capsEnd)
 
-      // Try comma first, then period as fallback separator
       const commaOffset = afterCaps.indexOf(',')
       const dotOffset = afterCaps.indexOf('.')
 
@@ -95,12 +238,14 @@ function parseLine(rawLine) {
         .replace(/^[,.\s]+|[,.\s]+$/g, '')
         .trim()
 
-      title = titlePart ? titlePart.split(',')[0].replace(/\.$/, '').trim() : ''
-
+      if (titlePart) {
+        const titleParts = titlePart.split(',').map((p) => p.trim())
+        title = titleParts[0].replace(/\.$/, '').trim()
+        edition = titleParts.length > 1 ? titleParts.slice(1).join(', ').replace(/\.$/, '').trim() : ''
+      }
+      authors = [{ firstName, lastName }]
     } else {
       // ── 6. Comma / period-based splitting (no ALL CAPS) ──────────────────
-      // Normalize: if periods are used as separators instead of commas, convert
-      // "Butler J. Gender Trouble." → treat '. ' as potential separator
       const hasSeparatingPeriods = !cleaned.includes(',') && /\.\s+[A-ZÀÁÂÃ\u00C0-\u00DC]/.test(cleaned)
       const normalized = hasSeparatingPeriods
         ? cleaned.replace(/\.\s+/g, ', ').replace(/\.$/, '')
@@ -114,13 +259,14 @@ function parseLine(rawLine) {
         const looksLikeAuthor = words.length <= 4
 
         if (looksLikeAuthor) {
+          let titleIndex
           if (words.length === 1) {
             lastName = words[0]
             if (parts.length >= 3 && isInitial(parts[1])) {
               firstName = parts[1].replace('.', '').trim()
-              title = parts.slice(2)[0].replace(/\.$/, '').trim()
+              titleIndex = 2
             } else {
-              title = parts[1].replace(/\.$/, '').trim()
+              titleIndex = 1
             }
           } else {
             const firstWordIsLower = /^[a-zàáâãäçèéêëìíîïñòóôùúûü]/.test(words[0])
@@ -131,14 +277,21 @@ function parseLine(rawLine) {
               firstName = words.slice(0, -1).join(' ')
               lastName = words[words.length - 1]
             }
-            title = parts.slice(1)[0].replace(/\.$/, '').trim()
+            titleIndex = 1
           }
+          title = (parts[titleIndex] || '').replace(/\.$/, '').trim()
+          const editionParts = parts.slice(titleIndex + 1)
+          if (editionParts.length) edition = editionParts.join(', ').replace(/\.$/, '').trim()
         } else {
           title = firstPart.replace(/\.$/, '').trim()
+          const editionParts = parts.slice(1)
+          if (editionParts.length) edition = editionParts.join(', ').replace(/\.$/, '').trim()
         }
       } else {
         title = cleaned.replace(/\.$/, '').trim()
       }
+
+      authors = [{ firstName, lastName }]
     }
   }
 
@@ -147,10 +300,12 @@ function parseLine(rawLine) {
   return {
     firstName: firstName.trim(),
     lastName: lastName.trim(),
+    authors: authors.filter((a) => a.firstName || a.lastName),
     title: title.trim(),
+    edition: edition.trim(),
     year: year || CURRENT_YEAR,
     yearMissing: !year,
-    axes: [],
+    axes: detectAxes(rawLine),
   }
 }
 
@@ -178,10 +333,12 @@ function titleSimilarity(a, b) {
 /**
  * Parses raw multi-line text (OCR / bibliography) into book objects.
  *
- * Each result includes:
- *   isDuplicate        — exact title match in existingNodes
- *   isFuzzyDuplicate   — high similarity (≥ 0.82) but not exact
- *   existingNode       — the matching existing node (if any)
+ * Chaque résultat inclut :
+ *   authors            — tableau [{firstName, lastName}], un par co-auteur détecté
+ *   firstName/lastName — premier auteur (rétrocompat affichage)
+ *   isDuplicate        — correspondance exacte sur le titre dans existingNodes
+ *   isFuzzyDuplicate   — similarité élevée (≥ 0.82) mais pas exacte
+ *   existingNode       — nœud existant correspondant (si doublon)
  */
 export function parseSmartInput(text, existingNodes = []) {
   const lines = text.split('\n').map((l) => l.trim()).filter((l) => l.length > 3)

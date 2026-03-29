@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { authorName } from '../../authorUtils'
+import { bookAuthorDisplay, buildAuthorsMap } from '../../authorUtils'
 import { resolveLinks } from './resolveLinks'
 import TableTopbar from './TableTopbar'
 import TableBooksTab from './TableBooksTab'
 import TableLinksTab from './TableLinksTab'
+import TableAuthorsTab from './TableAuthorsTab'
 import TableFooter from './TableFooter'
 import TableMergeModal from './TableMergeModal'
 import TableOrphanModal from './TableOrphanModal'
@@ -13,6 +14,7 @@ import SmartImportModal from './SmartImportModal'
 export default function TableView({
   nodes,
   links,
+  authors,
   onAddBook,
   onAddLink,
   onUpdateBook,
@@ -20,6 +22,10 @@ export default function TableView({
   onUpdateLink,
   onDeleteLink,
   onMergeBooks,
+  onAddAuthor,
+  onUpdateAuthor,
+  onDeleteAuthor,
+  onMigrateData,
   onClose,
   onLastEdited,
   initialTab = 'books',
@@ -39,13 +45,11 @@ export default function TableView({
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [editingCell, setEditingCell] = useState(null)
   const [editingValue, setEditingValue] = useState('')
-  const [editingAuthor, setEditingAuthor] = useState(null) // { nodeId, firstName, lastName }
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
   const [addedQueue, setAddedQueue] = useState([])
 
   const [inputTitle, setInputTitle] = useState('')
-  const [inputFirstName, setInputFirstName] = useState('')
-  const [inputLastName, setInputLastName] = useState('')
+  const [inputAuthorIds, setInputAuthorIds] = useState([])
   const [inputYear, setInputYear] = useState('')
   const [inputAxes, setInputAxes] = useState([])
   const [stickyAuthor, setStickyAuthor] = useState(false)
@@ -55,6 +59,7 @@ export default function TableView({
   const [mergeKeepId, setMergeKeepId] = useState(null)
   const [mergeConfirm, setMergeConfirm] = useState(false)
 
+  const [authorSearch, setAuthorSearch] = useState('')
   const [linkSearch, setLinkSearch] = useState('')
   const [linkSourceNode, setLinkSourceNode] = useState(
     () => (initialLinkSourceId ? nodes.find((n) => n.id === initialLinkSourceId) ?? null : null)
@@ -73,6 +78,8 @@ export default function TableView({
 
   const [smartImportModal, setSmartImportModal] = useState(false)
 
+  const authorsMap = useMemo(() => buildAuthorsMap(authors), [authors])
+
   const linkCountByNode = useMemo(() => {
     const counts = new Map()
     links.forEach((l) => {
@@ -90,10 +97,10 @@ export default function TableView({
     return nodes.filter(
       (n) =>
         n.title.toLowerCase().includes(q) ||
-        authorName(n).toLowerCase().includes(q) ||
+        bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q) ||
         String(n.year || '').includes(q)
     )
-  }, [nodes, search])
+  }, [nodes, search, authorsMap])
 
   const sortedNodes = useMemo(
     () =>
@@ -101,7 +108,7 @@ export default function TableView({
         let va, vb
         switch (sortCol) {
           case 'title': va = a.title.toLowerCase(); vb = b.title.toLowerCase(); break
-          case 'lastName': va = (a.lastName || '').toLowerCase(); vb = (b.lastName || '').toLowerCase(); break
+          case 'lastName': va = bookAuthorDisplay(a, authorsMap).toLowerCase(); vb = bookAuthorDisplay(b, authorsMap).toLowerCase(); break
           case 'year': va = a.year || 0; vb = b.year || 0; break
           default: va = ''; vb = ''
         }
@@ -109,7 +116,7 @@ export default function TableView({
         if (va > vb) return sortDir === 'asc' ? 1 : -1
         return 0
       }),
-    [filteredNodes, sortCol, sortDir]
+    [filteredNodes, sortCol, sortDir, authorsMap]
   )
 
   const allSelected = sortedNodes.length > 0 && sortedNodes.every((n) => selectedIds.has(n.id))
@@ -143,10 +150,10 @@ export default function TableView({
         (n) =>
           !q ||
           n.title.toLowerCase().includes(q) ||
-          authorName(n).toLowerCase().includes(q)
+          bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q)
       )
       .sort((a, b) => a.title.localeCompare(b.title))
-  }, [nodes, linkSourceNode, checklistSearch])
+  }, [nodes, linkSourceNode, checklistSearch, authorsMap])
 
   const newLinksCount = useMemo(
     () => [...linkCheckedIds].filter((id) => !existingTargetIds.has(id)).length,
@@ -160,7 +167,7 @@ export default function TableView({
       (l) =>
         (l.sourceNode?.title || '').toLowerCase().includes(q) ||
         (l.targetNode?.title || '').toLowerCase().includes(q) ||
-        authorName(l.sourceNode || {}).toLowerCase().includes(q) ||
+        bookAuthorDisplay(l.sourceNode || {}, authorsMap).toLowerCase().includes(q) ||
         ((l.citation_text || l.context || '')).toLowerCase().includes(q)
     )
   }, [resolvedLinks, linkSearch])
@@ -191,12 +198,12 @@ export default function TableView({
     const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim()
     const map = new Map()
     nodes.forEach((n) => {
-      const key = `${norm(n.title)}|||${norm(authorName(n))}`
+      const key = `${norm(n.title)}|||${norm(bookAuthorDisplay(n, authorsMap))}`
       if (!map.has(key)) map.set(key, [])
       map.get(key).push(n)
     })
     return Array.from(map.values()).filter((g) => g.length > 1)
-  }, [nodes])
+  }, [nodes, authorsMap])
 
   const handleNodeSort = (col) => {
     if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
@@ -214,19 +221,6 @@ export default function TableView({
   const toggleAll = () => {
     if (allSelected || someSelected) setSelectedIds(new Set())
     else setSelectedIds(new Set(sortedNodes.map((n) => n.id)))
-  }
-
-  const commitAuthorEdit = () => {
-    if (!editingAuthor) return
-    const node = nodes.find((n) => n.id === editingAuthor.nodeId)
-    if (!node) { setEditingAuthor(null); return }
-    const fn = editingAuthor.firstName.trim()
-    const ln = editingAuthor.lastName.trim()
-    if (fn !== (node.firstName || '') || ln !== (node.lastName || '')) {
-      onUpdateBook({ ...node, firstName: fn, lastName: ln })
-      onLastEdited?.(editingAuthor.nodeId)
-    }
-    setEditingAuthor(null)
   }
 
   const commitNodeEdit = () => {
@@ -254,12 +248,11 @@ export default function TableView({
   }
 
   const handleAddBookRow = () => {
-    if (!inputTitle.trim() || !inputLastName.trim()) return
+    if (!inputTitle.trim()) return
     onAddBook({
       id: crypto.randomUUID(),
       title: inputTitle.trim(),
-      firstName: inputFirstName.trim(),
-      lastName: inputLastName.trim(),
+      authorIds: inputAuthorIds,
       year: parseInt(inputYear) || new Date().getFullYear(),
       axes: inputAxes,
       description: '',
@@ -268,7 +261,7 @@ export default function TableView({
     setInputTitle('')
     setInputYear('')
     setInputAxes([])
-    if (!stickyAuthor) { setInputFirstName(''); setInputLastName('') }
+    if (!stickyAuthor) setInputAuthorIds([])
     setTimeout(() => titleInputRef.current?.focus(), 0)
   }
 
@@ -343,18 +336,14 @@ export default function TableView({
         setTab={setTab}
         nodes={nodes}
         links={links}
+        authors={authors}
         search={search}
         setSearch={setSearch}
         linkSearch={linkSearch}
         setLinkSearch={setLinkSearch}
+        authorSearch={authorSearch}
+        setAuthorSearch={setAuthorSearch}
         selectedIds={selectedIds}
-        mergeNodes={mergeNodes}
-        setMergeKeepId={setMergeKeepId}
-        setMergeConfirm={setMergeConfirm}
-        setMergeModal={setMergeModal}
-        handleBulkDelete={handleBulkDelete}
-        bulkDeleteConfirm={bulkDeleteConfirm}
-        setBulkDeleteConfirm={setBulkDeleteConfirm}
         orphans={orphans}
         setOrphanModal={setOrphanModal}
         setOrphanConfirm={setOrphanConfirm}
@@ -369,6 +358,7 @@ export default function TableView({
           sortedNodes={sortedNodes}
           search={search}
           nodes={nodes}
+          authors={authors}
           allSelected={allSelected}
           someSelected={someSelected}
           toggleAll={toggleAll}
@@ -380,10 +370,9 @@ export default function TableView({
           titleInputRef={titleInputRef}
           inputTitle={inputTitle}
           setInputTitle={setInputTitle}
-          inputFirstName={inputFirstName}
-          setInputFirstName={setInputFirstName}
-          inputLastName={inputLastName}
-          setInputLastName={setInputLastName}
+          inputAuthorIds={inputAuthorIds}
+          setInputAuthorIds={setInputAuthorIds}
+          onAddAuthor={onAddAuthor}
           inputYear={inputYear}
           setInputYear={setInputYear}
           inputAxes={inputAxes}
@@ -396,21 +385,45 @@ export default function TableView({
           setEditingValue={setEditingValue}
           commitNodeEdit={commitNodeEdit}
           setEditingCell={setEditingCell}
-          editingAuthor={editingAuthor}
-          setEditingAuthor={setEditingAuthor}
-          commitAuthorEdit={commitAuthorEdit}
           linkCountByNode={linkCountByNode}
           onUpdateBook={onUpdateBook}
           onLastEdited={onLastEdited}
+          handleBulkDelete={handleBulkDelete}
+          bulkDeleteConfirm={bulkDeleteConfirm}
+          setBulkDeleteConfirm={setBulkDeleteConfirm}
+          clearSelection={() => setSelectedIds(new Set())}
+          mergeNodes={mergeNodes}
+          setMergeKeepId={setMergeKeepId}
+          setMergeConfirm={setMergeConfirm}
+          setMergeModal={setMergeModal}
           setTab={setTab}
           setLinkSourceNode={setLinkSourceNode}
           setLinkCheckedIds={setLinkCheckedIds}
         />
       )}
 
+      {tab === 'authors' && (
+        <TableAuthorsTab
+          authors={authors}
+          books={nodes}
+          search={authorSearch}
+          onAddAuthor={onAddAuthor}
+          onUpdateAuthor={onUpdateAuthor}
+          onDeleteAuthor={onDeleteAuthor}
+          onMigrateData={onMigrateData}
+          onAddBookForAuthor={(author) => {
+            setInputAuthorIds([author.id])
+            setStickyAuthor(true)
+            setTab('books')
+            setTimeout(() => titleInputRef.current?.focus(), 50)
+          }}
+        />
+      )}
+
       {tab === 'links' && (
         <TableLinksTab
           nodes={nodes}
+          authorsMap={authorsMap}
           linkSourceNode={linkSourceNode}
           setLinkSourceNode={setLinkSourceNode}
           setLinkCheckedIds={setLinkCheckedIds}
@@ -441,6 +454,7 @@ export default function TableView({
         mergeModal={mergeModal}
         mergeNodes={mergeNodes}
         nodes={nodes}
+        authorsMap={authorsMap}
         mergeKeepId={mergeKeepId}
         setMergeKeepId={setMergeKeepId}
         setMergeConfirm={setMergeConfirm}
@@ -452,6 +466,7 @@ export default function TableView({
       <TableOrphanModal
         orphanModal={orphanModal}
         orphans={orphans}
+        authorsMap={authorsMap}
         handleCleanOrphans={handleCleanOrphans}
         orphanConfirm={orphanConfirm}
         setOrphanModal={setOrphanModal}
@@ -471,7 +486,10 @@ export default function TableView({
         open={smartImportModal}
         onClose={() => setSmartImportModal(false)}
         existingNodes={nodes}
+        existingAuthors={authors}
+        authorsMap={authorsMap}
         onAddBook={onAddBook}
+        onAddAuthor={onAddAuthor}
         onAddLink={onAddLink}
         onUpdateBook={onUpdateBook}
         onQueued={(titles) => setAddedQueue((prev) => [...titles, ...prev].slice(0, 5))}

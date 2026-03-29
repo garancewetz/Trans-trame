@@ -4,7 +4,7 @@ import Button from '../../components/ui/Button'
 import SearchInput from '../../components/ui/SearchInput'
 import Logo from '../../components/Logo'
 import ViewSelector from './ViewSelector'
-import { authorName } from '../../authorUtils'
+import { bookAuthorDisplay } from '../../authorUtils'
 
 const BTN_BASE =
   'cursor-pointer rounded-lg border border-white/15 bg-white/5 px-[16px] py-[6px] text-[0.76rem] font-semibold text-white/70 backdrop-blur-lg transition-all'
@@ -19,6 +19,7 @@ export default function Navbar({ search, filters, view, catalogue }) {
     results: searchResults,
     onSelect: handleSearchSelect,
     axesGradient,
+    authorsMap,
     onOpenTable,
   } = search
 
@@ -28,7 +29,8 @@ export default function Navbar({ search, filters, view, catalogue }) {
     timelineRange,
     hasTimelineFilter,
     clearTimelineFilter,
-    selectedAuthor,
+    selectedAuthorId,
+    selectedAuthorName,
     clearSelectedAuthor,
   } = filters
 
@@ -58,11 +60,11 @@ export default function Navbar({ search, filters, view, catalogue }) {
           clear: () => clearActiveFilter?.(),
         }
       : null,
-    selectedAuthor
+    selectedAuthorId
       ? {
           key: 'author',
           prefix: 'Auteur·ice',
-          value: selectedAuthor,
+          value: selectedAuthorName || selectedAuthorId,
           clear: () => clearSelectedAuthor?.(),
         }
       : null,
@@ -194,7 +196,7 @@ export default function Navbar({ search, filters, view, catalogue }) {
                         <span className="flex min-w-0 flex-col gap-px">
                           <strong className="truncate text-[0.84rem] font-semibold">{node.title}</strong>
                           <span className="text-[0.72rem] text-white/35">
-                            {authorName(node)}, {node.year}
+                            {bookAuthorDisplay(node, authorsMap)}, {node.year}
                           </span>
                         </span>
                       </Button>
@@ -241,7 +243,7 @@ export default function Navbar({ search, filters, view, catalogue }) {
                 className={[
                   BTN_BASE,
                   'w-full hover:border-[rgba(255,180,130,0.5)] hover:bg-[rgba(255,180,130,0.2)] hover:text-white',
-                  selectedAuthor ? 'border-[rgba(255,180,130,0.6)] bg-[rgba(255,180,130,0.35)] text-white' : '',
+                  selectedAuthorId ? 'border-[rgba(255,180,130,0.6)] bg-[rgba(255,180,130,0.35)] text-white' : '',
                 ].join(' ')}
                 onClick={() => { onOpenAuthorsPanel(); setOpenGroup(null) }}
                 type="button"

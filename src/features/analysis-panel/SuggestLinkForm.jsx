@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
-import { authorName } from '../../authorUtils'
+import { bookAuthorDisplay } from '../../authorUtils'
 import Button from '../../components/ui/Button'
 
-export default function SuggestLinkForm({ bookNodes, onAddLink }) {
+export default function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
   const [show, setShow] = useState(false)
   const [source, setSource] = useState('')
   const [target, setTarget] = useState('')
@@ -15,13 +15,13 @@ export default function SuggestLinkForm({ bookNodes, onAddLink }) {
   const sourceResults = useMemo(() => {
     const q = sourceSearch.toLowerCase().trim()
     if (!q) return []
-    return bookNodes.filter((n) => n.title.toLowerCase().includes(q) || authorName(n).toLowerCase().includes(q))
+    return bookNodes.filter((n) => n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q))
   }, [bookNodes, sourceSearch])
 
   const targetResults = useMemo(() => {
     const q = targetSearch.toLowerCase().trim()
     if (!q) return []
-    return bookNodes.filter((n) => n.title.toLowerCase().includes(q) || authorName(n).toLowerCase().includes(q))
+    return bookNodes.filter((n) => n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q))
   }, [bookNodes, targetSearch])
 
   const handleSubmit = (e) => {
@@ -61,7 +61,7 @@ export default function SuggestLinkForm({ bookNodes, onAddLink }) {
 
       <label className="mb-1 block text-[0.62rem] uppercase text-white/30">Source</label>
       <input
-        value={sourceSearch || (selectedSource ? `${selectedSource.title} — ${authorName(selectedSource)}` : '')}
+        value={sourceSearch || (selectedSource ? `${selectedSource.title} — ${bookAuthorDisplay(selectedSource, authorsMap)}` : '')}
         onChange={(e) => {
           if (source) setSource('')
           setSourceSearch(e.target.value)
@@ -86,7 +86,7 @@ export default function SuggestLinkForm({ bookNodes, onAddLink }) {
                       setSourceSearch('')
                     }}
                   >
-                    {n.title} — <span className="text-white/35">{authorName(n)}</span>
+                    {n.title} — <span className="text-white/35">{bookAuthorDisplay(n, authorsMap)}</span>
                   </button>
                 </li>
               ))}
@@ -97,7 +97,7 @@ export default function SuggestLinkForm({ bookNodes, onAddLink }) {
 
       <label className="mb-1 block text-[0.62rem] uppercase text-white/30">Cible</label>
       <input
-        value={targetSearch || (selectedTarget ? `${selectedTarget.title} — ${authorName(selectedTarget)}` : '')}
+        value={targetSearch || (selectedTarget ? `${selectedTarget.title} — ${bookAuthorDisplay(selectedTarget, authorsMap)}` : '')}
         onChange={(e) => {
           if (target) setTarget('')
           setTargetSearch(e.target.value)
@@ -122,7 +122,7 @@ export default function SuggestLinkForm({ bookNodes, onAddLink }) {
                       setTargetSearch('')
                     }}
                   >
-                    {n.title} — <span className="text-white/35">{authorName(n)}</span>
+                    {n.title} — <span className="text-white/35">{bookAuthorDisplay(n, authorsMap)}</span>
                   </button>
                 </li>
               ))}

@@ -1,10 +1,11 @@
 import { Merge } from 'lucide-react'
-import { authorName } from '../../authorUtils'
+import { bookAuthorDisplay } from '../../authorUtils'
 
 export default function TableMergeModal({
   mergeModal,
   mergeNodes,
   nodes,
+  authorsMap,
   mergeKeepId,
   setMergeKeepId,
   setMergeConfirm,
@@ -15,8 +16,8 @@ export default function TableMergeModal({
   if (!mergeModal || mergeNodes.length !== 2) return null
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[rgba(6,5,20,0.98)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.65)]">
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-sm px-4">
+      <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-[rgba(6,5,20,0.98)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.65)]">
         <h3 className="mb-1 font-semibold text-white">Fusionner deux identités</h3>
         <p className="mb-4 text-[0.73rem] text-white/40">
           L&apos;identité non conservée sera supprimée. Ses ouvrages et liens seront
@@ -25,8 +26,9 @@ export default function TableMergeModal({
 
         <div className="mb-4 flex flex-col gap-2">
           {mergeNodes.map((n) => {
+            const authorDisplay = bookAuthorDisplay(n, authorsMap)
             const bookCount = nodes.filter(
-              (x) => authorName(x).toLowerCase() === authorName(n).toLowerCase()
+              (x) => bookAuthorDisplay(x, authorsMap).toLowerCase() === authorDisplay.toLowerCase()
             ).length
             return (
               <label
@@ -61,7 +63,7 @@ export default function TableMergeModal({
                     {n.title}
                   </strong>
                   <span className="font-mono text-[0.7rem] text-white/40">
-                    {authorName(n)}{n.year ? `, ${n.year}` : ''}
+                    {authorDisplay}{n.year ? `, ${n.year}` : ''}
                   </span>
                   <span className="ml-2 font-mono text-[0.65rem] text-white/28">
                     · {bookCount} ouvrage{bookCount > 1 ? 's' : ''}
@@ -76,7 +78,7 @@ export default function TableMergeModal({
           Conserver :{' '}
           <strong className="text-white/55">
             {mergeNodes.find((n) => n.id === mergeKeepId)
-              ? authorName(mergeNodes.find((n) => n.id === mergeKeepId))
+              ? bookAuthorDisplay(mergeNodes.find((n) => n.id === mergeKeepId), authorsMap)
               : '—'}
           </strong>
         </p>

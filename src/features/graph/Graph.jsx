@@ -11,7 +11,6 @@ import {
 import { drawNode, getNodeRadius } from './nodeObject'
 import { drawGenealogyOverlay } from './axisLabels'
 import { blendAxesColors } from '../../categories'
-import { authorName } from '../../authorUtils'
 
 const SHOW_STARFIELD = false
 /** Zoom appliqué au centrage sur un nœud sélectionné (plus bas = moins rapproché). */
@@ -19,8 +18,9 @@ const NODE_FOCUS_ZOOM = 1.9
 
 const Graph = forwardRef(function Graph({
   graphData,
+  authors,
   selectedNode,
-  selectedAuthor,
+  selectedAuthorId,
   peekNodeId,
   activeFilter,
   hoveredFilter,
@@ -124,7 +124,7 @@ const Graph = forwardRef(function Graph({
         const charge = fg.d3Force('charge')
         if (charge) charge.strength(-30)
         const link = fg.d3Force('link')
-        if (link) link.distance(102)
+        if (link) link.distance((l) => l.type === 'author-book' ? 45 : 102)
 
         const radiusSource = [...layoutPositions.values()]
         const maxR = Math.max(...radiusSource.map((p) => Math.hypot(p.fx ?? 0, p.fy ?? 0)), 300)
@@ -138,9 +138,9 @@ const Graph = forwardRef(function Graph({
           node.fy = undefined
         })
         const charge = fg.d3Force('charge')
-        if (charge) charge.strength(-520).distanceMax(620)
+        if (charge) charge.strength((node) => node.type === 'author' ? -900 : -520).distanceMax(700)
         const link = fg.d3Force('link')
-        if (link) link.distance(130)
+        if (link) link.distance((l) => l.type === 'author-book' ? 60 : 130)
 
         fg.d3ReheatSimulation()
         camRef.current = { x: 0, y: 0, zoom: 0.7 }
@@ -168,13 +168,17 @@ const Graph = forwardRef(function Graph({
     fg.zoom(NODE_FOCUS_ZOOM, 1200)
   }, [selectedNode, peekNodeId, viewMode, graphData.nodes])
 
-  // IDs of all nodes belonging to selectedAuthor
+  // IDs of all book nodes belonging to selectedAuthorId
   const authorNodeIds = useMemo(() => {
-    if (!selectedAuthor) return new Set()
-    const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim()
-    const target = norm(selectedAuthor)
-    return new Set(graphData.nodes.filter((n) => norm(authorName(n)) === target).map((n) => n.id))
-  }, [selectedAuthor, graphData.nodes])
+    if (!selectedAuthorId) return new Set()
+    const ids = new Set()
+    // Include the author node itself if present
+    graphData.nodes.forEach((n) => {
+      if (n.type === 'author' && n.id === selectedAuthorId) ids.add(n.id)
+      if (n.authorIds?.includes(selectedAuthorId)) ids.add(n.id)
+    })
+    return ids
+  }, [selectedAuthorId, graphData.nodes])
 
   const anchorIds = useMemo(() => {
     if (peekNodeId) return new Set([peekNodeId])
@@ -209,6 +213,7 @@ const Graph = forwardRef(function Graph({
   const citationsByNodeId = useMemo(() => {
     const counts = new Map()
     graphData.links.forEach((link) => {
+      if (link.type === 'author-book') return  // ne pas compter les liens auteur→livre
       const targetId = typeof link.target === 'object' ? link.target.id : link.target
       if (!targetId) return
       counts.set(targetId, (counts.get(targetId) || 0) + 1)
@@ -220,6 +225,7 @@ const Graph = forwardRef(function Graph({
   const linkWeights = useMemo(() => {
     const counts = new Map()
     graphData.links.forEach((link) => {
+      if (link.type === 'author-book') return
       const srcId = typeof link.source === 'object' ? link.source.id : link.source
       const tgtId = typeof link.target === 'object' ? link.target.id : link.target
       const key = [srcId, tgtId].sort().join('-')
@@ -243,8 +249,10 @@ const Graph = forwardRef(function Graph({
   }, [graphData.links])
 
   const handleInit = useCallback((fg) => {
-    fg.d3Force('charge').strength(-520).distanceMax(620)
-    fg.d3Force('link').distance(130)
+    // Les auteurs ont une répulsion plus forte pour créer des "systèmes stellaires" distincts
+    fg.d3Force('charge').strength((node) => node.type === 'author' ? -900 : -520).distanceMax(700)
+    // Les liens auteur→livre sont plus courts (les livres orbitent près de l'auteur)
+    fg.d3Force('link').distance((link) => link.type === 'author-book' ? 60 : 130)
     fg.centerAt(0, 0, 0)
     fg.zoom(0.7, 0)
   }, [])
@@ -274,8 +282,9 @@ const Graph = forwardRef(function Graph({
     (node, ctx, globalScale) => {
       drawNode(node, ctx, globalScale, {
         selectedNode,
-        selectedAuthor,
+        selectedAuthorId,
         peekNodeId,
+        authors,
         hoveredNode: hoveredNodeRef.current,
         connectedNodes,
         isNodeVisible,
@@ -297,7 +306,7 @@ const Graph = forwardRef(function Graph({
         ctx.restore()
       }
     },
-    [selectedNode, selectedAuthor, peekNodeId, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId]
+    [selectedNode, selectedAuthorId, peekNodeId, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId]
   )
 
   const nodePointerAreaPaint = useCallback(
@@ -348,6 +357,12 @@ const Graph = forwardRef(function Graph({
       // Hovered links are drawn by linkCanvasObject — return transparent to avoid double-draw
       if (hoveredNodeRef.current && isLinkHovered(link)) return 'rgba(0,0,0,0)'
 
+      // Liens auteur→livre : fin et discret (lien structurel, pas une citation)
+      if (link.type === 'author-book') {
+        if (isLinkActive(link)) return 'rgba(180, 220, 255, 0.45)'
+        return 'rgba(140, 200, 255, 0.14)'
+      }
+
       if (viewMode === 'genealogy') {
         if (!hasSelection) return 'rgba(190, 210, 255, 0.6)'
         if (isLinkActive(link)) return 'rgba(220, 238, 255, 0.95)'
@@ -362,6 +377,11 @@ const Graph = forwardRef(function Graph({
 
   const linkWidth = useCallback(
     (link) => {
+      // Liens auteur→livre : toujours fins
+      if (link.type === 'author-book') {
+        return isLinkActive(link) ? 1.2 : 0.5
+      }
+
       const weight = getLinkWeight(link)
       const isStrong = weight > 1
 
@@ -424,6 +444,8 @@ const Graph = forwardRef(function Graph({
 
   const arrowColor = useCallback(
     (link) => {
+      // Liens auteur→livre : pas de flèche directionnelle
+      if (link.type === 'author-book') return 'rgba(0,0,0,0)'
       // When hovering a node, color arrows by source node color
       if (hoveredNodeRef.current && !hasSelection && isLinkHovered(link)) {
         const src = typeof link.source === 'object' ? link.source : null
@@ -449,8 +471,9 @@ const Graph = forwardRef(function Graph({
     (ctx, globalScale) => {
       const baseOpts = {
         selectedNode: selectedNodeRef.current,
-        selectedAuthor,
+        selectedAuthorId,
         peekNodeId,
+        authors,
         hoveredNode: hoveredNodeRef.current,
         connectedNodes,
         isNodeVisible,
@@ -467,7 +490,7 @@ const Graph = forwardRef(function Graph({
         drawNode(hovered, ctx, globalScale, { ...baseOpts, citationCount: citationsByNodeId.get(hovered.id) || 0, labelOnly: true })
       }
     },
-    [selectedAuthor, peekNodeId, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, graphData.nodes]
+    [selectedAuthorId, peekNodeId, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, graphData.nodes]
   )
 
   return (

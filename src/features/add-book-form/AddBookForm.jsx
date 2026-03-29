@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
-import { authorName } from '../../authorUtils'
+import { bookAuthorDisplay } from '../../authorUtils'
 import BookForm from './BookForm'
 import LinkForm from './LinkForm'
 
@@ -8,8 +8,7 @@ function bookDefaultValues(mode, editNode, bookPrefill) {
   if (mode === 'edit' && editNode) {
     return {
       title: editNode.title || '',
-      firstName: editNode.firstName || '',
-      lastName: editNode.lastName || '',
+      authorIds: Array.isArray(editNode.authorIds) ? [...editNode.authorIds] : [],
       year: String(editNode.year || ''),
       axes: Array.isArray(editNode.axes) ? editNode.axes : [],
       description: editNode.description || '',
@@ -18,8 +17,7 @@ function bookDefaultValues(mode, editNode, bookPrefill) {
   }
   return {
     title: '',
-    firstName: bookPrefill?.firstName ?? '',
-    lastName: bookPrefill?.lastName ?? '',
+    authorIds: bookPrefill?.authorIds ? [...bookPrefill.authorIds] : [],
     year: '',
     axes: [],
     description: '',
@@ -29,6 +27,8 @@ function bookDefaultValues(mode, editNode, bookPrefill) {
 
 export default function AddBookForm({
   nodes,
+  authors,
+  onAddAuthor,
   onAddBook,
   onAddLink,
   onUpdateBook,
@@ -41,6 +41,7 @@ export default function AddBookForm({
   prefilledAuthor,
   onRequestAddBook,
   onRequestBack,
+  authorsMap,
 }) {
   const bookPrefill = mode === 'book' && prefilledAuthor ? prefilledAuthor : null
 
@@ -60,9 +61,8 @@ export default function AddBookForm({
   useEffect(() => {
     if (mode !== 'book' && mode !== 'edit') return
     bookForm.reset(bookDefaultValues(mode, editNode, bookPrefill))
-    // editNode / bookPrefill : on synchronise au changement d’id ou de préremplissage, pas à chaque nouvelle référence objet
     // eslint-disable-next-line react-hooks/exhaustive-deps -- voir ci-dessus
-  }, [mode, editNode?.id, bookPrefill?.firstName, bookPrefill?.lastName, bookForm])
+  }, [mode, editNode?.id, bookPrefill?.authorIds?.join(','), bookForm])
 
   useEffect(() => {
     if (mode === 'link') {
@@ -70,11 +70,10 @@ export default function AddBookForm({
     }
   }, [mode, linkForm])
 
-  const title = useWatch({ control: bookForm.control, name: 'title' }) ?? ''
-  const lastNameWatch = useWatch({ control: bookForm.control, name: 'lastName' }) ?? ''
+  const titleWatch = useWatch({ control: bookForm.control, name: 'title' }) ?? ''
+  const authorIdsWatch = useWatch({ control: bookForm.control, name: 'authorIds' }) ?? []
 
-  // Bulk insert
-  const [recentQueue, setRecentQueue] = useState([]) // [{title, firstName, lastName, year}]
+  const [recentQueue, setRecentQueue] = useState([])
 
   const [sourceSearch, setSourceSearch] = useState('')
   const [targetSearch, setTargetSearch] = useState('')
@@ -93,8 +92,8 @@ export default function AddBookForm({
   const sourceResults = useMemo(() => {
     const q = sourceSearch.toLowerCase().trim()
     if (!q) return []
-    return nodes.filter((n) => n.title.toLowerCase().includes(q) || authorName(n).toLowerCase().includes(q))
-  }, [sourceSearch, nodes])
+    return nodes.filter((n) => n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q))
+  }, [sourceSearch, nodes, authorsMap])
 
   const targetResults = useMemo(() => {
     const q = targetSearch.toLowerCase().trim()
@@ -102,46 +101,44 @@ export default function AddBookForm({
     return nodes.filter(
       (n) =>
         !targetIds.includes(n.id) &&
-        (n.title.toLowerCase().includes(q) || authorName(n).toLowerCase().includes(q))
+        (n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q))
     )
-  }, [targetSearch, nodes, targetIds])
+  }, [targetSearch, nodes, targetIds, authorsMap])
 
   const possibleDuplicates = useMemo(() => {
     if (mode === 'edit') return []
-    const t = (title || '').toLowerCase().trim()
-    const ln = (lastNameWatch || '').toLowerCase().trim()
-    if (!t && !ln) return []
+    const t = (titleWatch || '').toLowerCase().trim()
+    const selectedIds = new Set(authorIdsWatch)
+    if (!t) return []
 
     return nodes.filter((n) => {
-      const nt = n.title.toLowerCase()
-      const nln = (n.lastName || '').toLowerCase()
-      if (t && nt === t) return true
+      const nt = (n.title || '').toLowerCase()
+      const nIds = new Set(n.authorIds || [])
+      const overlap = [...selectedIds].some((id) => nIds.has(id))
+      if (nt === t) return true
       if (t.length >= 4 && (nt.includes(t) || t.includes(nt))) return true
-      if (ln.length >= 3 && nln.includes(ln) && t.length >= 3 && nt.includes(t)) return true
-      if (!t && ln.length >= 3 && nln.includes(ln)) return true
+      if (overlap && t.length >= 3 && (nt.includes(t.slice(0, Math.min(t.length, 12))) || t.includes(nt.slice(0, Math.min(nt.length, 12))))) return true
       return false
     })
-  }, [title, lastNameWatch, nodes, mode])
+  }, [titleWatch, authorIdsWatch, nodes, mode])
 
   const submitAddBook = (data) => {
-    if (!data.title.trim() || !data.lastName.trim()) return
+    if (!data.title.trim() || !data.authorIds?.length) return
     const book = {
       id: crypto.randomUUID(),
       title: data.title.trim(),
-      firstName: data.firstName.trim(),
-      lastName: data.lastName.trim(),
+      authorIds: data.authorIds,
       year: parseInt(data.year, 10) || new Date().getFullYear(),
       axes: data.axes || [],
       description: (data.description || '').trim(),
     }
     onAddBook(book)
     setRecentQueue((prev) =>
-      [{ title: book.title, firstName: book.firstName, lastName: book.lastName, year: book.year }, ...prev].slice(0, 3)
+      [{ title: book.title, authorIds: book.authorIds, year: book.year }, ...prev].slice(0, 3)
     )
     bookForm.reset({
       title: '',
-      firstName: data.stickyAuthor ? data.firstName : '',
-      lastName: data.stickyAuthor ? data.lastName : '',
+      authorIds: data.stickyAuthor ? [...data.authorIds] : [],
       year: '',
       axes: [],
       description: '',
@@ -150,12 +147,11 @@ export default function AddBookForm({
   }
 
   const submitEditBook = (data) => {
-    if (!data.title.trim() || !data.lastName.trim()) return
+    if (!data.title.trim() || !data.authorIds?.length) return
     onUpdateBook({
       ...editNode,
       title: data.title.trim(),
-      firstName: data.firstName.trim(),
-      lastName: data.lastName.trim(),
+      authorIds: data.authorIds,
       year: parseInt(data.year, 10) || new Date().getFullYear(),
       axes: data.axes || [],
       description: (data.description || '').trim(),
@@ -208,6 +204,9 @@ export default function AddBookForm({
           onDeleteBook={onDeleteBook}
           onMergeBooks={onMergeBooks}
           recentQueue={recentQueue}
+          authorsMap={authorsMap}
+          authors={authors}
+          onAddAuthor={onAddAuthor}
         />
       )}
 
@@ -230,6 +229,7 @@ export default function AddBookForm({
           targetResults={targetResults}
           onRequestAddBook={onRequestAddBook}
           inputClass={inputClass}
+          authorsMap={authorsMap}
         />
       )}
     </div>

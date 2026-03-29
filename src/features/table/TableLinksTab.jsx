@@ -1,11 +1,12 @@
 import { ArrowRight, Check, Link2, Search, Trash2 } from 'lucide-react'
-import { authorName } from '../../authorUtils'
+import { bookAuthorDisplay } from '../../authorUtils'
 import { axesGradient } from '../../categories'
 import { INPUT } from './tableConstants'
 import { NodeSearch } from './TableSubcomponents'
 
 export default function TableLinksTab({
   nodes,
+  authorsMap,
   linkSourceNode,
   setLinkSourceNode,
   setLinkCheckedIds,
@@ -37,6 +38,7 @@ export default function TableLinksTab({
           </p>
           <NodeSearch
             nodes={nodes}
+            authorsMap={authorsMap}
             value={linkSourceNode}
             onSelect={(n) => {
               setLinkSourceNode(n)
@@ -112,7 +114,7 @@ export default function TableLinksTab({
                         {n.title}
                       </span>
                       <span className="block font-mono text-[0.62rem] text-white/30">
-                        {authorName(n)}{n.year ? `, ${n.year}` : ''}
+                        {bookAuthorDisplay(n, authorsMap)}{n.year ? `, ${n.year}` : ''}
                         {existing && ' · existant'}
                       </span>
                     </span>

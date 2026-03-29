@@ -1,18 +1,143 @@
 import { blendAxesColors } from '../../categories'
 import { getGradientCanvas } from './scene'
-import { authorName } from '../../authorUtils'
+import { authorName, bookAuthorDisplay } from '../../authorUtils'
 
 const hoverAnimById = new Map()
 
-export function drawNode(node, ctx, globalScale, opts) {
-  const { selectedNode, selectedAuthor, peekNodeId, hoveredNode, connectedNodes, isNodeVisible, hoveredFilter, citationCount = 0, skipLabel = false, labelOnly = false } = opts
+// ── Nœud auteur ───────────────────────────────────────────────────────────────
 
-  // Force-graph can call nodeCanvasObject before layout stabilizes (x/y can be undefined/NaN).
-  // Canvas APIs (e.g. createRadialGradient) require finite numbers.
+function drawAuthorNode(node, ctx, globalScale, opts) {
+  const {
+    selectedAuthorId, hoveredNode, connectedNodes,
+    hoveredFilter, selectedNode, peekNodeId, isNodeVisible,
+  } = opts
+
+  if (!Number.isFinite(node?.x) || !Number.isFinite(node?.y)) return
+
+  const isHovered = hoveredNode?.id === node.id
+  const hoverTarget = isHovered ? 1 : 0
+  const prevHover = hoverAnimById.get(node.id) ?? 0
+  const hover = prevHover + (hoverTarget - prevHover) * 0.22
+  hoverAnimById.set(node.id, hover)
+
+  const name = authorName(node)
+  const matchesSelectedAuthor = selectedAuthorId && node.id === selectedAuthorId
+  const hasAnySelection = selectedNode || selectedAuthorId || peekNodeId
+  const isConnected = connectedNodes.has(node.id)
+  const isActive = !hasAnySelection || isConnected || matchesSelectedAuthor
+  const nodeAxes = node.axes || []
+  const matchesHover = hoveredFilter && nodeAxes.includes(hoveredFilter)
+  const dimmedByHover = hoveredFilter && !matchesHover
+
+  const opacity = hover > 0.01 ? 1 : dimmedByHover ? 0.06 : (matchesSelectedAuthor || isActive) ? 0.85 : 0.25
+
+  // Couleur : axes de l'auteur, ou blanc/gris par défaut
+  const blendedColor = nodeAxes.length ? blendAxesColors(nodeAxes) : '#b0b8d0'
+
+  const BASE_R = 9
+  const auraR = BASE_R + 5 + hover * 7
+  const ringR = BASE_R + 2
+
+  ctx.save()
+
+  // Aura externe
+  if (isActive || matchesHover || matchesSelectedAuthor) {
+    const glowAlpha = hover > 0.01 ? 0.3 : matchesSelectedAuthor ? 0.28 : 0.12
+    const auraGrad = ctx.createRadialGradient(node.x, node.y, BASE_R, node.x, node.y, auraR)
+    auraGrad.addColorStop(0, withAlpha(blendedColor, glowAlpha))
+    auraGrad.addColorStop(1, withAlpha(blendedColor, 0))
+    ctx.fillStyle = auraGrad
+    ctx.beginPath()
+    ctx.arc(node.x, node.y, auraR, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
+  ctx.globalAlpha = opacity
+
+  // Cœur semi-transparent
+  ctx.beginPath()
+  ctx.arc(node.x, node.y, BASE_R, 0, Math.PI * 2)
+  ctx.fillStyle = withAlpha(blendedColor, 0.18 + hover * 0.2)
+  ctx.fill()
+
+  // Anneau extérieur (signature visuelle de l'auteur)
+  ctx.beginPath()
+  ctx.arc(node.x, node.y, ringR, 0, Math.PI * 2)
+  ctx.strokeStyle = blendedColor
+  ctx.lineWidth = (hover > 0.01 ? 2.2 : 1.6) / Math.max(globalScale, 0.1)
+  ctx.stroke()
+
+  // Deuxième anneau fin pour le "double rayonnement"
+  if (hover > 0.05 || matchesSelectedAuthor) {
+    const outerR = BASE_R + 6 + hover * 4
+    ctx.beginPath()
+    ctx.arc(node.x, node.y, outerR, 0, Math.PI * 2)
+    ctx.strokeStyle = withAlpha(blendedColor, (hover > 0.05 ? 0.45 : 0.22))
+    ctx.lineWidth = 0.8 / Math.max(globalScale, 0.1)
+    ctx.stroke()
+  }
+
+  ctx.globalAlpha = 1
+
+  // Label : juste le nom de l'auteur (pas de titre de livre)
+  drawAuthorLabel(node, ctx, globalScale, { ...opts, hover, nodeRadius: ringR })
+
+  ctx.restore()
+}
+
+function drawAuthorLabel(node, ctx, globalScale, opts) {
+  const { hover = 0, nodeRadius = 11, selectedAuthorId, selectedNode, connectedNodes, peekNodeId } = opts
+  const name = (authorName(node) || '').toUpperCase()
+
+  const matchesSelectedAuthor = selectedAuthorId && node.id === selectedAuthorId
+  const showLabel = hover > 0.01 || globalScale > 0.35 || matchesSelectedAuthor || peekNodeId === node.id ||
+    (selectedNode && connectedNodes?.has(node.id))
+  if (!showLabel) return
+
+  const baseTextHeight = 5.5
+  const minHoveredFontSize = hover > 0.01 ? 20 / Math.max(globalScale, 0.08) : 0
+  const fontSize = Math.max(baseTextHeight * (1 + hover * 0.8), minHoveredFontSize)
+
+  ctx.save()
+  ctx.font = `700 ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'top'
+
+  const labelY = node.y - nodeRadius - fontSize * 2.5
+
+  if (hover > 0.01 || matchesSelectedAuthor) {
+    const nameW = ctx.measureText(name).width
+    const pad = 3
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+    roundRect(ctx, node.x - nameW / 2 - pad, labelY - pad, nameW + pad * 2, fontSize + pad * 2, 3)
+    ctx.fill()
+  }
+
+  const textColor = (hover > 0.01 || matchesSelectedAuthor) ? '#ffffff' : 'rgba(255,255,255,0.28)'
+  ctx.fillStyle = textColor
+  ctx.fillText(name, node.x, labelY)
+  ctx.restore()
+}
+
+// ── Nœud livre (comportement existant) ────────────────────────────────────────
+
+export function drawNode(node, ctx, globalScale, opts) {
+  // Déléguer aux auteurs
+  if (node.type === 'author') {
+    drawAuthorNode(node, ctx, globalScale, opts)
+    return
+  }
+
+  const {
+    selectedNode, selectedAuthorId, peekNodeId, hoveredNode,
+    connectedNodes, isNodeVisible, hoveredFilter, citationCount = 0,
+    skipLabel = false, labelOnly = false,
+  } = opts
+
   if (!Number.isFinite(node?.x) || !Number.isFinite(node?.y)) return
   if (!Number.isFinite(globalScale)) globalScale = 1
+
   if (labelOnly) {
-    // Reuse the current hover animation value so the label position/visibility matches the node
     const hover = hoverAnimById.get(node.id) ?? 1
     const safeCitationCount = Number.isFinite(citationCount) ? citationCount : 0
     const citationBoost = Math.min(Math.sqrt(Math.max(0, safeCitationCount)) * 5.2, 34)
@@ -27,7 +152,7 @@ export function drawNode(node, ctx, globalScale, opts) {
   const prevHover = hoverAnimById.get(node.id) ?? 0
   const hover = prevHover + (hoverTarget - prevHover) * 0.22
   hoverAnimById.set(node.id, hover)
-  const hasAnySelection = selectedNode || selectedAuthor || peekNodeId
+  const hasAnySelection = selectedNode || selectedAuthorId || peekNodeId
   const isSelectedContext = !hasAnySelection || connectedNodes.has(node.id)
   const isFiltered = isNodeVisible(node)
   const isActive = isSelectedContext && isFiltered
@@ -35,7 +160,7 @@ export function drawNode(node, ctx, globalScale, opts) {
   const nodeAxes = node.axes || []
   const matchesHover = hoveredFilter && nodeAxes.includes(hoveredFilter)
   const dimmedByHover = hoveredFilter && !matchesHover
-  const matchesSelectedAuthor = selectedAuthor && normalize(authorName(node)) === normalize(selectedAuthor)
+  const matchesSelectedAuthor = selectedAuthorId && node.authorIds?.includes(selectedAuthorId)
   const matchesPeek = peekNodeId && node.id === peekNodeId
 
   const opacity = hover > 0.01 ? 1 : dimmedByHover ? 0.06 : matchesSelectedAuthor || matchesPeek ? 1 : isActive ? 1 : 0.22
@@ -62,7 +187,6 @@ export function drawNode(node, ctx, globalScale, opts) {
     ctx.arc(node.x, node.y, glowRadius, 0, Math.PI * 2)
     ctx.fill()
 
-    // Extra bloom on hover
     if (matchesHover) {
       const bloomR = nodeRadius + 7
       const bloomGrad = ctx.createRadialGradient(node.x, node.y, nodeRadius, node.x, node.y, bloomR)
@@ -81,17 +205,10 @@ export function drawNode(node, ctx, globalScale, opts) {
   ctx.arc(node.x, node.y, nodeRadius, 0, Math.PI * 2)
 
   if (nodeAxes.length > 1) {
-    // Conic gradient via cached offscreen canvas, clipped to circle
     ctx.save()
     ctx.clip()
     const gradCanvas = getGradientCanvas(nodeAxes)
-    ctx.drawImage(
-      gradCanvas,
-      node.x - nodeRadius,
-      node.y - nodeRadius,
-      nodeRadius * 2,
-      nodeRadius * 2
-    )
+    ctx.drawImage(gradCanvas, node.x - nodeRadius, node.y - nodeRadius, nodeRadius * 2, nodeRadius * 2)
     ctx.restore()
   } else {
     ctx.fillStyle = blendedColor
@@ -116,7 +233,7 @@ function drawLabel(node, ctx, globalScale, opts) {
   const minHoveredFontSize = hover > 0.01 ? 18 / Math.max(globalScale, 0.08) : 0
   const fontSize = Math.max((baseTextHeight + citationTextBoost) * (1 + hover * 0.75), minHoveredFontSize)
 
-  const name = (authorName(node) || '').toUpperCase()
+  const name = (bookAuthorDisplay(node, opts.authors || []) || '').toUpperCase()
   const title = node.title || ''
 
   ctx.save()
@@ -147,22 +264,22 @@ function drawLabel(node, ctx, globalScale, opts) {
   ctx.restore()
 }
 
-export function getNodeRadius(_node, citationCount) {
+export function getNodeRadius(node, citationCount) {
+  if (node.type === 'author') return 11
   const baseRadius = 6
   const safeCitationCount = Number.isFinite(citationCount) ? citationCount : 0
   const citationBoost = Math.min(Math.sqrt(Math.max(0, safeCitationCount)) * 5.2, 34)
   return baseRadius + citationBoost
 }
 
-function normalize(s) {
-  return String(s || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .trim()
-}
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
 
 function withAlpha(hex, alpha) {
+  if (hex.startsWith('rgba') || hex.startsWith('rgb')) {
+    // Couleur déjà en format rgba/rgb : juste retourner avec alpha modifié
+    return hex.replace(/[\d.]+\)$/, `${alpha})`)
+  }
   const r = parseInt(hex.slice(1, 3), 16)
   const g = parseInt(hex.slice(3, 5), 16)
   const b = parseInt(hex.slice(5, 7), 16)

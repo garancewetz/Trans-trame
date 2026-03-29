@@ -6,8 +6,9 @@ import { axesGradient } from '../../categories'
 export default function AuthorsPanel({
   open,
   onClose,
-  nodes,
-  selectedAuthor,
+  authors = [],
+  books = [],
+  selectedAuthorId,
   onSelectAuthor,
   onAddWorkForAuthor,
   onOpenAddBookFromSearch,
@@ -18,25 +19,22 @@ export default function AuthorsPanel({
     if (!open) queueMicrotask(() => setQ(''))
   }, [open])
 
-  // Build sorted list of unique authors with their books
-  const authors = useMemo(() => {
-    const map = new Map()
-    nodes.forEach((n) => {
-      const name = authorName(n)
-      if (!name) return
-      if (!map.has(name)) map.set(name, [])
-      map.get(name).push(n)
-    })
-    return [...map.entries()]
-      .map(([name, books]) => ({ name, books }))
+  // Build sorted list of authors with their books (via authorIds)
+  const authorEntries = useMemo(() => {
+    return authors
+      .map((a) => {
+        const name = authorName(a)
+        const authorBooks = books.filter((b) => b.authorIds?.includes(a.id))
+        return { id: a.id, name, books: authorBooks, author: a }
+      })
       .sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }))
-  }, [nodes])
+  }, [authors, books])
 
   const filtered = useMemo(() => {
     const query = q.toLowerCase().trim()
-    if (!query) return authors
-    return authors.filter((a) => a.name.toLowerCase().includes(query))
-  }, [q, authors])
+    if (!query) return authorEntries
+    return authorEntries.filter((a) => a.name.toLowerCase().includes(query))
+  }, [q, authorEntries])
 
   useEffect(() => {
     if (!open) return
@@ -59,11 +57,11 @@ export default function AuthorsPanel({
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-[0.9rem] font-semibold text-white/90">Auteur·ices</h2>
-            <p className="text-[0.7rem] text-white/40">{authors.length} au total</p>
+            <p className="text-[0.7rem] text-white/40">{authorEntries.length} au total</p>
           </div>
 
           <div className="flex items-center gap-2">
-            {selectedAuthor && (
+            {selectedAuthorId && (
               <button
                 type="button"
                 className="cursor-pointer rounded-lg border border-[rgba(255,180,130,0.3)] bg-[rgba(255,180,130,0.1)] px-2.5 py-1.5 text-[0.72rem] font-semibold text-[rgba(255,200,160,0.9)] transition-colors hover:bg-[rgba(255,180,130,0.2)]"
@@ -100,9 +98,9 @@ export default function AuthorsPanel({
             <p className="px-3 py-3 text-[0.8rem] text-white/40">Aucun·e auteur·ice dans le graphe.</p>
           ) : (
             filtered.map((a) => {
-              const isSelected = selectedAuthor === a.name
+              const isSelected = selectedAuthorId === a.id
               return (
-                <div key={a.name}>
+                <div key={a.id}>
                   <div
                     className={[
                       'flex w-full items-center gap-1 rounded-lg border px-2 py-1.5 backdrop-blur-xl transition-all',
@@ -117,7 +115,7 @@ export default function AuthorsPanel({
                         'flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-3 rounded-md px-1.5 py-1 text-left transition-colors',
                         isSelected ? 'hover:bg-[rgba(255,180,130,0.08)]' : 'hover:bg-white/5',
                       ].join(' ')}
-                      onClick={() => onSelectAuthor?.(isSelected ? null : a.name)}
+                      onClick={() => onSelectAuthor?.(isSelected ? null : a.id)}
                     >
                       <span className={['truncate text-[0.86rem] font-semibold', isSelected ? 'text-[rgba(255,210,170,0.95)]' : 'text-white/85'].join(' ')}>
                         {a.name}

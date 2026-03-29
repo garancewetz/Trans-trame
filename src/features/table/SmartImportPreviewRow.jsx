@@ -1,4 +1,5 @@
-import { AlertTriangle, Check, GitMerge } from 'lucide-react'
+import { AlertTriangle, Check, GitMerge, Plus } from 'lucide-react'
+import { AxisDots } from './TableSubcomponents'
 
 export default function SmartImportPreviewRow({
   item,
@@ -14,11 +15,16 @@ export default function SmartImportPreviewRow({
   setEditingCell,
   commitAuthorEdit,
   handleMerge,
+  onAddCoAuthor,
+  onUpdateAxes,
 }) {
   const isEditTitle = editingCell?.id === item.id && editingCell?.field === 'title'
   const isEditYear = editingCell?.id === item.id && editingCell?.field === 'year'
-  const isEditAuthor = editingAuthor?.id === item.id
-  const fullAuthor = [item.firstName, item.lastName].filter(Boolean).join(' ') || '—'
+  const editingAuthorIndex = editingAuthor?.id === item.id ? editingAuthor.authorIndex : null
+  const fullAuthor = (item.authors?.length > 0
+    ? item.authors.map((a) => [a.firstName, a.lastName].filter(Boolean).join(' ')).join(', ')
+    : [item.firstName, item.lastName].filter(Boolean).join(' ')
+  ) || '—'
   const isMerged = mergedIds.has(item.id)
   const isExact = item.isDuplicate
   const isFuzzy = item.isFuzzyDuplicate
@@ -28,7 +34,7 @@ export default function SmartImportPreviewRow({
     <div>
       <div
         className={[
-          'grid grid-cols-[28px_1fr_150px_64px] items-center gap-x-1 border-b border-white/4 px-3 py-1.5 transition-colors',
+          'grid grid-cols-[28px_1fr_150px_100px_64px] items-start gap-x-1 border-b border-white/4 px-3 py-1.5 transition-colors',
           isMerged ? 'opacity-40' : '',
           isExact && !isMerged ? 'bg-[rgba(255,70,70,0.03)]' : '',
           isFuzzy && !isMerged ? 'bg-[rgba(255,180,60,0.03)]' : '',
@@ -90,49 +96,73 @@ export default function SmartImportPreviewRow({
 
         {/* Author */}
         <div className="min-w-0 pr-1">
-          {isEditAuthor ? (
-            <div
-              className="flex gap-0.5"
-              onBlur={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget)) commitAuthorEdit()
-              }}
-            >
-              <input
-                autoFocus
-                className="w-[45%] rounded border border-[rgba(140,220,255,0.35)] bg-white/8 px-1.5 py-0.5 font-mono text-[0.7rem] text-white outline-none"
-                placeholder="Prénom"
-                value={editingAuthor.firstName}
-                onChange={(e) => setEditingAuthor((p) => ({ ...p, firstName: e.target.value }))}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitAuthorEdit()
-                  if (e.key === 'Escape') setEditingAuthor(null)
-                }}
-              />
-              <input
-                className="w-[55%] rounded border border-[rgba(140,220,255,0.35)] bg-white/8 px-1.5 py-0.5 font-mono text-[0.7rem] text-white outline-none"
-                placeholder="Nom"
-                value={editingAuthor.lastName}
-                onChange={(e) => setEditingAuthor((p) => ({ ...p, lastName: e.target.value }))}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitAuthorEdit()
-                  if (e.key === 'Escape') setEditingAuthor(null)
-                }}
-              />
-            </div>
-          ) : (
-            <span
-              className={[
-                'block cursor-text truncate font-mono text-[0.7rem]',
-                isDup ? 'text-white/35' : 'text-white/42 hover:text-white/75',
-              ].join(' ')}
-              onClick={() => {
-                if (isMerged) return
-                setEditingAuthor({ id: item.id, firstName: item.firstName, lastName: item.lastName })
-              }}
-            >
-              {fullAuthor}
-            </span>
-          )}
+          <div className="flex flex-col gap-0.5 font-mono text-[0.7rem]">
+            {(item.authors?.length > 0 ? item.authors : [{ firstName: item.firstName, lastName: item.lastName }]).map((a, i) => (
+              editingAuthorIndex === i ? (
+                <div
+                  key={i}
+                  className="flex gap-0.5"
+                  onBlur={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget)) commitAuthorEdit()
+                  }}
+                >
+                  <input
+                    autoFocus
+                    className="w-[45%] rounded border border-[rgba(140,220,255,0.35)] bg-white/8 px-1.5 py-0.5 text-white outline-none"
+                    placeholder="Prénom"
+                    value={editingAuthor.firstName}
+                    onChange={(e) => setEditingAuthor((p) => ({ ...p, firstName: e.target.value }))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') commitAuthorEdit()
+                      if (e.key === 'Escape') setEditingAuthor(null)
+                    }}
+                  />
+                  <input
+                    className="w-[55%] rounded border border-[rgba(140,220,255,0.35)] bg-white/8 px-1.5 py-0.5 text-white outline-none"
+                    placeholder="Nom"
+                    value={editingAuthor.lastName}
+                    onChange={(e) => setEditingAuthor((p) => ({ ...p, lastName: e.target.value }))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') commitAuthorEdit()
+                      if (e.key === 'Escape') setEditingAuthor(null)
+                    }}
+                  />
+                </div>
+              ) : (
+                <span
+                  key={i}
+                  className={[
+                    'cursor-text truncate',
+                    isDup ? 'text-white/35' : 'text-white/42 hover:text-white/75',
+                  ].join(' ')}
+                  onClick={() => {
+                    if (isMerged) return
+                    setEditingAuthor({ id: item.id, authorIndex: i, firstName: a.firstName || '', lastName: a.lastName || '' })
+                  }}
+                >
+                  {[a.firstName, a.lastName].filter(Boolean).join(' ') || '—'}
+                </span>
+              )
+            ))}
+            {!isMerged && editingAuthorIndex == null && (
+              <button
+                type="button"
+                onClick={() => onAddCoAuthor?.(item.id)}
+                className="mt-0.5 inline-flex w-fit cursor-pointer items-center gap-0.5 rounded border border-white/10 bg-white/4 px-1.5 py-0.5 text-[0.58rem] text-white/35 transition-colors hover:border-[rgba(140,220,255,0.3)] hover:bg-[rgba(140,220,255,0.07)] hover:text-[rgba(140,220,255,0.7)]"
+                title="Ajouter un·e co-auteur·ice"
+              >
+                <Plus size={9} /> co-auteur·ice
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Axes */}
+        <div className="py-0.5">
+          <AxisDots
+            axes={item.axes || []}
+            onChange={(newAxes) => onUpdateAxes?.(item.id, newAxes)}
+          />
         </div>
 
         {/* Year */}

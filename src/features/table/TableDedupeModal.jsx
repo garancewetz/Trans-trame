@@ -13,8 +13,8 @@ export default function TableDedupeModal({
   const totalToRemove = duplicateGroups.reduce((acc, g) => acc + g.length - 1, 0)
 
   return (
-    <div className="absolute inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[rgba(6,5,20,0.98)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.65)]">
+    <div className="absolute inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+      <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-[rgba(6,5,20,0.98)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.65)]">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-semibold text-white">Dédoublonner</h3>
           <button
@@ -32,7 +32,7 @@ export default function TableDedupeModal({
           Le plus riche de chaque groupe sera conservé, ses liens préservés.
         </p>
 
-        <div className="mb-4 max-h-48 overflow-y-auto rounded-xl border border-white/8 text-[0.7rem]">
+        <div className="mb-4 max-h-[min(40vh,320px)] overflow-y-auto rounded-xl border border-white/8 text-[0.7rem]">
           {duplicateGroups.map((group, i) => (
             <div key={i} className="border-b border-white/5 px-3 py-2 last:border-0">
               <span className="font-mono text-white/70">{group[0].title}</span>

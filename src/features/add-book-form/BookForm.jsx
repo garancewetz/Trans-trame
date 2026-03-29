@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Controller } from 'react-hook-form'
 import { Search, X, Merge, Trash2, Pin } from 'lucide-react'
-import { authorName } from '../../authorUtils'
+import { bookAuthorDisplay } from '../../authorUtils'
 import { axesGradient } from '../../categories'
+import { AuthorPicker } from '../table/TableSubcomponents'
 import AxisSelector from './AxisSelector'
 import DuplicateWarning from './DuplicateWarning'
 
@@ -18,77 +19,27 @@ export default function BookForm({
   onDeleteBook,
   onMergeBooks,
   recentQueue,
+  authorsMap,
+  authors,
+  onAddAuthor,
 }) {
-  const { register, control, watch, setValue } = bookForm
-  const firstName = watch('firstName')
-  const lastName = watch('lastName')
+  const { register, control, watch } = bookForm
   const selectedAxes = watch('axes') || []
 
-  const lastNameField = register('lastName', { required: true })
   const [mergeSearch, setMergeSearch] = useState('')
   const [mergeTarget, setMergeTarget] = useState(null)
   const [mergeConfirm, setMergeConfirm] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
 
-  // ── Author autocomplete ──────────────────────────────────────────────────
-  const [showAuthorSugg, setShowAuthorSugg] = useState(false)
-  const authorRef = useRef(null)
-
-  useEffect(() => {
-    function onDown(e) {
-      if (!authorRef.current?.contains(e.target)) setShowAuthorSugg(false)
-    }
-    document.addEventListener('pointerdown', onDown)
-    return () => document.removeEventListener('pointerdown', onDown)
-  }, [])
-
-  const knownAuthors = useMemo(() => {
-    const seen = new Map()
-    ;(nodes || []).forEach((n) => {
-      const ln = (n.lastName || '').trim()
-      const fn = (n.firstName || '').trim()
-      if (!ln) return
-      const key = `${fn.toLowerCase()}||${ln.toLowerCase()}`
-      if (!seen.has(key)) seen.set(key, { firstName: fn, lastName: ln })
-    })
-    return Array.from(seen.values()).sort((a, b) => a.lastName.localeCompare(b.lastName))
-  }, [nodes])
-
-  const authorSuggestions = useMemo(() => {
-    const q = lastName.toLowerCase().trim()
-    if (q.length < 2) return []
-    return knownAuthors
-      .filter(
-        (a) =>
-          a.lastName.toLowerCase().startsWith(q) ||
-          a.lastName.toLowerCase().includes(q) ||
-          `${a.firstName} ${a.lastName}`.toLowerCase().includes(q)
-      )
-      .slice(0, 6)
-  }, [knownAuthors, lastName])
-
-  const isKnownAuthor = useMemo(
-    () =>
-      lastName.trim().length > 1 &&
-      knownAuthors.some(
-        (a) =>
-          a.lastName.toLowerCase() === lastName.toLowerCase().trim() &&
-          (!firstName.trim() ||
-            a.firstName.toLowerCase() === firstName.toLowerCase().trim())
-      ),
-    [knownAuthors, firstName, lastName]
-  )
-
-  // ── Merge (danger zone) ──────────────────────────────────────────────────
   const mergeResults = useMemo(() => {
     const q = mergeSearch.toLowerCase().trim()
     if (!q || !editNode) return []
     return (nodes || []).filter(
       (n) =>
         n.id !== editNode.id &&
-        (n.title.toLowerCase().includes(q) || authorName(n).toLowerCase().includes(q))
+        (n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q))
     )
-  }, [mergeSearch, nodes, editNode])
+  }, [mergeSearch, nodes, editNode, authorsMap])
 
   const handleMerge = () => {
     if (!mergeTarget || !editNode) return
@@ -123,69 +74,32 @@ export default function BookForm({
         />
       </label>
 
-      {/* ── Author fields with autocomplete ─────────────────────────── */}
-      <div className="flex gap-3" ref={authorRef}>
-        <label className="flex flex-1 flex-col gap-1.5">
-          <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
-            Pr&eacute;nom
-          </span>
-          <input
-            className={inputClass}
-            placeholder="Ex : bell"
-            {...register('firstName', { required: true })}
-          />
-        </label>
-
-        <div className="relative flex flex-1 flex-col gap-1.5">
-          <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
-            Nom
-          </span>
-          <div className="relative">
-            <input
-              className={inputClass}
-              placeholder="Ex : hooks"
-              {...lastNameField}
-              onChange={(e) => {
-                lastNameField.onChange(e)
-                setShowAuthorSugg(true)
-              }}
-              onFocus={() => setShowAuthorSugg(true)}
-            />
-            {isKnownAuthor && (
-              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full bg-[rgba(0,255,135,0.12)] px-2 py-px text-[0.6rem] font-semibold text-[rgba(0,255,135,0.65)]">
-                existant·e
-              </span>
-            )}
-          </div>
-
-          {showAuthorSugg && authorSuggestions.length > 0 && (
-            <ul className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 list-none rounded-xl border border-white/10 bg-[rgba(6,4,20,0.97)] p-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl">
-              {authorSuggestions.map((a) => (
-                <li key={`${a.firstName}||${a.lastName}`}>
-                  <button
-                    type="button"
-                    className="flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left transition-colors hover:bg-white/8"
-                    onClick={() => {
-                      setValue('firstName', a.firstName, { shouldValidate: true })
-                      setValue('lastName', a.lastName, { shouldValidate: true })
-                      setShowAuthorSugg(false)
-                    }}
-                  >
-                    <span className="text-[0.82rem] text-white">
-                      {a.firstName} <strong>{a.lastName}</strong>
-                    </span>
-                    <span className="ml-2 shrink-0 text-[0.65rem] text-white/28">
-                      auteur·ice existant·e
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
+          Auteur·ices
+        </span>
+        <Controller
+          name="authorIds"
+          control={control}
+          rules={{
+            validate: (v) => (Array.isArray(v) && v.length > 0) || 'Au moins un auteur·ice',
+          }}
+          render={({ field, fieldState }) => (
+            <>
+              <AuthorPicker
+                authors={authors || []}
+                selectedAuthorIds={field.value || []}
+                onChange={field.onChange}
+                onAddAuthor={onAddAuthor}
+              />
+              {fieldState.error?.message && (
+                <span className="text-[0.68rem] text-[rgba(255,140,140,0.85)]">{fieldState.error.message}</span>
+              )}
+            </>
           )}
-        </div>
+        />
       </div>
 
-      {/* Sticky author toggle — only in 'book' mode */}
       {mode === 'book' && (
         <Controller
           name="stickyAuthor"
@@ -213,14 +127,14 @@ export default function BookForm({
               </button>
               <span className="inline-flex items-center gap-1.5 text-[0.75rem] text-white/50 transition-colors">
                 <Pin size={11} className={value ? 'text-[#00FF87]' : 'text-white/30'} />
-                Garder cet auteur·ice
+                Garder les auteur·ices pour la suite
               </span>
             </label>
           )}
         />
       )}
 
-      <DuplicateWarning possibleDuplicates={possibleDuplicates} />
+      <DuplicateWarning possibleDuplicates={possibleDuplicates} authorsMap={authorsMap} />
 
       <label className="flex flex-col gap-1.5">
         <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
@@ -255,7 +169,6 @@ export default function BookForm({
         {mode === 'edit' ? 'Enregistrer les modifications' : 'Ajouter l\u2019ouvrage'}
       </button>
 
-      {/* Recent queue */}
       {mode === 'book' && recentQueue && recentQueue.length > 0 && (
         <div className="flex flex-col gap-2">
           <span className="text-[0.65rem] font-semibold uppercase tracking-[1.5px] text-white/25">
@@ -266,7 +179,7 @@ export default function BookForm({
               <span
                 key={i}
                 className="inline-flex max-w-full items-center gap-1.5 truncate rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[0.72rem] text-white/55"
-                title={`${item.title} — ${item.firstName} ${item.lastName}, ${item.year}`}
+                title={`${item.title} — ${bookAuthorDisplay({ authorIds: item.authorIds }, authorsMap)}, ${item.year}`}
               >
                 <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#00FF87] opacity-70" />
                 <span className="truncate">{item.title}</span>
@@ -279,14 +192,12 @@ export default function BookForm({
         </div>
       )}
 
-      {/* Danger zone */}
       {mode === 'edit' && editNode && (
         <div className="mt-4 rounded-xl border border-white/8 bg-white/2 p-4">
           <h4 className="mb-4 text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-white/25">
             Zone dangereuse
           </h4>
 
-          {/* Merge */}
           <div className="mb-4">
             <p className="mb-2 text-[0.75rem] text-white/40">
               Fusionner cet ouvrage dans un autre (les liens seront transférés)
@@ -342,7 +253,7 @@ export default function BookForm({
                                   {n.title}
                                 </strong>
                                 <span className="mt-0.5 block text-[0.72rem] text-white/35">
-                                  {authorName(n)}{n.year ? `, ${n.year}` : ''}
+                                  {bookAuthorDisplay(n, authorsMap)}{n.year ? `, ${n.year}` : ''}
                                 </span>
                               </span>
                             </button>
@@ -390,7 +301,6 @@ export default function BookForm({
             )}
           </div>
 
-          {/* Delete */}
           <div>
             <button
               type="button"

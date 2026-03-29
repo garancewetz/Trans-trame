@@ -5,8 +5,10 @@ export default function AdminPanel({
   selectedNode,
   previousPanelTab,
   graphData,
+  authors,
   handleAddBook,
   handleAddLink,
+  handleAddAuthor,
   handleUpdateBook,
   handleDeleteBook,
   handleMergeBooks,
@@ -14,17 +16,21 @@ export default function AdminPanel({
   setSelectedNode,
   setSelectedLink,
   handleClosePanel,
+  authorsMap,
 }) {
   return (
     <div className="px-6 pb-8 pt-12">
       <AddBookForm
         key={`${panelTab}-${selectedNode?.id || ''}`}
         nodes={graphData.nodes}
+        authors={authors}
+        onAddAuthor={handleAddAuthor}
         onAddBook={handleAddBook}
         onAddLink={handleAddLink}
         onUpdateBook={handleUpdateBook}
         onDeleteBook={handleDeleteBook}
         onMergeBooks={handleMergeBooks}
+        authorsMap={authorsMap}
         mode={panelTab}
         editNode={panelTab === 'edit' ? selectedNode : null}
         onRequestAddBook={() => {
