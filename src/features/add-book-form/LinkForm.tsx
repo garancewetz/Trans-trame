@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowLeft, X } from 'lucide-react'
-import { bookAuthorDisplay } from '../../authorUtils'
-import { axesGradient } from '../../categories'
+import { bookAuthorDisplay } from '@/lib/authorUtils'
+import { axesGradient } from '@/lib/categories'
 import Button from '../../components/ui/Button'
 import TextInput from '../../components/ui/TextInput'
 import Textarea from '../../components/ui/Textarea'

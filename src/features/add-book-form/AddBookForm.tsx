@@ -1,10 +1,40 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
-import { bookAuthorDisplay } from '../../authorUtils'
+import type { Author, AuthorId, Book, BookId, Link } from '@/domain/types'
+import type { AuthorNode } from '@/lib/authorUtils'
+import { bookAuthorDisplay } from '@/lib/authorUtils'
 import BookForm from './BookForm'
 import LinkForm from './LinkForm'
 
-function bookDefaultValues(mode, editNode, bookPrefill) {
+/** Référence stable pour éviter un nouveau `[]` à chaque rendu (exhaustive-deps / useMemo). */
+const EMPTY_AUTHOR_IDS: string[] = []
+
+type BookPrefill = { authorIds?: AuthorId[] }
+
+type AddBookFormProps = {
+  nodes: Book[]
+  authors: Author[]
+  authorsMap: Map<string, AuthorNode>
+  onAddAuthor?: (author: Author) => void
+  onAddBook?: (book: Partial<Book> & Pick<Book, 'id' | 'title'>) => void | PromiseLike<unknown>
+  onAddLink?: (link: Partial<Link> & Pick<Link, 'source' | 'target'>) => void
+  onUpdateBook?: (book: Book) => void
+  onDeleteBook?: (nodeId: BookId) => void
+  onMergeBooks?: (fromNodeId: BookId, intoNodeId: BookId) => void
+  mode: 'book' | 'edit' | 'link'
+  editNode?: Book | null
+  prefilledSourceId?: string | null
+  prefilledTargetId?: string | null
+  prefilledAuthor?: BookPrefill | null
+  onRequestAddBook?: () => void
+  onRequestBack?: () => void
+}
+
+function bookDefaultValues(
+  mode: AddBookFormProps['mode'],
+  editNode: Book | null | undefined,
+  bookPrefill: BookPrefill | null
+) {
   if (mode === 'edit' && editNode) {
     return {
       title: editNode.title || '',
@@ -42,7 +72,7 @@ export default function AddBookForm({
   onRequestAddBook,
   onRequestBack,
   authorsMap,
-}) {
+}: AddBookFormProps) {
   const bookPrefill = mode === 'book' && prefilledAuthor ? prefilledAuthor : null
 
   const bookForm = useForm({
@@ -71,9 +101,11 @@ export default function AddBookForm({
   }, [mode, linkForm])
 
   const titleWatch = useWatch({ control: bookForm.control, name: 'title' }) ?? ''
-  const authorIdsWatch = useWatch({ control: bookForm.control, name: 'authorIds' }) ?? []
+  const authorIdsRaw = useWatch({ control: bookForm.control, name: 'authorIds' })
+  const authorIdsWatch = authorIdsRaw ?? EMPTY_AUTHOR_IDS
 
-  const [recentQueue, setRecentQueue] = useState([])
+  type RecentDraft = { title: string; authorIds: string[]; year: number | null }
+  const [recentQueue, setRecentQueue] = useState<RecentDraft[]>([])
 
   const [sourceSearch, setSourceSearch] = useState('')
   const [targetSearch, setTargetSearch] = useState('')
@@ -84,10 +116,14 @@ export default function AddBookForm({
   )
 
   const selectedSource = useMemo(() => nodes.find((n) => n.id === sourceId) || null, [nodes, sourceId])
-  const selectedTargets = useMemo(
-    () => targetIds.map((id) => nodes.find((n) => n.id === id)).filter(Boolean),
-    [nodes, targetIds]
-  )
+  const selectedTargets = useMemo((): Book[] => {
+    const list: Book[] = []
+    for (const id of targetIds) {
+      const n = nodes.find((b) => b.id === id)
+      if (n) list.push(n)
+    }
+    return list
+  }, [nodes, targetIds])
 
   const sourceResults = useMemo(() => {
     const q = sourceSearch.toLowerCase().trim()
@@ -124,17 +160,25 @@ export default function AddBookForm({
 
   const submitAddBook = (data) => {
     if (!data.title.trim() || !data.authorIds?.length) return
-    const book = {
+    const book: Partial<Book> & Pick<Book, 'id' | 'title' | 'type'> = {
       id: crypto.randomUUID(),
+      type: 'book',
       title: data.title.trim(),
       authorIds: data.authorIds,
       year: parseInt(data.year, 10) || null,
       axes: data.axes || [],
       description: (data.description || '').trim(),
     }
-    onAddBook(book)
+    onAddBook?.(book)
     setRecentQueue((prev) =>
-      [{ title: book.title, authorIds: book.authorIds, year: book.year }, ...prev].slice(0, 3)
+      [
+        {
+          title: book.title,
+          authorIds: book.authorIds ?? [],
+          year: book.year ?? null,
+        },
+        ...prev,
+      ].slice(0, 3)
     )
     bookForm.reset({
       title: '',
@@ -147,8 +191,8 @@ export default function AddBookForm({
   }
 
   const submitEditBook = (data) => {
-    if (!data.title.trim() || !data.authorIds?.length) return
-    onUpdateBook({
+    if (!editNode || !data.title.trim() || !data.authorIds?.length) return
+    onUpdateBook?.({
       ...editNode,
       title: data.title.trim(),
       authorIds: data.authorIds,
@@ -163,7 +207,7 @@ export default function AddBookForm({
     const validTargets = targetIds.filter((tid) => tid !== sourceId)
     if (validTargets.length === 0) return
     validTargets.forEach((tid) => {
-      onAddLink({
+      onAddLink?.({
         source: sourceId,
         target: tid,
         citation_text: (data.citationText || '').trim(),

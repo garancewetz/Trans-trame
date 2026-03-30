@@ -1,4 +1,4 @@
-import { AXES, AXES_COLORS, AXES_LABELS } from '../../categories'
+import { AXES, AXES_COLORS, AXES_LABELS } from '@/lib/categories'
 import Button from '../../components/ui/Button'
 
 export default function AxisSelector({ selectedAxes, toggleAxis }) {

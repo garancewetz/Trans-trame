@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { bookAuthorDisplay } from '../../authorUtils'
+import { bookAuthorDisplay } from '@/lib/authorUtils'
 import Button from '../../components/ui/Button'
 import TextInput from '../../components/ui/TextInput'
 
@@ -17,13 +17,13 @@ export default function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
     const q = sourceSearch.toLowerCase().trim()
     if (!q) return []
     return bookNodes.filter((n) => n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q))
-  }, [bookNodes, sourceSearch])
+  }, [bookNodes, sourceSearch, authorsMap])
 
   const targetResults = useMemo(() => {
     const q = targetSearch.toLowerCase().trim()
     if (!q) return []
     return bookNodes.filter((n) => n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q))
-  }, [bookNodes, targetSearch])
+  }, [bookNodes, targetSearch, authorsMap])
 
   const handleSubmit = (e) => {
     e.preventDefault()

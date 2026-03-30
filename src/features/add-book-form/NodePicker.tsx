@@ -1,6 +1,6 @@
 import { Search, X } from 'lucide-react'
-import { axesGradient } from '../../categories'
-import { bookAuthorDisplay } from '../../authorUtils'
+import { axesGradient } from '@/lib/categories'
+import { bookAuthorDisplay } from '@/lib/authorUtils'
 import Button from '../../components/ui/Button'
 import TextInput from '../../components/ui/TextInput'
 

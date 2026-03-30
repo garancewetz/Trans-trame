@@ -1,11 +1,25 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { BookPlus, Check, Merge, Plus, Sparkles, Trash2 } from 'lucide-react'
-import { authorName } from '../../../authorUtils'
-import Button from '../../../components/ui/Button'
-import TextInput from '../../../components/ui/TextInput'
+import { authorName } from '@/lib/authorUtils'
+import Button from '@/components/ui/Button'
+import TextInput from '@/components/ui/TextInput'
 import { INPUT, TD } from '../tableConstants'
 import { TH } from '../TableSubcomponents'
 import TableMergeAuthorsModal from '../TableMergeAuthorsModal'
+import type { Author, AuthorId, Book } from '@/domain/types'
+
+type AuthorsTabProps = {
+  authors: Author[]
+  books: Book[]
+  search?: string
+  onAddAuthor: (author: Author) => unknown
+  onUpdateAuthor: (author: Author) => unknown
+  onDeleteAuthor: (authorId: AuthorId) => unknown
+  onMigrateData?: () => Promise<{ newAuthors: number; updatedBooks: number } | null> | { newAuthors: number; updatedBooks: number } | null
+  onAddBookForAuthor?: (author: Author) => unknown
+  focusAuthorId?: AuthorId | null
+  onMergeAuthors?: (fromAuthorId: AuthorId, keepAuthorId: AuthorId) => unknown
+}
 
 export default function AuthorsTab({
   authors,
@@ -18,23 +32,26 @@ export default function AuthorsTab({
   onAddBookForAuthor,
   focusAuthorId,
   onMergeAuthors,
-}) {
-  const [editingCell, setEditingCell] = useState(null)   // { authorId, field }
+}: AuthorsTabProps) {
+  const [editingCell, setEditingCell] = useState<null | { authorId: AuthorId; field: 'firstName' | 'lastName' }>(null) // { authorId, field }
   const [editingValue, setEditingValue] = useState('')
-  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [selectedIds, setSelectedIds] = useState<Set<AuthorId>>(new Set())
   const [bulkConfirm, setBulkConfirm] = useState(false)
   const [migrating, setMigrating] = useState(false)
-  const [migrateResult, setMigrateResult] = useState(null)
+  const [migrateResult, setMigrateResult] = useState<{
+    newAuthors: number
+    updatedBooks: number
+  } | null>(null)
 
   const [mergeModal, setMergeModal] = useState(false)
-  const [mergeKeepId, setMergeKeepId] = useState(null)
+  const [mergeKeepId, setMergeKeepId] = useState<AuthorId | null>(null)
   const [mergeConfirm, setMergeConfirm] = useState(false)
 
   const [sortCol, setSortCol] = useState('lastName')
   const [sortDir, setSortDir] = useState('asc')
   const [inputFirstName, setInputFirstName] = useState('')
   const [inputLastName, setInputLastName] = useState('')
-  const firstNameRef = useRef(null)
+  const firstNameRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     if (!focusAuthorId) return
@@ -77,9 +94,9 @@ export default function AuthorsTab({
     if (q) {
       list = list.filter(
         (a) =>
-          `${a.firstName} ${a.lastName}`.toLowerCase().includes(q) ||
-          a.lastName.toLowerCase().includes(q) ||
-          a.firstName.toLowerCase().includes(q)
+          `${a.firstName ?? ''} ${a.lastName ?? ''}`.toLowerCase().includes(q) ||
+          (a.lastName ?? '').toLowerCase().includes(q) ||
+          (a.firstName ?? '').toLowerCase().includes(q)
       )
     }
     list.sort((a, b) => {

@@ -1,107 +1,43 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { supabase } from '../../../lib/supabase'
-import { AXES_MIGRATION } from '../../../categories'
-import { migrateData } from '../../../authorUtils'
-
-// ── Helpers: sanitisation ──────────────────────────────────────────────────────
-
-function sanitizeAxes(axes, axesColors) {
-  if (!Array.isArray(axes)) return []
-  const allowed = new Set(Object.keys(axesColors))
-  return axes.map((a) => AXES_MIGRATION[a] ?? a).filter((a) => allowed.has(a))
-}
-
-function sanitizeBook(node, axesColors) {
-  if (!node || typeof node !== 'object') return node
-  return { ...node, axes: sanitizeAxes(node.axes, axesColors) }
-}
-
-function sanitizeAuthor(author, axesColors) {
-  if (!author || typeof author !== 'object') return author
-  return { ...author, axes: sanitizeAxes(author.axes, axesColors) }
-}
-
-function normalizeId(v) {
-  if (v && typeof v === 'object') return v.id
-  return v
-}
-
-function normalizeEndpointId(v) {
-  const raw = normalizeId(v)
-  if (typeof raw === 'string') return raw
-  if (typeof raw === 'number' && Number.isFinite(raw)) return String(raw)
-  return null
-}
-
-// ── Helpers: conversion DB ↔ app ───────────────────────────────────────────────
-
-function dbBookToNode(row) {
-  return {
-    id: row.id,
-    type: 'book',
-    title: row.title,
-    firstName: row.first_name,   // legacy — conservé pour rétrocompatibilité
-    lastName: row.last_name,     // legacy — conservé pour rétrocompatibilité
-    authorIds: row.author_ids || [],
-    year: row.year,
-    description: row.description || '',
-    axes: row.axes || [],
-  }
-}
-
-function dbAuthorToNode(row) {
-  return {
-    id: row.id,
-    type: 'author',
-    firstName: row.first_name,
-    lastName: row.last_name,
-    axes: row.axes || [],
-  }
-}
-
-function dbLinkToLink(row) {
-  return {
-    id: row.id,
-    source: row.source_id,
-    target: row.target_id,
-    citation_text: row.citation_text || '',
-    edition: row.edition || '',
-    page: row.page || '',
-    context: row.context || '',
-  }
-}
-
-function bookToDbRow(node) {
-  return {
-    id: node.id,
-    title: node.title,
-    first_name: node.firstName || '',
-    last_name: node.lastName || '',
-    author_ids: node.authorIds || [],
-    year: node.year || null,
-    description: node.description || '',
-    axes: node.axes || [],
-  }
-}
-
-function authorToDbRow(author) {
-  return {
-    id: author.id,
-    first_name: author.firstName || '',
-    last_name: author.lastName || '',
-    axes: author.axes || [],
-  }
-}
+import type { Author, Book, Link } from '@/domain/types'
+import { migrateData } from '@/lib/authorUtils'
+import { devWarn } from '@/lib/logger'
+import {
+  deleteAllBooks,
+  deleteAuthorRowById,
+  deleteBookRowById,
+  deleteLinkRowById,
+  insertAuthorRow,
+  insertBookRow,
+  insertLinkRow,
+  loadGraphDataFromSupabase,
+  updateAuthorRowById,
+  updateBookRowById,
+  updateLinkRowById,
+} from '../api/graphDataApi'
+import {
+  authorToDbRow,
+  bookToDbRow,
+  type AxesColorMap,
+  type BookRowInput,
+  dbAuthorToNode,
+  dbBookToNode,
+  dbLinkToLink,
+  normalizeEndpointId,
+  normalizeId,
+  sanitizeAuthor,
+  sanitizeBook,
+} from '../domain/graphDataModel'
 
 // ── Chargement initial ─────────────────────────────────────────────────────────
 
-async function loadFromSupabase({ axesColors }) {
+async function loadFromSupabase({
+  axesColors,
+}: {
+  axesColors: AxesColorMap
+}): Promise<{ books: Book[]; authors: Author[]; links: Link[] } | null> {
   try {
-    const [booksRes, authorsRes, linksRes] = await Promise.all([
-      supabase.from('books').select('*').order('created_at', { ascending: true }),
-      supabase.from('authors').select('*').order('created_at', { ascending: true }),
-      supabase.from('links').select('*'),
-    ])
+    const { booksRes, authorsRes, linksRes } = await loadGraphDataFromSupabase()
     if (booksRes.error || linksRes.error) return null
     const authorsData = authorsRes.error ? [] : (authorsRes.data || [])
     return {
@@ -116,10 +52,10 @@ async function loadFromSupabase({ axesColors }) {
 
 // ── Hook principal ─────────────────────────────────────────────────────────────
 
-export default function useGraphData({ axesColors }) {
-  const [books, setBooks] = useState([])
-  const [authors, setAuthors] = useState([])
-  const [links, setLinks] = useState([])
+export default function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
+  const [books, setBooks] = useState<Book[]>([])
+  const [authors, setAuthors] = useState<Author[]>([])
+  const [links, setLinks] = useState<Link[]>([])
   const axesColorsRef = useRef(axesColors)
   axesColorsRef.current = axesColors
   const booksRef = useRef(books)
@@ -152,9 +88,9 @@ export default function useGraphData({ axesColors }) {
         const source = normalizeEndpointId(l.source)
         const target = normalizeEndpointId(l.target)
         if (!source || !target) return null
-        return { ...l, source, target }
+        return { ...l, source, target } as Link
       })
-      .filter(Boolean),
+      .filter((x): x is Link => x !== null),
   }), [books, links])
 
   // ── Livres ───────────────────────────────────────────────────────────────────
@@ -165,8 +101,8 @@ export default function useGraphData({ axesColors }) {
       if (prev.some((n) => n.id === sanitized.id)) return prev
       return [...prev, sanitized]
     })
-    return supabase.from('books').insert(bookToDbRow(sanitized))
-      .then(({ error }) => { if (error) console.warn('[trans_trame] Erreur ajout livre', error) })
+    return insertBookRow(bookToDbRow(sanitized))
+      .then(({ error }) => { if (error) devWarn('Erreur ajout livre', error) })
   }, [])
 
   const handleUpdateBook = useCallback((updatedNode) => {
@@ -180,8 +116,8 @@ export default function useGraphData({ axesColors }) {
       })
     })
     const { id, ...fields } = bookToDbRow(sanitized)
-    supabase.from('books').update(fields).eq('id', id)
-      .then(({ error }) => { if (error) console.warn('[trans_trame] Erreur mise à jour livre', error) })
+    updateBookRowById(id, fields)
+      .then(({ error }) => { if (error) devWarn('Erreur mise à jour livre', error) })
   }, [])
 
   const handleDeleteBook = useCallback((nodeId) => {
@@ -196,8 +132,8 @@ export default function useGraphData({ axesColors }) {
       return srcId !== nodeId && tgtId !== nodeId
     }))
     // ON DELETE CASCADE dans la DB supprime automatiquement les liens associés
-    supabase.from('books').delete().eq('id', nodeId)
-      .then(({ error }) => { if (error) console.warn('[trans_trame] Erreur suppression livre', error) })
+    deleteBookRowById(nodeId)
+      .then(({ error }) => { if (error) devWarn('Erreur suppression livre', error) })
     return true
   }, [])
 
@@ -209,16 +145,16 @@ export default function useGraphData({ axesColors }) {
       if (prev.some((a) => a.id === sanitized.id)) return prev
       return [...prev, sanitized]
     })
-    return supabase.from('authors').insert(authorToDbRow(sanitized))
-      .then(({ error }) => { if (error) console.warn('[trans_trame] Erreur ajout auteur', error) })
+    return insertAuthorRow(authorToDbRow(sanitized))
+      .then(({ error }) => { if (error) devWarn('Erreur ajout auteur', error) })
   }, [])
 
   const handleUpdateAuthor = useCallback((updatedAuthor) => {
     const sanitized = sanitizeAuthor({ type: 'author', ...updatedAuthor }, axesColorsRef.current)
     setAuthors((prev) => prev.map((a) => (a.id === sanitized.id ? sanitized : a)))
     const { id, ...fields } = authorToDbRow(sanitized)
-    supabase.from('authors').update(fields).eq('id', id)
-      .then(({ error }) => { if (error) console.warn('[trans_trame] Erreur mise à jour auteur', error) })
+    updateAuthorRowById(id, fields)
+      .then(({ error }) => { if (error) devWarn('Erreur mise à jour auteur', error) })
   }, [])
 
   const handleDeleteAuthor = useCallback((authorId) => {
@@ -227,10 +163,11 @@ export default function useGraphData({ axesColors }) {
     // Mettre à jour les livres qui référencent cet auteur
     const booksToUpdate = booksRef.current.filter((b) => b.authorIds?.includes(authorId))
     booksToUpdate.forEach((book) => {
-      const updated = { ...book, authorIds: book.authorIds.filter((id) => id !== authorId) }
+      const ids = book.authorIds ?? []
+      const updated = { ...book, authorIds: ids.filter((id) => id !== authorId) }
       const { id, ...fields } = bookToDbRow(updated)
-      supabase.from('books').update(fields).eq('id', id)
-        .then(({ error }) => { if (error) console.warn('[trans_trame] Erreur MAJ authorId dans livre', error) })
+      updateBookRowById(id, fields)
+        .then(({ error }) => { if (error) devWarn('Erreur MAJ authorId dans livre', error) })
     })
     setAuthors((prev) => prev.filter((a) => a.id !== authorId))
     if (booksToUpdate.length > 0) {
@@ -240,8 +177,8 @@ export default function useGraphData({ axesColors }) {
           : b
       ))
     }
-    supabase.from('authors').delete().eq('id', authorId)
-      .then(({ error }) => { if (error) console.warn('[trans_trame] Erreur suppression auteur', error) })
+    deleteAuthorRowById(authorId)
+      .then(({ error }) => { if (error) devWarn('Erreur suppression auteur', error) })
     return true
   }, [])
 
@@ -270,7 +207,7 @@ export default function useGraphData({ axesColors }) {
       return [...prev, newLink]
     })
 
-    supabase.from('links').insert({
+    insertLinkRow({
       id: newLink.id,
       source_id: srcId,
       target_id: tgtId,
@@ -278,19 +215,19 @@ export default function useGraphData({ axesColors }) {
       edition: newLink.edition,
       page: newLink.page,
       context: newLink.context,
-    }).then(({ error }) => { if (error) console.warn('[trans_trame] Erreur ajout lien', error) })
+    }).then(({ error }) => { if (error) devWarn('Erreur ajout lien', error) })
   }, [])
 
   const handleDeleteLink = useCallback((linkId) => {
     setLinks((prev) => prev.filter((l) => l.id !== linkId))
-    supabase.from('links').delete().eq('id', linkId)
-      .then(({ error }) => { if (error) console.warn('[trans_trame] Erreur suppression lien', error) })
+    deleteLinkRowById(linkId)
+      .then(({ error }) => { if (error) devWarn('Erreur suppression lien', error) })
   }, [])
 
   const handleUpdateLink = useCallback((linkId, updatedFields) => {
     setLinks((prev) => prev.map((l) => (l.id === linkId ? { ...l, ...updatedFields } : l)))
-    supabase.from('links').update(updatedFields).eq('id', linkId)
-      .then(({ error }) => { if (error) console.warn('[trans_trame] Erreur mise à jour lien', error) })
+    updateLinkRowById(linkId, updatedFields)
+      .then(({ error }) => { if (error) devWarn('Erreur mise à jour lien', error) })
   }, [])
 
   // ── Fusion de livres ─────────────────────────────────────────────────────────
@@ -302,10 +239,10 @@ export default function useGraphData({ axesColors }) {
     const intoExists = books.some((n) => n.id === intoNodeId)
     if (!fromExists || !intoExists) return false
 
-    const linksToUpdate = []
-    const linkIdsToDelete = []
-    const dedupe = new Set()
-    const remappedLinks = []
+    const linksToUpdate: { id: string; source_id: string; target_id: string }[] = []
+    const linkIdsToDelete: string[] = []
+    const dedupe = new Set<string>()
+    const remappedLinks: Link[] = []
 
     links.forEach((link) => {
       const srcIdRaw = normalizeId(link.source)
@@ -335,15 +272,15 @@ export default function useGraphData({ axesColors }) {
 
     Promise.all([
       ...linksToUpdate.map(({ id, source_id, target_id }) =>
-        supabase.from('links').update({ source_id, target_id }).eq('id', id)
+        updateLinkRowById(id, { source_id, target_id })
       ),
       ...linkIdsToDelete.map((id) =>
-        supabase.from('links').delete().eq('id', id)
+        deleteLinkRowById(id)
       ),
-      supabase.from('books').delete().eq('id', fromNodeId),
+      deleteBookRowById(fromNodeId),
     ]).then((results) => {
       const errors = results.filter((r) => r.error)
-      if (errors.length > 0) console.warn('[trans_trame] Erreurs lors de la fusion', errors)
+      if (errors.length > 0) devWarn('Erreurs lors de la fusion', errors)
     })
 
     return true
@@ -359,22 +296,30 @@ export default function useGraphData({ axesColors }) {
 
     // Insérer les nouveaux auteurs en DB
     if (newAuthors.length > 0) {
-      const rows = newAuthors.map(authorToDbRow)
-      const { error } = await supabase.from('authors').insert(rows)
-      if (error) { console.warn('[trans_trame] Migration: erreur insert authors', error); return null }
-      setAuthors((prev) => [...prev, ...newAuthors])
+      const rows = newAuthors.map((a) =>
+        authorToDbRow({
+          type: 'author',
+          id: a.id,
+          firstName: a.firstName,
+          lastName: a.lastName,
+          axes: a.axes,
+        } as Author)
+      )
+      const { error } = await insertAuthorRow(rows)
+      if (error) { devWarn('Migration: erreur insert authors', error); return null }
+      setAuthors((prev) => [...prev, ...newAuthors.map((a) => ({ ...a, type: 'author' as const } as Author))])
     }
 
     // Mettre à jour les livres avec leurs authorIds
     const booksToUpdate = updatedBooks.filter((b) => b.authorIds?.length > 0)
     await Promise.all(
       booksToUpdate.map((book) => {
-        const { id, ...fields } = bookToDbRow(book)
-        return supabase.from('books').update(fields).eq('id', id)
-          .then(({ error }) => { if (error) console.warn('[trans_trame] Migration: erreur update book', id, error) })
+        const { id, ...fields } = bookToDbRow(book as BookRowInput)
+        return updateBookRowById(id, fields)
+          .then(({ error }) => { if (error) devWarn('Migration: erreur update book', id, error) })
       })
     )
-    setBooks(updatedBooks)
+    setBooks(updatedBooks as Book[])
 
     return { newAuthors: newAuthors.length, updatedBooks: booksToUpdate.length }
   }, [books, authors])
@@ -385,8 +330,8 @@ export default function useGraphData({ axesColors }) {
     setBooks([])
     setAuthors([])
     setLinks([])
-    supabase.from('books').delete().not('id', 'is', null)
-      .then(({ error }) => { if (error) console.warn('[trans_trame] Erreur reset', error) })
+    deleteAllBooks()
+      .then(({ error }) => { if (error) devWarn('Erreur reset', error) })
   }, [])
 
   return {

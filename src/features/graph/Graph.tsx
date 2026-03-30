@@ -12,66 +12,38 @@ import {
 } from './cameraControls'
 import { drawNode, getNodeRadius } from './nodeObject'
 import { drawGenealogyOverlay } from './axisLabels'
-import { blendAxesColors } from '../../categories'
+import { blendAxesColors } from '@/lib/categories'
+import type { GraphData, Link, Book, Author, AuthorId } from '../../domain/types'
+import { normalizeEndpointId } from './domain/graphDataModel'
 
 const SHOW_STARFIELD = false
 /** Zoom appliqué au centrage sur un nœud sélectionné (plus bas = moins rapproché). */
 const NODE_FOCUS_ZOOM = 1.9
 
-type GraphNode = {
-  id: string
-  x?: number
-  y?: number
-  fx?: number
-  fy?: number
-  axes?: string[]
-  type?: string
-  title?: string
-  authorIds?: string[]
-  citedBy?: number
-} & Record<string, unknown>
-
-type GraphLink = {
-  source?: unknown
-  target?: unknown
-  type?: string
-} & Record<string, unknown>
-
-type GraphData = {
-  nodes: GraphNode[]
-  links: GraphLink[]
-}
+type GraphNode = Book & { citedBy?: number }
+type GraphLink = Link
 
 type GraphProps = {
   graphData: GraphData
-  authors: GraphNode[]
+  authors: Author[]
   selectedNode: GraphNode | null
-  selectedAuthorId: string | null
+  selectedAuthorId: AuthorId | null
   peekNodeId: string | null
   activeFilter: string | null
   hoveredFilter: string | null
-  onNodeClick: (node: GraphNode) => void
+  onNodeClick: (node: Book | Author) => void
   onLinkClick: (link: GraphLink) => void
   layoutPositions: Map<string, { fx: number; fy: number }> | null | undefined
   viewMode: string
   flashNodeIds: Set<string> | null
 }
 
-type GraphImperativeHandle = {
+export type GraphImperativeHandle = {
   centerCamera: () => void
 }
 
 type ForceGraphLooseProps = Record<string, unknown>
 const ForceGraph2DLoose = ForceGraph2D as unknown as ForwardRefExoticComponent<ForceGraphLooseProps>
-
-function extractMaybeId(value: unknown): string | null {
-  if (typeof value === 'string') return value
-  if (typeof value === 'object' && value) {
-    const maybe = value as { id?: unknown }
-    if (typeof maybe.id === 'string') return maybe.id
-  }
-  return null
-}
 
 // eslint: use `unknown`-backed minimal types to keep migration unblocked.
 
@@ -213,7 +185,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         const midYear = (minYear + maxYear) / 2
         const span = Math.max(1, maxYear - minYear)
 
-        const forceX = fg.d3Force('x') as unknown as { strength?: (v: number) => unknown; x?: (fn: (node: any) => number) => unknown } | null
+        const forceX = fg.d3Force('x') as unknown as { strength?: (v: number) => unknown; x?: (fn: (node: GraphNode) => number) => unknown } | null
         if (forceX?.strength && forceX?.x) {
           forceX.strength(0.06)
           forceX.x((node) => {
@@ -253,9 +225,29 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     if (px == null || py == null) return
     // Kill any residual pan/zoom velocity so the loop doesn't fight the centering
     velRef.current = { moveX: 0, moveY: 0, zoom: 0 }
-    camRef.current = { x: px, y: py, zoom: NODE_FOCUS_ZOOM }
-    fg.centerAt(px, py, 1200)
-    fg.zoom(NODE_FOCUS_ZOOM, 1200)
+    // Animate centering via RAF + instant centerAt(0) to stay in sync with the
+    // custom camera system (d3 transitions can conflict with the panZoomLoop).
+    const targetX = px as number
+    const targetY = py as number
+    const startX = camRef.current.x
+    const startY = camRef.current.y
+    const startZoom = camRef.current.zoom
+    const fgRef_ = fg
+    const t0 = performance.now()
+    const DURATION = 800
+    let rafId: number
+    function step(now: number) {
+      const t = Math.min((now - t0) / DURATION, 1)
+      const ease = t < 1 ? t * (2 - t) : 1 // ease-out quad
+      camRef.current.x = startX + (targetX - startX) * ease
+      camRef.current.y = startY + (targetY - startY) * ease
+      camRef.current.zoom = startZoom + (NODE_FOCUS_ZOOM - startZoom) * ease
+      fgRef_.centerAt(camRef.current.x, camRef.current.y, 0)
+      fgRef_.zoom(camRef.current.zoom, 0)
+      if (t < 1) rafId = requestAnimationFrame(step)
+    }
+    rafId = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(rafId)
   }, [selectedNode, peekNodeId, viewMode, graphData.nodes])
 
   // IDs of all book nodes belonging to selectedAuthorId
@@ -263,8 +255,8 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     if (!selectedAuthorId) return new Set()
     const ids = new Set()
     // Include the author node itself if present
+    ids.add(selectedAuthorId)
     graphData.nodes.forEach((n) => {
-      if (n.type === 'author' && n.id === selectedAuthorId) ids.add(n.id)
       if (n.authorIds?.includes(selectedAuthorId)) ids.add(n.id)
     })
     return ids
@@ -281,8 +273,8 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     if (!anchorIds) return new Set()
     const set = new Set()
     graphData.links.forEach((link) => {
-      const srcId = extractMaybeId(link.source)
-      const tgtId = extractMaybeId(link.target)
+      const srcId = normalizeEndpointId(link.source)
+      const tgtId = normalizeEndpointId(link.target)
       if (!srcId || !tgtId) return
       if (anchorIds.has(srcId) || anchorIds.has(tgtId)) set.add(`${srcId}-${tgtId}`)
     })
@@ -293,8 +285,8 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     if (!anchorIds) return new Set()
     const set = new Set(anchorIds)
     graphData.links.forEach((link) => {
-      const srcId = extractMaybeId(link.source)
-      const tgtId = extractMaybeId(link.target)
+      const srcId = normalizeEndpointId(link.source)
+      const tgtId = normalizeEndpointId(link.target)
       if (!srcId || !tgtId) return
       if (anchorIds.has(srcId)) set.add(tgtId)
       if (anchorIds.has(tgtId)) set.add(srcId)
@@ -306,7 +298,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     const counts = new Map()
     graphData.links.forEach((link) => {
       if (link.type === 'author-book') return  // ne pas compter les liens auteur→livre
-      const targetId = extractMaybeId(link.target)
+      const targetId = normalizeEndpointId(link.target)
       if (!targetId) return
       counts.set(targetId, (counts.get(targetId) || 0) + 1)
     })
@@ -318,8 +310,8 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     const counts = new Map()
     graphData.links.forEach((link) => {
       if (link.type === 'author-book') return
-      const srcId = extractMaybeId(link.source)
-      const tgtId = extractMaybeId(link.target)
+      const srcId = normalizeEndpointId(link.source)
+      const tgtId = normalizeEndpointId(link.target)
       if (!srcId || !tgtId) return
       const key = [srcId, tgtId].sort().join('-')
       counts.set(key, (counts.get(key) || 0) + 1)
@@ -333,8 +325,8 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     hoveredLinksRef.current.clear()
     if (!node) return
     graphData.links.forEach((link) => {
-      const srcId = extractMaybeId(link.source)
-      const tgtId = extractMaybeId(link.target)
+      const srcId = normalizeEndpointId(link.source)
+      const tgtId = normalizeEndpointId(link.target)
       if (!srcId || !tgtId) return
       if (srcId === node.id || tgtId === node.id) {
         hoveredLinksRef.current.add(`${srcId}-${tgtId}`)
@@ -425,8 +417,8 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   const isLinkActive = useCallback(
     (link) => {
       if (!anchorIds) return false
-      const srcId = extractMaybeId(link.source)
-      const tgtId = extractMaybeId(link.target)
+      const srcId = normalizeEndpointId(link.source)
+      const tgtId = normalizeEndpointId(link.target)
       if (!srcId || !tgtId) return false
       return connectedLinks.has(`${srcId}-${tgtId}`)
     },
@@ -435,8 +427,8 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
 
   const isLinkHovered = useCallback(
     (link) => {
-      const srcId = extractMaybeId(link.source)
-      const tgtId = extractMaybeId(link.target)
+      const srcId = normalizeEndpointId(link.source)
+      const tgtId = normalizeEndpointId(link.target)
       if (!srcId || !tgtId) return false
       return hoveredLinksRef.current.has(`${srcId}-${tgtId}`)
     },
@@ -445,8 +437,8 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
 
   const getLinkWeight = useCallback(
     (link) => {
-      const srcId = extractMaybeId(link.source)
-      const tgtId = extractMaybeId(link.target)
+      const srcId = normalizeEndpointId(link.source)
+      const tgtId = normalizeEndpointId(link.target)
       if (!srcId || !tgtId) return 1
       const key = [srcId, tgtId].sort().join('-')
       return linkWeights.get(key) || 1

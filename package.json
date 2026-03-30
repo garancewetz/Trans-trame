@@ -1,5 +1,5 @@
 {
-  "name": "la-trame",
+  "name": "trans-trame",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -8,6 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:strict": "tsc -p tsconfig.strict.json --noEmit",
     "preview": "vite preview"
   },
   "dependencies": {

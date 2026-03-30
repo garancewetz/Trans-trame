@@ -1,25 +1,28 @@
 import { useCallback, useEffect, useState } from 'react'
+import type { Author, Book, GraphData, Link } from '@/domain/types'
 import useGlobalSearch from '../features/shell/hooks/useGlobalSearch'
 
-export function useAppUiState(graphData, authors) {
-  const [selectedNode, setSelectedNode] = useState(null)
-  const [selectedLink, setSelectedLink] = useState(null)
-  const [linkContextNode, setLinkContextNode] = useState(null)
+type GraphTapNode = Book | Author
+
+export function useAppUiState(graphData: GraphData, authors: Author[]) {
+  const [selectedNode, setSelectedNode] = useState<Book | null>(null)
+  const [selectedLink, setSelectedLink] = useState<Link | null>(null)
+  const [linkContextNode, setLinkContextNode] = useState<Book | null>(null)
   const [panelTab, setPanelTab] = useState('details')
   const [previousPanelTab, setPreviousPanelTab] = useState('details')
   const [textsPanelOpen, setTextsPanelOpen] = useState(false)
   const [authorsPanelOpen, setAuthorsPanelOpen] = useState(false)
-  const [peekNodeId, setPeekNodeId] = useState(null)
+  const [peekNodeId, setPeekNodeId] = useState<string | null>(null)
 
-  const [activeFilter, setActiveFilter] = useState(null)
-  const [hoveredFilter, setHoveredFilter] = useState(null)
-  const [selectedAuthor, setSelectedAuthor] = useState(null)
+  const [activeFilter, setActiveFilter] = useState<string | null>(null)
+  const [hoveredFilter, setHoveredFilter] = useState<string | null>(null)
+  const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null)
 
   const [tableMode, setTableMode] = useState(false)
   const [tableInitialTab, setTableInitialTab] = useState('books')
-  const [tableLinkSourceId, setTableLinkSourceId] = useState(null)
-  const [lastEditedNodeId, setLastEditedNodeId] = useState(null)
-  const [flashNodeIds, setFlashNodeIds] = useState(null)
+  const [tableLinkSourceId, setTableLinkSourceId] = useState<string | null>(null)
+  const [lastEditedNodeId, setLastEditedNodeId] = useState<string | null>(null)
+  const [flashNodeIds, setFlashNodeIds] = useState<Set<string> | null>(null)
 
   const isAdminTab = panelTab === 'edit'
   const hasSelection = selectedNode || selectedLink
@@ -39,7 +42,7 @@ export function useAppUiState(graphData, authors) {
     setTableMode(true)
   }, [])
 
-  const handleNodeClick = useCallback((node) => {
+  const handleNodeClick = useCallback((node: GraphTapNode) => {
     // Clic sur un nœud auteur → sélection par ID (highlight tous ses livres)
     if (node.type === 'author') {
       setLinkContextNode(null)
@@ -58,7 +61,7 @@ export function useAppUiState(graphData, authors) {
     setPanelTab('details')
   }, [])
 
-  const handleSelectAuthorFromPanel = useCallback((authorId) => {
+  const handleSelectAuthorFromPanel = useCallback((authorId: string) => {
     setLinkContextNode(null)
     setSelectedLink(null)
     setPeekNodeId(null)
@@ -67,7 +70,7 @@ export function useAppUiState(graphData, authors) {
     setSelectedAuthor((prev) => (prev === authorId ? null : authorId))
   }, [])
 
-  const handleSelectTextFromPanel = useCallback((node) => {
+  const handleSelectTextFromPanel = useCallback((node: Book) => {
     setLinkContextNode(null)
     setSelectedLink(null)
     setSelectedAuthor(null)
@@ -77,7 +80,7 @@ export function useAppUiState(graphData, authors) {
     setTextsPanelOpen(false)
   }, [])
 
-  const handlePeekTextOnGraph = useCallback((node) => {
+  const handlePeekTextOnGraph = useCallback((node: Book) => {
     setPeekNodeId(node.id)
     setSelectedAuthor(null)
     setSelectedNode(null)
@@ -90,7 +93,7 @@ export function useAppUiState(graphData, authors) {
     // Ne pas ouvrir le panneau "lien" au clic sur une arête du graphe.
   }, [])
 
-  const toggleFilter = useCallback((axis) => setActiveFilter((prev) => (prev === axis ? null : axis)), [])
+  const toggleFilter = useCallback((axis: string) => setActiveFilter((prev) => (prev === axis ? null : axis)), [])
   const clearActiveFilter = useCallback(() => setActiveFilter(null), [])
 
   const openTextsPanel = useCallback(() => {
@@ -104,7 +107,7 @@ export function useAppUiState(graphData, authors) {
   }, [])
 
   useEffect(() => {
-    function onKeyDown(e) {
+    function onKeyDown(e: KeyboardEvent) {
       if (e.key !== 'Escape') return
       if (panelOpen) handleClosePanel()
       else setPeekNodeId((prev) => (prev ? null : prev))

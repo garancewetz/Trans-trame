@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes } from 'react'
-import { axesGradient } from '../../categories'
+import { axesGradient } from '@/lib/categories'
 
 type Props = Omit<HTMLAttributes<HTMLSpanElement>, 'style'> & {
   axes: string[]

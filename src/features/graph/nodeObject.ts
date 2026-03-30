@@ -1,6 +1,6 @@
-import { blendAxesColors } from '../../categories'
+import { blendAxesColors } from '@/lib/categories'
 import { getGradientCanvas } from './scene'
-import { authorName, bookAuthorDisplay } from '../../authorUtils'
+import { authorName, bookAuthorDisplay } from '@/lib/authorUtils'
 
 const hoverAnimById = new Map()
 

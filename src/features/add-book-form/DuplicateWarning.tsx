@@ -1,6 +1,6 @@
 import { TriangleAlert } from 'lucide-react'
-import { axesGradient } from '../../categories'
-import { bookAuthorDisplay } from '../../authorUtils'
+import { axesGradient } from '@/lib/categories'
+import { bookAuthorDisplay } from '@/lib/authorUtils'
 
 export default function DuplicateWarning({ possibleDuplicates, authorsMap }) {
   if (!possibleDuplicates || possibleDuplicates.length === 0) return null

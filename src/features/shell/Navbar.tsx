@@ -4,7 +4,7 @@ import Button from '../../components/ui/Button'
 import SearchInput from '../../components/ui/SearchInput'
 import Logo from '../../components/Logo'
 import ViewSelector from './ViewSelector'
-import { bookAuthorDisplay } from '../../authorUtils'
+import { bookAuthorDisplay } from '@/lib/authorUtils'
 import CountBadge from '../../components/ui/CountBadge'
 
 const BTN_BASE =
@@ -50,9 +50,10 @@ export default function Navbar({ search, filters, view, catalogue }) {
     authorCount,
   } = catalogue
 
-  const groupsRef = useRef(null)
-  const [openGroup, setOpenGroup] = useState(null)
-  const activeFilterItems = [
+  const groupsRef = useRef<HTMLDivElement | null>(null)
+  const [openGroup, setOpenGroup] = useState<'catalogue' | null>(null)
+  type FilterPill = { key: string; prefix: string; value: string; clear: () => void }
+  const activeFilterItems: FilterPill[] = [
     activeFilter
       ? {
           key: 'category',
@@ -77,11 +78,13 @@ export default function Navbar({ search, filters, view, catalogue }) {
           clear: () => clearTimelineFilter?.(),
         }
       : null,
-  ].filter(Boolean)
+  ].filter((x): x is FilterPill => x != null)
 
   useEffect(() => {
-    function onPointerDown(e) {
-      if (!groupsRef.current?.contains(e.target)) {
+    function onPointerDown(e: PointerEvent) {
+      const el = groupsRef.current
+      const t = e.target
+      if (!el || !(t instanceof Node) || !el.contains(t)) {
         setOpenGroup(null)
       }
     }

@@ -1,18 +1,37 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type PointerEvent as ReactPointerEvent,
+  type SetStateAction,
+} from 'react'
+import type { Book, GraphData, TimelineRange } from '@/domain/types'
 import Button from '../../components/ui/Button'
 
-export default function Timeline({ graphData, timelineRange, onRangeChange }) {
+type TimelineProps = {
+  graphData: GraphData
+  timelineRange: TimelineRange
+  onRangeChange: Dispatch<SetStateAction<TimelineRange | null>>
+}
+
+export default function Timeline({ graphData, timelineRange, onRangeChange }: TimelineProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
-  const playRef = useRef(null)
-  const trackRef = useRef(null)
-  const dragTargetRef = useRef('end') // 'start' | 'end'
+  const playRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const trackRef = useRef<HTMLDivElement | null>(null)
+  const dragTargetRef = useRef<'start' | 'end'>('end')
 
   const { minYear, maxYear, booksByYear } = useMemo(() => {
-    const years = graphData.nodes.map((n) => n.year).filter(Boolean).sort((a, b) => a - b)
+    const years = graphData.nodes
+      .map((n) => n.year)
+      .filter((y): y is number => typeof y === 'number')
+      .sort((a, b) => a - b)
     const min = years[0] ?? 1800
     const max = years[years.length - 1] ?? 2025
-    const byYear = {}
+    const byYear: Record<number, Book[]> = {}
     graphData.nodes.forEach((n) => {
       if (n.year) {
         if (!byYear[n.year]) byYear[n.year] = []
@@ -30,15 +49,18 @@ export default function Timeline({ graphData, timelineRange, onRangeChange }) {
     }
     playRef.current = setInterval(() => {
       onRangeChange((prev) => {
-        if (prev.end >= maxYear) {
+        const base = prev ?? { start: minYear, end: minYear }
+        if (base.end >= maxYear) {
           setIsPlaying(false)
-          return { ...prev, end: maxYear }
+          return { start: base.start, end: maxYear }
         }
-        return { ...prev, end: Math.min(maxYear, prev.end + 1) }
+        return { start: base.start, end: Math.min(maxYear, base.end + 1) }
       })
     }, 120)
-    return () => clearInterval(playRef.current)
-  }, [isPlaying, maxYear, onRangeChange])
+    return () => {
+      if (playRef.current) clearInterval(playRef.current)
+    }
+  }, [isPlaying, maxYear, minYear, onRangeChange])
 
   const togglePlay = useCallback(() => {
     setIsPlaying((prev) => {
@@ -60,7 +82,7 @@ export default function Timeline({ graphData, timelineRange, onRangeChange }) {
   }, [booksByYear, minYear, maxYear])
 
   const handlePointerDown = useCallback(
-    (e) => {
+    (e: ReactPointerEvent<HTMLDivElement>) => {
       setIsDragging(true)
       e.currentTarget.setPointerCapture(e.pointerId)
       updateFromPointer(e)
@@ -70,7 +92,7 @@ export default function Timeline({ graphData, timelineRange, onRangeChange }) {
   )
 
   const handlePointerMove = useCallback(
-    (e) => {
+    (e: ReactPointerEvent<HTMLDivElement>) => {
       if (!isDragging) return
       updateFromPointer(e)
     },
@@ -82,7 +104,7 @@ export default function Timeline({ graphData, timelineRange, onRangeChange }) {
     setIsDragging(false)
   }, [])
 
-  function updateFromPointer(e) {
+  function updateFromPointer(e: ReactPointerEvent<HTMLDivElement>) {
     const rect = trackRef.current?.getBoundingClientRect()
     if (!rect) return
     const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
@@ -116,14 +138,14 @@ export default function Timeline({ graphData, timelineRange, onRangeChange }) {
   const startYear = timelineRange?.start ?? minYear
   const endYear = timelineRange?.end ?? maxYear
 
-  const clampPercent = (p) => Math.max(0, Math.min(100, Number.isFinite(p) ? p : 0))
+  const clampPercent = (p: number) => Math.max(0, Math.min(100, Number.isFinite(p) ? p : 0))
 
   const startProgressRaw = maxYear === minYear ? 0 : ((startYear - minYear) / (maxYear - minYear)) * 100
   const endProgressRaw = maxYear === minYear ? 100 : ((endYear - minYear) / (maxYear - minYear)) * 100
   const startProgress = clampPercent(startProgressRaw)
   const endProgress = clampPercent(endProgressRaw)
 
-  const thumbTransform = (p) => {
+  const thumbTransform = (p: number) => {
     if (p <= 0) return 'translate(0, -50%)'
     if (p >= 100) return 'translate(-100%, -50%)'
     return 'translate(-50%, -50%)'

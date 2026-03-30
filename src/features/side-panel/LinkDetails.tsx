@@ -1,7 +1,7 @@
 import { ArrowRight, ArrowLeft, LinkIcon, BookCopy, ExternalLink, Trash2, Pencil, MoreHorizontal } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { bookAuthorDisplay } from '../../authorUtils'
-import { blendAxesColors } from '../../categories'
+import { bookAuthorDisplay } from '@/lib/authorUtils'
+import { blendAxesColors } from '@/lib/categories'
 import Button from '../../components/ui/Button'
 import TextareaInline from '../../components/ui/TextareaInline'
 

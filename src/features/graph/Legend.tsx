@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Tags, ChevronDown } from 'lucide-react'
-import { AXES_LABELS } from '../../categories'
+import { AXES_LABELS } from '@/lib/categories'
 import Button from '../../components/ui/Button'
 import CountBadge from '../../components/ui/CountBadge'
 

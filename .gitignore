@@ -10,7 +10,15 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+
+# Secrets & environnement (ne jamais versionner les vraies valeurs)
+.env
+.env.*
+!.env.example
 *.local
+
+# Outils IDE / agent (optionnel : retirer cette ligne si tu veux versionner les règles)
+.cursor/
 
 # Editor directories and files
 .vscode/*

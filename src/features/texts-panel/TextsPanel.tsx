@@ -1,10 +1,29 @@
 import { Eye, Search, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { bookAuthorDisplay, buildAuthorsMap } from '../../authorUtils'
-import { axesGradient } from '../../categories'
+import type { Author, Book } from '@/domain/types'
+import { bookAuthorDisplay, buildAuthorsMap } from '@/lib/authorUtils'
+import { axesGradient } from '@/lib/categories'
 import Button from '../../components/ui/Button'
 
-export default function TextsPanel({ open, onClose, nodes, authors = [], onSelectNode, onPeekNode, peekNodeId }) {
+type TextsPanelProps = {
+  open: boolean
+  onClose?: () => void
+  nodes: Book[]
+  authors?: Author[]
+  onSelectNode?: (node: Book) => void
+  onPeekNode?: (node: Book) => void
+  peekNodeId?: string | null
+}
+
+export default function TextsPanel({
+  open,
+  onClose,
+  nodes,
+  authors = [],
+  onSelectNode,
+  onPeekNode,
+  peekNodeId,
+}: TextsPanelProps) {
   const [q, setQ] = useState('')
 
   useEffect(() => {

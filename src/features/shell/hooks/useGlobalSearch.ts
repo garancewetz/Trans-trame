@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { authorName, bookAuthorDisplay } from '../../../authorUtils'
+import type { Author, Book } from '@/domain/types'
+import { authorName, bookAuthorDisplay } from '@/lib/authorUtils'
 
-function normalize(s) {
+function normalize(s: unknown): string {
   return String(s || '')
     .toLowerCase()
     .normalize('NFD')
@@ -9,10 +10,26 @@ function normalize(s) {
     .trim()
 }
 
-export default function useGlobalSearch({ nodes, authors = [], onSelectNode, onSelectAuthor }) {
+export type GlobalSearchResultItem =
+  | { kind: 'author'; authorId: string; author: string; count: number }
+  | { kind: 'node'; node: Book }
+
+type UseGlobalSearchProps = {
+  nodes: Book[]
+  authors?: Author[]
+  onSelectNode?: (node: Book) => void
+  onSelectAuthor?: (authorId: string) => void
+}
+
+export default function useGlobalSearch({
+  nodes,
+  authors = [],
+  onSelectNode,
+  onSelectAuthor,
+}: UseGlobalSearchProps) {
   const [globalSearch, setGlobalSearch] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
-  const searchRef = useRef(null)
+  const searchRef = useRef<HTMLDivElement | null>(null)
 
   const searchResults = useMemo(() => {
     const q = normalize(globalSearch)
@@ -20,10 +37,9 @@ export default function useGlobalSearch({ nodes, authors = [], onSelectNode, onS
 
     const matchedNodes = nodes
       .filter((n) => normalize(n.title).includes(q) || normalize(bookAuthorDisplay(n, authors)).includes(q))
-      .map((node) => ({ kind: 'node', node }))
+      .map((node) => ({ kind: 'node' as const, node }))
 
-    // Build author results from entity list
-    const bookCountByAuthor = new Map()
+    const bookCountByAuthor = new Map<string, number>()
     nodes.forEach((n) => {
       ;(n.authorIds || []).forEach((aid) => {
         bookCountByAuthor.set(aid, (bookCountByAuthor.get(aid) || 0) + 1)
@@ -33,7 +49,7 @@ export default function useGlobalSearch({ nodes, authors = [], onSelectNode, onS
     const matchedAuthors = authors
       .filter((a) => normalize(authorName(a)).includes(q))
       .map((a) => ({
-        kind: 'author',
+        kind: 'author' as const,
         authorId: a.id,
         author: authorName(a),
         count: bookCountByAuthor.get(a.id) || 0,
@@ -49,7 +65,7 @@ export default function useGlobalSearch({ nodes, authors = [], onSelectNode, onS
   }, [])
 
   const handleSearchSelect = useCallback(
-    (item) => {
+    (item: GlobalSearchResultItem | null | undefined) => {
       closeSearch()
       if (!item) return
       if (item.kind === 'author') {
@@ -64,8 +80,10 @@ export default function useGlobalSearch({ nodes, authors = [], onSelectNode, onS
   )
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) setSearchFocused(false)
+    const handleClickOutside = (e: MouseEvent) => {
+      const el = searchRef.current
+      const target = e.target
+      if (el && target instanceof Node && !el.contains(target)) setSearchFocused(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)

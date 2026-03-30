@@ -1,11 +1,48 @@
 import { ArrowRight, BookCopy, Check, Eye, Link2, Pencil, Search, Trash2 } from 'lucide-react'
-import { bookAuthorDisplay } from '../../../authorUtils'
-import AxesDot from '../../../components/ui/AxesDot'
-import Button from '../../../components/ui/Button'
-import TextInput from '../../../components/ui/TextInput'
-import Textarea from '../../../components/ui/Textarea'
+import { bookAuthorDisplay, type AuthorNode } from '@/lib/authorUtils'
+import AxesDot from '@/components/ui/AxesDot'
+import Button from '@/components/ui/Button'
+import TextInput from '@/components/ui/TextInput'
+import Textarea from '@/components/ui/Textarea'
 import { INPUT } from '../tableConstants'
 import { NodeSearch } from '../TableSubcomponents'
+import type { Book, BookId, Link } from '@/domain/types'
+
+type ResolvedLink = Link & {
+  _srcId?: string
+  _tgtId?: string
+  sourceNode?: Book | null
+  targetNode?: Book | null
+}
+
+type LinkGroup = { srcId?: string; sourceNode?: Book | null; links: ResolvedLink[] }
+
+type LinksTabProps = {
+  nodes: Book[]
+  authorsMap: Map<string, AuthorNode>
+  linkSourceNode: Book | null
+  setLinkSourceNode: (node: Book | null) => void
+  setLinkCheckedIds: (next: Set<BookId>) => void
+  checklistSearch: string
+  setChecklistSearch: (value: string) => void
+  checklistNodes: Book[]
+  existingTargetIds: Set<BookId>
+  linkCheckedIds: Set<BookId>
+  toggleChecklist: (id: BookId) => void
+  newLinksCount: number
+  handleTisser: () => void
+  groupedLinks: LinkGroup[]
+  linkSearch: string
+  editingLink: null | { id: string; field: string }
+  editingLinkValue: string
+  setEditingLinkValue: (value: string) => void
+  setEditingLink: (next: null | { id: string; field: string }) => void
+  commitLinkEdit: () => void
+  deletingLinkId: string | null
+  setDeletingLinkId: (id: string | null) => void
+  onDeleteLink: (linkId: string) => void
+  onRevealBookLine?: (bookId: BookId) => void
+}
 
 export default function LinksTab({
   nodes,
@@ -32,7 +69,7 @@ export default function LinksTab({
   setDeletingLinkId,
   onDeleteLink,
   onRevealBookLine,
-}) {
+}: LinksTabProps) {
   return (
     <div className="flex flex-1 overflow-hidden">
       <div className="flex w-80 shrink-0 flex-col border-r border-white/8">
@@ -46,7 +83,7 @@ export default function LinksTab({
             value={linkSourceNode}
             onSelect={(n) => {
               setLinkSourceNode(n)
-              setLinkCheckedIds(new Set())
+              setLinkCheckedIds(new Set<BookId>())
               setChecklistSearch('')
             }}
             placeholder="Rechercher le livre source…"
@@ -54,7 +91,7 @@ export default function LinksTab({
           {linkSourceNode && (
             <Button
               type="button"
-              onClick={() => { setLinkSourceNode(null); setLinkCheckedIds(new Set()) }}
+              onClick={() => { setLinkSourceNode(null); setLinkCheckedIds(new Set<BookId>()) }}
               className="mt-1 cursor-pointer font-mono text-[0.6rem] text-white/22 hover:text-white/55"
             >
               × retirer
@@ -251,7 +288,10 @@ export default function LinksTab({
                           {link.targetNode && (
                             <Button
                               type="button"
-                              onClick={() => onRevealBookLine?.(link.targetNode?.id)}
+                              onClick={() => {
+                                const t = link.targetNode
+                                if (t) onRevealBookLine?.(t.id)
+                              }}
                               disabled={isDeleting}
                               className={[
                                 'shrink-0 cursor-pointer rounded border px-1 py-0.5 text-[0.6rem] transition-all',

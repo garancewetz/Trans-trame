@@ -1,23 +1,40 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { ChevronLeft, X, Zap } from 'lucide-react'
+import type { Author, Book, Link } from '@/domain/types'
+import type { AuthorNode } from '@/lib/authorUtils'
 import Button from '../../components/ui/Button'
-import { parseSmartInput } from './parseSmartInput'
+
+function isThenable(v: unknown): v is PromiseLike<unknown> {
+  return (
+    v != null &&
+    (typeof v === 'object' || typeof v === 'function') &&
+    'then' in v &&
+    typeof (v as PromiseLike<unknown>).then === 'function'
+  )
+}
+import { parseSmartInput, type ParsedBook } from './parseSmartInput'
 import SmartImportInputPhase from './SmartImportInputPhase'
 import SmartImportPreviewPhase from './SmartImportPreviewPhase'
 
 /** Normalise une chaîne pour la comparaison auteur */
-function normStr(s) {
+function normStr(s: unknown): string {
   return String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim()
 }
+
+type AuthorNameParts = { firstName?: string; lastName?: string }
 
 /**
  * Pour chaque auteur dans la liste, cherche un auteur existant (match prénom+nom normalisé).
  * Si absent, crée un nouveau nœud auteur via onAddAuthor et retourne son id.
  * Retourne un tableau d'ids auteurs résolus.
  */
-function resolveOrCreateAuthors(authorList, existingAuthors, onAddAuthor) {
+function resolveOrCreateAuthors(
+  authorList: AuthorNameParts[],
+  existingAuthors: Author[],
+  onAddAuthor: (a: Author) => void
+): string[] {
   if (!authorList?.length) return []
-  const resolved = []
+  const resolved: string[] = []
   authorList.forEach(({ firstName, lastName }) => {
     const fn = (firstName || '').trim()
     const ln = (lastName || '').trim()
@@ -30,12 +47,25 @@ function resolveOrCreateAuthors(authorList, existingAuthors, onAddAuthor) {
     } else {
       const newId = crypto.randomUUID()
       onAddAuthor({ id: newId, type: 'author', firstName: fn, lastName: ln, axes: [] })
-      // Ajouter à existingAuthors localement pour éviter les doublons dans le même batch
-      existingAuthors.push({ id: newId, firstName: fn, lastName: ln, axes: [] })
+      existingAuthors.push({ id: newId, type: 'author', firstName: fn, lastName: ln, axes: [] })
       resolved.push(newId)
     }
   })
   return resolved
+}
+
+type SmartImportModalProps = {
+  open: boolean
+  onClose: () => void
+  existingNodes: Book[]
+  existingAuthors?: Author[]
+  authorsMap: Map<string, AuthorNode>
+  onAddBook?: (book: Partial<Book> & Pick<Book, 'id' | 'title'>) => void | PromiseLike<unknown>
+  onAddAuthor?: (author: Author) => void
+  onAddLink?: (link: Partial<Link> & Pick<Link, 'source' | 'target'>) => void
+  onUpdateBook?: (book: Book) => void
+  onQueued?: (titles: string[]) => void
+  onImportComplete?: (ids: string[]) => void
 }
 
 export default function SmartImportModal({
@@ -50,21 +80,22 @@ export default function SmartImportModal({
   onUpdateBook,
   onQueued,
   onImportComplete,
-}) {
-  const [phase, setPhase] = useState('input')
+}: SmartImportModalProps) {
+  const [phase, setPhase] = useState<'input' | 'preview'>('input')
   const [rawText, setRawText] = useState('')
-  const [parsed, setParsed] = useState([])
-  const [checked, setChecked] = useState(new Set())
+  const [parsed, setParsed] = useState<ParsedBook[]>([])
+  const [checked, setChecked] = useState<Set<string>>(new Set())
   const [injected, setInjected] = useState(false)
   const [inserting, setInserting] = useState(false)
-  const [masterNode, setMasterNode] = useState(null)
+  const [masterNode, setMasterNode] = useState<Book | null>(null)
   const [masterContext, setMasterContext] = useState('')
-  // Par défaut: l'œuvre source (master) cite les ouvrages importés
   const [linkDirection, setLinkDirection] = useState('master-cites-imported')
-  const [editingCell, setEditingCell] = useState(null)
+  const [editingCell, setEditingCell] = useState<null | { id: string; field: string }>(null)
   const [editingValue, setEditingValue] = useState('')
-  const [editingAuthor, setEditingAuthor] = useState(null)
-  const [mergedIds, setMergedIds] = useState(new Set())
+  const [editingAuthor, setEditingAuthor] = useState<
+    null | { id: string; authorIndex: number | null; firstName: string; lastName: string }
+  >(null)
+  const [mergedIds, setMergedIds] = useState<Set<string>>(new Set())
 
   if (!open) return null
 
@@ -92,19 +123,21 @@ export default function SmartImportModal({
     setInjected(false)
   }
 
-  const handleMerge = (item) => {
+  const handleMerge = (item: ParsedBook) => {
     if (!item.existingNode || !onUpdateBook) return
     const existing = item.existingNode
+    if (!existing.id) return
     const updates = { ...existing }
     if (!existing.firstName && item.firstName) updates.firstName = item.firstName
     if (!existing.lastName && item.lastName) updates.lastName = item.lastName
     if ((!existing.year || existing.year === new Date().getFullYear()) && item.year && !item.yearMissing) {
       updates.year = item.year
     }
-    onUpdateBook(updates)
+    onUpdateBook(updates as Book)
     if (masterNode) {
-      const source = linkDirection === 'imported-cites-master' ? existing.id : masterNode.id
-      const target = linkDirection === 'imported-cites-master' ? masterNode.id : existing.id
+      const exId = existing.id
+      const source = linkDirection === 'imported-cites-master' ? exId : masterNode.id
+      const target = linkDirection === 'imported-cites-master' ? masterNode.id : exId
       onAddLink?.({
         source,
         target,
@@ -118,7 +151,7 @@ export default function SmartImportModal({
     setChecked((prev) => { const next = new Set(prev); next.delete(item.id); return next })
   }
 
-  const toggleItem = (id) =>
+  const toggleItem = (id: string) =>
     setChecked((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -173,13 +206,13 @@ export default function SmartImportModal({
     setEditingAuthor(null)
   }
 
-  const handleUpdateAxes = (itemId, newAxes) => {
+  const handleUpdateAxes = (itemId: string, newAxes: ParsedBook['axes']) => {
     setParsed((prev) =>
       prev.map((item) => (item.id === itemId ? { ...item, axes: newAxes } : item))
     )
   }
 
-  const handleAddCoAuthor = (itemId) => {
+  const handleAddCoAuthor = (itemId: string) => {
     const item = parsed.find((i) => i.id === itemId)
     if (!item) return
     const currentAuthors = item.authors?.length > 0
@@ -198,27 +231,25 @@ export default function SmartImportModal({
   const handleInject = async () => {
     setInserting(true)
     const toAdd = parsed.filter((r) => checked.has(r.id))
-    const newIds = []
-    // Copie locale pour résoudre les doublons dans le même batch d'import
+    const newIds: string[] = []
     const localAuthors = [...existingAuthors]
-    // Collecter les promesses d'insertion pour attendre la persistence avant de créer les liens
-    const insertPromises = []
+    const insertPromises: Promise<unknown>[] = []
     toAdd.forEach((r) => {
       // Résoudre ou créer les auteurs de ce livre
       const authorIds = onAddAuthor
         ? resolveOrCreateAuthors(r.authors || [], localAuthors, onAddAuthor)
         : []
-      const bookPromise = onAddBook({
+      const pending = onAddBook?.({
         id: r.id,
         title: r.title,
-        firstName: r.firstName,   // legacy fallback
-        lastName: r.lastName,     // legacy fallback
+        firstName: r.firstName,
+        lastName: r.lastName,
         authorIds,
         year: r.year,
         axes: r.axes,
         description: '',
       })
-      if (bookPromise?.then) insertPromises.push(bookPromise)
+      if (isThenable(pending)) insertPromises.push(Promise.resolve(pending))
       newIds.push(r.id)
     })
     // Attendre que tous les livres soient persistés en DB avant de créer les liens
@@ -246,7 +277,7 @@ export default function SmartImportModal({
   const handleClose = () => { resetAll(); onClose() }
   const goBack = () => { setPhase('input'); setEditingCell(null); setEditingAuthor(null) }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (phase === 'input' && rawText.trim()) handleAnalyze()
     else if (phase === 'preview' && checked.size > 0 && !injected && !inserting) handleInject()

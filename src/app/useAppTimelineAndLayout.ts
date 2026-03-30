@@ -1,11 +1,19 @@
 import { useCallback, useMemo, useState } from 'react'
+import type { GraphData, TimelineRange } from '@/domain/types'
+import { normalizeEndpointId } from '@/features/graph/domain/graphDataModel'
 import { constellationLayout, genealogyLayout } from '../features/graph/layoutEngine'
 
-export function useAppTimelineAndLayout(graphData) {
-  const allYears = useMemo(() => graphData.nodes.map((n) => n.year).filter(Boolean), [graphData.nodes])
+export function useAppTimelineAndLayout(graphData: GraphData) {
+  const allYears = useMemo(
+    () =>
+      graphData.nodes
+        .map((n) => n.year)
+        .filter((y): y is number => typeof y === 'number'),
+    [graphData.nodes],
+  )
   const maxYear = useMemo(() => Math.max(...allYears, 2025), [allYears])
   const minYear = useMemo(() => Math.min(...allYears, 1800), [allYears])
-  const [timelineRange, setTimelineRange] = useState(null)
+  const [timelineRange, setTimelineRange] = useState<TimelineRange | null>(null)
 
   const [viewMode, setViewMode] = useState('constellation')
 
@@ -27,9 +35,9 @@ export function useAppTimelineAndLayout(graphData) {
     return {
       nodes: graphData.nodes.filter((n) => visibleNodeIds.has(n.id)),
       links: graphData.links.filter((l) => {
-        const srcId = l.source && typeof l.source === 'object' ? l.source.id : l.source
-        const tgtId = l.target && typeof l.target === 'object' ? l.target.id : l.target
-        return visibleNodeIds.has(srcId) && visibleNodeIds.has(tgtId)
+        const srcId = normalizeEndpointId(l.source)
+        const tgtId = normalizeEndpointId(l.target)
+        return !!(srcId && tgtId && visibleNodeIds.has(srcId) && visibleNodeIds.has(tgtId))
       }),
     }
   }, [graphData, clampedTimelineRange])
@@ -43,7 +51,7 @@ export function useAppTimelineAndLayout(graphData) {
     }
   }, [viewMode, filteredGraphData])
 
-  const handleViewChange = useCallback((mode) => {
+  const handleViewChange = useCallback((mode: string) => {
     setViewMode(mode)
   }, [])
 

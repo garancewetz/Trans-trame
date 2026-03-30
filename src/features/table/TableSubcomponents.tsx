@@ -1,24 +1,34 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp, Plus } from 'lucide-react'
-import { authorName, bookAuthorDisplay } from '../../authorUtils'
-import { AXES, AXES_COLORS, AXES_LABELS, axesGradient } from '../../categories'
+import type { Author, AuthorId, Book, BookId } from '@/domain/types'
+import type { AuthorNode } from '@/lib/authorUtils'
+import { authorName, bookAuthorDisplay } from '@/lib/authorUtils'
+import { AXES, AXES_COLORS, AXES_LABELS, axesGradient, type Axis } from '@/lib/categories'
 import Button from '../../components/ui/Button'
 import TextInput from '../../components/ui/TextInput'
 import { INPUT } from './tableConstants'
 
-export function AxisDots({ axes = [], onChange }) {
+export function AxisDots({
+  axes = [],
+  onChange,
+}: {
+  axes?: Axis[]
+  onChange: (axes: Axis[]) => void
+}) {
   const [open, setOpen] = useState(false)
-  const ref = useRef(null)
+  const ref = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    function onDown(e) {
-      if (!ref.current?.contains(e.target)) setOpen(false)
+    function onDown(e: PointerEvent) {
+      const el = ref.current
+      const t = e.target
+      if (!el || !(t instanceof Node) || !el.contains(t)) setOpen(false)
     }
     document.addEventListener('pointerdown', onDown)
     return () => document.removeEventListener('pointerdown', onDown)
   }, [])
 
-  const toggle = (axis) =>
+  const toggle = (axis: Axis) =>
     onChange(axes.includes(axis) ? axes.filter((a) => a !== axis) : [...axes, axis])
 
   return (
@@ -67,24 +77,39 @@ export function AxisDots({ axes = [], onChange }) {
   )
 }
 
-// authors: Author[], selectedAuthorIds: string[], onChange: (ids: string[]) => void, onAddAuthor?: (author) => void
-export function AuthorPicker({ authors = [], selectedAuthorIds = [], onChange, onAddAuthor }) {
+export function AuthorPicker({
+  authors = [],
+  selectedAuthorIds = [],
+  onChange,
+  onAddAuthor,
+}: {
+  authors?: Author[]
+  selectedAuthorIds?: AuthorId[]
+  onChange: (ids: AuthorId[]) => void
+  onAddAuthor?: (author: Author) => void
+}) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
-  const ref = useRef(null)
+  const ref = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    function onDown(e) {
-      if (!ref.current?.contains(e.target)) setOpen(false)
+    function onDown(e: PointerEvent) {
+      const el = ref.current
+      const t = e.target
+      if (!el || !(t instanceof Node) || !el.contains(t)) setOpen(false)
     }
     document.addEventListener('pointerdown', onDown)
     return () => document.removeEventListener('pointerdown', onDown)
   }, [])
 
-  const selectedAuthors = useMemo(
-    () => selectedAuthorIds.map((id) => authors.find((a) => a.id === id)).filter(Boolean),
-    [selectedAuthorIds, authors]
-  )
+  const selectedAuthors = useMemo((): Author[] => {
+    const list: Author[] = []
+    for (const id of selectedAuthorIds) {
+      const a = authors.find((au) => au.id === id)
+      if (a) list.push(a)
+    }
+    return list
+  }, [selectedAuthorIds, authors])
 
   const suggestions = useMemo(() => {
     const q = query.toLowerCase().trim()
@@ -93,17 +118,17 @@ export function AuthorPicker({ authors = [], selectedAuthorIds = [], onChange, o
       .filter((a) => !selectedAuthorIds.includes(a.id))
       .filter(
         (a) =>
-          `${a.firstName} ${a.lastName}`.toLowerCase().includes(q) ||
-          a.lastName.toLowerCase().startsWith(q)
+          `${a.firstName ?? ''} ${a.lastName ?? ''}`.toLowerCase().includes(q) ||
+          (a.lastName ?? '').toLowerCase().startsWith(q)
       )
       .slice(0, 6)
   }, [authors, selectedAuthorIds, query])
 
   const canCreate = query.trim().length > 1 && suggestions.length === 0 && !!onAddAuthor
 
-  const removeAuthor = (id) => onChange(selectedAuthorIds.filter((aid) => aid !== id))
+  const removeAuthor = (id: AuthorId) => onChange(selectedAuthorIds.filter((aid) => aid !== id))
 
-  const addAuthor = (author) => {
+  const addAuthor = (author: Author) => {
     onChange([...selectedAuthorIds, author.id])
     setQuery('')
     setOpen(false)
@@ -113,14 +138,14 @@ export function AuthorPicker({ authors = [], selectedAuthorIds = [], onChange, o
     const parts = query.trim().split(/\s+/)
     const firstName = parts.length > 1 ? parts.slice(0, -1).join(' ') : ''
     const lastName = parts.length > 1 ? parts[parts.length - 1] : parts[0]
-    const newAuthor = {
+    const newAuthor: Author = {
       id: `auth_${crypto.randomUUID().slice(0, 8)}`,
       type: 'author',
       firstName,
       lastName,
       axes: [],
     }
-    onAddAuthor(newAuthor)
+    onAddAuthor?.(newAuthor)
     onChange([...selectedAuthorIds, newAuthor.id])
     setQuery('')
     setOpen(false)
@@ -206,14 +231,30 @@ export function AuthorPicker({ authors = [], selectedAuthorIds = [], onChange, o
   )
 }
 
-export function NodeSearch({ nodes, authorsMap, value, onSelect, placeholder, exclude = [] }) {
+export function NodeSearch({
+  nodes,
+  authorsMap,
+  value,
+  onSelect,
+  placeholder,
+  exclude = [],
+}: {
+  nodes: Book[]
+  authorsMap: Map<string, AuthorNode>
+  value: Book | null
+  onSelect: (n: Book) => void
+  placeholder: string
+  exclude?: BookId[]
+}) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
-  const ref = useRef(null)
+  const ref = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    function onDown(e) {
-      if (!ref.current?.contains(e.target)) setOpen(false)
+    function onDown(e: PointerEvent) {
+      const el = ref.current
+      const t = e.target
+      if (!el || !(t instanceof Node) || !el.contains(t)) setOpen(false)
     }
     document.addEventListener('pointerdown', onDown)
     return () => document.removeEventListener('pointerdown', onDown)

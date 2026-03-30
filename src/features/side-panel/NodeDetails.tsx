@@ -1,5 +1,5 @@
 import { Pencil, ArrowRight, ArrowLeft, LinkIcon, Plus } from 'lucide-react'
-import { bookAuthorDisplay } from '../../authorUtils'
+import { bookAuthorDisplay } from '@/lib/authorUtils'
 import AxisBadge from '../../components/ui/AxisBadge'
 import Button from '../../components/ui/Button'
 
@@ -19,7 +19,7 @@ export default function NodeDetails({
   const displayAuthor = (book) => bookAuthorDisplay(book, authorsMap || new Map())
 
   const refMeta = (other, link) => {
-    const parts = []
+    const parts: string[] = []
     if (other) {
       const a = displayAuthor(other)
       if (a) parts.push(a)

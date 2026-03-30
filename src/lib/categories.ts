@@ -15,6 +15,14 @@ export const AXES_LABELS = Object.fromEntries(
 
 export const AXES = Object.keys(CATEGORY_THEME) as Axis[]
 
+const AXIS_KEY_SET = new Set<string>(AXES)
+
+/** Ne garde que les axes reconnus (données livre / table / import). */
+export function narrowAxes(axes: readonly string[] | undefined | null): Axis[] {
+  if (!axes?.length) return []
+  return axes.filter((a): a is Axis => AXIS_KEY_SET.has(a))
+}
+
 // Backward-compat alias
 export const CATEGORY_COLORS = AXES_COLORS
 

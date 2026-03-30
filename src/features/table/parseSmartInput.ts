@@ -1,9 +1,10 @@
 import { parseSmartInput as parseSmartInputJs } from './parseSmartInput.logic'
-import type { Axis } from '../../categories.constants'
+import type { Axis } from '@/lib/categories.constants'
 
 export type Author = { firstName: string; lastName: string }
 
 export type ExistingNode = {
+  id?: string
   title?: string
   [key: string]: unknown
 }

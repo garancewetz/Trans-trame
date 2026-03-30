@@ -1,22 +1,30 @@
-import { AXES_COLORS } from '../../categories'
+import { AXES_COLORS } from '@/lib/categories'
 
-// Pre-generate star positions once
-let _stars = null
-function getStars() {
+type Star = {
+  x: number
+  y: number
+  brightness: number
+  size: number
+}
+
+let _stars: Star[] | null = null
+
+function getStars(): Star[] {
   if (_stars) return _stars
-  _stars = []
+  const list: Star[] = []
   for (let i = 0; i < 2000; i++) {
-    _stars.push({
+    list.push({
       x: (Math.random() - 0.5) * 3000,
       y: (Math.random() - 0.5) * 3000,
       brightness: 0.3 + Math.random() * 0.5,
       size: 0.4 + Math.random() * 1.2,
     })
   }
-  return _stars
+  _stars = list
+  return list
 }
 
-export function drawStarField(ctx, globalScale) {
+export function drawStarField(ctx: CanvasRenderingContext2D, globalScale: number) {
   const stars = getStars()
   const r = 1 / globalScale
   for (const star of stars) {
@@ -27,21 +35,27 @@ export function drawStarField(ctx, globalScale) {
   }
 }
 
-// Cache offscreen canvases for conic gradient node fills (keyed by axes combo)
-const gradientCanvasCache = new Map()
+const gradientCanvasCache = new Map<string, HTMLCanvasElement>()
 const GRAD_SIZE = 64
 
-export function getGradientCanvas(axes) {
+export function getGradientCanvas(axes: string[] | undefined | null): HTMLCanvasElement {
   const key = (axes || []).join('|') || '_empty'
-  if (gradientCanvasCache.has(key)) return gradientCanvasCache.get(key)
+  const cached = gradientCanvasCache.get(key)
+  if (cached) return cached
 
   const canvas = document.createElement('canvas')
   canvas.width = GRAD_SIZE
   canvas.height = GRAD_SIZE
   const ctx = canvas.getContext('2d')
+  if (!ctx) {
+    gradientCanvasCache.set(key, canvas)
+    return canvas
+  }
 
-  const colors = (axes || []).map((a) => AXES_COLORS[a]).filter(Boolean)
-  if (colors.length === 0) colors.push('#ffffff')
+  let colors = (axes || [])
+    .map((a) => AXES_COLORS[a])
+    .filter((c): c is string => typeof c === 'string' && c.length > 0)
+  if (colors.length === 0) colors = ['#ffffff']
 
   if (colors.length === 1) {
     ctx.fillStyle = colors[0]

@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
+import type { Book } from '@/domain/types'
 import { Controller } from 'react-hook-form'
 import { Search, X, Merge, Trash2, Pin } from 'lucide-react'
-import { bookAuthorDisplay } from '../../authorUtils'
-import { axesGradient } from '../../categories'
+import { bookAuthorDisplay } from '@/lib/authorUtils'
+import { axesGradient } from '@/lib/categories'
 import Button from '../../components/ui/Button'
 import TextInput from '../../components/ui/TextInput'
 import Textarea from '../../components/ui/Textarea'
@@ -30,7 +31,7 @@ export default function BookForm({
   const selectedAxes = watch('axes') || []
 
   const [mergeSearch, setMergeSearch] = useState('')
-  const [mergeTarget, setMergeTarget] = useState(null)
+  const [mergeTarget, setMergeTarget] = useState<Book | null>(null)
   const [mergeConfirm, setMergeConfirm] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
 

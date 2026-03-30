@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { bookAuthorDisplay, buildAuthorsMap } from '../../authorUtils'
+import { bookAuthorDisplay, buildAuthorsMap } from '@/lib/authorUtils'
 import { resolveLinks } from './resolveLinks'
 import TableTopbar from './TableTopbar'
 import TableBooksTab from './tabs/BooksTab'
@@ -10,6 +10,39 @@ import TableOrphanModal from './TableOrphanModal'
 import TableDedupeModal from './TableDedupeModal'
 import TableAuthorDedupeModal from './TableAuthorDedupeModal'
 import SmartImportModal from './SmartImportModal'
+import type { Author, AuthorId, Book, BookId, Link } from '@/domain/types'
+
+function maybeNodeId(v: unknown): string | null {
+  if (!v) return null
+  if (typeof v === 'string') return v
+  if (typeof v === 'object') {
+    const anyV = v as { id?: unknown }
+    if (typeof anyV.id === 'string') return anyV.id
+  }
+  return null
+}
+
+type TableViewProps = {
+  nodes: Book[]
+  links: Link[]
+  authors: Author[]
+  onAddBook?: (book: Partial<Book> & Pick<Book, 'id' | 'title'>) => void | PromiseLike<unknown>
+  onAddLink?: (link: Partial<Link> & Pick<Link, 'source' | 'target'>) => unknown
+  onUpdateBook?: (book: Book) => unknown
+  onDeleteBook?: (bookId: BookId) => unknown
+  onUpdateLink?: (linkId: string, updatedFields: Partial<Link>) => unknown
+  onDeleteLink?: (linkId: string) => unknown
+  onMergeBooks?: (fromNodeId: BookId, intoNodeId: BookId) => unknown
+  onAddAuthor?: (author: Author) => unknown
+  onUpdateAuthor?: (author: Author) => unknown
+  onDeleteAuthor?: (authorId: AuthorId) => unknown
+  onMigrateData?: () => Promise<{ newAuthors: number; updatedBooks: number } | null> | { newAuthors: number; updatedBooks: number } | null
+  onClose?: () => void
+  onLastEdited?: (bookId: BookId) => void
+  initialTab?: 'books' | 'authors' | 'links'
+  initialLinkSourceId?: BookId | null
+  onImportComplete?: (nodeIds: BookId[]) => void
+}
 
 export default function TableView({
   nodes,
@@ -31,37 +64,37 @@ export default function TableView({
   initialTab = 'books',
   initialLinkSourceId = null,
   onImportComplete,
-}) {
+}: TableViewProps) {
   const [visible, setVisible] = useState(false)
   useEffect(() => {
     queueMicrotask(() => setVisible(true))
   }, [])
 
-  const [tab, setTab] = useState(initialTab)
-  const [focusAuthorId, setFocusAuthorId] = useState(null)
-  const [focusBookId, setFocusBookId] = useState(null)
-  const [booksPrefill, setBooksPrefill] = useState(null) // { nonce, authorId }
+  const [tab, setTab] = useState<TableViewProps['initialTab']>(initialTab)
+  const [focusAuthorId, setFocusAuthorId] = useState<AuthorId | null>(null)
+  const [focusBookId, setFocusBookId] = useState<BookId | null>(null)
+  const [booksPrefill, setBooksPrefill] = useState<null | { nonce: string; authorId: AuthorId }>(null)
 
   const [search, setSearch] = useState('')
-  const [addedQueue, setAddedQueue] = useState([])
+  const [addedQueue, setAddedQueue] = useState<string[]>([])
 
   const [authorSearch, setAuthorSearch] = useState('')
   const [linkSearch, setLinkSearch] = useState('')
-  const [linkSourceNode, setLinkSourceNode] = useState(
-    () => (initialLinkSourceId ? nodes.find((n) => n.id === initialLinkSourceId) ?? null : null)
+  const [linkSourceNode, setLinkSourceNode] = useState<Book | null>(
+    () => (initialLinkSourceId ? nodes.find((n) => n.id === initialLinkSourceId) ?? null : null),
   )
 
-  const focusAuthorInAuthorsTab = (authorId) => {
+  const focusAuthorInAuthorsTab = (authorId: AuthorId) => {
     if (!authorId) return
     setAuthorSearch('')
     setFocusAuthorId(authorId)
     setTab('authors')
   }
   const [checklistSearch, setChecklistSearch] = useState('')
-  const [linkCheckedIds, setLinkCheckedIds] = useState(new Set())
-  const [editingLink, setEditingLink] = useState(null)
+  const [linkCheckedIds, setLinkCheckedIds] = useState<Set<BookId>>(new Set())
+  const [editingLink, setEditingLink] = useState<null | { id: string; field: string }>(null)
   const [editingLinkValue, setEditingLinkValue] = useState('')
-  const [deletingLinkId, setDeletingLinkId] = useState(null)
+  const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null)
 
   const [orphanModal, setOrphanModal] = useState(false)
   const [orphanConfirm, setOrphanConfirm] = useState(false)
@@ -79,13 +112,13 @@ export default function TableView({
   const resolvedLinks = useMemo(() => resolveLinks(links, nodes), [links, nodes])
 
   const existingTargetIds = useMemo(() => {
-    if (!linkSourceNode) return new Set()
+    if (!linkSourceNode) return new Set<BookId>()
     const srcId = linkSourceNode.id
-    const set = new Set()
+    const set = new Set<BookId>()
     links.forEach((l) => {
-      const s = typeof l.source === 'object' ? l.source.id : l.source
-      const t = typeof l.target === 'object' ? l.target.id : l.target
-      if (s === srcId) set.add(t)
+      const s = maybeNodeId(l.source)
+      const t = maybeNodeId(l.target)
+      if (s === srcId && t) set.add(t)
     })
     return set
   }, [links, linkSourceNode])
@@ -137,8 +170,10 @@ export default function TableView({
   const orphans = useMemo(() => {
     const linked = new Set()
     links.forEach((l) => {
-      linked.add(typeof l.source === 'object' ? l.source.id : l.source)
-      linked.add(typeof l.target === 'object' ? l.target.id : l.target)
+      const s = maybeNodeId(l.source)
+      const t = maybeNodeId(l.target)
+      if (s) linked.add(s)
+      if (t) linked.add(t)
     })
     return nodes.filter((n) => !linked.has(n.id))
   }, [nodes, links])
@@ -165,7 +200,7 @@ export default function TableView({
     return Array.from(map.values()).filter((g) => g.length > 1)
   }, [authors])
 
-  const mergeAuthors = (fromAuthorId, keepAuthorId) => {
+  const mergeAuthors = (fromAuthorId: AuthorId, keepAuthorId: AuthorId) => {
     if (!fromAuthorId || !keepAuthorId || fromAuthorId === keepAuthorId) return
     ;(nodes || []).forEach((b) => {
       const ids = b.authorIds || []
@@ -191,7 +226,7 @@ export default function TableView({
     if (!node) return
     setTab('links')
     setLinkSourceNode(node)
-    setLinkCheckedIds(new Set())
+    setLinkCheckedIds(new Set<BookId>())
     setChecklistSearch('')
   }
 
@@ -209,16 +244,23 @@ export default function TableView({
     if (!linkSourceNode || newLinksCount === 0) return
     linkCheckedIds.forEach((id) => {
       if (existingTargetIds.has(id) || id === linkSourceNode.id) return
-      onAddLink({ source: linkSourceNode.id, target: id, citation_text: '', edition: '', page: '', context: '' })
+      onAddLink?.({
+        source: linkSourceNode.id,
+        target: id,
+        citation_text: '',
+        edition: '',
+        page: '',
+        context: '',
+      })
     })
-    setLinkCheckedIds(new Set())
+    setLinkCheckedIds(new Set<BookId>())
   }
 
   const commitLinkEdit = () => {
     if (!editingLink) return
     const linkId = editingLink.id
     if (editingLink.field !== '_expand') {
-      onUpdateLink(linkId, { [editingLink.field]: editingLinkValue.trim() })
+      onUpdateLink?.(linkId, { [editingLink.field]: editingLinkValue.trim() })
     }
     // Revenir au panneau étendu après l'édition d'un champ
     setEditingLink({ id: linkId, field: '_expand' })
@@ -226,7 +268,7 @@ export default function TableView({
 
   const handleCleanOrphans = () => {
     if (!orphanConfirm) { setOrphanConfirm(true); return }
-    orphans.forEach((n) => onDeleteBook(n.id))
+    orphans.forEach((n) => onDeleteBook?.(n.id))
     setOrphanModal(false)
     setOrphanConfirm(false)
   }
@@ -237,7 +279,7 @@ export default function TableView({
     duplicateGroups.forEach((group) => {
       const sorted = [...group].sort((a, b) => richness(b) - richness(a))
       const keep = sorted[0]
-      sorted.slice(1).forEach((from) => onMergeBooks(from.id, keep.id))
+      sorted.slice(1).forEach((from) => onMergeBooks?.(from.id, keep.id))
     })
     setDedupeModal(false)
     setDedupeConfirm(false)
@@ -323,9 +365,9 @@ export default function TableView({
           authors={authors}
           books={nodes}
           search={authorSearch}
-          onAddAuthor={onAddAuthor}
-          onUpdateAuthor={onUpdateAuthor}
-          onDeleteAuthor={onDeleteAuthor}
+          onAddAuthor={(a) => onAddAuthor?.(a)}
+          onUpdateAuthor={(a) => onUpdateAuthor?.(a)}
+          onDeleteAuthor={(id) => onDeleteAuthor?.(id)}
           onMigrateData={onMigrateData}
           onMergeAuthors={mergeAuthors}
           onAddBookForAuthor={(author) => {
@@ -363,7 +405,7 @@ export default function TableView({
           commitLinkEdit={commitLinkEdit}
           deletingLinkId={deletingLinkId}
           setDeletingLinkId={setDeletingLinkId}
-          onDeleteLink={onDeleteLink}
+          onDeleteLink={(id) => onDeleteLink?.(id)}
           onRevealBookLine={revealBookLine}
         />
       )}

@@ -1,8 +1,8 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react'
 import { BarChart3, X, Network, Quote, EyeOff, Activity } from 'lucide-react'
-import { AXES_COLORS } from '../../categories'
-import { bookAuthorDisplay } from '../../authorUtils'
-import type { AuthorNode } from '../../authorUtils'
+import { AXES_COLORS } from '@/lib/categories'
+import { bookAuthorDisplay } from '@/lib/authorUtils'
+import type { AuthorNode } from '@/lib/authorUtils'
 import Button from '../../components/ui/Button'
 import Panel from '../../components/ui/Panel'
 import {
@@ -23,7 +23,7 @@ type AnalysisPanelProps = {
   authorsMap: Map<string, AuthorNode>
 }
 
-type AnalysisPanelImperativeHandle = {
+export type AnalysisPanelImperativeHandle = {
   openPanel: () => void
   closePanel: () => void
 }

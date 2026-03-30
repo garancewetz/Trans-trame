@@ -1,5 +1,5 @@
-import { bookAuthorDisplay } from '../../authorUtils'
-import { axesGradient } from '../../categories'
+import { bookAuthorDisplay } from '@/lib/authorUtils'
+import { axesGradient } from '@/lib/categories'
 import Button from '../../components/ui/Button'
 
 export default function TableOrphanModal({

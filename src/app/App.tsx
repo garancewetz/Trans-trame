@@ -1,21 +1,21 @@
 import { useMemo, useRef } from 'react'
 import type { ForwardRefExoticComponent, RefAttributes } from 'react'
-import AnalysisPanel from '../features/analysis-panel/AnalysisPanel'
-import Graph from '../features/graph/Graph'
-import Legend from '../features/graph/Legend'
-import Navbar from '../features/shell/Navbar'
-import SidePanel from '../features/side-panel/SidePanel'
-import TableView from '../features/table/TableView'
-import Timeline from '../features/timeline/Timeline'
-import TextsPanel from '../features/texts-panel/TextsPanel'
-import AuthorsPanel from '../features/authors-panel/AuthorsPanel'
-import { AXES_COLORS, axesGradient } from '../categories'
-import { authorName, bookAuthorDisplay, buildAuthorsMap } from '../authorUtils'
-import useGraphData from '../features/graph/hooks/useGraphData'
-import { computeSameAuthorBooks, getIncomingRefs, getLinkNodes, getOutgoingRefs } from '../features/graph/graphRelations'
+import AnalysisPanel, { type AnalysisPanelImperativeHandle } from '@/features/analysis-panel/AnalysisPanel'
+import Graph, { type GraphImperativeHandle } from '@/features/graph/Graph'
+import Legend from '@/features/graph/Legend'
+import Navbar from '@/features/shell/Navbar'
+import SidePanel from '@/features/side-panel/SidePanel'
+import TableView from '@/features/table/TableView'
+import Timeline from '@/features/timeline/Timeline'
+import TextsPanel from '@/features/texts-panel/TextsPanel'
+import AuthorsPanel from '@/features/authors-panel/AuthorsPanel'
+import { AXES_COLORS, axesGradient } from '@/lib/categories'
+import { authorName, bookAuthorDisplay, buildAuthorsMap } from '@/lib/authorUtils'
+import { computeSameAuthorBooks, getIncomingRefs, getLinkNodes, getOutgoingRefs } from '@/features/graph/graphRelations'
 import { useAppTimelineAndLayout } from './useAppTimelineAndLayout'
 import { useAppUiState } from './useAppUiState'
-import { computeAxisStats } from '../features/analysis-panel/analysisMetrics'
+import { computeAxisStats } from '@/features/analysis-panel/analysisMetrics'
+import { useAppData } from './AppDataContext'
 
 // Pendant la migration, Graph/AnalysisPanel sont encore en `.jsx`.
 // TS ne peut pas toujours inférer correctement leurs props via `forwardRef`.
@@ -42,12 +42,10 @@ export default function App() {
     handleUpdateAuthor,
     handleDeleteAuthor,
     handleMigrateData,
-  } = useGraphData({
-    axesColors: AXES_COLORS,
-  })
+  } = useAppData()
 
-  const graphRef = useRef(null)
-  const analysisPanelRef = useRef(null)
+  const graphRef = useRef<GraphImperativeHandle | null>(null)
+  const analysisPanelRef = useRef<AnalysisPanelImperativeHandle | null>(null)
 
   const {
     selectedNode,
@@ -355,7 +353,7 @@ export default function App() {
             setFlashNodeIds(ids)
             setTimeout(() => setFlashNodeIds(null), 4000)
           }}
-          initialTab={tableInitialTab}
+          initialTab={tableInitialTab as 'books' | 'authors' | 'links'}
           initialLinkSourceId={tableLinkSourceId}
         />
       )}

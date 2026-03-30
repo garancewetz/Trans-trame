@@ -1,4 +1,4 @@
-import { AXIS_KEYWORDS } from '../../keywords.constants'
+import { AXIS_KEYWORDS } from '@/lib/keywords.constants'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -8,9 +8,9 @@ const CURRENT_YEAR = new Date().getFullYear()
  * Détecte les axes pertinents à partir du texte brut d'une ligne bibliographique.
  * Retourne un tableau d'axes (ex. ['QUEER', 'HEALTH']).
  */
-function detectAxes(rawLine) {
+function detectAxes(rawLine: string): string[] {
   const text = rawLine.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim()
-  const matched = []
+  const matched: string[] = []
   for (const [axis, keywords] of Object.entries(AXIS_KEYWORDS)) {
     for (const kw of keywords) {
       if (text.includes(kw.normalize('NFD').replace(/\p{Diacritic}/gu, ''))) {
@@ -83,7 +83,9 @@ function parseAuthorString(raw) {
   return { firstName: words[0], lastName: words.slice(1).join(' ') }
 }
 
-function parseLine(rawLine) {
+type ParsedAuthorName = { firstName: string; lastName: string }
+
+function parseLine(rawLine: string) {
   // ── 1. Strip leading bullet points / numbered lists ───────────────────────
   const line = rawLine
     .replace(/^[\s*•·◦▪▸►\-–—]+/, '')
@@ -109,7 +111,7 @@ function parseLine(rawLine) {
   let lastName = ''
   let title = ''
   let edition = ''
-  let authors = []
+  let authors: ParsedAuthorName[] = []
 
   // ── 4. Multi-auteurs : "Pardo et Delor" / "Smith & Jones" / "A, B et C" ──
   // Détecte une liste d'auteurs avant le titre (séparés par et|&|,)
@@ -291,7 +293,7 @@ function titleSimilarity(a, b) {
  *   isFuzzyDuplicate   — similarité élevée (≥ 0.82) mais pas exacte
  *   existingNode       — nœud existant correspondant (si doublon)
  */
-export function parseSmartInput(text, existingNodes = []) {
+export function parseSmartInput(text: string, existingNodes: Array<{ title?: string }> = []) {
   const lines = text.split('\n').map((l) => l.trim()).filter((l) => l.length > 3)
 
   return lines
@@ -300,7 +302,7 @@ export function parseSmartInput(text, existingNodes = []) {
       if (!parsed || !parsed.title) return null
 
       // Find the best matching existing node
-      let bestNode = null
+      let bestNode: { title?: string } | null = null
       let bestScore = 0
       for (const n of existingNodes) {
         const score = titleSimilarity(n.title, parsed.title)

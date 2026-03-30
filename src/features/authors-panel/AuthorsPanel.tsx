@@ -1,15 +1,16 @@
 import { Plus, Search, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { authorName } from '../../authorUtils'
-import { axesGradient } from '../../categories'
+import type { Author, Book } from '@/domain/types'
+import { authorName } from '@/lib/authorUtils'
+import { axesGradient } from '@/lib/categories'
 import Button from '../../components/ui/Button'
 import TextInput from '../../components/ui/TextInput'
 
 export default function AuthorsPanel({
   open,
   onClose,
-  authors = [],
-  books = [],
+  authors = [] as Author[],
+  books = [] as Book[],
   selectedAuthorId,
   onSelectAuthor,
   onAddWorkForAuthor,

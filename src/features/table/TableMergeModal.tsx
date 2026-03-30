@@ -1,5 +1,5 @@
 import { Merge } from 'lucide-react'
-import { bookAuthorDisplay } from '../../authorUtils'
+import { bookAuthorDisplay } from '@/lib/authorUtils'
 import Button from '../../components/ui/Button'
 
 export default function TableMergeModal({

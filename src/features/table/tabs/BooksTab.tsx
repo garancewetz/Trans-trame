@@ -1,12 +1,43 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, Link2, Merge, Plus, Trash2 } from 'lucide-react'
-import { bookAuthorDisplay } from '../../../authorUtils'
-import Button from '../../../components/ui/Button'
-import OutlineBadge from '../../../components/ui/OutlineBadge'
-import TextInput from '../../../components/ui/TextInput'
+import { bookAuthorDisplay } from '@/lib/authorUtils'
+import Button from '@/components/ui/Button'
+import OutlineBadge from '@/components/ui/OutlineBadge'
+import TextInput from '@/components/ui/TextInput'
 import { INPUT, TD } from '../tableConstants'
 import { AxisDots, AuthorPicker, TH } from '../TableSubcomponents'
 import TableMergeModal from '../TableMergeModal'
+import type { Author, AuthorId, Book, BookId, Link } from '@/domain/types'
+import { narrowAxes, type Axis } from '@/lib/categories'
+
+function maybeNodeId(v: unknown): string | null {
+  if (!v) return null
+  if (typeof v === 'string') return v
+  if (typeof v === 'object') {
+    const anyV = v as { id?: unknown }
+    if (typeof anyV.id === 'string') return anyV.id
+  }
+  return null
+}
+
+type BooksTabProps = {
+  nodes: Book[]
+  links: Link[]
+  search: string
+  authors: Author[]
+  onAddBook?: (book: Partial<Book> & Pick<Book, 'id' | 'title'>) => unknown
+  onUpdateBook?: (book: Book) => unknown
+  onDeleteBook?: (bookId: BookId) => unknown
+  onMergeBooks?: (fromNodeId: BookId, intoNodeId: BookId) => unknown
+  onAddAuthor?: (author: Author) => unknown
+  onLastEdited?: (bookId: BookId) => unknown
+  onBookAdded?: (title: string) => unknown
+  onOpenLinksForBook?: (node: Book) => unknown
+  onFocusAuthorInAuthorsTab?: (authorId: AuthorId) => unknown
+  initialAuthorIds?: AuthorId[]
+  autoFocusTitle?: boolean
+  focusBookId?: BookId | null
+}
 
 export default function BooksTab({
   nodes,
@@ -25,28 +56,28 @@ export default function BooksTab({
   initialAuthorIds = [],
   autoFocusTitle = false,
   focusBookId,
-}) {
-  const [editingAuthorsNodeId, setEditingAuthorsNodeId] = useState(null)
+}: BooksTabProps) {
+  const [editingAuthorsNodeId, setEditingAuthorsNodeId] = useState<BookId | null>(null)
   const [sortCol, setSortCol] = useState('lastName')
   const [sortDir, setSortDir] = useState('asc')
-  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [selectedIds, setSelectedIds] = useState<Set<BookId>>(new Set())
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
-  const [editingCell, setEditingCell] = useState(null)
+  const [editingCell, setEditingCell] = useState<null | { nodeId: BookId; field: 'title' | 'year' }>(null)
   const [editingValue, setEditingValue] = useState('')
 
   const [mergeModal, setMergeModal] = useState(false)
-  const [mergeKeepId, setMergeKeepId] = useState(null)
+  const [mergeKeepId, setMergeKeepId] = useState<BookId | null>(null)
   const [mergeConfirm, setMergeConfirm] = useState(false)
 
   const [inputTitle, setInputTitle] = useState('')
-  const [inputAuthorIds, setInputAuthorIds] = useState(initialAuthorIds)
+  const [inputAuthorIds, setInputAuthorIds] = useState<AuthorId[]>(initialAuthorIds)
   const [inputYear, setInputYear] = useState('')
-  const [inputAxes, setInputAxes] = useState([])
-  const titleInputRef = useRef(null)
+  const [inputAxes, setInputAxes] = useState<Axis[]>([])
+  const titleInputRef = useRef<HTMLInputElement | null>(null)
 
   // Index des auteurs par id pour affichage rapide des badges
   const authorsMap = useMemo(() => {
-    const m = new Map()
+    const m = new Map<string, Author>()
     ;(authors || []).forEach((a) => m.set(a.id, a))
     return m
   }, [authors])
@@ -54,10 +85,10 @@ export default function BooksTab({
   const linkCountByNode = useMemo(() => {
     const counts = new Map()
     ;(links || []).forEach((l) => {
-      const srcId = typeof l.source === 'object' ? l.source.id : l.source
-      const tgtId = typeof l.target === 'object' ? l.target.id : l.target
-      counts.set(srcId, (counts.get(srcId) || 0) + 1)
-      counts.set(tgtId, (counts.get(tgtId) || 0) + 1)
+      const srcId = maybeNodeId(l.source)
+      const tgtId = maybeNodeId(l.target)
+      if (srcId) counts.set(srcId, (counts.get(srcId) || 0) + 1)
+      if (tgtId) counts.set(tgtId, (counts.get(tgtId) || 0) + 1)
     })
     return counts
   }, [links])
@@ -140,10 +171,10 @@ export default function BooksTab({
     let val = editingValue.trim()
     if (field === 'year') {
       const p = parseInt(val)
-      val = isNaN(p) ? node.year : p
+      val = isNaN(p) ? String(node.year || '') : String(p)
     }
     if (String(val) !== String(node[field] ?? '')) {
-      onUpdateBook?.({ ...node, [field]: val })
+      onUpdateBook?.({ ...node, [field]: field === 'year' ? (val ? parseInt(val) : null) : val })
       onLastEdited?.(nodeId)
     }
     setEditingCell(null)
@@ -380,13 +411,13 @@ export default function BooksTab({
                         onAddAuthor={onAddAuthor}
                       />
                     </div>
-                  ) : node.authorIds?.length > 0 ? (
+                  ) : (node.authorIds?.length ?? 0) > 0 ? (
                     // Badges cliquables → ouvre le picker
                     <div
                       className="flex min-h-[1.5em] cursor-pointer flex-wrap items-center gap-1 rounded px-0.5 py-0.5 hover:bg-white/4"
                       onClick={() => setEditingAuthorsNodeId(node.id)}
                     >
-                      {node.authorIds.map((aid) => {
+                      {(node.authorIds ?? []).map((aid) => {
                         const a = authorsMap.get(aid)
                         return a ? (
                           <OutlineBadge
@@ -434,7 +465,7 @@ export default function BooksTab({
                 </td>
                 <td className="px-3 py-2">
                   <AxisDots
-                    axes={node.axes || []}
+                    axes={narrowAxes(node.axes)}
                     onChange={(newAxes) => { onUpdateBook?.({ ...node, axes: newAxes }); onLastEdited?.(node.id) }}
                   />
                 </td>
