@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react'
-import { ChevronLeft, X, Zap } from 'lucide-react'
+import { Zap } from 'lucide-react'
+import Modal from '../../components/ui/Modal'
 import type { Author, Book, Link } from '@/domain/types'
 import type { AuthorNode } from '@/lib/authorUtils'
-import Button from '../../components/ui/Button'
 
 function isThenable(v: unknown): v is PromiseLike<unknown> {
   return (
@@ -284,79 +284,57 @@ export default function SmartImportModal({
   }
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-sm px-4">
-      <form
-        onSubmit={handleSubmit}
-        className={[
-          'w-full rounded-2xl border border-white/10 bg-[rgba(6,5,20,0.98)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.65)] transition-all duration-200',
-          phase === 'preview' ? 'max-w-5xl' : 'max-w-4xl',
-        ].join(' ')}
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {phase === 'preview' && (
-              <Button
-                type="button"
-                onClick={goBack}
-                variant="buttonIcon"
-                className="mr-0.5"
-              >
-                <ChevronLeft size={16} />
-              </Button>
-            )}
-            <Zap size={14} className="text-[rgba(140,220,255,0.7)]" />
-            <h3 className="font-semibold text-white">Import Magique</h3>
-          </div>
-          <Button
-            type="button"
-            onClick={handleClose}
-            variant="buttonIcon"
-          >
-            <X size={15} />
-          </Button>
-        </div>
+    <Modal
+      open={open}
+      title="Import Magique"
+      titleIcon={<Zap size={14} className="text-[rgba(140,220,255,0.7)]" />}
+      onClose={handleClose}
+      onBack={phase === 'preview' ? goBack : undefined}
+      as="form"
+      onSubmit={handleSubmit}
+      containerClassName="transition-all duration-200"
+      maxWidth={phase === 'preview' ? 'max-w-5xl' : 'max-w-4xl'}
+    >
+      {phase === 'input' && (
+        <SmartImportInputPhase
+          rawText={rawText}
+          setRawText={setRawText}
+          masterNode={masterNode}
+          setMasterNode={setMasterNode}
+          masterContext={masterContext}
+          setMasterContext={setMasterContext}
+          linkDirection={linkDirection}
+          setLinkDirection={setLinkDirection}
+          existingNodes={existingNodes}
+          authorsMap={authorsMap}
+        />
+      )}
 
-        {phase === 'input' && (
-          <SmartImportInputPhase
-            rawText={rawText}
-            setRawText={setRawText}
-            masterNode={masterNode}
-            setMasterNode={setMasterNode}
-            masterContext={masterContext}
-            setMasterContext={setMasterContext}
-            linkDirection={linkDirection}
-            setLinkDirection={setLinkDirection}
-            existingNodes={existingNodes}
-            authorsMap={authorsMap}
-          />
-        )}
-
-        {phase === 'preview' && (
-          <SmartImportPreviewPhase
-            parsed={parsed}
-            checked={checked}
-            mergedIds={mergedIds}
-            editingCell={editingCell}
-            editingValue={editingValue}
-            setEditingValue={setEditingValue}
-            editingAuthor={editingAuthor}
-            setEditingAuthor={setEditingAuthor}
-            toggleItem={toggleItem}
-            commitCellEdit={commitCellEdit}
-            setEditingCell={setEditingCell}
-            commitAuthorEdit={commitAuthorEdit}
-            handleMerge={handleMerge}
-            onAddCoAuthor={handleAddCoAuthor}
-            onUpdateAxes={handleUpdateAxes}
-            masterNode={masterNode}
-            linkDirection={linkDirection}
-            selectedCount={checked.size}
-            injected={injected}
-            inserting={inserting}
-            handleClose={handleClose}
-          />
-        )}
-      </form>
-    </div>
+      {phase === 'preview' && (
+        <SmartImportPreviewPhase
+          parsed={parsed}
+          checked={checked}
+          mergedIds={mergedIds}
+          editingCell={editingCell}
+          editingValue={editingValue}
+          setEditingValue={setEditingValue}
+          editingAuthor={editingAuthor}
+          setEditingAuthor={setEditingAuthor}
+          toggleItem={toggleItem}
+          commitCellEdit={commitCellEdit}
+          setEditingCell={setEditingCell}
+          commitAuthorEdit={commitAuthorEdit}
+          handleMerge={handleMerge}
+          onAddCoAuthor={handleAddCoAuthor}
+          onUpdateAxes={handleUpdateAxes}
+          masterNode={masterNode}
+          linkDirection={linkDirection}
+          selectedCount={checked.size}
+          injected={injected}
+          inserting={inserting}
+          handleClose={handleClose}
+        />
+      )}
+    </Modal>
   )
 }

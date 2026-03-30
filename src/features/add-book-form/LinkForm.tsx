@@ -4,6 +4,7 @@ import { axesGradient } from '@/lib/categories'
 import Button from '../../components/ui/Button'
 import TextInput from '../../components/ui/TextInput'
 import Textarea from '../../components/ui/Textarea'
+import FormField from '../../components/ui/FormField'
 import NodePicker from './NodePicker'
 
 export default function LinkForm({
@@ -134,48 +135,36 @@ export default function LinkForm({
         </p>
       )}
 
-      <label className="flex flex-col gap-1.5">
-        <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
-          Extrait / Lien
-        </span>
+      <FormField label="Extrait / Lien">
         <Textarea
           className={`${inputClass} resize-none leading-relaxed`}
           rows={3}
           placeholder="&laquo; L'extrait qui justifie le lien... &raquo;"
           {...register('citationText')}
         />
-      </label>
+      </FormField>
 
-      <label className="flex flex-col gap-1.5">
-        <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
-          &Eacute;dition cit&eacute;e
-        </span>
+      <FormField label="Édition citée">
         <TextInput
           variant="default"
           className={inputClass}
           placeholder="Ex : Gallimard, coll. Folio, 1976"
           {...register('edition')}
         />
-      </label>
+      </FormField>
 
       <div className="grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
-            Page
-          </span>
+        <FormField label="Page">
           <TextInput variant="default" className={inputClass} placeholder="p. 42" {...register('page')} />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
-            Contexte
-          </span>
+        </FormField>
+        <FormField label="Contexte">
           <TextInput
             variant="default"
             className={inputClass}
             placeholder="Chapitre 3..."
             {...register('context')}
           />
-        </label>
+        </FormField>
       </div>
 
       <Button

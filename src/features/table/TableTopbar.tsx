@@ -31,11 +31,13 @@ export default function TableTopbar({
   return (
     <div className="flex shrink-0 items-center gap-3 border-b border-white/8 px-5 py-2.5">
       <Button
+        variant="outline"
+        outlineWeight="muted"
+        icon={<ArrowLeft size={12} />}
         onClick={onClose}
-        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/10 bg-white/4 px-3 py-1.5 text-[0.7rem] font-semibold text-white/50 transition-all hover:border-white/20 hover:text-white"
         type="button"
       >
-        <ArrowLeft size={12} /> Graph
+        Graph
       </Button>
 
       <div className="flex rounded-lg border border-white/8 bg-white/3 p-0.5">
@@ -47,11 +49,9 @@ export default function TableTopbar({
           <Button
             key={t.id}
             type="button"
+            variant="chip"
+            selected={tab === t.id}
             onClick={() => { setTab(t.id); setSearch(''); setLinkSearch(''); setAuthorSearch('') }}
-            className={[
-              'cursor-pointer rounded-md px-3 py-1 text-[0.72rem] font-semibold transition-all',
-              tab === t.id ? 'bg-white/10 text-white shadow-sm' : 'text-white/38 hover:text-white/70',
-            ].join(' ')}
           >
             {t.label}
             <span
@@ -77,7 +77,10 @@ export default function TableTopbar({
         />
         {(tab === 'books' ? search : tab === 'authors' ? authorSearch : linkSearch) && (
           <Button
-            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-white/22 hover:text-white"
+            variant="ghost"
+            layout="inline"
+            tone="muted"
+            className="absolute right-2 top-1/2 -translate-y-1/2"
             onClick={() => tab === 'books' ? setSearch('') : tab === 'authors' ? setAuthorSearch('') : setLinkSearch('')}
             type="button"
           >
@@ -89,26 +92,27 @@ export default function TableTopbar({
       <div className="ml-auto flex items-center gap-2">
         <Button
           type="button"
+          variant="outline"
+          outlineWeight="accent"
+          tone="magic"
+          icon={<Zap size={11} />}
           onClick={onSmartImport}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[rgba(140,220,255,0.22)] bg-[rgba(140,220,255,0.05)] px-3 py-1.5 text-[0.7rem] font-semibold text-[rgba(140,220,255,0.6)] transition-all hover:border-[rgba(140,220,255,0.38)] hover:bg-[rgba(140,220,255,0.1)] hover:text-[rgba(140,220,255,0.9)]"
         >
-          <Zap size={11} /> Import Magique
+          Import Magique
         </Button>
 
         {tab === 'books' && (
           <Button
+            variant="outline"
+            outlineWeight="faint"
+            tone="warning"
+            emphasis={duplicateGroups.length > 0}
+            icon={<Merge size={11} />}
             onClick={() => { setDedupeModal(true); setDedupeConfirm(false) }}
             disabled={duplicateGroups.length === 0}
-            className={[
-              'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.7rem] font-semibold transition-all',
-              duplicateGroups.length > 0
-                ? 'border-[rgba(255,180,60,0.28)] text-[rgba(255,200,100,0.65)] hover:bg-[rgba(255,180,60,0.08)] hover:text-[rgba(255,200,100,0.9)]'
-                : 'cursor-default border-white/5 text-white/18',
-            ].join(' ')}
             type="button"
             title={duplicateGroups.length > 0 ? `${duplicateGroups.length} groupe${duplicateGroups.length > 1 ? 's' : ''} de doublons` : 'Aucun doublon'}
           >
-            <Merge size={11} />
             Doublons
             {duplicateGroups.length > 0 && <span className="tabular-nums">({duplicateGroups.length})</span>}
           </Button>
@@ -116,36 +120,32 @@ export default function TableTopbar({
 
         {tab === 'authors' && (
           <Button
+            variant="outline"
+            outlineWeight="faint"
+            tone="warning"
+            emphasis={(authorDuplicateGroups || []).length > 0}
+            icon={<Merge size={11} />}
             onClick={() => { setAuthorDedupeModal?.(true); setAuthorDedupeConfirm?.(false) }}
             disabled={(authorDuplicateGroups || []).length === 0}
-            className={[
-              'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.7rem] font-semibold transition-all',
-              (authorDuplicateGroups || []).length > 0
-                ? 'border-[rgba(255,180,60,0.28)] text-[rgba(255,200,100,0.65)] hover:bg-[rgba(255,180,60,0.08)] hover:text-[rgba(255,200,100,0.9)]'
-                : 'cursor-default border-white/5 text-white/18',
-            ].join(' ')}
             type="button"
             title={(authorDuplicateGroups || []).length > 0 ? `${authorDuplicateGroups.length} groupe${authorDuplicateGroups.length > 1 ? 's' : ''} de doublons` : 'Aucun doublon'}
           >
-            <Merge size={11} />
             Doublons
             {(authorDuplicateGroups || []).length > 0 && <span className="tabular-nums">({authorDuplicateGroups.length})</span>}
           </Button>
         )}
 
         <Button
+          variant="outline"
+          outlineWeight="faint"
+          tone="orphan"
+          emphasis={orphans.length > 0}
+          icon={<Sparkles size={11} />}
           onClick={() => { setOrphanModal(true); setOrphanConfirm(false) }}
           disabled={orphans.length === 0}
-          className={[
-            'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.7rem] font-semibold transition-all',
-            orphans.length > 0
-              ? 'border-white/10 text-white/40 hover:border-[rgba(255,210,0,0.28)] hover:text-[rgba(255,210,100,0.75)]'
-              : 'cursor-default border-white/5 text-white/18',
-          ].join(' ')}
           type="button"
           title={orphans.length > 0 ? `${orphans.length} ouvrage${orphans.length > 1 ? 's' : ''} sans lien` : 'Aucun orphelin'}
         >
-          <Sparkles size={11} />
           Orphelins
           {orphans.length > 0 && <span className="tabular-nums">({orphans.length})</span>}
         </Button>

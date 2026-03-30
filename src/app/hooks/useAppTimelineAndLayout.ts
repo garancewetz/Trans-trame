@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { GraphData, TimelineRange } from '@/domain/types'
 import { normalizeEndpointId } from '@/features/graph/domain/graphDataModel'
-import { constellationLayout, genealogyLayout } from '../features/graph/layoutEngine'
+import { constellationLayout, genealogyLayout } from '../../features/graph/layoutEngine'
 
 export function useAppTimelineAndLayout(graphData: GraphData) {
   const allYears = useMemo(

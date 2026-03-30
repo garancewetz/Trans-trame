@@ -2,6 +2,7 @@ import { Pencil, ArrowRight, ArrowLeft, LinkIcon, Plus } from 'lucide-react'
 import { bookAuthorDisplay } from '@/lib/authorUtils'
 import AxisBadge from '../../components/ui/AxisBadge'
 import Button from '../../components/ui/Button'
+import SectionHeading from '../../components/ui/SectionHeading'
 
 export default function NodeDetails({
   selectedNode,
@@ -60,9 +61,9 @@ export default function NodeDetails({
 
       {sameAuthorBooks.length > 0 && (
         <>
-          <h3 className="mb-3 mt-5 text-[0.78rem] font-semibold uppercase tracking-[1.5px] text-white/35">
+          <SectionHeading>
             Autres ouvrages de {displayAuthor(selectedNode)} ({sameAuthorBooks.length})
-          </h3>
+          </SectionHeading>
           <ul className="mb-5 flex list-none flex-col gap-2 border-b border-white/10 pb-5">
             {sameAuthorBooks.map((n) => (
               <li key={n.id}>
@@ -97,10 +98,10 @@ export default function NodeDetails({
 
       {getOutgoingRefs(selectedNode).length > 0 && (
         <>
-          <h3 className="mb-3 mt-5 text-[0.78rem] font-semibold uppercase tracking-[1.5px] text-white/35">
+          <SectionHeading>
             <ArrowRight size={14} className="inline text-[rgba(140,220,255,0.8)]" />
             {' '}Références citées ({getOutgoingRefs(selectedNode).length})
-          </h3>
+          </SectionHeading>
           <ul className="flex list-none flex-col gap-2">
             {getOutgoingRefs(selectedNode).map(({ link, other }, i) => (
               <li
@@ -123,10 +124,10 @@ export default function NodeDetails({
 
       {getIncomingRefs(selectedNode).length > 0 && (
         <>
-          <h3 className="mb-3 mt-5 text-[0.78rem] font-semibold uppercase tracking-[1.5px] text-white/35">
+          <SectionHeading>
             <ArrowLeft size={14} className="inline text-[rgba(255,171,64,0.8)]" />
             {' '}Cité par ({getIncomingRefs(selectedNode).length})
-          </h3>
+          </SectionHeading>
           <ul className="flex list-none flex-col gap-2">
             {getIncomingRefs(selectedNode).map(({ link, other }, i) => (
               <li

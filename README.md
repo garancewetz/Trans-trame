@@ -103,9 +103,9 @@ La clé **anon** est exposée côté client : c’est le fonctionnement normal d
 
 ---
 
-## Structure des exports (racine `src/`)
+## Structure de `src/`
 
-Quelques fichiers à la racine de `src/` (`App.tsx`, `Graph.tsx`, …) réexportent des modules dans `features/` pour des chemins d’import courts. Un barrel `src/index.ts` regroupe aussi certains exports publics.
+Les composants vivent sous `src/features/…`, les types métier sous `src/domain/types.ts`. L’app est montée depuis `src/app/App.tsx` via `main.tsx`.
 
 ---
 

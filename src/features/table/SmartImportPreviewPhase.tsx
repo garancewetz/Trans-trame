@@ -105,7 +105,7 @@ export default function SmartImportPreviewPhase({
         <Button
           type="button"
           onClick={handleClose}
-          variant="modalSecondary"
+          variant="surface"
         >
           Annuler
         </Button>

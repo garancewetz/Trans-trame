@@ -3,6 +3,7 @@ import { axesGradient } from '@/lib/categories'
 import { bookAuthorDisplay } from '@/lib/authorUtils'
 import Button from '../../components/ui/Button'
 import TextInput from '../../components/ui/TextInput'
+import FormField from '../../components/ui/FormField'
 
 export default function NodePicker({
   label,
@@ -17,8 +18,7 @@ export default function NodePicker({
   authorsMap,
 }) {
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">{label}</span>
+    <FormField label={label}>
       <div className="relative flex items-center">
         <div className="pointer-events-none absolute left-3.5 text-white/25">
           <Search size={16} />
@@ -31,7 +31,9 @@ export default function NodePicker({
         />
         {query && (
           <Button
-            className="absolute right-2.5 cursor-pointer bg-transparent px-2 py-1 text-white/30 hover:text-white"
+            variant="ghost"
+            layout="inline"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2"
             onClick={() => onChange({ target: { value: '' } })}
             type="button"
           >
@@ -49,7 +51,8 @@ export default function NodePicker({
               </p>
               {addButtonVisible && typeof onRequestAddBook === 'function' && (
                 <Button
-                  className="flex w-full cursor-pointer items-center justify-center rounded-lg bg-transparent px-3 py-3 text-center text-[0.84rem] font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+                  variant="ghost"
+                  layout="banner"
                   onClick={() => {
                     onRequestAddBook()
                   }}
@@ -64,7 +67,9 @@ export default function NodePicker({
               {results.map((n) => (
                 <li key={n.id}>
                   <Button
-                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg bg-transparent px-3.5 py-2.5 text-left transition-colors hover:bg-white/10"
+                    variant="ghost"
+                    layout="row"
+                    tone="neutral"
                     type="button"
                     onClick={() => onPick(n)}
                   >
@@ -85,6 +90,6 @@ export default function NodePicker({
           )}
         </div>
       )}
-    </label>
+    </FormField>
   )
 }

@@ -7,9 +7,6 @@ import ViewSelector from './ViewSelector'
 import { bookAuthorDisplay } from '@/lib/authorUtils'
 import CountBadge from '../../components/ui/CountBadge'
 
-const BTN_BASE =
-  'cursor-pointer rounded-lg border border-white/15 bg-white/5 px-[16px] py-[6px] text-[0.76rem] font-semibold text-white/70 backdrop-blur-lg transition-all'
-
 export default function Navbar({ search, filters, view, catalogue }) {
   const {
     ref: searchRef,
@@ -114,17 +111,16 @@ export default function Navbar({ search, filters, view, catalogue }) {
           </h1>
           <ViewSelector currentView={viewMode} onViewChange={onViewChange} inline discreet />
           <Button
-            className={[
-              'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-[10px] py-[5px] text-[0.72rem] font-semibold backdrop-blur-lg transition-all',
-              tableMode
-                ? 'border-[rgba(0,255,135,0.5)] bg-[rgba(0,255,135,0.12)] text-[#00FF87]'
-                : 'border-white/10 bg-white/5 text-white/45 hover:border-white/20 hover:text-white/80',
-            ].join(' ')}
+            variant="outline"
+            frosted
+            size="sm"
+            tone="mint"
+            active={tableMode}
+            icon={<PenLine size={13} />}
             onClick={onToggleTableMode}
             type="button"
             title={tableMode ? 'Retour au graphe' : 'Contribuer — Ajouter et tisser des liens'}
           >
-            <PenLine size={13} />
             Contribuer
           </Button>
         </div>
@@ -144,7 +140,9 @@ export default function Navbar({ search, filters, view, catalogue }) {
             />
             {globalSearch && (
               <Button
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 cursor-pointer bg-transparent px-1.5 py-0.5 text-white/30 hover:text-white"
+                variant="ghost"
+                layout="inline"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2"
                 onClick={() => {
                   setGlobalSearch('')
                   setSearchFocused(false)
@@ -164,7 +162,8 @@ export default function Navbar({ search, filters, view, catalogue }) {
                       Aucun r&eacute;sultat trouv&eacute;
                     </p>
                     <Button
-                      className="flex w-full cursor-pointer items-center justify-center rounded-lg bg-transparent px-3 py-3 text-center text-[0.84rem] font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+                      variant="ghost"
+                      layout="banner"
                       onClick={() => {
                         onOpenTable?.('books')
                         setGlobalSearch('')
@@ -181,7 +180,10 @@ export default function Navbar({ search, filters, view, catalogue }) {
                       return (
                         <Button
                           key={`author-${item.author}-${idx}`}
-                          className="flex w-full cursor-pointer items-center justify-between gap-2.5 rounded-lg bg-transparent px-3 py-2.5 text-left text-white transition-colors hover:bg-[rgba(168,130,255,0.12)]"
+                          variant="ghost"
+                          layout="row"
+                          tone="violet"
+                          className="justify-between"
                           onClick={() => handleSearchSelect(item)}
                           type="button"
                         >
@@ -200,7 +202,9 @@ export default function Navbar({ search, filters, view, catalogue }) {
                     return (
                       <Button
                         key={node.id}
-                        className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg bg-transparent px-3 py-2.5 text-left text-white transition-colors hover:bg-[rgba(168,130,255,0.12)]"
+                        variant="ghost"
+                        layout="row"
+                        tone="violet"
                         onClick={() => handleSearchSelect(item)}
                         type="button"
                       >
@@ -224,25 +228,25 @@ export default function Navbar({ search, filters, view, catalogue }) {
 
         <div className="relative flex items-center gap-2" ref={groupsRef}>
           <Button
-            className={[
-              BTN_BASE,
-              'hover:border-[rgba(130,200,255,0.5)] hover:bg-[rgba(130,200,255,0.2)] hover:text-white',
-              openGroup === 'catalogue' ? 'border-[rgba(130,200,255,0.6)] bg-[rgba(130,200,255,0.25)] text-white' : '',
-            ].join(' ')}
+            variant="outline"
+            frosted
+            tone="cyan"
+            active={openGroup === 'catalogue'}
+            icon={<LayoutGrid size={14} />}
             onClick={() => {
               setOpenGroup((prev) => (prev === 'catalogue' ? null : 'catalogue'))
             }}
             type="button"
           >
-            <span className="inline-flex items-center gap-2">
-              <LayoutGrid size={14} />
-              Catalogue
-            </span>
+            Catalogue
           </Button>
           {openGroup === 'catalogue' && (
             <div className="absolute right-0 top-[calc(100%+6px)] z-50 flex min-w-[280px] flex-col gap-1 rounded-xl border border-white/10 bg-[rgba(12,6,28,0.95)] p-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
               <Button
-                className={[BTN_BASE, 'w-full hover:border-[rgba(130,200,255,0.5)] hover:bg-[rgba(130,200,255,0.2)] hover:text-white'].join(' ')}
+                variant="outline"
+                frosted
+                tone="cyan"
+                className="w-full justify-start"
                 onClick={() => { onOpenTextsPanel(); setOpenGroup(null) }}
                 type="button"
               >
@@ -256,11 +260,11 @@ export default function Navbar({ search, filters, view, catalogue }) {
                 </span>
               </Button>
               <Button
-                className={[
-                  BTN_BASE,
-                  'w-full hover:border-[rgba(255,180,130,0.5)] hover:bg-[rgba(255,180,130,0.2)] hover:text-white',
-                  selectedAuthorId ? 'border-[rgba(255,180,130,0.6)] bg-[rgba(255,180,130,0.35)] text-white' : '',
-                ].join(' ')}
+                variant="outline"
+                frosted
+                tone="amber"
+                active={Boolean(selectedAuthorId)}
+                className="w-full justify-start"
                 onClick={() => { onOpenAuthorsPanel(); setOpenGroup(null) }}
                 type="button"
               >
@@ -273,7 +277,10 @@ export default function Navbar({ search, filters, view, catalogue }) {
                 </span>
               </Button>
               <Button
-                className={[BTN_BASE, 'w-full hover:border-[rgba(90,200,255,0.5)] hover:bg-[rgba(90,200,255,0.2)] hover:text-white'].join(' ')}
+                variant="outline"
+                frosted
+                tone="sky"
+                className="w-full justify-start"
                 onClick={() => { onOpenAnalysisPanel?.(); setOpenGroup(null) }}
                 type="button"
               >
@@ -305,9 +312,10 @@ export default function Navbar({ search, filters, view, catalogue }) {
             </span>
             <Button
               type="button"
+              variant="icon"
+              iconDensity="soft"
               onClick={item.clear}
               aria-label={`Retirer le filtre ${item.prefix} : ${item.value}`}
-              className="shrink-0 cursor-pointer rounded-md p-1.5 text-white/55 transition-colors hover:bg-white/12 hover:text-white"
             >
               <X size={13} strokeWidth={2} />
             </Button>

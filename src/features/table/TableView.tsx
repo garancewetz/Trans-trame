@@ -22,7 +22,7 @@ function maybeNodeId(v: unknown): string | null {
   return null
 }
 
-type TableViewProps = {
+export type TableViewProps = {
   nodes: Book[]
   links: Link[]
   authors: Author[]

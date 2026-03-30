@@ -4,6 +4,7 @@ import { bookAuthorDisplay } from '@/lib/authorUtils'
 import { blendAxesColors } from '@/lib/categories'
 import Button from '../../components/ui/Button'
 import TextareaInline from '../../components/ui/TextareaInline'
+import InlineBadge from '../../components/ui/InlineBadge'
 
 export default function LinkDetails({
   selectedLink,
@@ -94,9 +95,9 @@ export default function LinkDetails({
           <span className="mx-1 text-white/25">{'>'}</span> Citation
         </p>
       )}
-      <span className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-[3px] text-[0.72rem] font-bold uppercase tracking-[0.5px] ${relationBadgeClass}`}>
+      <InlineBadge className={`mb-3 ${relationBadgeClass}`}>
         <LinkIcon size={11} /> {relationBadgeLabel}
-      </span>
+      </InlineBadge>
       {source && target && (
         <div className="mb-4 rounded-md border border-white/8 bg-white/2 px-2.5 py-2">
           <div className="flex items-center justify-between gap-2">
