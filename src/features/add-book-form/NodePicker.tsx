@@ -1,6 +1,8 @@
 import { Search, X } from 'lucide-react'
 import { axesGradient } from '../../categories'
 import { bookAuthorDisplay } from '../../authorUtils'
+import Button from '../../components/ui/Button'
+import TextInput from '../../components/ui/TextInput'
 
 export default function NodePicker({
   label,
@@ -21,21 +23,20 @@ export default function NodePicker({
         <div className="pointer-events-none absolute left-3.5 text-white/25">
           <Search size={16} />
         </div>
-        <input
-          className="w-full rounded-xl border border-white/10 bg-white/5 px-10 py-3.5 text-[0.85rem] text-white outline-none transition-all placeholder:text-white/25 focus:border-[rgba(140,220,255,0.4)] focus:bg-white/10 focus:shadow-[0_0_0_3px_rgba(140,220,255,0.08)]"
-          type="text"
+        <TextInput
+          variant="picker"
           placeholder={placeholder}
           value={value}
           onChange={onChange}
         />
         {query && (
-          <button
+          <Button
             className="absolute right-2.5 cursor-pointer bg-transparent px-2 py-1 text-white/30 hover:text-white"
             onClick={() => onChange({ target: { value: '' } })}
             type="button"
           >
             <X size={16} />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -47,7 +48,7 @@ export default function NodePicker({
                 Aucun ouvrage trouv&eacute; pour &laquo;&nbsp;{query}&nbsp;&raquo;
               </p>
               {addButtonVisible && typeof onRequestAddBook === 'function' && (
-                <button
+                <Button
                   className="flex w-full cursor-pointer items-center justify-center rounded-lg bg-transparent px-3 py-3 text-center text-[0.84rem] font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white"
                   onClick={() => {
                     onRequestAddBook()
@@ -55,14 +56,14 @@ export default function NodePicker({
                   type="button"
                 >
                   Ajouter un ouvrage ?
-                </button>
+                </Button>
               )}
             </div>
           ) : (
             <ul className="flex list-none flex-col">
               {results.map((n) => (
                 <li key={n.id}>
-                  <button
+                  <Button
                     className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg bg-transparent px-3.5 py-2.5 text-left transition-colors hover:bg-white/10"
                     type="button"
                     onClick={() => onPick(n)}
@@ -77,7 +78,7 @@ export default function NodePicker({
                         {bookAuthorDisplay(n, authorsMap)}, {n.year}
                       </span>
                     </span>
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp, Plus } from 'lucide-react'
 import { authorName, bookAuthorDisplay } from '../../authorUtils'
 import { AXES, AXES_COLORS, AXES_LABELS, axesGradient } from '../../categories'
+import Button from '../../components/ui/Button'
+import TextInput from '../../components/ui/TextInput'
 import { INPUT } from './tableConstants'
 
 export function AxisDots({ axes = [], onChange }) {
@@ -22,7 +24,7 @@ export function AxisDots({ axes = [], onChange }) {
   return (
     <div className="relative flex flex-wrap items-center gap-1" ref={ref}>
       {axes.map((axis) => (
-        <button
+        <Button
           key={axis}
           type="button"
           onClick={() => toggle(axis)}
@@ -31,21 +33,21 @@ export function AxisDots({ axes = [], onChange }) {
           style={{ backgroundColor: AXES_COLORS[axis] }}
         >
           {AXES_LABELS[axis] ?? axis}
-        </button>
+        </Button>
       ))}
-      <button
+      <Button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="inline-flex h-4 w-4 cursor-pointer items-center justify-center rounded-full border border-white/15 text-white/30 transition-colors hover:border-white/35 hover:text-white/60"
       >
         <Plus size={8} />
-      </button>
+      </Button>
       {open && (
         <div className="absolute left-0 top-[calc(100%+4px)] z-50 flex flex-wrap gap-1 rounded-lg border border-white/10 bg-[rgba(6,4,20,0.98)] p-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
           {AXES.map((axis) => {
             const active = axes.includes(axis)
             return (
-              <button
+              <Button
                 key={axis}
                 type="button"
                 onClick={() => toggle(axis)}
@@ -56,7 +58,7 @@ export function AxisDots({ axes = [], onChange }) {
                 style={active ? { backgroundColor: AXES_COLORS[axis] } : {}}
               >
                 {AXES_LABELS[axis] ?? axis}
-              </button>
+              </Button>
             )
           })}
         </div>
@@ -133,13 +135,13 @@ export function AuthorPicker({ authors = [], selectedAuthorIds = [], onChange, o
             className="inline-flex items-center gap-1 rounded-full border border-white/14 bg-white/8 px-1.5 py-px text-[0.62rem] text-white/75"
           >
             {authorName(a)}
-            <button
+            <Button
               type="button"
               onClick={() => removeAuthor(a.id)}
               className="cursor-pointer leading-none text-white/35 hover:text-white/80"
             >
               ×
-            </button>
+            </Button>
           </span>
         ))}
         <input
@@ -173,7 +175,7 @@ export function AuthorPicker({ authors = [], selectedAuthorIds = [], onChange, o
         <ul className="absolute left-0 right-0 top-[calc(100%+3px)] z-50 list-none rounded-lg border border-white/10 bg-[rgba(6,4,20,0.98)] p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur-xl">
           {suggestions.map((a) => (
             <li key={a.id}>
-              <button
+              <Button
                 type="button"
                 className="flex w-full cursor-pointer items-center rounded-md px-2.5 py-1.5 text-left transition-colors hover:bg-white/8"
                 onClick={() => addAuthor(a)}
@@ -181,12 +183,12 @@ export function AuthorPicker({ authors = [], selectedAuthorIds = [], onChange, o
                 <span className="font-mono text-[0.74rem] text-white">
                   {a.firstName} <strong>{a.lastName ? a.lastName.toUpperCase() : ''}</strong>
                 </span>
-              </button>
+              </Button>
             </li>
           ))}
           {canCreate && (
             <li>
-              <button
+              <Button
                 type="button"
                 className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors hover:bg-white/8"
                 onClick={handleCreate}
@@ -195,7 +197,7 @@ export function AuthorPicker({ authors = [], selectedAuthorIds = [], onChange, o
                 <span className="font-mono text-[0.74rem] text-[rgba(140,220,255,0.75)]">
                   Créer «&nbsp;{query.trim()}&nbsp;»
                 </span>
-              </button>
+              </Button>
             </li>
           )}
         </ul>
@@ -231,7 +233,8 @@ export function NodeSearch({ nodes, authorsMap, value, onSelect, placeholder, ex
 
   return (
     <div className="relative" ref={ref}>
-      <input
+      <TextInput
+        variant="table"
         className={INPUT}
         placeholder={value ? '' : placeholder}
         value={query}
@@ -248,7 +251,7 @@ export function NodeSearch({ nodes, authorsMap, value, onSelect, placeholder, ex
       {open && results.length > 0 && (
         <div className="absolute left-0 right-0 top-[calc(100%+3px)] z-50 max-h-[180px] overflow-y-auto rounded-lg border border-white/10 bg-[rgba(6,4,20,0.98)] p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl">
           {results.map((n) => (
-            <button
+            <Button
               key={n.id}
               type="button"
               className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-white/8"
@@ -261,7 +264,7 @@ export function NodeSearch({ nodes, authorsMap, value, onSelect, placeholder, ex
                   {bookAuthorDisplay(n, authorsMap || new Map())}{n.year ? `, ${n.year}` : ''}
                 </span>
               </span>
-            </button>
+            </Button>
           ))}
         </div>
       )}

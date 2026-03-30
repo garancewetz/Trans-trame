@@ -10,7 +10,7 @@ import Timeline from '../features/timeline/Timeline'
 import TextsPanel from '../features/texts-panel/TextsPanel'
 import AuthorsPanel from '../features/authors-panel/AuthorsPanel'
 import { AXES_COLORS, axesGradient } from '../categories'
-import { authorName, buildAuthorsMap } from '../authorUtils'
+import { authorName, bookAuthorDisplay, buildAuthorsMap } from '../authorUtils'
 import useGraphData from '../features/graph/hooks/useGraphData'
 import { computeSameAuthorBooks, getIncomingRefs, getLinkNodes, getOutgoingRefs } from '../features/graph/graphRelations'
 import { useAppTimelineAndLayout } from './useAppTimelineAndLayout'
@@ -119,11 +119,13 @@ export default function App() {
     // Fallback legacy : compter les noms uniques sur les livres
     const names = new Set()
     books.forEach((n) => {
-      const name = authorName(n)
+      // Comptage basé sur le nouveau modèle (authorIds + authorsMap)
+      // `bookAuthorDisplay` garde un fallback legacy si nécessaire.
+      const name = bookAuthorDisplay(n, authorsMap)
       if (name) names.add(name)
     })
     return names.size
-  }, [authors, books])
+  }, [authors, books, authorsMap])
 
   const sameAuthorBooks = useMemo(
     () => computeSameAuthorBooks(graphData, selectedNode),
@@ -219,6 +221,8 @@ export default function App() {
         getIncomingRefs={(node) => getIncomingRefs(graphData, node)}
         getLinkNodes={(link) => getLinkNodes(graphData, link)}
         handleClosePanel={handleClosePanel}
+        onUpdateLink={handleUpdateLink}
+        onDeleteLink={handleDeleteLink}
         handleAddBook={handleAddBook}
         handleAddAuthor={handleAddAuthor}
         handleAddLink={(link) => {
@@ -228,7 +232,12 @@ export default function App() {
         }}
         handleUpdateBook={(n) => {
           handleUpdateBook(n)
-          setSelectedNode((prevSel) => (prevSel?.id === n.id ? { ...prevSel, ...n } : n))
+          // handleUpdateBook mutates the node in books[] in place (Object.assign).
+          // Look up the live node reference from graphData.nodes so selectedNode
+          // stays the same object as force-graph's, preventing position divergence
+          // (stale x/y copy would cause the node to appear twice on canvas).
+          const live = graphData.nodes.find((node) => node.id === n.id)
+          if (live) setSelectedNode({ ...live })
           setPanelTab('details')
         }}
         handleDeleteBook={(nodeId) => {

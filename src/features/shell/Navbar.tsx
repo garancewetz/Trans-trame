@@ -110,7 +110,7 @@ export default function Navbar({ search, filters, view, catalogue }) {
             </span>
           </h1>
           <ViewSelector currentView={viewMode} onViewChange={onViewChange} inline discreet />
-          <button
+          <Button
             className={[
               'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-[10px] py-[5px] text-[0.72rem] font-semibold backdrop-blur-lg transition-all',
               tableMode
@@ -123,7 +123,7 @@ export default function Navbar({ search, filters, view, catalogue }) {
           >
             <PenLine size={13} />
             Contribuer
-          </button>
+          </Button>
         </div>
 
           {/* Global search */}
@@ -220,7 +220,7 @@ export default function Navbar({ search, filters, view, catalogue }) {
           </div>
 
         <div className="relative flex items-center gap-2" ref={groupsRef}>
-          <button
+          <Button
             className={[
               BTN_BASE,
               'hover:border-[rgba(130,200,255,0.5)] hover:bg-[rgba(130,200,255,0.2)] hover:text-white',
@@ -235,10 +235,10 @@ export default function Navbar({ search, filters, view, catalogue }) {
               <LayoutGrid size={14} />
               Catalogue
             </span>
-          </button>
+          </Button>
           {openGroup === 'catalogue' && (
             <div className="absolute right-0 top-[calc(100%+6px)] z-50 flex min-w-[280px] flex-col gap-1 rounded-xl border border-white/10 bg-[rgba(12,6,28,0.95)] p-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
-              <button
+              <Button
                 className={[BTN_BASE, 'w-full hover:border-[rgba(130,200,255,0.5)] hover:bg-[rgba(130,200,255,0.2)] hover:text-white'].join(' ')}
                 onClick={() => { onOpenTextsPanel(); setOpenGroup(null) }}
                 type="button"
@@ -251,8 +251,8 @@ export default function Navbar({ search, filters, view, catalogue }) {
                     className="bg-white/15 px-[7px] py-px text-[0.68rem] font-bold text-white/90"
                   />
                 </span>
-              </button>
-              <button
+              </Button>
+              <Button
                 className={[
                   BTN_BASE,
                   'w-full hover:border-[rgba(255,180,130,0.5)] hover:bg-[rgba(255,180,130,0.2)] hover:text-white',
@@ -268,8 +268,8 @@ export default function Navbar({ search, filters, view, catalogue }) {
                     {authorCount}
                   </span>
                 </span>
-              </button>
-              <button
+              </Button>
+              <Button
                 className={[BTN_BASE, 'w-full hover:border-[rgba(90,200,255,0.5)] hover:bg-[rgba(90,200,255,0.2)] hover:text-white'].join(' ')}
                 onClick={() => { onOpenAnalysisPanel?.(); setOpenGroup(null) }}
                 type="button"
@@ -277,7 +277,7 @@ export default function Navbar({ search, filters, view, catalogue }) {
                 <span className="inline-flex items-center gap-2">
                   <BarChart3 size={14} /> Analyse
                 </span>
-              </button>
+              </Button>
             </div>
           )}
 
@@ -300,14 +300,14 @@ export default function Navbar({ search, filters, view, catalogue }) {
               </span>
               <span className="min-w-0 truncate text-[0.82rem] font-medium text-white">{item.value}</span>
             </span>
-            <button
+            <Button
               type="button"
               onClick={item.clear}
               aria-label={`Retirer le filtre ${item.prefix} : ${item.value}`}
               className="shrink-0 cursor-pointer rounded-md p-1.5 text-white/55 transition-colors hover:bg-white/12 hover:text-white"
             >
               <X size={13} strokeWidth={2} />
-            </button>
+            </Button>
           </span>
         ))}
       </div>

@@ -27,8 +27,8 @@ export function useAppTimelineAndLayout(graphData) {
     return {
       nodes: graphData.nodes.filter((n) => visibleNodeIds.has(n.id)),
       links: graphData.links.filter((l) => {
-        const srcId = typeof l.source === 'object' ? l.source.id : l.source
-        const tgtId = typeof l.target === 'object' ? l.target.id : l.target
+        const srcId = l.source && typeof l.source === 'object' ? l.source.id : l.source
+        const tgtId = l.target && typeof l.target === 'object' ? l.target.id : l.target
         return visibleNodeIds.has(srcId) && visibleNodeIds.has(tgtId)
       }),
     }

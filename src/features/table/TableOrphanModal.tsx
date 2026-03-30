@@ -1,5 +1,6 @@
 import { bookAuthorDisplay } from '../../authorUtils'
 import { axesGradient } from '../../categories'
+import Button from '../../components/ui/Button'
 
 export default function TableOrphanModal({
   orphanModal,
@@ -19,7 +20,7 @@ export default function TableOrphanModal({
         <p className="mb-4 text-[0.73rem] text-white/38">
           {orphans.length} ouvrage{orphans.length > 1 ? 's' : ''} sans aucun lien dans la galaxie.
         </p>
-        <div className="mb-4 max-h-[min(50vh,360px)] overflow-y-auto rounded-xl border border-white/8 bg-white/[0.025] p-2">
+        <div className="mb-4 max-h-[min(50vh,360px)] overflow-y-auto rounded-xl border border-white/8 bg-white/2.5 p-2">
           {orphans.map((n) => (
             <div key={n.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5">
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: axesGradient(n.axes) }} />
@@ -33,14 +34,14 @@ export default function TableOrphanModal({
           ))}
         </div>
         <div className="flex gap-2">
-          <button
+          <Button
             type="button"
             onClick={() => { setOrphanModal(false); setOrphanConfirm(false) }}
-            className="flex-1 cursor-pointer rounded-lg border border-white/10 bg-white/4 px-4 py-2 text-[0.75rem] font-semibold text-white/55 transition-all hover:text-white"
+            variant="modalSecondary"
           >
             Annuler
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={handleCleanOrphans}
             className={[
@@ -51,7 +52,7 @@ export default function TableOrphanModal({
             ].join(' ')}
           >
             {orphanConfirm ? `Supprimer (${orphans.length})` : 'Nettoyer'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

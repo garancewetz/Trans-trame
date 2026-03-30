@@ -26,6 +26,13 @@ function normalizeId(v) {
   return v
 }
 
+function normalizeEndpointId(v) {
+  const raw = normalizeId(v)
+  if (typeof raw === 'string') return raw
+  if (typeof raw === 'number' && Number.isFinite(raw)) return String(raw)
+  return null
+}
+
 // ── Helpers: conversion DB ↔ app ───────────────────────────────────────────────
 
 function dbBookToNode(row) {
@@ -135,8 +142,19 @@ export default function useGraphData({ axesColors }) {
 
   // graphData : livres uniquement + liens citation (les auteurs sont des entités de données, pas des nœuds graphe)
   const graphData = useMemo(() => ({
+    // IMPORTANT: react-force-graph mutates `nodes` and `links` (source/target become node objects).
+    // - On garde les objets `books` stables pour préserver les positions (x/y/vx...) du layout.
+    // - Mais on CLONE les liens + on normalise source/target en ids pour éviter les doublons
+    //   quand les nœuds sont mis à jour (sinon les liens peuvent pointer vers de vieux objets).
     nodes: books,
-    links,
+    links: (links || [])
+      .map((l) => {
+        const source = normalizeEndpointId(l.source)
+        const target = normalizeEndpointId(l.target)
+        if (!source || !target) return null
+        return { ...l, source, target }
+      })
+      .filter(Boolean),
   }), [books, links])
 
   // ── Livres ───────────────────────────────────────────────────────────────────
@@ -157,7 +175,8 @@ export default function useGraphData({ axesColors }) {
       return prev.map((n) => {
         if (n.id !== sanitized.id) return n
         // Copie avec positions force-graph préservées (x, y, fx, fy, vx, vy)
-        return { ...n, ...sanitized }
+        Object.assign(n, sanitized)
+        return n
       })
     })
     const { id, ...fields } = bookToDbRow(sanitized)

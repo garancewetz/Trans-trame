@@ -1,6 +1,9 @@
 import { ArrowDown, ArrowLeft, X } from 'lucide-react'
 import { bookAuthorDisplay } from '../../authorUtils'
 import { axesGradient } from '../../categories'
+import Button from '../../components/ui/Button'
+import TextInput from '../../components/ui/TextInput'
+import Textarea from '../../components/ui/Textarea'
 import NodePicker from './NodePicker'
 
 export default function LinkForm({
@@ -31,13 +34,13 @@ export default function LinkForm({
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-[18px]">
       {typeof onRequestBack === 'function' && (
-        <button
+        <Button
           type="button"
           onClick={() => onRequestBack()}
           className="inline-flex items-center gap-1.5 cursor-pointer bg-transparent text-left text-[0.78rem] font-semibold text-white/50 transition-colors hover:text-white"
         >
           <ArrowLeft size={14} /> Retour
-        </button>
+        </Button>
       )}
       <h3 className="border-b border-white/10 pb-2.5 text-[0.82rem] font-bold uppercase tracking-[2px] text-white/50">
         Nouveau lien
@@ -89,14 +92,14 @@ export default function LinkForm({
                   style={{ background: axesGradient(t.axes) }}
                 />
                 <span className="max-w-[160px] truncate">{t.title}</span>
-                <button
+                <Button
                   type="button"
                   onClick={() => removeTarget(t.id)}
                   className="ml-0.5 shrink-0 cursor-pointer rounded-full bg-transparent p-0.5 text-white/35 transition-colors hover:bg-white/15 hover:text-white"
                   aria-label={`Retirer ${t.title}`}
                 >
                   <X size={11} />
-                </button>
+                </Button>
               </span>
             ))}
           </div>
@@ -135,7 +138,7 @@ export default function LinkForm({
         <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
           Extrait / Lien
         </span>
-        <textarea
+        <Textarea
           className={`${inputClass} resize-none leading-relaxed`}
           rows={3}
           placeholder="&laquo; L'extrait qui justifie le lien... &raquo;"
@@ -147,7 +150,8 @@ export default function LinkForm({
         <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
           &Eacute;dition cit&eacute;e
         </span>
-        <input
+        <TextInput
+          variant="default"
           className={inputClass}
           placeholder="Ex : Gallimard, coll. Folio, 1976"
           {...register('edition')}
@@ -159,13 +163,14 @@ export default function LinkForm({
           <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
             Page
           </span>
-          <input className={inputClass} placeholder="p. 42" {...register('page')} />
+          <TextInput variant="default" className={inputClass} placeholder="p. 42" {...register('page')} />
         </label>
         <label className="flex flex-col gap-1.5">
           <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
             Contexte
           </span>
-          <input
+          <TextInput
+            variant="default"
             className={inputClass}
             placeholder="Chapitre 3..."
             {...register('context')}
@@ -173,13 +178,13 @@ export default function LinkForm({
         </label>
       </div>
 
-      <button
+      <Button
         type="submit"
         disabled={!sourceId || linkCount === 0}
         className="mt-1 w-full cursor-pointer rounded-[10px] bg-linear-to-br from-[rgba(140,220,255,0.7)] to-[rgba(80,160,255,0.9)] px-5 py-3.5 text-[0.85rem] font-semibold text-white shadow-[0_4px_20px_rgba(140,220,255,0.15)] transition-all hover:-translate-y-px hover:from-[rgba(140,220,255,0.9)] hover:to-[rgba(80,160,255,1)] hover:shadow-[0_4px_24px_rgba(140,220,255,0.3)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
       >
         {linkCount > 1 ? `Créer les ${linkCount} liens` : 'Créer un lien'}
-      </button>
+      </Button>
     </form>
   )
 }

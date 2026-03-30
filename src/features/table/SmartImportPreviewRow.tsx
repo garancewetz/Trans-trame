@@ -1,4 +1,6 @@
-import { AlertTriangle, Check, GitMerge, Plus } from 'lucide-react'
+import { AlertTriangle, Check, GitMerge, Info, Plus } from 'lucide-react'
+import Button from '../../components/ui/Button'
+import TextInput from '../../components/ui/TextInput'
 import { AxisDots } from './TableSubcomponents'
 
 export default function SmartImportPreviewRow({
@@ -19,6 +21,7 @@ export default function SmartImportPreviewRow({
   onUpdateAxes,
 }) {
   const isEditTitle = editingCell?.id === item.id && editingCell?.field === 'title'
+  const isEditEdition = editingCell?.id === item.id && editingCell?.field === 'edition'
   const isEditYear = editingCell?.id === item.id && editingCell?.field === 'year'
   const editingAuthorIndex = editingAuthor?.id === item.id ? editingAuthor.authorIndex : null
   const isMerged = mergedIds.has(item.id)
@@ -30,7 +33,7 @@ export default function SmartImportPreviewRow({
     <div>
       <div
         className={[
-          'grid grid-cols-[28px_1fr_150px_100px_64px] items-start gap-x-1 border-b border-white/4 px-3 py-1.5 transition-colors',
+          'grid grid-cols-[28px_1fr_150px_100px_120px_64px] items-start gap-x-1 border-b border-white/4 px-3 py-1.5 transition-colors',
           isMerged ? 'opacity-40' : '',
           isExact && !isMerged ? 'bg-[rgba(255,70,70,0.03)]' : '',
           isFuzzy && !isMerged ? 'bg-[rgba(255,180,60,0.03)]' : '',
@@ -43,7 +46,7 @@ export default function SmartImportPreviewRow({
         ) : isMerged ? (
           <Check size={12} className="text-[rgba(0,255,135,0.6)]" />
         ) : (
-          <button
+          <Button
             type="button"
             onClick={() => toggleItem(item.id)}
             className={[
@@ -56,15 +59,16 @@ export default function SmartImportPreviewRow({
             ].join(' ')}
           >
             {checked.has(item.id) && <Check size={10} className="text-[#00FF87]" />}
-          </button>
+          </Button>
         )}
 
         {/* Title */}
         <div className="min-w-0 pr-2">
           {isEditTitle ? (
-            <input
+            <TextInput
+              variant="table"
               autoFocus
-              className="w-full rounded border border-[rgba(140,220,255,0.35)] bg-white/8 px-1.5 py-0.5 font-mono text-[0.75rem] text-white outline-none"
+              className="w-full rounded border border-[rgba(140,220,255,0.35)] bg-white/8 px-1.5 py-0.5 text-[0.75rem] focus:border-[rgba(140,220,255,0.35)] focus:bg-white/8"
               value={editingValue}
               onChange={(e) => setEditingValue(e.target.value)}
               onBlur={commitCellEdit}
@@ -102,9 +106,10 @@ export default function SmartImportPreviewRow({
                     if (!e.currentTarget.contains(e.relatedTarget)) commitAuthorEdit()
                   }}
                 >
-                  <input
+                  <TextInput
+                    variant="table"
                     autoFocus
-                    className="w-[45%] rounded border border-[rgba(140,220,255,0.35)] bg-white/8 px-1.5 py-0.5 text-white outline-none"
+                    className="w-[45%] rounded border border-[rgba(140,220,255,0.35)] bg-white/8 px-1.5 py-0.5 text-[0.7rem] focus:border-[rgba(140,220,255,0.35)] focus:bg-white/8"
                     placeholder="Prénom"
                     value={editingAuthor.firstName}
                     onChange={(e) => setEditingAuthor((p) => ({ ...p, firstName: e.target.value }))}
@@ -113,8 +118,9 @@ export default function SmartImportPreviewRow({
                       if (e.key === 'Escape') setEditingAuthor(null)
                     }}
                   />
-                  <input
-                    className="w-[55%] rounded border border-[rgba(140,220,255,0.35)] bg-white/8 px-1.5 py-0.5 text-white outline-none"
+                  <TextInput
+                    variant="table"
+                    className="w-[55%] rounded border border-[rgba(140,220,255,0.35)] bg-white/8 px-1.5 py-0.5 text-[0.7rem] focus:border-[rgba(140,220,255,0.35)] focus:bg-white/8"
                     placeholder="Nom"
                     value={editingAuthor.lastName}
                     onChange={(e) => setEditingAuthor((p) => ({ ...p, lastName: e.target.value }))}
@@ -141,14 +147,14 @@ export default function SmartImportPreviewRow({
               )
             ))}
             {!isMerged && editingAuthorIndex == null && (
-              <button
+              <Button
                 type="button"
                 onClick={() => onAddCoAuthor?.(item.id)}
                 className="mt-0.5 inline-flex w-fit cursor-pointer items-center gap-0.5 rounded border border-white/10 bg-white/4 px-1.5 py-0.5 text-[0.58rem] text-white/35 transition-colors hover:border-[rgba(140,220,255,0.3)] hover:bg-[rgba(140,220,255,0.07)] hover:text-[rgba(140,220,255,0.7)]"
                 title="Ajouter un·e co-auteur·ice"
               >
                 <Plus size={9} /> co-auteur·ice
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -161,13 +167,54 @@ export default function SmartImportPreviewRow({
           />
         </div>
 
+        {/* Edition */}
+        <div className="min-w-0">
+          {isEditEdition ? (
+            <TextInput
+              variant="table"
+              autoFocus
+              className="w-full rounded border border-[rgba(140,220,255,0.35)] bg-white/8 px-1.5 py-0.5 text-[0.7rem] focus:border-[rgba(140,220,255,0.35)] focus:bg-white/8"
+              value={editingValue}
+              onChange={(e) => setEditingValue(e.target.value)}
+              onBlur={commitCellEdit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitCellEdit()
+                if (e.key === 'Escape') setEditingCell(null)
+              }}
+            />
+          ) : (
+            <span
+              className={[
+                'group/ed relative flex cursor-text items-center gap-1 truncate font-mono text-[0.7rem]',
+                item.edition ? (isDup ? 'text-white/30' : 'text-white/42 hover:text-white/75') : 'text-white/15',
+              ].join(' ')}
+              onClick={() => {
+                if (isMerged) return
+                setEditingCell({ id: item.id, field: 'edition' })
+                setEditingValue(item.edition || '')
+              }}
+            >
+              {item.edition || '—'}
+              {item.edition && (
+                <>
+                  <Info size={8} className="shrink-0 text-white/20" />
+                  <span className="pointer-events-none absolute left-0 top-full z-50 mt-1 whitespace-nowrap rounded-md border border-white/10 bg-[rgba(10,8,30,0.95)] px-2 py-1 text-[0.58rem] font-normal text-white/55 opacity-0 shadow-lg transition-opacity group-hover/ed:opacity-100">
+                    Apparaîtra sur le lien
+                  </span>
+                </>
+              )}
+            </span>
+          )}
+        </div>
+
         {/* Year */}
         <div>
           {isEditYear ? (
-            <input
+            <TextInput
+              variant="table"
               autoFocus
               type="number"
-              className="w-full rounded border border-[rgba(140,220,255,0.35)] bg-white/8 px-1.5 py-0.5 font-mono text-[0.7rem] text-white outline-none"
+              className="w-full rounded border border-[rgba(140,220,255,0.35)] bg-white/8 px-1.5 py-0.5 text-[0.7rem] focus:border-[rgba(140,220,255,0.35)] focus:bg-white/8"
               value={editingValue}
               onChange={(e) => setEditingValue(e.target.value)}
               onBlur={commitCellEdit}
@@ -221,13 +268,13 @@ export default function SmartImportPreviewRow({
               {item.existingNode?.title}
             </span>
           </div>
-          <button
+          <Button
             type="button"
             onClick={() => handleMerge(item)}
             className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md border border-[rgba(140,220,255,0.2)] bg-[rgba(140,220,255,0.05)] px-2 py-0.5 text-[0.62rem] font-semibold text-[rgba(140,220,255,0.6)] transition-all hover:bg-[rgba(140,220,255,0.12)] hover:text-[rgba(140,220,255,0.9)]"
           >
             <GitMerge size={9} /> Fusionner
-          </button>
+          </Button>
         </div>
       )}
     </div>

@@ -1,5 +1,7 @@
 import { Pencil, ArrowRight, ArrowLeft, LinkIcon, Plus } from 'lucide-react'
 import { bookAuthorDisplay } from '../../authorUtils'
+import AxisBadge from '../../components/ui/AxisBadge'
+import Button from '../../components/ui/Button'
 
 export default function NodeDetails({
   selectedNode,
@@ -34,23 +36,19 @@ export default function NodeDetails({
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex flex-wrap gap-1.5">
           {(selectedNode.axes || []).map((axis) => (
-            <span
-              key={axis}
-              className="inline-block rounded-full px-3 py-[3px] text-[0.68rem] font-bold uppercase tracking-[0.5px] text-black"
-              style={{ backgroundColor: AXES_COLORS[axis] }}
-            >
+            <AxisBadge key={axis} color={AXES_COLORS[axis]}>
               {axis}
-            </span>
+            </AxisBadge>
           ))}
         </div>
 
-        <button
+        <Button
           type="button"
           className="cursor-pointer rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.75rem] font-semibold text-white/60 transition-all hover:border-[rgba(168,85,247,0.5)] hover:bg-[rgba(168,85,247,0.2)] hover:text-white"
           onClick={() => setPanelTab('edit')}
         >
           <span className="inline-flex items-center gap-1.5"><Pencil size={12} /> Modifier</span>
-        </button>
+        </Button>
       </div>
 
       <h2 className="mb-1 text-[1.3rem] font-bold leading-snug text-white">{selectedNode.title}</h2>
@@ -68,7 +66,7 @@ export default function NodeDetails({
           <ul className="mb-5 flex list-none flex-col gap-2 border-b border-white/10 pb-5">
             {sameAuthorBooks.map((n) => (
               <li key={n.id}>
-                <button
+                <Button
                   type="button"
                   className="w-full cursor-pointer rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 text-left transition-all hover:border-white/20 hover:bg-white/8"
                   onClick={() => {
@@ -80,7 +78,7 @@ export default function NodeDetails({
                 >
                   <strong className="mb-0.5 block text-[0.88rem] text-white">{n.title}</strong>
                   <span className="text-[0.75rem] text-white/30">{n.year}</span>
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
@@ -88,13 +86,13 @@ export default function NodeDetails({
       )}
 
       <div className="mb-5 flex flex-wrap gap-2 border-b border-white/10 pb-5">
-        <button
+        <Button
           type="button"
           className="cursor-pointer rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.75rem] font-semibold text-[rgba(140,220,255,0.7)] transition-all hover:border-[rgba(140,220,255,0.5)] hover:bg-[rgba(140,220,255,0.15)] hover:text-white"
           onClick={() => onOpenTable?.('links', selectedNode.id)}
         >
           <span className="inline-flex items-center gap-1.5"><Plus size={12} /> Tisser un lien…</span>
-        </button>
+        </Button>
       </div>
 
       {getOutgoingRefs(selectedNode).length > 0 && (

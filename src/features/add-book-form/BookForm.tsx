@@ -3,6 +3,9 @@ import { Controller } from 'react-hook-form'
 import { Search, X, Merge, Trash2, Pin } from 'lucide-react'
 import { bookAuthorDisplay } from '../../authorUtils'
 import { axesGradient } from '../../categories'
+import Button from '../../components/ui/Button'
+import TextInput from '../../components/ui/TextInput'
+import Textarea from '../../components/ui/Textarea'
 import { AuthorPicker } from '../table/TableSubcomponents'
 import AxisSelector from './AxisSelector'
 import DuplicateWarning from './DuplicateWarning'
@@ -67,7 +70,8 @@ export default function BookForm({
         <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
           Titre
         </span>
-        <input
+        <TextInput
+          variant="default"
           className={inputClass}
           placeholder="Ex : Feminist Theory"
           {...register('title', { required: true })}
@@ -106,7 +110,7 @@ export default function BookForm({
           control={control}
           render={({ field: { value, onChange } }) => (
             <label className="flex cursor-pointer items-center gap-2.5 select-none">
-              <button
+              <Button
                 type="button"
                 onClick={() => onChange(!value)}
                 className={[
@@ -124,7 +128,7 @@ export default function BookForm({
                     value ? 'left-[18px] bg-[#00FF87]' : 'left-0.5 bg-white/30',
                   ].join(' ')}
                 />
-              </button>
+              </Button>
               <span className="inline-flex items-center gap-1.5 text-[0.75rem] text-white/50 transition-colors">
                 <Pin size={11} className={value ? 'text-[#00FF87]' : 'text-white/30'} />
                 Garder les auteur·ices pour la suite
@@ -140,7 +144,8 @@ export default function BookForm({
         <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
           Ann&eacute;e
         </span>
-        <input
+        <TextInput
+          variant="default"
           className={inputClass}
           type="number"
           placeholder="1984"
@@ -154,7 +159,7 @@ export default function BookForm({
         <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
           Description
         </span>
-        <textarea
+        <Textarea
           className={`${inputClass} resize-none leading-relaxed`}
           rows={3}
           placeholder="Courte description de l'ouvrage..."
@@ -162,12 +167,12 @@ export default function BookForm({
         />
       </label>
 
-      <button
+      <Button
         type="submit"
         className="mt-1 w-full cursor-pointer rounded-[10px] bg-linear-to-br from-[rgba(140,220,255,0.7)] to-[rgba(80,160,255,0.9)] px-5 py-3.5 text-[0.85rem] font-semibold text-white shadow-[0_4px_20px_rgba(140,220,255,0.15)] transition-all hover:-translate-y-px hover:from-[rgba(140,220,255,0.9)] hover:to-[rgba(80,160,255,1)] hover:shadow-[0_4px_24px_rgba(140,220,255,0.3)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
       >
         {mode === 'edit' ? 'Enregistrer les modifications' : 'Ajouter l\u2019ouvrage'}
-      </button>
+      </Button>
 
       {mode === 'book' && recentQueue && recentQueue.length > 0 && (
         <div className="flex flex-col gap-2">
@@ -208,7 +213,8 @@ export default function BookForm({
                   <div className="pointer-events-none absolute left-3 text-white/25">
                     <Search size={14} />
                   </div>
-                  <input
+                  <TextInput
+                    variant="default"
                     className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 pl-9 pr-8 text-[0.82rem] text-white outline-none transition-all placeholder:text-white/25 focus:border-white/20 focus:bg-white/8"
                     type="text"
                     placeholder="Rechercher l'ouvrage cible…"
@@ -216,13 +222,13 @@ export default function BookForm({
                     onChange={(e) => setMergeSearch(e.target.value)}
                   />
                   {mergeSearch && (
-                    <button
+                    <Button
                       className="absolute right-2 cursor-pointer bg-transparent px-1 py-0.5 text-white/30 hover:text-white"
                       onClick={() => setMergeSearch('')}
                       type="button"
                     >
                       <X size={14} />
-                    </button>
+                    </Button>
                   )}
                 </div>
                 {mergeSearch.trim() && (
@@ -235,7 +241,7 @@ export default function BookForm({
                       <ul className="flex list-none flex-col">
                         {mergeResults.map((n) => (
                           <li key={n.id}>
-                            <button
+                            <Button
                               className="flex w-full cursor-pointer items-center gap-2 rounded-md bg-transparent px-3 py-2 text-left transition-colors hover:bg-white/10"
                               type="button"
                               onClick={() => {
@@ -256,7 +262,7 @@ export default function BookForm({
                                   {bookAuthorDisplay(n, authorsMap)}{n.year ? `, ${n.year}` : ''}
                                 </span>
                               </span>
-                            </button>
+                            </Button>
                           </li>
                         ))}
                       </ul>
@@ -274,15 +280,15 @@ export default function BookForm({
                   <span className="min-w-0 truncate text-[0.82rem] text-white">
                     {mergeTarget.title}
                   </span>
-                  <button
+                  <Button
                     className="ml-auto shrink-0 cursor-pointer bg-transparent text-white/30 hover:text-white"
                     type="button"
                     onClick={() => { setMergeTarget(null); setMergeConfirm(false) }}
                   >
                     <X size={14} />
-                  </button>
+                  </Button>
                 </div>
-                <button
+                <Button
                   type="button"
                   className={[
                     'shrink-0 cursor-pointer rounded-lg border px-3 py-2 text-[0.75rem] font-semibold transition-all',
@@ -296,13 +302,13 @@ export default function BookForm({
                     <Merge size={12} />
                     {mergeConfirm ? 'Confirmer' : 'Fusionner'}
                   </span>
-                </button>
+                </Button>
               </div>
             )}
           </div>
 
           <div>
-            <button
+            <Button
               type="button"
               className={[
                 'cursor-pointer rounded-lg border px-3 py-2 text-[0.75rem] font-semibold transition-all',
@@ -317,7 +323,7 @@ export default function BookForm({
                 <Trash2 size={12} />
                 {deleteConfirm ? 'Confirmer la suppression' : 'Supprimer l\u2019ouvrage'}
               </span>
-            </button>
+            </Button>
           </div>
         </div>
       )}

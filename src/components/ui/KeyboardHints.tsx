@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { Move, ChevronDown } from 'lucide-react'
+import Button from './Button'
 
 const KeyCap = ({ children }) => (
   <span
@@ -53,7 +54,7 @@ export default function KeyboardHints() {
     <div
       className={`pointer-events-auto absolute bottom-20 right-6 z-20 flex select-none flex-col rounded-[10px] border border-white/10 bg-[rgba(6,3,15,0.45)] px-4 backdrop-blur-2xl backdrop-saturate-150 ${collapsed ? 'py-2' : 'py-3'}`}
     >
-      <button
+      <Button
         type="button"
         onClick={() => setCollapsed((v) => !v)}
         aria-expanded={!collapsed}
@@ -70,7 +71,7 @@ export default function KeyboardHints() {
           className={`shrink-0 text-white/25 transition-transform duration-200 ease-out ${collapsed ? '' : 'rotate-180'}`}
           aria-hidden
         />
-      </button>
+      </Button>
 
       <div
         id={panelId}

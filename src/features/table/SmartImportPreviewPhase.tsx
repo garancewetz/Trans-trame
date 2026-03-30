@@ -1,4 +1,5 @@
-import { AlertTriangle, Check, Link2, Loader2, Zap } from 'lucide-react'
+import { AlertTriangle, Check, Info, Link2, Loader2, Zap } from 'lucide-react'
+import Button from '../../components/ui/Button'
 import SmartImportPreviewRow from './SmartImportPreviewRow'
 
 export default function SmartImportPreviewPhase({
@@ -18,6 +19,7 @@ export default function SmartImportPreviewPhase({
   onAddCoAuthor,
   onUpdateAxes,
   masterNode,
+  linkDirection,
   selectedCount,
   injected,
   inserting,
@@ -47,7 +49,9 @@ export default function SmartImportPreviewPhase({
         )}
         {masterNode && (
           <span className="flex items-center gap-1 rounded-full border border-[rgba(140,220,255,0.25)] bg-[rgba(140,220,255,0.06)] px-2 py-0.5 text-[rgba(140,220,255,0.65)]">
-            <Link2 size={9} /> → {masterNode.title}
+            <Link2 size={9} />
+            {linkDirection === 'imported-cites-master' ? ' ← ' : ' → '}
+            {masterNode.title}
           </span>
         )}
         <span className="ml-auto text-[0.65rem] text-white/22">Cliquer pour modifier</span>
@@ -55,11 +59,18 @@ export default function SmartImportPreviewPhase({
 
       {/* Table */}
       <div className="mb-4 overflow-hidden rounded-xl border border-white/8">
-        <div className="grid grid-cols-[28px_1fr_150px_100px_64px] border-b border-white/6 bg-white/2.5 px-3 py-1.5 text-[0.58rem] font-semibold uppercase tracking-[1.3px] text-white/28">
+        <div className="grid grid-cols-[28px_1fr_150px_100px_120px_64px] border-b border-white/6 bg-white/2.5 px-3 py-1.5 text-[0.58rem] font-semibold uppercase tracking-[1.3px] text-white/28">
           <span />
           <span>Titre</span>
           <span>Auteur·ice</span>
           <span>Axes</span>
+          <span className="group/tip relative flex items-center gap-1">
+            Édition
+            <Info size={10} className="text-white/25 transition-colors group-hover/tip:text-white/50" />
+            <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-white/10 bg-[rgba(10,8,30,0.95)] px-2.5 py-1.5 text-[0.62rem] font-normal normal-case tracking-normal text-white/65 opacity-0 shadow-lg transition-opacity group-hover/tip:opacity-100">
+              Info du lien, pas de l'ouvrage
+            </span>
+          </span>
           <span>Année</span>
         </div>
         <div className="max-h-[min(55vh,480px)] overflow-y-auto">
@@ -91,14 +102,14 @@ export default function SmartImportPreviewPhase({
 
       {/* Actions */}
       <div className="flex gap-2">
-        <button
+        <Button
           type="button"
           onClick={handleClose}
-          className="flex-1 cursor-pointer rounded-lg border border-white/10 bg-white/4 px-4 py-2 text-[0.75rem] font-semibold text-white/55 transition-all hover:text-white"
+          variant="modalSecondary"
         >
           Annuler
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
           disabled={selectedCount === 0 || injected || inserting}
           className={[
@@ -121,7 +132,7 @@ export default function SmartImportPreviewPhase({
               )}
             </>
           )}
-        </button>
+        </Button>
       </div>
     </>
   )

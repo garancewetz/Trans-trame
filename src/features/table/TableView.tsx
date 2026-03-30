@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { bookAuthorDisplay, buildAuthorsMap } from '../../authorUtils'
 import { resolveLinks } from './resolveLinks'
 import TableTopbar from './TableTopbar'
-import TableBooksTab from './TableBooksTab'
-import TableLinksTab from './TableLinksTab'
-import TableAuthorsTab from './TableAuthorsTab'
+import TableBooksTab from './tabs/BooksTab'
+import TableAuthorsTab from './tabs/AuthorsTab'
+import TableLinksTab from './tabs/LinksTab'
 import TableFooter from './TableFooter'
-import TableMergeModal from './TableMergeModal'
 import TableOrphanModal from './TableOrphanModal'
 import TableDedupeModal from './TableDedupeModal'
+import TableAuthorDedupeModal from './TableAuthorDedupeModal'
 import SmartImportModal from './SmartImportModal'
 
 export default function TableView({
@@ -38,32 +38,25 @@ export default function TableView({
   }, [])
 
   const [tab, setTab] = useState(initialTab)
+  const [focusAuthorId, setFocusAuthorId] = useState(null)
+  const [focusBookId, setFocusBookId] = useState(null)
+  const [booksPrefill, setBooksPrefill] = useState(null) // { nonce, authorId }
 
   const [search, setSearch] = useState('')
-  const [sortCol, setSortCol] = useState('lastName')
-  const [sortDir, setSortDir] = useState('asc')
-  const [selectedIds, setSelectedIds] = useState(new Set())
-  const [editingCell, setEditingCell] = useState(null)
-  const [editingValue, setEditingValue] = useState('')
-  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
   const [addedQueue, setAddedQueue] = useState([])
-
-  const [inputTitle, setInputTitle] = useState('')
-  const [inputAuthorIds, setInputAuthorIds] = useState([])
-  const [inputYear, setInputYear] = useState('')
-  const [inputAxes, setInputAxes] = useState([])
-  const [stickyAuthor, setStickyAuthor] = useState(false)
-  const titleInputRef = useRef(null)
-
-  const [mergeModal, setMergeModal] = useState(false)
-  const [mergeKeepId, setMergeKeepId] = useState(null)
-  const [mergeConfirm, setMergeConfirm] = useState(false)
 
   const [authorSearch, setAuthorSearch] = useState('')
   const [linkSearch, setLinkSearch] = useState('')
   const [linkSourceNode, setLinkSourceNode] = useState(
     () => (initialLinkSourceId ? nodes.find((n) => n.id === initialLinkSourceId) ?? null : null)
   )
+
+  const focusAuthorInAuthorsTab = (authorId) => {
+    if (!authorId) return
+    setAuthorSearch('')
+    setFocusAuthorId(authorId)
+    setTab('authors')
+  }
   const [checklistSearch, setChecklistSearch] = useState('')
   const [linkCheckedIds, setLinkCheckedIds] = useState(new Set())
   const [editingLink, setEditingLink] = useState(null)
@@ -76,56 +69,12 @@ export default function TableView({
   const [dedupeModal, setDedupeModal] = useState(false)
   const [dedupeConfirm, setDedupeConfirm] = useState(false)
 
+  const [authorDedupeModal, setAuthorDedupeModal] = useState(false)
+  const [authorDedupeConfirm, setAuthorDedupeConfirm] = useState(false)
+
   const [smartImportModal, setSmartImportModal] = useState(false)
 
   const authorsMap = useMemo(() => buildAuthorsMap(authors), [authors])
-
-  const linkCountByNode = useMemo(() => {
-    const counts = new Map()
-    links.forEach((l) => {
-      const srcId = typeof l.source === 'object' ? l.source.id : l.source
-      const tgtId = typeof l.target === 'object' ? l.target.id : l.target
-      counts.set(srcId, (counts.get(srcId) || 0) + 1)
-      counts.set(tgtId, (counts.get(tgtId) || 0) + 1)
-    })
-    return counts
-  }, [links])
-
-  const filteredNodes = useMemo(() => {
-    const q = search.toLowerCase().trim()
-    if (!q) return nodes
-    return nodes.filter(
-      (n) =>
-        n.title.toLowerCase().includes(q) ||
-        bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q) ||
-        String(n.year || '').includes(q)
-    )
-  }, [nodes, search, authorsMap])
-
-  const sortedNodes = useMemo(
-    () =>
-      [...filteredNodes].sort((a, b) => {
-        let va, vb
-        switch (sortCol) {
-          case 'title': va = a.title.toLowerCase(); vb = b.title.toLowerCase(); break
-          case 'lastName': va = bookAuthorDisplay(a, authorsMap).toLowerCase(); vb = bookAuthorDisplay(b, authorsMap).toLowerCase(); break
-          case 'year': va = a.year || 0; vb = b.year || 0; break
-          default: va = ''; vb = ''
-        }
-        if (va < vb) return sortDir === 'asc' ? -1 : 1
-        if (va > vb) return sortDir === 'asc' ? 1 : -1
-        return 0
-      }),
-    [filteredNodes, sortCol, sortDir, authorsMap]
-  )
-
-  const allSelected = sortedNodes.length > 0 && sortedNodes.every((n) => selectedIds.has(n.id))
-  const someSelected = selectedIds.size > 0 && !allSelected
-
-  const mergeNodes = useMemo(() => {
-    if (selectedIds.size !== 2) return []
-    return nodes.filter((n) => selectedIds.has(n.id))
-  }, [nodes, selectedIds])
 
   const resolvedLinks = useMemo(() => resolveLinks(links, nodes), [links, nodes])
 
@@ -170,7 +119,7 @@ export default function TableView({
         bookAuthorDisplay(l.sourceNode || {}, authorsMap).toLowerCase().includes(q) ||
         ((l.citation_text || l.context || '')).toLowerCase().includes(q)
     )
-  }, [resolvedLinks, linkSearch])
+  }, [resolvedLinks, linkSearch, authorsMap])
 
   const groupedLinks = useMemo(() => {
     const groups = new Map()
@@ -205,88 +154,45 @@ export default function TableView({
     return Array.from(map.values()).filter((g) => g.length > 1)
   }, [nodes, authorsMap])
 
-  const handleNodeSort = (col) => {
-    if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    else { setSortCol(col); setSortDir('asc') }
-  }
-
-  const toggleRow = (id) =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
+  const authorDuplicateGroups = useMemo(() => {
+    const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim()
+    const map = new Map()
+    ;(authors || []).forEach((a) => {
+      const key = `${norm(a.lastName)}|||${norm(a.firstName)}`
+      if (!map.has(key)) map.set(key, [])
+      map.get(key).push(a)
     })
+    return Array.from(map.values()).filter((g) => g.length > 1)
+  }, [authors])
 
-  const toggleAll = () => {
-    if (allSelected || someSelected) setSelectedIds(new Set())
-    else setSelectedIds(new Set(sortedNodes.map((n) => n.id)))
+  const mergeAuthors = (fromAuthorId, keepAuthorId) => {
+    if (!fromAuthorId || !keepAuthorId || fromAuthorId === keepAuthorId) return
+    ;(nodes || []).forEach((b) => {
+      const ids = b.authorIds || []
+      if (!ids.includes(fromAuthorId)) return
+      const next = Array.from(new Set(ids.map((id) => (id === fromAuthorId ? keepAuthorId : id))))
+      onUpdateBook?.({ ...b, authorIds: next })
+    })
+    onDeleteAuthor?.(fromAuthorId)
   }
 
   const revealBookLine = (bookId) => {
     if (!bookId) return
     setTab('books')
-    setSelectedIds(new Set([bookId]))
+    setFocusBookId(bookId)
     // Le DOM du tab "books" n'est pas encore monté : attendre un tour de rendu.
     setTimeout(() => {
       const el = document.querySelector(`[data-book-row-id="${bookId}"]`)
       el?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
     }, 50)
   }
-
-  const commitNodeEdit = () => {
-    if (!editingCell) return
-    const { nodeId, field } = editingCell
-    const node = nodes.find((n) => n.id === nodeId)
-    if (!node) { setEditingCell(null); return }
-    let val = editingValue.trim()
-    if (field === 'year') {
-      const p = parseInt(val)
-      val = isNaN(p) ? node.year : p
-    }
-    if (String(val) !== String(node[field] ?? '')) {
-      onUpdateBook({ ...node, [field]: val })
-      onLastEdited?.(nodeId)
-    }
-    setEditingCell(null)
-  }
-
-  const handleBulkDelete = () => {
-    if (!bulkDeleteConfirm) { setBulkDeleteConfirm(true); return }
-    selectedIds.forEach((id) => onDeleteBook(id))
-    setSelectedIds(new Set())
-    setBulkDeleteConfirm(false)
-  }
-
-  const handleAddBookRow = () => {
-    if (!inputTitle.trim()) return
-    onAddBook({
-      id: crypto.randomUUID(),
-      title: inputTitle.trim(),
-      authorIds: inputAuthorIds,
-      year: parseInt(inputYear) || null,
-      axes: inputAxes,
-      description: '',
-    })
-    setAddedQueue((prev) => [inputTitle.trim(), ...prev].slice(0, 5))
-    setInputTitle('')
-    setInputYear('')
-    setInputAxes([])
-    if (!stickyAuthor) setInputAuthorIds([])
-    setTimeout(() => titleInputRef.current?.focus(), 0)
-  }
-
-  const handleConfirmMerge = () => {
-    if (!mergeKeepId || mergeNodes.length !== 2) return
-    if (!mergeConfirm) { setMergeConfirm(true); return }
-    const fromNode = mergeNodes.find((n) => n.id !== mergeKeepId)
-    if (fromNode) {
-      onMergeBooks(fromNode.id, mergeKeepId)
-    }
-    setMergeModal(false)
-    setMergeKeepId(null)
-    setMergeConfirm(false)
-    setSelectedIds(new Set())
+  
+  const openLinksForBook = (node) => {
+    if (!node) return
+    setTab('links')
+    setLinkSourceNode(node)
+    setLinkCheckedIds(new Set())
+    setChecklistSearch('')
   }
 
   const toggleChecklist = (id) => {
@@ -310,8 +216,12 @@ export default function TableView({
 
   const commitLinkEdit = () => {
     if (!editingLink) return
-    onUpdateLink(editingLink.id, { [editingLink.field]: editingLinkValue.trim() })
-    setEditingLink(null)
+    const linkId = editingLink.id
+    if (editingLink.field !== '_expand') {
+      onUpdateLink(linkId, { [editingLink.field]: editingLinkValue.trim() })
+    }
+    // Revenir au panneau étendu après l'édition d'un champ
+    setEditingLink({ id: linkId, field: '_expand' })
   }
 
   const handleCleanOrphans = () => {
@@ -331,6 +241,25 @@ export default function TableView({
     })
     setDedupeModal(false)
     setDedupeConfirm(false)
+  }
+
+  const handleMergeAuthorDupes = () => {
+    if (!authorDedupeConfirm) { setAuthorDedupeConfirm(true); return }
+    const score = (a) => {
+      const filled = [a.firstName, a.lastName].filter(Boolean).length
+      let booksCount = 0
+      ;(nodes || []).forEach((b) => {
+        if ((b.authorIds || []).includes(a.id)) booksCount += 1
+      })
+      return filled * 10 + booksCount
+    }
+    authorDuplicateGroups.forEach((group) => {
+      const sorted = [...group].sort((a, b) => score(b) - score(a))
+      const keep = sorted[0]
+      sorted.slice(1).forEach((from) => mergeAuthors(from.id, keep.id))
+    })
+    setAuthorDedupeModal(false)
+    setAuthorDedupeConfirm(false)
   }
 
   return (
@@ -354,62 +283,38 @@ export default function TableView({
         setLinkSearch={setLinkSearch}
         authorSearch={authorSearch}
         setAuthorSearch={setAuthorSearch}
-        selectedIds={selectedIds}
+        selectedIds={new Set()}
         orphans={orphans}
         setOrphanModal={setOrphanModal}
         setOrphanConfirm={setOrphanConfirm}
         duplicateGroups={duplicateGroups}
+        authorDuplicateGroups={authorDuplicateGroups}
         setDedupeModal={setDedupeModal}
         setDedupeConfirm={setDedupeConfirm}
+        setAuthorDedupeModal={setAuthorDedupeModal}
+        setAuthorDedupeConfirm={setAuthorDedupeConfirm}
         onSmartImport={() => setSmartImportModal(true)}
       />
 
       {tab === 'books' && (
         <TableBooksTab
-          sortedNodes={sortedNodes}
-          search={search}
+          key={booksPrefill?.nonce || 'books'}
           nodes={nodes}
+          links={links}
+          search={search}
           authors={authors}
-          allSelected={allSelected}
-          someSelected={someSelected}
-          toggleAll={toggleAll}
-          toggleRow={toggleRow}
-          selectedIds={selectedIds}
-          sortCol={sortCol}
-          sortDir={sortDir}
-          handleNodeSort={handleNodeSort}
-          titleInputRef={titleInputRef}
-          inputTitle={inputTitle}
-          setInputTitle={setInputTitle}
-          inputAuthorIds={inputAuthorIds}
-          setInputAuthorIds={setInputAuthorIds}
           onAddAuthor={onAddAuthor}
-          inputYear={inputYear}
-          setInputYear={setInputYear}
-          inputAxes={inputAxes}
-          setInputAxes={setInputAxes}
-          stickyAuthor={stickyAuthor}
-          setStickyAuthor={setStickyAuthor}
-          handleAddBookRow={handleAddBookRow}
-          editingCell={editingCell}
-          editingValue={editingValue}
-          setEditingValue={setEditingValue}
-          commitNodeEdit={commitNodeEdit}
-          setEditingCell={setEditingCell}
-          linkCountByNode={linkCountByNode}
+          onAddBook={onAddBook}
           onUpdateBook={onUpdateBook}
+          onDeleteBook={onDeleteBook}
           onLastEdited={onLastEdited}
-          handleBulkDelete={handleBulkDelete}
-          bulkDeleteConfirm={bulkDeleteConfirm}
-          setBulkDeleteConfirm={setBulkDeleteConfirm}
-          clearSelection={() => setSelectedIds(new Set())}
-          mergeNodes={mergeNodes}
-          setMergeKeepId={setMergeKeepId}
-          setMergeConfirm={setMergeConfirm}
-          setMergeModal={setMergeModal}
-          setTab={setTab}
-          setLinkSourceNode={setLinkSourceNode}
-          setLinkCheckedIds={setLinkCheckedIds}
+          onMergeBooks={onMergeBooks}
+          onBookAdded={(title) => setAddedQueue((prev) => [title, ...prev].slice(0, 5))}
+          onOpenLinksForBook={openLinksForBook}
+          onFocusAuthorInAuthorsTab={focusAuthorInAuthorsTab}
+          initialAuthorIds={booksPrefill?.authorId ? [booksPrefill.authorId] : []}
+          autoFocusTitle={Boolean(booksPrefill?.authorId)}
+          focusBookId={focusBookId}
         />
       )}
 
@@ -422,12 +327,15 @@ export default function TableView({
           onUpdateAuthor={onUpdateAuthor}
           onDeleteAuthor={onDeleteAuthor}
           onMigrateData={onMigrateData}
+          onMergeAuthors={mergeAuthors}
           onAddBookForAuthor={(author) => {
-            setInputAuthorIds([author.id])
-            setStickyAuthor(true)
+            // Préremplit le champ d'ajout + la recherche topbar.
+            const authorLabel = bookAuthorDisplay({ authorIds: [author.id] }, authorsMap)
+            setSearch(authorLabel)
+            setBooksPrefill({ nonce: crypto.randomUUID(), authorId: author.id })
             setTab('books')
-            setTimeout(() => titleInputRef.current?.focus(), 50)
           }}
+          focusAuthorId={focusAuthorId}
         />
       )}
 
@@ -462,19 +370,6 @@ export default function TableView({
 
       <TableFooter tab={tab} addedQueue={addedQueue} />
 
-      <TableMergeModal
-        mergeModal={mergeModal}
-        mergeNodes={mergeNodes}
-        nodes={nodes}
-        authorsMap={authorsMap}
-        mergeKeepId={mergeKeepId}
-        setMergeKeepId={setMergeKeepId}
-        setMergeConfirm={setMergeConfirm}
-        mergeConfirm={mergeConfirm}
-        handleConfirmMerge={handleConfirmMerge}
-        setMergeModal={setMergeModal}
-      />
-
       <TableOrphanModal
         orphanModal={orphanModal}
         orphans={orphans}
@@ -492,6 +387,15 @@ export default function TableView({
         dedupeConfirm={dedupeConfirm}
         setDedupeModal={setDedupeModal}
         setDedupeConfirm={setDedupeConfirm}
+      />
+
+      <TableAuthorDedupeModal
+        open={authorDedupeModal}
+        duplicateGroups={authorDuplicateGroups}
+        handleMergeDupes={handleMergeAuthorDupes}
+        confirm={authorDedupeConfirm}
+        setOpen={setAuthorDedupeModal}
+        setConfirm={setAuthorDedupeConfirm}
       />
 
       <SmartImportModal

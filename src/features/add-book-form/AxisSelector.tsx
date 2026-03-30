@@ -1,4 +1,5 @@
 import { AXES, AXES_COLORS, AXES_LABELS } from '../../categories'
+import Button from '../../components/ui/Button'
 
 export default function AxisSelector({ selectedAxes, toggleAxis }) {
   return (
@@ -10,7 +11,7 @@ export default function AxisSelector({ selectedAxes, toggleAxis }) {
         {AXES.map((axis) => {
           const active = selectedAxes.includes(axis)
           return (
-            <button
+            <Button
               key={axis}
               type="button"
               className={[
@@ -23,7 +24,7 @@ export default function AxisSelector({ selectedAxes, toggleAxis }) {
               onClick={() => toggleAxis(axis)}
             >
               {AXES_LABELS[axis] ?? axis}
-            </button>
+            </Button>
           )
         })}
       </div>

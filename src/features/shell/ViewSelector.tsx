@@ -1,4 +1,6 @@
 import { Orbit, GitFork } from 'lucide-react'
+import Button from '../../components/ui/Button'
+import Tooltip from '../../components/ui/Tooltip'
 
 const VIEWS = [
   { id: 'constellation', label: 'Constellation', icon: Orbit, hint: 'Exploration libre' },
@@ -20,26 +22,26 @@ export default function ViewSelector({ currentView, onViewChange, inline = false
           const active = currentView === id
           const tooltip = `${label} - ${hint}`
           return (
-            <button
-              key={id}
-              onClick={() => onViewChange(id)}
-              title={tooltip}
-              aria-label={tooltip}
-              className={[
-                'flex items-center gap-1.5 rounded-full transition-all cursor-pointer',
-                inline && discreet
-                  ? 'px-2 py-1 text-[0.62rem] font-medium tracking-[0.3px]'
-                  : 'px-3 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[1px]',
-                active
-                  ? inline && discreet
-                    ? 'bg-white/12 text-white/85'
-                    : 'bg-[rgba(109,95,255,0.6)] text-white'
-                  : 'text-white/50 hover:text-white/80 hover:bg-white/5',
-              ].join(' ')}
-            >
-              <Icon size={13} />
-              <span className={inline && discreet ? 'hidden' : 'hidden sm:inline'}>{label}</span>
-            </button>
+            <Tooltip key={id} content={tooltip}>
+              <Button
+                onClick={() => onViewChange(id)}
+                aria-label={tooltip}
+                className={[
+                  'flex items-center gap-1.5 rounded-full transition-all cursor-pointer',
+                  inline && discreet
+                    ? 'px-2 py-1 text-[0.62rem] font-medium tracking-[0.3px]'
+                    : 'px-3 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[1px]',
+                  active
+                    ? inline && discreet
+                      ? 'bg-white/12 text-white/85'
+                      : 'bg-[rgba(109,95,255,0.6)] text-white'
+                    : 'text-white/50 hover:text-white/80 hover:bg-white/5',
+                ].join(' ')}
+              >
+                <Icon size={13} />
+                <span className={inline && discreet ? 'hidden' : 'hidden sm:inline'}>{label}</span>
+              </Button>
+            </Tooltip>
           )
         })}
       </div>

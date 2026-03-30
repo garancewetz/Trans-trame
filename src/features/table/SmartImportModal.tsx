@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronLeft, X, Zap } from 'lucide-react'
+import Button from '../../components/ui/Button'
 import { parseSmartInput } from './parseSmartInput'
 import SmartImportInputPhase from './SmartImportInputPhase'
 import SmartImportPreviewPhase from './SmartImportPreviewPhase'
@@ -58,6 +59,8 @@ export default function SmartImportModal({
   const [inserting, setInserting] = useState(false)
   const [masterNode, setMasterNode] = useState(null)
   const [masterContext, setMasterContext] = useState('')
+  // Par défaut: l'œuvre source (master) cite les ouvrages importés
+  const [linkDirection, setLinkDirection] = useState('master-cites-imported')
   const [editingCell, setEditingCell] = useState(null)
   const [editingValue, setEditingValue] = useState('')
   const [editingAuthor, setEditingAuthor] = useState(null)
@@ -75,6 +78,7 @@ export default function SmartImportModal({
     setMergedIds(new Set())
     setInjected(false)
     setInserting(false)
+    setLinkDirection('master-cites-imported')
   }
 
   const handleAnalyze = () => {
@@ -99,7 +103,16 @@ export default function SmartImportModal({
     }
     onUpdateBook(updates)
     if (masterNode) {
-      onAddLink?.({ source: masterNode.id, target: existing.id, citation_text: masterContext.trim(), edition: item.edition || '', page: '', context: '' })
+      const source = linkDirection === 'imported-cites-master' ? existing.id : masterNode.id
+      const target = linkDirection === 'imported-cites-master' ? masterNode.id : existing.id
+      onAddLink?.({
+        source,
+        target,
+        citation_text: masterContext.trim(),
+        edition: item.edition || '',
+        page: '',
+        context: '',
+      })
     }
     setMergedIds((prev) => new Set([...prev, item.id]))
     setChecked((prev) => { const next = new Set(prev); next.delete(item.id); return next })
@@ -212,7 +225,16 @@ export default function SmartImportModal({
     if (insertPromises.length > 0) await Promise.all(insertPromises)
     if (masterNode) {
       toAdd.forEach((r) => {
-        onAddLink?.({ source: masterNode.id, target: r.id, citation_text: masterContext.trim(), edition: r.edition || '', page: '', context: '' })
+        const source = linkDirection === 'imported-cites-master' ? r.id : masterNode.id
+        const target = linkDirection === 'imported-cites-master' ? masterNode.id : r.id
+        onAddLink?.({
+          source,
+          target,
+          citation_text: masterContext.trim(),
+          edition: r.edition || '',
+          page: '',
+          context: '',
+        })
       })
     }
     onQueued?.(toAdd.map((r) => r.title))
@@ -242,24 +264,25 @@ export default function SmartImportModal({
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {phase === 'preview' && (
-              <button
+              <Button
                 type="button"
                 onClick={goBack}
-                className="mr-0.5 cursor-pointer rounded-lg p-1 text-white/30 transition-colors hover:text-white"
+                variant="buttonIcon"
+                className="mr-0.5"
               >
                 <ChevronLeft size={16} />
-              </button>
+              </Button>
             )}
             <Zap size={14} className="text-[rgba(140,220,255,0.7)]" />
             <h3 className="font-semibold text-white">Import Magique</h3>
           </div>
-          <button
+          <Button
             type="button"
             onClick={handleClose}
-            className="cursor-pointer rounded-lg p-1 text-white/30 transition-colors hover:text-white"
+            variant="buttonIcon"
           >
             <X size={15} />
-          </button>
+          </Button>
         </div>
 
         {phase === 'input' && (
@@ -270,6 +293,8 @@ export default function SmartImportModal({
             setMasterNode={setMasterNode}
             masterContext={masterContext}
             setMasterContext={setMasterContext}
+            linkDirection={linkDirection}
+            setLinkDirection={setLinkDirection}
             existingNodes={existingNodes}
             authorsMap={authorsMap}
           />
@@ -293,6 +318,7 @@ export default function SmartImportModal({
             onAddCoAuthor={handleAddCoAuthor}
             onUpdateAxes={handleUpdateAxes}
             masterNode={masterNode}
+            linkDirection={linkDirection}
             selectedCount={checked.size}
             injected={injected}
             inserting={inserting}

@@ -2,6 +2,8 @@ import { Plus, Search, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { authorName } from '../../authorUtils'
 import { axesGradient } from '../../categories'
+import Button from '../../components/ui/Button'
+import TextInput from '../../components/ui/TextInput'
 
 export default function AuthorsPanel({
   open,
@@ -62,32 +64,33 @@ export default function AuthorsPanel({
 
           <div className="flex items-center gap-2">
             {selectedAuthorId && (
-              <button
+              <Button
                 type="button"
                 className="cursor-pointer rounded-lg border border-[rgba(255,180,130,0.3)] bg-[rgba(255,180,130,0.1)] px-2.5 py-1.5 text-[0.72rem] font-semibold text-[rgba(255,200,160,0.9)] transition-colors hover:bg-[rgba(255,180,130,0.2)]"
                 onClick={() => onSelectAuthor?.(null)}
               >
                 Retirer le filtre
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="button"
               className="cursor-pointer rounded-lg border border-white/10 bg-white/5 p-2 text-white/40 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
               onClick={onClose}
               aria-label="Fermer"
             >
               <X size={18} />
-            </button>
+            </Button>
           </div>
         </div>
 
         <div className="relative mb-4">
           <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/25" />
-          <input
+          <TextInput
+            variant="default"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Rechercher un·e auteur·ice..."
-            className="w-full rounded-[10px] border border-white/10 bg-white/5 px-9 py-[9px] text-[0.82rem] text-white outline-none placeholder:text-white/25 backdrop-blur-lg transition-all focus:border-[rgba(255,180,130,0.4)] focus:bg-white/10"
+            className="px-9 py-[9px] text-[0.82rem] backdrop-blur-lg focus:border-[rgba(255,180,130,0.4)]"
           />
         </div>
 
@@ -109,7 +112,7 @@ export default function AuthorsPanel({
                         : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/8',
                     ].join(' ')}
                   >
-                    <button
+                    <Button
                       type="button"
                       className={[
                         'flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-3 rounded-md px-1.5 py-1 text-left transition-colors',
@@ -123,9 +126,9 @@ export default function AuthorsPanel({
                       <span className={['shrink-0 rounded-full px-2 py-0.5 text-[0.7rem] font-bold tabular-nums', isSelected ? 'bg-[rgba(255,180,130,0.2)] text-[rgba(255,200,160,0.8)]' : 'bg-white/10 text-white/50'].join(' ')}>
                         {a.books.length}
                       </span>
-                    </button>
+                    </Button>
                     {typeof onAddWorkForAuthor === 'function' && (
-                      <button
+                      <Button
                         type="button"
                         className="shrink-0 cursor-pointer rounded-md border border-white/10 bg-white/5 p-2 text-[rgba(255,200,160,0.85)] transition-colors hover:border-[rgba(255,180,130,0.4)] hover:bg-[rgba(255,180,130,0.12)] hover:text-white"
                         aria-label={`Ajouter un ouvrage pour ${a.name}`}
@@ -136,7 +139,7 @@ export default function AuthorsPanel({
                         }}
                       >
                         <Plus size={18} strokeWidth={2.25} />
-                      </button>
+                      </Button>
                     )}
                   </div>
 
@@ -169,13 +172,13 @@ export default function AuthorsPanel({
           )}
           {typeof onOpenAddBookFromSearch === 'function' && (
             <div className="mt-4">
-              <button
+              <Button
                 type="button"
                 className="w-full cursor-pointer rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-left text-[0.82rem] font-semibold text-white/70 transition-colors hover:border-[rgba(168,85,247,0.45)] hover:bg-[rgba(168,85,247,0.15)] hover:text-white"
                 onClick={() => onOpenAddBookFromSearch(q)}
               >
                 Ajouter un·e auteur·ice (nouvel ouvrage)
-              </button>
+              </Button>
             </div>
           )}
         </div>

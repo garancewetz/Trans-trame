@@ -2,6 +2,7 @@ import { Eye, Search, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { bookAuthorDisplay, buildAuthorsMap } from '../../authorUtils'
 import { axesGradient } from '../../categories'
+import Button from '../../components/ui/Button'
 
 export default function TextsPanel({ open, onClose, nodes, authors = [], onSelectNode, onPeekNode, peekNodeId }) {
   const [q, setQ] = useState('')
@@ -52,14 +53,14 @@ export default function TextsPanel({ open, onClose, nodes, authors = [], onSelec
             <p className="text-[0.7rem] text-white/40">{nodes.length} au total</p>
           </div>
 
-          <button
+          <Button
             type="button"
             className="cursor-pointer rounded-lg border border-white/10 bg-white/5 p-2 text-white/40 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
             onClick={onClose}
             aria-label="Fermer"
           >
             <X size={18} />
-          </button>
+          </Button>
         </div>
 
         <div className="relative mb-4">
@@ -88,7 +89,7 @@ export default function TextsPanel({ open, onClose, nodes, authors = [], onSelec
                       : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/8',
                   ].join(' ')}
                 >
-                  <button
+                  <Button
                     type="button"
                     className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 px-3 py-2.5 text-left"
                     onClick={() => onSelectNode?.(n)}
@@ -104,9 +105,9 @@ export default function TextsPanel({ open, onClose, nodes, authors = [], onSelec
                         {n.year ? ` — ${n.year}` : ''}
                       </div>
                     </div>
-                  </button>
+                  </Button>
                   {typeof onPeekNode === 'function' && (
-                    <button
+                    <Button
                       type="button"
                       className="shrink-0 cursor-pointer border-l border-white/10 px-2.5 text-white/35 transition-colors hover:bg-white/10 hover:text-[rgba(168,130,255,0.95)]"
                       aria-label={`Voir ce texte sur le graphe (${n.title})`}
@@ -117,7 +118,7 @@ export default function TextsPanel({ open, onClose, nodes, authors = [], onSelec
                       }}
                     >
                       <Eye size={18} strokeWidth={2} />
-                    </button>
+                    </Button>
                   )}
                 </div>
               )

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Tags, ChevronDown } from 'lucide-react'
 import { AXES_LABELS } from '../../categories'
+import Button from '../../components/ui/Button'
 import CountBadge from '../../components/ui/CountBadge'
 
 type LegendProps = {
@@ -28,7 +29,7 @@ export default function Legend({
     <div
       className={`fixed bottom-20 left-3 z-20 flex flex-col rounded-[10px] border border-white/10 bg-[rgba(6,3,15,0.45)] px-4 backdrop-blur-2xl backdrop-saturate-150 ${collapsed ? 'py-2' : 'py-3'}`}
     >
-      <button
+      <Button
         type="button"
         onClick={() => setCollapsed((v) => !v)}
         aria-expanded={!collapsed}
@@ -44,7 +45,7 @@ export default function Legend({
           className={`shrink-0 text-white/25 transition-transform duration-200 ease-out ${collapsed ? '' : 'rotate-180'}`}
           aria-hidden
         />
-      </button>
+      </Button>
       <div
         className={`grid min-h-0 transition-[grid-template-rows] duration-200 ease-out ${collapsed ? 'grid-rows-[0fr]' : 'mt-2 grid-rows-[1fr]'}`}
       >
@@ -58,7 +59,7 @@ export default function Legend({
                 AXES_LABELS[axis as keyof typeof AXES_LABELS] ?? axis
 
               return (
-                <button
+                <Button
                   key={axis}
                   className={[
                     'flex cursor-pointer items-center gap-2.5 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-left text-[0.72rem] font-medium uppercase tracking-[0.5px] transition-all backdrop-blur-lg',
@@ -83,17 +84,17 @@ export default function Legend({
                       className="bg-white/10 px-[7px] py-px text-[0.62rem] font-bold text-white/45 normal-case"
                     />
                   </span>
-                </button>
+                </Button>
               )
             })}
             {activeFilter && (
-              <button
+              <Button
                 className="mt-1 cursor-pointer rounded-md bg-white/5 px-2 py-1 text-[0.68rem] text-white/40 backdrop-blur-lg transition-colors hover:bg-white/10 hover:text-white/70"
                 onClick={clearFilter}
                 type="button"
               >
                 Tout afficher
-              </button>
+              </Button>
             )}
           </div>
         </div>

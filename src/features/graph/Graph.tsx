@@ -96,14 +96,19 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   const containerRef = useRef<HTMLDivElement | null>(null)
   const camRef = useRef({ x: 0, y: 0, zoom: 0.7 })
   const hoveredNodeRef = useRef<GraphNode | null>(null)
+  const didInitialFitRef = useRef(false)
 
   useImperativeHandle(ref, () => ({
     centerCamera() {
-      const fg = fgRef.current
+      const fg = fgRef.current as unknown as { zoomToFit?: (ms: number, padding: number) => void; centerAt?: (x: number, y: number, ms: number) => void; zoom?: (z: number, ms: number) => void } | null
       if (!fg) return
-      camRef.current = { x: 0, y: 0, zoom: 0.7 }
-      fg.centerAt(0, 0, 1200)
-      fg.zoom(0.7, 1200)
+      if (fg.zoomToFit) {
+        fg.zoomToFit(1200, 80)
+      } else {
+        camRef.current = { x: 0, y: 0, zoom: 0.7 }
+        fg.centerAt?.(0, 0, 1200)
+        fg.zoom?.(0.7, 1200)
+      }
     },
   }))
 
@@ -145,23 +150,23 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   }, [selectedNode])
 
   const resetToOverview = useCallback(() => {
-    const fg = fgRef.current
+    const fg = fgRef.current as unknown as { zoomToFit?: (ms: number, padding: number) => void; centerAt?: (x: number, y: number, ms: number) => void; zoom?: (z: number, ms: number) => void } | null
     if (!fg) return
 
-    if (layoutPositions) {
-      const radiusSource = [...layoutPositions.values()]
-      const maxR = Math.max(...radiusSource.map((p) => Math.hypot(p.fx ?? 0, p.fy ?? 0)), 300)
-      const zoom = 400 / maxR
-      camRef.current = { x: 0, y: 0, zoom }
-      fg.centerAt(0, 0, 900)
-      fg.zoom(zoom, 900)
+    // Use zoomToFit to show the entire constellation with comfortable padding
+    if (fg.zoomToFit) {
+      fg.zoomToFit(900, 80)
+      // Update camRef after animation settles
+      setTimeout(() => {
+        camRef.current = { x: 0, y: 0, zoom: camRef.current.zoom }
+      }, 950)
       return
     }
 
     camRef.current = { x: 0, y: 0, zoom: 0.7 }
-    fg.centerAt(0, 0, 900)
-    fg.zoom(0.7, 900)
-  }, [layoutPositions])
+    fg.centerAt?.(0, 0, 900)
+    fg.zoom?.(0.7, 900)
+  }, [])
 
   useEffect(() => setupKeyboardHandlers({ keysRef, onSpace: resetToOverview }), [resetToOverview])
   useEffect(() => setupMouseDragHandlers({ containerRef, velRef, hoveredNodeRef }), [])
@@ -188,12 +193,8 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         const link = fg.d3Force('link')
         if (link) link.distance((l) => l.type === 'author-book' ? 45 : 102)
 
-        const radiusSource = [...layoutPositions.values()]
-        const maxR = Math.max(...radiusSource.map((p) => Math.hypot(p.fx ?? 0, p.fy ?? 0)), 300)
-        const zoom = 400 / maxR
-        camRef.current = { x: 0, y: 0, zoom }
-        fg.centerAt(0, 0, 1200)
-        fg.zoom(zoom, 1200)
+        // Fit all nodes in view after layout positions are applied
+        fg.zoomToFit?.(1200, 80)
       } else {
         graphData.nodes.forEach((node) => {
           node.fx = undefined
@@ -204,10 +205,34 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         const link = fg.d3Force('link')
         if (link) link.distance((l) => l.type === 'author-book' ? 60 : 130)
 
+        // Constellation "horizontale" : compresser Y et étaler X (chronologie approximative)
+        // sans figer les positions (on garde la dynamique d3-force).
+        const years = graphData.nodes.map((n) => n.year).filter(Boolean) as number[]
+        const minYear = years.length ? Math.min(...years) : 1800
+        const maxYear = years.length ? Math.max(...years) : 2025
+        const midYear = (minYear + maxYear) / 2
+        const span = Math.max(1, maxYear - minYear)
+
+        const forceX = fg.d3Force('x') as unknown as { strength?: (v: number) => unknown; x?: (fn: (node: any) => number) => unknown } | null
+        if (forceX?.strength && forceX?.x) {
+          forceX.strength(0.06)
+          forceX.x((node) => {
+            const y = typeof node?.year === 'number' ? node.year : null
+            if (!y) return 0
+            const t = (y - midYear) / span
+            return t * 900
+          })
+        }
+
+        const forceY = fg.d3Force('y') as unknown as { strength?: (v: number) => unknown; y?: (v: number) => unknown } | null
+        if (forceY?.strength && forceY?.y) {
+          forceY.strength(0.14)
+          forceY.y(0)
+        }
+
         fg.d3ReheatSimulation()
-        camRef.current = { x: 0, y: 0, zoom: 0.7 }
-        fg.centerAt(0, 0, 1200)
-        fg.zoom(0.7, 1200)
+        // Fit to view after simulation settles a bit
+        setTimeout(() => { fg.zoomToFit?.(1200, 80) }, 800)
       }
       prevViewRef.current = viewMode
     }, 100)
@@ -218,15 +243,18 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   useEffect(() => {
     const fg = fgRef.current
     if (!fg) return
-    const focusNode =
-      selectedNode ||
-      (peekNodeId ? graphData.nodes?.find((n) => n.id === peekNodeId) : null)
-    if (!focusNode) return
-    const fx = focusNode.fx ?? focusNode.x
-    const fy = focusNode.fy ?? focusNode.y
-    if (fx == null) return
-    camRef.current = { x: fx, y: fy, zoom: NODE_FOCUS_ZOOM }
-    fg.centerAt(fx, fy, 1200)
+    const focusId = selectedNode?.id || peekNodeId
+    if (!focusId) return
+    // Always resolve the live force-graph node object (has up-to-date x/y from d3)
+    const liveNode = graphData.nodes?.find((n) => n.id === focusId)
+    if (!liveNode) return
+    const px = liveNode.fx ?? liveNode.x
+    const py = liveNode.fy ?? liveNode.y
+    if (px == null || py == null) return
+    // Kill any residual pan/zoom velocity so the loop doesn't fight the centering
+    velRef.current = { moveX: 0, moveY: 0, zoom: 0 }
+    camRef.current = { x: px, y: py, zoom: NODE_FOCUS_ZOOM }
+    fg.centerAt(px, py, 1200)
     fg.zoom(NODE_FOCUS_ZOOM, 1200)
   }, [selectedNode, peekNodeId, viewMode, graphData.nodes])
 
@@ -321,6 +349,13 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     fg.d3Force('link').distance((link) => link.type === 'author-book' ? 60 : 130)
     fg.centerAt(0, 0, 0)
     fg.zoom(0.7, 0)
+    // Early zoomToFit once nodes have initial positions (after a short simulation warmup)
+    setTimeout(() => {
+      if (!didInitialFitRef.current) {
+        didInitialFitRef.current = true
+        fg.zoomToFit?.(1200, 80)
+      }
+    }, 800)
   }, [])
 
   const isNodeVisible = useCallback(
@@ -372,7 +407,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         ctx.restore()
       }
     },
-    [selectedNode, selectedAuthorId, peekNodeId, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId]
+    [selectedNode, selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId]
   )
 
   const nodePointerAreaPaint = useCallback(
@@ -420,6 +455,25 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   )
 
   const hasSelection = Boolean(anchorIds)
+
+  // Auto recadrage (vue d'ensemble) : au chargement / changement de vue,
+  // s'assurer que le graphe "tient" dans l'écran pour voir plus de connexions d'un coup d'œil.
+  useEffect(() => {
+    didInitialFitRef.current = false
+  }, [viewMode, graphData.nodes.length, graphData.links.length])
+
+  const maybeZoomToFitOverview = useCallback(
+    (duration = 900) => {
+      const fg = fgRef.current as unknown as { zoomToFit?: (ms: number, padding: number) => void } | null
+      if (!fg?.zoomToFit) return
+      if (hasSelection) return
+      if (activeFilter) return
+      if (didInitialFitRef.current) return
+      didInitialFitRef.current = true
+      fg.zoomToFit(duration, 80)
+    },
+    [hasSelection, activeFilter],
+  )
 
   const linkColor = useCallback(
     (link) => {
@@ -548,8 +602,10 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         isNodeVisible,
         hoveredFilter,
       }
-      // Redraw selected/peek node on top
-      const topNode = selectedNodeRef.current || (peekNodeId && graphData.nodes?.find((n) => n.id === peekNodeId))
+      // Redraw selected/peek node on top — always resolve from graphData.nodes
+      // to use the live force-graph object (with current x/y), not a stale selectedNode copy.
+      const topId = selectedNodeRef.current?.id || peekNodeId
+      const topNode = topId ? graphData.nodes?.find((n) => n.id === topId) : null
       if (topNode) {
         drawNode(topNode, ctx, globalScale, { ...baseOpts, citationCount: citationsByNodeId.get(topNode.id) || 0 })
       }
@@ -559,7 +615,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         drawNode(hovered, ctx, globalScale, { ...baseOpts, citationCount: citationsByNodeId.get(hovered.id) || 0, labelOnly: true })
       }
     },
-    [selectedAuthorId, peekNodeId, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, graphData.nodes]
+    [selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, graphData.nodes]
   )
 
   return (
@@ -629,6 +685,10 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         }}
         backgroundColor="#06030f"
         onEngineInit={handleInit}
+        onEngineStop={() => {
+          // Le recadrage est plus fiable une fois la simulation stabilisée.
+          maybeZoomToFitOverview(900)
+        }}
         onRenderFramePre={onRenderFramePre}
         onRenderFramePost={onRenderFramePost}
       />

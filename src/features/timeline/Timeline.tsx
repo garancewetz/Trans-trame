@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import Button from '../../components/ui/Button'
 
 export default function Timeline({ graphData, timelineRange, onRangeChange }) {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -137,7 +138,7 @@ export default function Timeline({ graphData, timelineRange, onRangeChange }) {
           style={{ background: 'rgba(8, 12, 30, 0.35)', backdropFilter: 'blur(18px)' }}
         >
         {/* Play/pause */}
-        <button
+        <Button
           onClick={togglePlay}
           className="h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full transition-all duration-200 flex"
           style={{
@@ -156,7 +157,7 @@ export default function Timeline({ graphData, timelineRange, onRangeChange }) {
               <polygon points="2,0 10,5 2,10" />
             </svg>
           )}
-        </button>
+        </Button>
 
         {/* Min year */}
         <span

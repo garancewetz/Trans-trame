@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { bookAuthorDisplay } from '../../authorUtils'
 import Button from '../../components/ui/Button'
+import TextInput from '../../components/ui/TextInput'
 
 export default function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
   const [show, setShow] = useState(false)
@@ -60,15 +61,15 @@ export default function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
       </h4>
 
       <label className="mb-1 block text-[0.62rem] uppercase text-white/30">Source</label>
-      <input
+      <TextInput
+        variant="table"
+        className="mb-2 rounded border border-white/10 bg-white/5 px-2 py-1.5 text-[0.7rem] placeholder:text-white/25"
         value={sourceSearch || (selectedSource ? `${selectedSource.title} — ${bookAuthorDisplay(selectedSource, authorsMap)}` : '')}
         onChange={(e) => {
           if (source) setSource('')
           setSourceSearch(e.target.value)
         }}
         placeholder={source ? 'Changer la source…' : 'Rechercher la source…'}
-        className="mb-2 w-full rounded border border-white/10 bg-white/5 px-2 py-1.5 text-[0.7rem] text-white outline-none placeholder:text-white/25"
-        type="text"
       />
       {sourceSearch.trim() && (
         <div className="mb-2.5 max-h-[160px] overflow-y-auto rounded border border-white/10 bg-white/5 p-1">
@@ -78,7 +79,7 @@ export default function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
             <ul className="flex list-none flex-col">
               {sourceResults.map((n) => (
                 <li key={n.id}>
-                  <button
+                  <Button
                     type="button"
                     className="w-full cursor-pointer rounded bg-transparent px-2 py-2 text-left text-[0.7rem] text-white/75 transition-colors hover:bg-white/10"
                     onClick={() => {
@@ -87,7 +88,7 @@ export default function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
                     }}
                   >
                     {n.title} — <span className="text-white/35">{bookAuthorDisplay(n, authorsMap)}</span>
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -96,15 +97,15 @@ export default function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
       )}
 
       <label className="mb-1 block text-[0.62rem] uppercase text-white/30">Cible</label>
-      <input
+      <TextInput
+        variant="table"
+        className="mb-2 rounded border border-white/10 bg-white/5 px-2 py-1.5 text-[0.7rem] placeholder:text-white/25"
         value={targetSearch || (selectedTarget ? `${selectedTarget.title} — ${bookAuthorDisplay(selectedTarget, authorsMap)}` : '')}
         onChange={(e) => {
           if (target) setTarget('')
           setTargetSearch(e.target.value)
         }}
         placeholder={target ? 'Changer la cible…' : 'Rechercher la cible…'}
-        className="mb-2 w-full rounded border border-white/10 bg-white/5 px-2 py-1.5 text-[0.7rem] text-white outline-none placeholder:text-white/25"
-        type="text"
       />
       {targetSearch.trim() && (
         <div className="mb-3 max-h-[160px] overflow-y-auto rounded border border-white/10 bg-white/5 p-1">
@@ -114,7 +115,7 @@ export default function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
             <ul className="flex list-none flex-col">
               {targetResults.map((n) => (
                 <li key={n.id}>
-                  <button
+                  <Button
                     type="button"
                     className="w-full cursor-pointer rounded bg-transparent px-2 py-2 text-left text-[0.7rem] text-white/75 transition-colors hover:bg-white/10"
                     onClick={() => {
@@ -123,7 +124,7 @@ export default function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
                     }}
                   >
                     {n.title} — <span className="text-white/35">{bookAuthorDisplay(n, authorsMap)}</span>
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>
