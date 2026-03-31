@@ -1,136 +1,188 @@
-Ne commit jamais ce fichier.
+# Repository rules (Trans-Trame)
 
-## RÈGLE CRITIQUE - Commits
+**Note:** For day-to-day Git behavior in Cursor, see `.cursor/rules/` (e.g. when agents may commit or push). This document describes **code and workflow conventions** for this repo.
 
-**JAMAIS de co-signature dans les commits** - Cette règle est absolue et NON-NÉGOCIABLE.
+---
 
-- JAMAIS ajouter "Co-Authored-By: Claude" ou toute autre signature dans les messages de commit
-- JAMAIS utiliser --trailer, Co-Authored-By, ou toute forme de signature automatique
-- Les commits doivent UNIQUEMENT contenir le message de commit demandé, sans aucune attribution à Claude
-- Cette règle s'applique à TOUS les commits, qu'ils soient créés via `git commit`, `git commit --amend`, ou toute autre commande git
-- Si tu constates qu'un commit contient une co-signature, tu dois immédiatement le corriger en utilisant `git commit --amend` ou `git rebase` pour retirer la signature
+## Critical — commit messages
 
-**Pourquoi:** Les commits sont audités pour la conformité réglementaire des dispositifs médicaux. Seul l'auteur humain doit apparaître dans l'historique git. Aucune mention d'outils d'IA ne doit figurer dans les commits.
+**No AI co-authorship or tool trailers in commits** — non-negotiable for this project.
 
-**Exemple de ce qu'il NE FAUT JAMAIS faire:**
+- Do **not** add `Co-Authored-By: …` or similar trailers to commit messages.
+- Do **not** use `--trailer` or other automation that injects tool attribution.
+- Commit messages should contain only what the human author intends, with no AI/tool attribution.
+
+**Why:** Keeps `git` history clearly attributable to human contributors and avoids polluting messages with tool metadata.
+
+**Examples:**
+
 ```bash
-# ❌ INTERDIT
+# BAD
 git commit -m "feat: add feature
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+Co-Authored-By: Claude <noreply@anthropic.com>"
 
-# ✅ CORRECT
+# GOOD
 git commit -m "feat: add feature"
 ```
 
-privilégie les listes sémantiques quand tu construits des fichiers html
+---
 
-Evite au maximum les eslint ignore
+## Project stack (keep rules realistic)
 
-Un fichier ne doit pas faire plus de 250 lignes
+- **App:** Vite, React 19, TypeScript, Tailwind CSS 4.
+- **Data:** Supabase (`@supabase/supabase-js`); graph state and mutations live mainly in `src/features/graph/hooks/useGraphData.ts` and related modules. **There is no Apollo Client** in this repository — ignore any GraphQL-cache guidance meant for other codebases.
+- **Layout:** `src/app/` (shell, providers, app-level hooks), `src/features/<feature>/`, `src/components/` (shared UI), `src/domain/` (shared types).
 
-### **Bad Practices to Avoid**
+Do **not** reference files that do not exist here (e.g. `use-cache-view.ts`, `useAddEtiology.ts`, `use-update-condition-status.tsx`).
 
-1. **Never use `as Type` casting**: Type assertions bypass TypeScript's type checking and hide potential bugs. If the type doesn't match, fix the underlying issue instead of forcing the type. Use type guards, proper generics, or fix the data flow to ensure type safety.
+---
 
-2. **Never use `refetch()` from Apollo**: Refetching bypasses Apollo's normalized cache and forces a network request, leading to:
-   - Poor UX (unnecessary loading states)
-   - Wasted bandwidth
-   - Cache inconsistencies
+## General practices
 
-   **Use these patterns instead:**
-   - `update` function in mutations to update cache after mutation completes
-   - `optimisticResponse` for instant UI updates without waiting for network
-   - `cache.writeQuery()` to write data directly to the cache
-   - `cache.evict()` + `cache.gc()` to remove stale entries
-   - `cache.readFragment()` / `cache.readQuery()` to read before modifying
+- Prefer **semantic HTML** where it fits (e.g. real lists for lists, headings in order).
+- Avoid `eslint-disable` unless there is a short, justified comment.
+- **File size:** a single source file **must not exceed 250 lines**. Before hitting the limit, extract hooks, subcomponents, or helpers into dedicated modules. (Existing files over the limit should be split when you work on them.)
+- Keep code **factored**, **simple**, and **consistent** with surrounding patterns; avoid unnecessary side effects.
 
-   The cache should be the source of truth. See `use-cache-view.ts` and `use-update-alert-rule.ts` for reference implementations.
+### Bad practices to avoid
 
-3. **Never `await` simple mutations in components**: Using `await` on a mutation call in a component is a code smell. It couples the component to the mutation lifecycle and leads to imperative response handling.
+1. **Type assertions (`as`) — avoid.** Do not use `as` (including `as unknown as …`) to silence errors without fixing the model. Prefer type guards, generics, or small helper modules. **Documented exceptions:** (a) `as const` on literal config objects (e.g. keyword maps); (b) import aliases (`import { x as y }`) and `type X as Y` renames are not type assertions. **Remaining debt:** occasional `as const` for discriminated unions (`useGlobalSearch.ts`); keep new `as` out of feature code.
 
-   **Use this pattern instead:**
-   - The mutation hook encapsulates **everything**: `variables` building, `update` (cache), and success side effects (toast, navigation, popover hide)
-   - Use `useEffect` on the mutation `data` to react to success, combined with `useEffectEvent` for stable callback references
-   - The component just calls the hook's function with the form data, no `await`, no response handling
-   - The hook exposes `loading` for the component to disable buttons/show spinners if needed
+2. **`src/features/graph/Graph.tsx`** uses `// @ts-nocheck` at the top: `react-force-graph-2d`’s recursive `LinkObject` / `NodeObject` generics are incompatible with our domain `Link` / `Book` without duplicating a huge prop surface or scattering assertions. Behaviour is validated via build and manual QA. Prefer extending this file only with small extractions into typed helpers (e.g. `useGraphDerivedLinkState.ts`) rather than re-enabling full strict checking until upstream types improve.
 
-   **Reference:** `use-update-condition-status.tsx`, `useAddEtiology.ts`
+3. **Files over 250 lines** must be split when touched; new code must stay under the limit. **Current outliers (approx.):** `Graph.tsx` (~635, `@ts-nocheck`), `AuthorsTab.tsx`, `LinksTab.tsx`, `TableSubcomponents.tsx`, `LinkDetails.tsx`, `Navbar.tsx`, `nodeObject.ts`, `Timeline.tsx`, `SmartImportPreviewRow.tsx`. Core table/graph hooks (`useGraphData`, `useTableViewController`, `parseSmartInput.logic`, import modal shell) are now under 250 when split across modules (`graphDataLoad`, `graphDataMigration`, `useGraphDataEntityCallbacks`, etc.).
 
-   ```tsx
-   // ❌ BAD - await + imperative handling in component
-   async function handleSubmit(data: FormData) {
-     const result = await addEtiology({ variables: { input: { ... } }, update: ... });
-     if (result.data?.addPatientEtiology?.__typename !== 'Patient') return;
-     toaster.add({ kind: 'success', message: '...' });
-     popover.hide();
-   }
+4. **Apollo / `refetch()`** — Not applicable. Use Supabase and local React state following existing hooks.
 
-   // ✅ GOOD - hook encapsulates everything, component just calls
-   // In hook:
-   const [mutation, { data, loading }] = useMutation(Mutation);
-   const doAction = (formData: FormData) => { mutation({ variables: ..., update: ... }); };
-   const onSuccess = useEffectEvent(() => { toaster.add(...); popover.hide(); });
-   useEffect(() => { if (data?.__typename === 'Success') onSuccess(); }, [data]);
-   // In component:
-   onSubmit={doAction}  // no await, no response handling
-   ```
+5. **Heavy `await` in UI handlers** — Prefer patterns already used in the feature: encapsulate async work in hooks or small functions, keep presentational components thin.
 
-Vérifie que le code est factorisé, simple, cohérent avec le projet, et qu'il n'engendre pas des effets de bord
- 
+---
 
-### **. General Rules**
+## Design and structure
 
-1. **Follow Standard Conventions**: Adhere to the coding standards and conventions that are prevalent for the languages and tools we use.
-2. **Keep It Simple**: Always prefer simpler solutions. Reduce complexity wherever possible.
-3. **Boy Scout Rule**: Always leave the code cleaner than you found it. Refactor or clean up every time you make changes.
-4. **Root Cause Analysis**: Always strive to find and fix the root cause of a defect, not just the symptoms.
-5. **Use Existing Hooks First**: Always check for and prioritize using existing hooks in the codebase before fetching data directly or passing data through props. Search the codebase for relevant hooks (e.g., `usePractitionerFragment`, `useOrganization`) and use them to access data within components.
+1. **Feature isolation:** Shared `src/components/` should not depend on a specific feature’s internals. If a component needs feature-only types or data, colocate it under that feature.
+2. **Configurable data** high in the tree when it affects many children.
+3. **Avoid over-abstraction** — extra configuration layers have a cost.
+4. **Law of Demeter:** Prefer small, direct dependencies over deep chaining.
 
-### **B. Design Rules**
+### Understandability
 
-1. **Feature Isolation**: A component outside a feature (`components/`) must never import elements from a feature (`features/`). If a component uses feature-specific elements, it must be placed within that feature and prefixed with the feature name (e.g., `transplant-document-status-badge.tsx` in `features/patient-transplant-files/components/`).
-2. **High-Level Configuration**: Keep configurable data at high levels in the code to enhance flexibility.
-3. **Separate Multi-threading**: Isolate multi-threading code to manage complexity and enhance maintainability.
-4. **Limit Over-Configurability**: Avoid excessive configurability which can lead to complex and unmanageable code.
-5. **Use Dependency Injection**: Favor dependency injection to manage dependencies cleanly and flexibly.
-6. **Law of Demeter**: Follow the Law of Demeter; a module should only know about direct dependencies.
+- Stay consistent with nearby code.
+- Use clear names and local variables for non-obvious expressions.
+- Centralize tricky boundary handling where it is easy to test and review.
 
-### **C. Understandability Tips**
+### Naming
 
-1. **Consistency**: If you do something one way, do all similar things in the same way.
-2. **Explanatory Variables**: Use explanatory variables to clarify the purpose of complex expressions. 
-3. **Encapsulate Boundary Conditions**: Centralize the handling of boundary conditions in a single location.
-4. **Avoid Logical Dependencies**: Ensure methods do not have hidden dependencies on internal class state.
+- **Code identifiers and commit subjects in English.**
+- Prefer full words over cryptic abbreviations; common acronyms (`id`, `url`) are fine when conventional.
+- Avoid meaningless single-letter names such as `v` or `i` except in extremely local, obvious contexts (e.g. a short numeric loop index where the team already uses `i`).
+- Replace magic numbers with named constants when it aids readability.
 
-### **D. Naming Rules**
+### Functions
 
-1. Everything in english, always. 
-2. At least 3 characters rules for naming, unless it’s very explicit with less. 
-3. Avoid acronyms at all cost ⬇️
-4. **Descriptive Names**: Choose names that describe their purpose or behavior.
-5. **Meaningful Distinctions**: Distinguish names in a way that clarifies their differences.
-6. **Pronounceable and Searchable Names**: Use names that are easy to pronounce and search through code.
-7. **Replace Magic Numbers**: Use named constants instead of magic numbers to enhance readability.
+- Small, focused functions; few parameters when possible.
+- Pure helpers are ideal; React components and data hooks naturally have side effects — contain them deliberately.
 
-### **E. Function Rules**
+### Comments
 
-1. **Small and Focused**: Functions should be small and focused on a single task.
-2. **Descriptive Names**: Function names should clearly describe their behavior.
-3. **Limit Arguments**: If possible prefer fewer arguments for simplicity and clarity.
-4. **No Side Effects**: Functions should not have side effects. They should not modify any state not contained within them.
+- Do not commit blocks of **commented-out** code — remove or restore.
+- Comment **why** non-obvious choices were made, not what the next line literally does.
 
-### **F. Commenting Rules**
+### File layout
 
-1. **Don’t comment code :** There is no reason to push commented code, if a code is commented it is not used and therefore should not be present. 
-2. **Explain Why, Not What**: Use comments to explain why something is done, not what is done.
-3. **Avoid Redundant Comments**: Don't add comments that just repeat what the code does.
-4. **Clarify Complex Code**: Use comments to clarify complex code operations or decisions.
-5. **Intent and Warnings**: Document the intent behind decisions and warn about potential consequences.
+- Group related code vertically; callers above callees when it helps reading order.
 
-### **G. Source Code Structure**
+---
 
-1. **Vertical Separation**: Separate concepts vertically in the code for better readability.
-2. **Related Code Should Be Close**: Keep related functions and variables close to each other.
-3. **Declare Variables Close to Usage**: Declare variables close to where they are used.
-4. **Logical Flow**: Arrange functions in a logical flow downwards, callers above callees.
+## TypeScript / React — props
+
+- Prefer `type Props = { … }` for component props (local, non-exported unless needed).
+- Destructure props in the function signature.
+- For `children`, use `PropsWithChildren<{ … }>` when appropriate.
+- Extend with intersections: `type Props = Base & { … }`.
+- Use `import type` for type-only imports from `react`.
+
+### Keys in lists
+
+1. Prefer stable IDs: `key={item.id}`.
+2. Else a stable unique field.
+3. Composite keys only when necessary: `` key={`${a}-${b}`} ``.
+4. Avoid index-only keys except for static, non-reorderable lists.
+
+### Tailwind conditional classes
+
+- Prefer **`clsx`** for conditional class names (already a dependency). Many components still use `[...].join(' ')`; migrate to `clsx` when editing those call sites.
+
+### Components and exports
+
+- **PascalCase** component names.
+- **Named exports only.** Export components and hooks with `export function MyComponent()` or `export const MyComponent = …`. Do **not** use `export default` for application code. The only exceptions are **mandatory** framework or tooling entry contracts (e.g. if a specific API requires a default); prefer named exports and a thin re-export at the boundary when possible.
+- Prefer function declarations for components: `export function MyComponent(props: Props) { … }`.
+
+### Custom hooks
+
+- Prefix with `use`.
+- Return objects (e.g. `{ data, setX }`) rather than opaque tuples, unless a well-known API (e.g. `useState`) is mirrored.
+- **Locations:** `src/app/hooks/` for app shell wiring; `src/features/<feature>/hooks/` for feature-specific logic (e.g. `useGraphData`, `useGlobalSearch`).
+- Memoize callbacks returned from hooks when they are used in dependency arrays or passed deep into children.
+
+### React imports
+
+- `import type { … } from 'react'` for types; value imports for hooks.
+
+### Errors
+
+- For **invalid required input** or impossible state in a loader, prefer a clear error or boundary rather than silent failure.
+- For **optional UI**, returning `null` is acceptable. Do not blanket-replace every guard with `throw` without context.
+
+### Performance
+
+- `useCallback` / `useMemo` when dependencies and re-renders matter; avoid premature optimization.
+
+### Context
+
+- Typical pattern: `createContext` + `Provider` + `useContext` hook with a guard (see `AppDataContext.tsx`).
+
+---
+
+## Dependencies (`package.json`)
+
+- **Pin exact versions.** Every dependency and devDependency must use an **exact** version string (e.g. `"1.2.3"`). Do **not** use `^`, `~`, `>`, or ranges.
+- When upgrading, change the number deliberately and run install + tests. If the lockfile is committed, keep it in sync after version changes.
+
+---
+
+## Conventional Commits
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/): `<type>(<scope>): <description>`.
+
+- **Types:** `feat`, `fix`, `docs`, `refactor`, `perf`, `style`, `test`, `build`, `ci`, etc.
+- **Scope:** Optional; prefer a real area of this app, e.g. `graph`, `table`, `app`, `shell`, `analysis`, `add-book-form` — not the repo name alone.
+- **Language:** English — all commit messages (subject, body, and footer) must be written in English without exception.
+- **Subject:** Imperative, lowercase, no trailing period.
+
+**Examples for this project:**
+
+```text
+feat(graph): highlight author selection on canvas
+fix(table): close merge modal after success
+refactor(app): extract navbar props hook
+docs: update README setup
+```
+
+**Avoid:**
+
+```text
+Added graph feature
+fix stuff
+```
+
+---
+
+## Relationship to Cursor
+
+- **This file (`rules.md`)** is the human-readable rule set for the Trans-Trame codebase.
+- **`.cursor/rules/*.mdc`** may add tool-specific instructions (e.g. when agents may run `git commit`). If both exist, follow Cursor rules for agent behavior and this file for code style unless you intentionally align them.
+
+If there is some comments in code, they should always be in english, as file names or constants names should be in english
