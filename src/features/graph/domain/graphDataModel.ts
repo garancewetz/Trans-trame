@@ -12,7 +12,6 @@ export type DbBookRow = {
   title?: string
   first_name?: string
   last_name?: string
-  author_ids?: string[]
   year?: number | null
   description?: string
   axes?: string[]
@@ -71,14 +70,14 @@ export function normalizeEndpointId(v: unknown): string | null {
 
 // ── Helpers: conversion DB ↔ app ───────────────────────────────────────────────
 
-export function dbBookToNode(row: DbBookRow): Book {
+export function dbBookToNode(row: DbBookRow, authorIds?: string[]): Book {
   return {
     id: row.id,
     type: 'book',
     title: row.title ?? '',
     firstName: row.first_name,
     lastName: row.last_name,
-    authorIds: row.author_ids || [],
+    authorIds: authorIds ?? [],
     year: row.year ?? null,
     description: row.description || '',
     axes: row.axes || [],
@@ -113,7 +112,6 @@ export function bookToDbRow(node: BookRowInput) {
     title: node.title ?? '',
     first_name: node.firstName || '',
     last_name: node.lastName || '',
-    author_ids: node.authorIds || [],
     year: node.year ?? null,
     description: node.description || '',
     axes: node.axes || [],

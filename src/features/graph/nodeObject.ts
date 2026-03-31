@@ -8,7 +8,7 @@ const hoverAnimById = new Map()
 
 function drawAuthorNode(node, ctx, globalScale, opts) {
   const {
-    selectedAuthorId, hoveredNode, connectedNodes,
+    selectedAuthorId, hoveredNode, hoveredNeighborIds, connectedNodes,
     hoveredFilter, selectedNode, peekNodeId,
   } = opts
 
@@ -28,7 +28,12 @@ function drawAuthorNode(node, ctx, globalScale, opts) {
   const matchesHover = hoveredFilter && nodeAxes.includes(hoveredFilter)
   const dimmedByHover = hoveredFilter && !matchesHover
 
-  const opacity = hover > 0.01 ? 1 : dimmedByHover ? 0.06 : (matchesSelectedAuthor || isActive) ? 0.85 : 0.25
+  // Hover focus: dim nodes that are not the hovered node or its direct neighbors
+  const hasHoverFocus = hoveredNode && !hasAnySelection
+  const isHoverNeighbor = hasHoverFocus && hoveredNeighborIds?.has(node.id)
+
+  const opacity = hasHoverFocus && !isHovered && !isHoverNeighbor ? 0.05
+    : hover > 0.01 ? 1 : dimmedByHover ? 0.06 : (matchesSelectedAuthor || isActive) ? 0.85 : 0.25
 
   // Couleur : axes de l'auteur, ou blanc/gris par défaut
   const blendedColor = nodeAxes.length ? blendAxesColors(nodeAxes) : '#b0b8d0'
@@ -85,12 +90,17 @@ function drawAuthorNode(node, ctx, globalScale, opts) {
 }
 
 function drawAuthorLabel(node, ctx, globalScale, opts) {
-  const { hover = 0, nodeRadius = 11, selectedAuthorId, selectedNode, connectedNodes, peekNodeId } = opts
+  const { hover = 0, nodeRadius = 11, selectedAuthorId, selectedNode, connectedNodes, peekNodeId, hoveredNode, hoveredNeighborIds } = opts
   const name = (authorName(node) || '').toUpperCase()
 
   const matchesSelectedAuthor = selectedAuthorId && node.id === selectedAuthorId
+  const hasAnySelection = selectedNode || selectedAuthorId || peekNodeId
+  // During hover focus: only show labels on hovered node and its direct neighbors
+  const hasHoverFocus = hoveredNode && !hasAnySelection
+  if (hasHoverFocus && hover <= 0.01 && !hoveredNeighborIds?.has(node.id)) return
+
   const showLabel = hover > 0.01 || globalScale > 0.35 || matchesSelectedAuthor || peekNodeId === node.id ||
-    (selectedNode && connectedNodes?.has(node.id))
+    (selectedNode && connectedNodes?.has(node.id)) || (hasHoverFocus && hoveredNeighborIds?.has(node.id))
   if (!showLabel) return
 
   const baseTextHeight = 5.5
@@ -128,20 +138,23 @@ export function drawNode(node, ctx, globalScale, opts) {
   }
 
   const {
-    selectedNode, selectedAuthorId, peekNodeId, hoveredNode,
-    connectedNodes, isNodeVisible, hoveredFilter, citationCount = 0,
+    selectedNode, selectedAuthorId, peekNodeId, hoveredNode, hoveredNeighborIds,
+    connectedNodes, isNodeVisible, hoveredFilter, citationCount = 0, degree = 0,
     skipLabel = false, labelOnly = false,
   } = opts
 
   if (!Number.isFinite(node?.x) || !Number.isFinite(node?.y)) return
   if (!Number.isFinite(globalScale)) globalScale = 1
 
+  const safeDegree = Number.isFinite(degree) ? degree : 0
+  const degreeBoost = Math.min(Math.sqrt(Math.max(0, safeDegree)) * 4, 28)
+
   if (labelOnly) {
     const hover = hoverAnimById.get(node.id) ?? 1
     const safeCitationCount = Number.isFinite(citationCount) ? citationCount : 0
     const citationBoost = Math.min(Math.sqrt(Math.max(0, safeCitationCount)) * 5.2, 34)
     const minHoveredRadius = hover > 0.01 ? 11 / Math.max(globalScale, 0.08) : 0
-    const nodeRadius = Math.max(6 + citationBoost + hover * 12, minHoveredRadius)
+    const nodeRadius = Math.max(6 + Math.max(citationBoost, degreeBoost) + hover * 12, minHoveredRadius)
     drawLabel(node, ctx, globalScale, { ...opts, hover, nodeRadius, safeCitationCount })
     return
   }
@@ -162,13 +175,18 @@ export function drawNode(node, ctx, globalScale, opts) {
   const matchesSelectedAuthor = selectedAuthorId && node.authorIds?.includes(selectedAuthorId)
   const matchesPeek = peekNodeId && node.id === peekNodeId
 
-  const opacity = hover > 0.01 ? 1 : dimmedByHover ? 0.06 : matchesSelectedAuthor || matchesPeek ? 1 : isActive ? 1 : 0.22
+  // Hover focus: dim nodes that are not the hovered node or its direct neighbors
+  const hasHoverFocus = hoveredNode && !hasAnySelection
+  const isHoverNeighbor = hasHoverFocus && hoveredNeighborIds?.has(node.id)
+
+  const opacity = hasHoverFocus && !isHoveredNode && !isHoverNeighbor ? 0.05
+    : hover > 0.01 ? 1 : dimmedByHover ? 0.06 : matchesSelectedAuthor || matchesPeek ? 1 : isActive ? 1 : 0.22
   const glowIntensity = hover > 0.01 ? 0.42 : matchesSelectedAuthor || matchesPeek ? 0.4 : matchesHover ? 0.35 : 0.15
   const baseRadius = 6
   const safeCitationCount = Number.isFinite(citationCount) ? citationCount : 0
   const citationBoost = Math.min(Math.sqrt(Math.max(0, safeCitationCount)) * 5.2, 34)
   const minHoveredRadius = hover > 0.01 ? 11 / Math.max(globalScale, 0.08) : 0
-  const nodeRadius = Math.max(baseRadius + citationBoost + hover * 12, minHoveredRadius)
+  const nodeRadius = Math.max(baseRadius + Math.max(citationBoost, degreeBoost) + hover * 12, minHoveredRadius)
   const glowRadius = nodeRadius + (matchesHover ? 4.5 : 2.5)
   if (!Number.isFinite(nodeRadius) || !Number.isFinite(glowRadius) || nodeRadius <= 0 || glowRadius <= 0) return
 
@@ -221,10 +239,15 @@ export function drawNode(node, ctx, globalScale, opts) {
 }
 
 function drawLabel(node, ctx, globalScale, opts) {
-  const { hover = 0, nodeRadius = 6, safeCitationCount = 0, isActive, matchesHover, matchesSelectedAuthor, matchesPeek, selectedNode, connectedNodes } = opts
+  const { hover = 0, nodeRadius = 6, safeCitationCount = 0, isActive, matchesHover, matchesSelectedAuthor, matchesPeek, selectedNode, connectedNodes, hoveredNode, hoveredNeighborIds, selectedAuthorId, peekNodeId } = opts
+
+  const hasAnySelection = selectedNode || selectedAuthorId || peekNodeId
+  // During hover focus: only show labels on hovered node and its direct neighbors
+  const hasHoverFocus = hoveredNode && !hasAnySelection
+  if (hasHoverFocus && hover <= 0.01 && !hoveredNeighborIds?.has(node.id)) return
 
   const showLabel =
-    hover > 0.01 || globalScale > 0.35 || (selectedNode && connectedNodes?.has(node.id)) || Boolean(matchesPeek)
+    hover > 0.01 || globalScale > 0.35 || (selectedNode && connectedNodes?.has(node.id)) || Boolean(matchesPeek) || (hasHoverFocus && hoveredNeighborIds?.has(node.id))
   if (!showLabel) return
 
   const baseTextHeight = 4.8
@@ -263,12 +286,14 @@ function drawLabel(node, ctx, globalScale, opts) {
   ctx.restore()
 }
 
-export function getNodeRadius(node, citationCount) {
+export function getNodeRadius(node, citationCount, degree = 0) {
   if (node.type === 'author') return 11
   const baseRadius = 6
   const safeCitationCount = Number.isFinite(citationCount) ? citationCount : 0
   const citationBoost = Math.min(Math.sqrt(Math.max(0, safeCitationCount)) * 5.2, 34)
-  return baseRadius + citationBoost
+  const safeDegree = Number.isFinite(degree) ? degree : 0
+  const degreeBoost = Math.min(Math.sqrt(Math.max(0, safeDegree)) * 4, 28)
+  return baseRadius + Math.max(citationBoost, degreeBoost)
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────

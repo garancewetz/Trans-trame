@@ -38,9 +38,38 @@ export type Database = {
         }
         Relationships: []
       }
+      book_authors: {
+        Row: {
+          book_id: string
+          author_id: string
+        }
+        Insert: {
+          book_id: string
+          author_id: string
+        }
+        Update: {
+          book_id?: string
+          author_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_authors_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_authors_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "authors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       books: {
         Row: {
-          author_ids: string[]
           axes: string[]
           created_at: string
           description: string
@@ -51,7 +80,6 @@ export type Database = {
           year: number | null
         }
         Insert: {
-          author_ids?: string[]
           axes?: string[]
           created_at?: string
           description?: string
@@ -62,7 +90,6 @@ export type Database = {
           year?: number | null
         }
         Update: {
-          author_ids?: string[]
           axes?: string[]
           created_at?: string
           description?: string

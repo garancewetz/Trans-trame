@@ -2,6 +2,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import type { ForceGraphMethods } from 'react-force-graph-2d'
+import { forceCollide } from 'd3-force-3d'
 import { KeyboardHints } from '@/common/components/ui/KeyboardHints'
 import { drawStarField } from '../scene'
 import {
@@ -23,6 +24,23 @@ function graphInstanceRefresh(fg: ForceGraphMethods | null | undefined) {
   if (typeof fn === 'function') fn.call(fg)
 }
 
+/** zoomToFit wrapper that syncs camRef after the animation completes. */
+function syncedZoomToFit(
+  fg: ForceGraphMethods | null | undefined,
+  camRef: React.MutableRefObject<{ x: number; y: number; zoom: number }>,
+  duration: number,
+  padding: number,
+) {
+  if (!fg?.zoomToFit) return
+  fg.zoomToFit(duration, padding)
+  // After the animation finishes, read the real zoom/center back into camRef
+  setTimeout(() => {
+    const z = Reflect.get(fg, 'zoom') as (() => number) | undefined
+    const zoom = typeof z === 'function' ? z.call(fg) : undefined
+    if (typeof zoom === 'number' && Number.isFinite(zoom)) camRef.current.zoom = zoom
+  }, duration + 50)
+}
+
 function isBookOrAuthor(node: object | null | undefined): node is Book | Author {
   if (node == null || typeof node !== 'object') return false
   const t = Reflect.get(node, 'type')
@@ -32,6 +50,18 @@ function isBookOrAuthor(node: object | null | undefined): node is Book | Author 
 const SHOW_STARFIELD = false
 /** Zoom appliqué au centrage sur un nœud sélectionné (plus bas = moins rapproché). */
 const NODE_FOCUS_ZOOM = 1.9
+
+/** Paramètres force-directed (vue constellation) : aéré pour éviter l’effet spaghetti. */
+const FORCE_CHARGE_AUTHOR = -1800
+const FORCE_CHARGE_BOOK = -1200
+const FORCE_CHARGE_DIST_MAX = 1400
+const FORCE_LINK_DIST_AUTHOR_BOOK = 100
+const FORCE_LINK_DIST_CITATION = 280
+const FORCE_GENEALOGY_LINK_AUTHOR_BOOK = 52
+const FORCE_GENEALOGY_LINK_CITATION = 128
+const FORCE_X_YEAR_SPREAD = 980
+const FORCE_Y_CENTER_STRENGTH = 0.095
+const FORCE_COLLIDE_RADIUS = 25
 
 type GraphNode = Book & { citedBy?: number }
 type GraphLink = Link
@@ -80,7 +110,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
 
   useImperativeHandle(ref, () => ({
     centerCamera() {
-      fgRef.current?.zoomToFit(1200, 80)
+      syncedZoomToFit(fgRef.current, camRef, 1200, 80)
     },
   }))
 
@@ -124,7 +154,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   const resetToOverview = useCallback(() => {
     const fg = fgRef.current
     if (!fg) return
-    fg.zoomToFit(900, 80)
+    syncedZoomToFit(fg, camRef, 900, 80)
     setTimeout(() => {
       camRef.current = { x: 0, y: 0, zoom: camRef.current.zoom }
     }, 950)
@@ -153,19 +183,31 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         const charge = fg.d3Force('charge')
         if (charge) charge.strength(-30)
         const link = fg.d3Force('link')
-        if (link) link.distance((l) => l.type === 'author-book' ? 45 : 102)
+        if (link) {
+          link.distance((l) =>
+            l.type === 'author-book' ? FORCE_GENEALOGY_LINK_AUTHOR_BOOK : FORCE_GENEALOGY_LINK_CITATION
+          )
+        }
 
         // Fit all nodes in view after layout positions are applied
-        fg.zoomToFit?.(1200, 80)
+        syncedZoomToFit(fg, camRef, 1200, 80)
       } else {
         graphData.nodes.forEach((node) => {
           node.fx = undefined
           node.fy = undefined
         })
         const charge = fg.d3Force('charge')
-        if (charge) charge.strength((node) => node.type === 'author' ? -900 : -520).distanceMax(700)
+        if (charge) {
+          charge
+            .strength((node) => (node.type === 'author' ? FORCE_CHARGE_AUTHOR : FORCE_CHARGE_BOOK))
+            .distanceMax(FORCE_CHARGE_DIST_MAX)
+        }
         const link = fg.d3Force('link')
-        if (link) link.distance((l) => l.type === 'author-book' ? 60 : 130)
+        if (link) {
+          link.distance((l) =>
+            l.type === 'author-book' ? FORCE_LINK_DIST_AUTHOR_BOOK : FORCE_LINK_DIST_CITATION
+          )
+        }
 
         // Constellation "horizontale" : compresser Y et étaler X (chronologie approximative)
         // sans figer les positions (on garde la dynamique d3-force).
@@ -185,7 +227,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
               const y = typeof node?.year === 'number' ? node.year : null
               if (!y) return 0
               const t = (y - midYear) / span
-              return t * 900
+              return t * FORCE_X_YEAR_SPREAD
             })
           }
         }
@@ -193,14 +235,14 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         const forceY = fg.d3Force('y')
         if (forceY) {
           const strengthFn = Reflect.get(forceY, 'strength')
-          if (typeof strengthFn === 'function') strengthFn.call(forceY, 0.14)
+          if (typeof strengthFn === 'function') strengthFn.call(forceY, FORCE_Y_CENTER_STRENGTH)
           const yFn = Reflect.get(forceY, 'y')
           if (typeof yFn === 'function') yFn.call(forceY, 0)
         }
 
         fg.d3ReheatSimulation()
         // Fit to view after simulation settles a bit
-        setTimeout(() => { fg.zoomToFit?.(1200, 80) }, 800)
+        setTimeout(() => { syncedZoomToFit(fg, camRef, 1200, 80) }, 800)
       }
       prevViewRef.current = viewMode
     }, 100)
@@ -246,43 +288,57 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     return () => cancelAnimationFrame(rafId)
   }, [selectedNode, peekNodeId, viewMode, graphData.nodes])
 
-  const { anchorIds, connectedLinks, connectedNodes, citationsByNodeId, linkWeights } = useGraphDerivedLinkState({
+  const { anchorIds, connectedLinks, connectedNodes, citationsByNodeId, linkWeights, degreeByNodeId } = useGraphDerivedLinkState({
     graphData,
     selectedAuthorId,
     peekNodeId,
     selectedNode,
   })
 
-  // Links connected to hovered node
-  const hoveredLinksRef = useRef(new Set())
+  // Links and neighbor nodes connected to hovered node (refs for perf — no re-render)
+  const hoveredLinksRef = useRef(new Set<string>())
+  const hoveredNeighborIdsRef = useRef(new Set<string>())
   const updateHoveredLinks = useCallback((node) => {
     hoveredLinksRef.current.clear()
+    hoveredNeighborIdsRef.current.clear()
     if (!node) return
+    hoveredNeighborIdsRef.current.add(node.id)
     graphData.links.forEach((link) => {
       const srcId = normalizeEndpointId(link.source)
       const tgtId = normalizeEndpointId(link.target)
       if (!srcId || !tgtId) return
       if (srcId === node.id || tgtId === node.id) {
         hoveredLinksRef.current.add(`${srcId}-${tgtId}`)
+        hoveredNeighborIdsRef.current.add(srcId === node.id ? tgtId : srcId)
       }
     })
   }, [graphData.links])
 
   const handleInit = useCallback((fg) => {
     // Les auteurs ont une répulsion plus forte pour créer des "systèmes stellaires" distincts
-    fg.d3Force('charge').strength((node) => node.type === 'author' ? -900 : -520).distanceMax(700)
-    // Les liens auteur→livre sont plus courts (les livres orbitent près de l'auteur)
-    fg.d3Force('link').distance((link) => link.type === 'author-book' ? 60 : 130)
+    fg
+      .d3Force('charge')
+      .strength((node) => (node.type === 'author' ? FORCE_CHARGE_AUTHOR : FORCE_CHARGE_BOOK))
+      .distanceMax(FORCE_CHARGE_DIST_MAX)
+    // Citations (livre→livre) : ressort plus long pour aérer ; auteur→livre reste compact
+    fg.d3Force('link').distance((link) =>
+      link.type === 'author-book' ? FORCE_LINK_DIST_AUTHOR_BOOK : FORCE_LINK_DIST_CITATION
+    )
+    // Collision force — prevent node overlap
+    fg.d3Force('collide', forceCollide((node) => {
+      const degree = degreeByNodeId.get(node.id) || 0
+      return FORCE_COLLIDE_RADIUS + Math.sqrt(degree) * 4
+    }))
     fg.centerAt(0, 0, 0)
     fg.zoom(0.7, 0)
     // Early zoomToFit once nodes have initial positions (after a short simulation warmup)
     setTimeout(() => {
       if (!didInitialFitRef.current) {
         didInitialFitRef.current = true
-        fg.zoomToFit?.(1200, 80)
+        syncedZoomToFit(fg, camRef, 1200, 80)
       }
     }, 800)
-  }, [])
+  }, [degreeByNodeId])
 
   const isNodeVisible = useCallback(
     (node) => {
@@ -313,16 +369,18 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         peekNodeId,
         authors,
         hoveredNode: hoveredNodeRef.current,
+        hoveredNeighborIds: hoveredNeighborIdsRef.current,
         connectedNodes,
         isNodeVisible,
         hoveredFilter,
         citationCount: citationsByNodeId.get(node.id) || 0,
+        degree: degreeByNodeId.get(node.id) || 0,
         skipLabel: hoveredNodeRef.current?.id === node.id,
       })
       // Flash ring for newly imported nodes
       if (flashNodeIdsRef.current.has(node.id) && Number.isFinite(node.x) && Number.isFinite(node.y)) {
         const alpha = flashAlphaRef.current
-        const r = getNodeRadius(node, citationsByNodeId.get(node.id) || 0)
+        const r = getNodeRadius(node, citationsByNodeId.get(node.id) || 0, degreeByNodeId.get(node.id) || 0)
         const expansion = (1 - alpha) * 10
         ctx.save()
         ctx.beginPath()
@@ -333,19 +391,19 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         ctx.restore()
       }
     },
-    [selectedNode, selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId]
+    [selectedNode, selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, degreeByNodeId]
   )
 
   const nodePointerAreaPaint = useCallback(
     (node, color, ctx) => {
-      const r = getNodeRadius(node, citationsByNodeId.get(node.id) || 0)
+      const r = getNodeRadius(node, citationsByNodeId.get(node.id) || 0, degreeByNodeId.get(node.id) || 0)
       if (!Number.isFinite(node?.x) || !Number.isFinite(node?.y) || !Number.isFinite(r) || r <= 0) return
       ctx.fillStyle = color
       ctx.beginPath()
       ctx.arc(node.x, node.y, r + 2, 0, Math.PI * 2)
       ctx.fill()
     },
-    [citationsByNodeId]
+    [citationsByNodeId, degreeByNodeId]
   )
 
   const isLinkActive = useCallback(
@@ -396,7 +454,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
       if (activeFilter) return
       if (didInitialFitRef.current) return
       didInitialFitRef.current = true
-      fg.zoomToFit(duration, 80)
+      syncedZoomToFit(fg, camRef, duration, 80)
     },
     [hasSelection, activeFilter],
   )
@@ -406,10 +464,13 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
       // Hovered links are drawn by linkCanvasObject — return transparent to avoid double-draw
       if (hoveredNodeRef.current && isLinkHovered(link)) return 'rgba(0,0,0,0)'
 
+      // Hover focus: dim non-connected links to near-invisible
+      if (hoveredNodeRef.current && !hasSelection && !isLinkHovered(link)) return 'rgba(140, 220, 255, 0.03)'
+
       // Liens auteur→livre : fin et discret (lien structurel, pas une citation)
       if (link.type === 'author-book') {
         if (isLinkActive(link)) return 'rgba(180, 220, 255, 0.45)'
-        return 'rgba(140, 200, 255, 0.14)'
+        return 'rgba(140, 200, 255, 0.10)'
       }
 
       if (viewMode === 'genealogy') {
@@ -417,9 +478,10 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         if (isLinkActive(link)) return 'rgba(220, 238, 255, 0.95)'
         return 'rgba(160, 185, 235, 0.35)'
       }
-      if (!hasSelection && !activeFilter) return 'rgba(140, 220, 255, 0.35)'
+      // Baseline opacity reduced to 0.15 to declutter the default view
+      if (!hasSelection && !activeFilter) return 'rgba(140, 220, 255, 0.15)'
       if (isLinkActive(link)) return 'rgba(190, 240, 255, 0.85)'
-      return 'rgba(140, 220, 255, 0.14)'
+      return 'rgba(140, 220, 255, 0.10)'
     },
     [hasSelection, activeFilter, isLinkActive, isLinkHovered, viewMode]
   )
@@ -524,6 +586,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         peekNodeId,
         authors,
         hoveredNode: hoveredNodeRef.current,
+        hoveredNeighborIds: hoveredNeighborIdsRef.current,
         connectedNodes,
         isNodeVisible,
         hoveredFilter,
@@ -533,15 +596,15 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
       const topId = selectedNodeRef.current?.id || peekNodeId
       const topNode = topId ? graphData.nodes?.find((n) => n.id === topId) : null
       if (topNode) {
-        drawNode(topNode, ctx, globalScale, { ...baseOpts, citationCount: citationsByNodeId.get(topNode.id) || 0 })
+        drawNode(topNode, ctx, globalScale, { ...baseOpts, citationCount: citationsByNodeId.get(topNode.id) || 0, degree: degreeByNodeId.get(topNode.id) || 0 })
       }
       // Redraw hovered node label on top of everything
       const hovered = hoveredNodeRef.current
       if (hovered && Number.isFinite(hovered.x) && Number.isFinite(hovered.y)) {
-        drawNode(hovered, ctx, globalScale, { ...baseOpts, citationCount: citationsByNodeId.get(hovered.id) || 0, labelOnly: true })
+        drawNode(hovered, ctx, globalScale, { ...baseOpts, citationCount: citationsByNodeId.get(hovered.id) || 0, degree: degreeByNodeId.get(hovered.id) || 0, labelOnly: true })
       }
     },
-    [selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, graphData.nodes]
+    [selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, degreeByNodeId, graphData.nodes]
   )
 
   return (
@@ -574,11 +637,14 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
           return Math.min(0.55 + dist / 700, 1.4)
         }}
         linkDirectionalArrowLength={(link) => {
+          if (hoveredNodeRef.current && !hasSelection) return isLinkHovered(link) ? 6 : 0
           return !hasSelection ? 4 : isLinkActive(link) ? 7 : 3
         }}
         linkDirectionalArrowRelPos={0.88}
         linkDirectionalArrowColor={arrowColor}
         linkDirectionalParticles={(link) => {
+          // During hover focus: only show particles on hovered links
+          if (hoveredNodeRef.current && !hasSelection) return isLinkHovered(link) ? 3 : 0
           if (viewMode === 'genealogy') {
             if (!hasSelection) return 2
             return isLinkActive(link) ? 6 : 2
@@ -586,6 +652,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
           return !hasSelection ? 2 : isLinkActive(link) ? 5 : 0
         }}
         linkDirectionalParticleWidth={(link) => {
+          if (hoveredNodeRef.current && !hasSelection) return isLinkHovered(link) ? 2 : 0
           if (viewMode === 'genealogy') {
             if (!hasSelection) return 1
             return isLinkActive(link) ? 2 : 1

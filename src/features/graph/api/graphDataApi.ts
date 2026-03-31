@@ -4,13 +4,14 @@ import { supabase } from '@/core/supabase'
 export type DbRow = Record<string, unknown>
 
 export async function loadGraphDataFromSupabase() {
-  const [booksRes, authorsRes, linksRes] = await Promise.all([
+  const [booksRes, authorsRes, linksRes, bookAuthorsRes] = await Promise.all([
     supabase.from('books').select('*').order('created_at', { ascending: true }),
     supabase.from('authors').select('*').order('created_at', { ascending: true }),
     supabase.from('links').select('*'),
+    supabase.from('book_authors').select('*'),
   ])
 
-  return { booksRes, authorsRes, linksRes }
+  return { booksRes, authorsRes, linksRes, bookAuthorsRes }
 }
 
 export function insertBookRow(row: DbRow) {
@@ -51,4 +52,25 @@ export function deleteLinkRowById(id: string) {
 
 export function deleteAllBooks() {
   return supabase.from('books').delete().not('id', 'is', null)
+}
+
+// ── Book-Authors junction ─────────────────────────────────────────────────
+
+export async function setBookAuthors(bookId: string, authorIds: string[]) {
+  await supabase.from('book_authors').delete().eq('book_id', bookId)
+  if (authorIds.length === 0) return { error: null }
+  return supabase.from('book_authors').insert(
+    authorIds.map((author_id) => ({ book_id: bookId, author_id }))
+  )
+}
+
+export function insertBookAuthors(bookId: string, authorIds: string[]) {
+  if (authorIds.length === 0) return Promise.resolve({ error: null })
+  return supabase.from('book_authors').insert(
+    authorIds.map((author_id) => ({ book_id: bookId, author_id }))
+  )
+}
+
+export function deleteBookAuthorsByBookId(bookId: string) {
+  return supabase.from('book_authors').delete().eq('book_id', bookId)
 }

@@ -3,10 +3,9 @@ import type { Author, Book } from '@/types/domain'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 import { migrateData } from '@/common/utils/authorUtils'
 import { devWarn } from '@/common/utils/logger'
-import { insertAuthorRow, updateBookRowById } from '../api/graphDataApi'
+import { insertAuthorRow, setBookAuthors } from '../api/graphDataApi'
 import {
   authorToDbRow,
-  bookToDbRow,
   type AxesColorMap,
   sanitizeBook,
 } from '../domain/graphDataModel'
@@ -55,13 +54,11 @@ export async function migrateLegacyAuthorsAndBooks(params: {
   await Promise.all(
     booksToUpdate.map((book) => {
       const orig = books.find((b0) => b0.id === String(book.id))
-      if (!orig) {
-        return Promise.resolve({ error: null })
-      }
-      const merged = sanitizeBook({ ...orig, authorIds: book.authorIds }, axesColors)
-      const { id, ...fields } = bookToDbRow(merged)
-      return updateBookRowById(id, fields).then(({ error }) => {
-        if (error) devWarn('Migration: erreur update book', id, error)
+      if (!orig) return Promise.resolve({ error: null })
+      return setBookAuthors(String(book.id), book.authorIds).then((result) => {
+        if (result && 'error' in result && result.error) {
+          devWarn('Migration: erreur set book_authors', book.id, result.error)
+        }
       })
     })
   )

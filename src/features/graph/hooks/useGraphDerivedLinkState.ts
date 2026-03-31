@@ -76,6 +76,19 @@ export function useGraphDerivedLinkState({ graphData, selectedAuthorId, peekNode
     return counts
   }, [graphData.links])
 
+  // Total degree (in + out connections) per node — used for dynamic node sizing
+  const degreeByNodeId = useMemo(() => {
+    const deg = new Map<string, number>()
+    graphData.links.forEach((link) => {
+      if (link.type === 'author-book') return
+      const srcId = normalizeEndpointId(link.source)
+      const tgtId = normalizeEndpointId(link.target)
+      if (srcId) deg.set(srcId, (deg.get(srcId) || 0) + 1)
+      if (tgtId) deg.set(tgtId, (deg.get(tgtId) || 0) + 1)
+    })
+    return deg
+  }, [graphData.links])
+
   return {
     authorNodeIds,
     anchorIds,
@@ -83,5 +96,6 @@ export function useGraphDerivedLinkState({ graphData, selectedAuthorId, peekNode
     connectedNodes,
     citationsByNodeId,
     linkWeights,
+    degreeByNodeId,
   }
 }

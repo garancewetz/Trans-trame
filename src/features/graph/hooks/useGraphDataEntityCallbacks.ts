@@ -8,7 +8,9 @@ import {
   deleteLinkRowById,
   insertAuthorRow,
   insertBookRow,
+  insertBookAuthors,
   insertLinkRow,
+  setBookAuthors,
   updateAuthorRowById,
   updateBookRowById,
   updateLinkRowById,
@@ -62,6 +64,7 @@ export function useGraphDataEntityCallbacks({
       const sanitized = sanitizeBook({ ...book, type: 'book' as const }, axesColorsRef.current!)
       const { error } = await insertBookRow(bookToDbRow(sanitized))
       if (error) throw new Error(error.message)
+      await insertBookAuthors(sanitized.id, sanitized.authorIds ?? [])
     },
     onMutate: (book) => {
       const sanitized = sanitizeBook({ ...book, type: 'book' as const }, axesColorsRef.current!)
@@ -77,6 +80,7 @@ export function useGraphDataEntityCallbacks({
       const { id, ...fields } = bookToDbRow(sanitized)
       const { error } = await updateBookRowById(id, fields)
       if (error) throw new Error(error.message)
+      await setBookAuthors(id, sanitized.authorIds ?? [])
     },
     onMutate: (updatedNode) => {
       const sanitized = sanitizeBook({ ...updatedNode, type: 'book' as const }, axesColorsRef.current!)
@@ -140,17 +144,9 @@ export function useGraphDataEntityCallbacks({
 
   const deleteAuthorMutation = useMutation({
     mutationFn: async (authorId: string) => {
-      const booksToUpdate = booksRef.current!.filter((b) => b.authorIds?.includes(authorId))
-      const results = await Promise.all([
-        ...booksToUpdate.map((book) => {
-          const updated = { ...book, authorIds: (book.authorIds ?? []).filter((id) => id !== authorId) }
-          const { id, ...fields } = bookToDbRow(updated)
-          return updateBookRowById(id, fields)
-        }),
-        deleteAuthorRowById(authorId),
-      ])
-      const errors = results.filter((r) => r.error)
-      if (errors.length > 0) throw new Error('Erreur suppression auteur')
+      // CASCADE on book_authors handles junction cleanup automatically
+      const { error } = await deleteAuthorRowById(authorId)
+      if (error) throw new Error(error.message)
     },
     onMutate: (authorId) => {
       setAuthors((prev) => prev.filter((a) => a.id !== authorId))
