@@ -1,4 +1,4 @@
-import type { Axis } from '@/lib/categories.constants'
+import type { Axis } from '@/common/utils/categories.constants'
 
 export type ParsedAuthor = { firstName: string; lastName: string }
 

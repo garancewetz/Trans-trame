@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { AuthorId, Book, GraphData } from '@/domain/types'
+import type { AuthorId, Book, GraphData } from '@/types/domain'
 import { normalizeEndpointId } from '../domain/graphDataModel'
 
 type Args = {

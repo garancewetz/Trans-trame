@@ -1,4 +1,4 @@
-import type { BookId, Link } from '@/domain/types'
+import type { BookId, Link } from '@/types/domain'
 import { normalizeEndpointId } from '../domain/graphDataModel'
 
 export type BookMergeLinkPlan = {

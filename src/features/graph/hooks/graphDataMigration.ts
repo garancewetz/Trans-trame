@@ -1,8 +1,8 @@
 import type { Dispatch, SetStateAction } from 'react'
-import type { Author, Book } from '@/domain/types'
-import type { AuthorNode } from '@/lib/authorUtils'
-import { migrateData } from '@/lib/authorUtils'
-import { devWarn } from '@/lib/logger'
+import type { Author, Book } from '@/types/domain'
+import type { AuthorNode } from '@/common/utils/authorUtils'
+import { migrateData } from '@/common/utils/authorUtils'
+import { devWarn } from '@/common/utils/logger'
 import { insertAuthorRow, updateBookRowById } from '../api/graphDataApi'
 import {
   authorToDbRow,

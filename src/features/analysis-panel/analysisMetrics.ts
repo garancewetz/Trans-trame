@@ -1,4 +1,4 @@
-import { AXES, AXES_COLORS } from '@/lib/categories'
+import { AXES, AXES_COLORS } from '@/common/utils/categories'
 
 export function computeAxisStats(bookNodes) {
   const counts: Record<string, number> = {}

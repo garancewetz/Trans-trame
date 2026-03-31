@@ -1,4 +1,4 @@
-import type { Author, AuthorId, Book, BookId, Link } from '@/domain/types'
+import type { Author, AuthorId, Book, BookId, Link } from '@/types/domain'
 
 export type TableViewProps = {
   nodes: Book[]

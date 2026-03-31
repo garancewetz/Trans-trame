@@ -1,4 +1,4 @@
-import type { Author } from '@/domain/types'
+import type { Author } from '@/types/domain'
 
 export function isThenable(v: unknown): v is PromiseLike<unknown> {
   if (v == null) return false

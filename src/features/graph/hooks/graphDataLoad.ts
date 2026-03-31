@@ -1,4 +1,4 @@
-import type { Author, Book, Link } from '@/domain/types'
+import type { Author, Book, Link } from '@/types/domain'
 import { loadGraphDataFromSupabase } from '../api/graphDataApi'
 import {
   type AxesColorMap,

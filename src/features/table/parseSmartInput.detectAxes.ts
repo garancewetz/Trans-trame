@@ -1,4 +1,4 @@
-import { AXIS_KEYWORDS } from '@/lib/keywords.constants'
+import { AXIS_KEYWORDS } from '@/common/utils/keywords.constants'
 
 /**
  * Détecte les axes pertinents à partir du texte brut d'une ligne bibliographique.

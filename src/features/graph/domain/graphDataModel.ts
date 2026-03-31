@@ -1,5 +1,5 @@
-import { AXES_MIGRATION } from '@/lib/categories'
-import type { Author, Book, Link } from '@/domain/types'
+import { AXES_MIGRATION } from '@/common/utils/categories'
+import type { Author, Book, Link } from '@/types/domain'
 
 /** Entrées minimales pour persistance (hook / migration). */
 export type BookRowInput = Partial<Book> & Pick<Book, 'id'>

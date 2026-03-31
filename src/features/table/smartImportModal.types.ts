@@ -1,5 +1,5 @@
-import type { Author, Book, Link } from '@/domain/types'
-import type { AuthorNode } from '@/lib/authorUtils'
+import type { Author, Book, Link } from '@/types/domain'
+import type { AuthorNode } from '@/common/utils/authorUtils'
 
 export type SmartImportModalProps = {
   open: boolean

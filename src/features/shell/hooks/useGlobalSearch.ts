@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { Author, Book } from '@/domain/types'
-import { authorName, bookAuthorDisplay } from '@/lib/authorUtils'
+import type { Author, Book } from '@/types/domain'
+import { authorName, bookAuthorDisplay } from '@/common/utils/authorUtils'
 
 function normalize(s: unknown): string {
   return String(s || '')

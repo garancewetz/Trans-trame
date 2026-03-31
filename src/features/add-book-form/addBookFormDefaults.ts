@@ -1,5 +1,5 @@
-import type { AuthorId, Book } from '@/domain/types'
-import type { BookFormValues } from './BookForm'
+import type { AuthorId, Book } from '@/types/domain'
+import type { BookFormValues } from './components/BookForm'
 
 type BookPrefill = { authorIds?: AuthorId[] }
 

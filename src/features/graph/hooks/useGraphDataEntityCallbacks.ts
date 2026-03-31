@@ -1,7 +1,7 @@
 import { useCallback, type RefObject, type Dispatch, type SetStateAction } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { Author, Book, Link } from '@/domain/types'
-import { devWarn } from '@/lib/logger'
+import type { Author, Book, Link } from '@/types/domain'
+import { devWarn } from '@/common/utils/logger'
 import {
   deleteAuthorRowById,
   deleteBookRowById,

@@ -186,3 +186,16 @@ fix stuff
 - **`.cursor/rules/*.mdc`** may add tool-specific instructions (e.g. when agents may run `git commit`). If both exist, follow Cursor rules for agent behavior and this file for code style unless you intentionally align them.
 
 If there is some comments in code, they should always be in english, as file names or constants names should be in english
+
+
+### 1. Folder Structure & Organization
+Reorganize the `src/` directory as follows:
+- `src/core/`: Central config (Supabase client, QueryClient provider).
+- `src/common/`: Shared UI (components), global hooks, global utils.
+- `src/features/`: For each feature (e.g., 'auth', 'tasks', 'profile'):
+    - `api/`: Pure Supabase fetch functions (returning Promises).
+    - `hooks/`: TanStack Query hooks (useQuery, useMutation) that call functions from `api/`.
+    - `components/`: UI specific to this feature.
+    - `types.ts`: Specific interfaces.
+- `src/pages/`: Route containers.
+- `src/types/`: Global types, including generated Supabase types.

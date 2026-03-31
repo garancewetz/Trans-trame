@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import type { Author, Book, BookId, Link } from '@/domain/types'
-import { devWarn } from '@/lib/logger'
+import type { Author, Book, BookId, Link } from '@/types/domain'
+import { devWarn } from '@/common/utils/logger'
 import {
   deleteAllBooks,
   deleteBookRowById,

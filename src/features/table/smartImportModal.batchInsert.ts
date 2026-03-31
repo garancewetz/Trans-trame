@@ -1,4 +1,4 @@
-import type { Author, Book, Link } from '@/domain/types'
+import type { Author, Book, Link } from '@/types/domain'
 import type { ParsedBook } from './parseSmartInput'
 import { isThenable, resolveOrCreateAuthors } from './smartImportModal.utils'
 

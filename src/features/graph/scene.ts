@@ -1,4 +1,4 @@
-import { AXES_COLORS } from '@/lib/categories'
+import { AXES_COLORS } from '@/common/utils/categories'
 
 type Star = {
   x: number

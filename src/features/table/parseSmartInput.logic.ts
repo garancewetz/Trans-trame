@@ -1,4 +1,4 @@
-import { narrowAxes } from '@/lib/categories'
+import { narrowAxes } from '@/common/utils/categories'
 import {
   capitalizeWord,
   isAuthorInitial,
