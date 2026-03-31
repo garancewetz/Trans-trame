@@ -6,7 +6,7 @@ type RadioCardProps = {
   children: ReactNode
 }
 
-export default function RadioCard({ checked, onChange, children }: RadioCardProps) {
+export function RadioCard({ checked, onChange, children }: RadioCardProps) {
   return (
     <label
       className={[

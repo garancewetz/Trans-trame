@@ -1,5 +1,5 @@
 import type { TextareaHTMLAttributes } from 'react'
-import Textarea from './Textarea'
+import { Textarea } from './Textarea'
 
 type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   className?: string
@@ -8,7 +8,7 @@ type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
 const BASE =
   'mb-4 h-52 w-full resize-none rounded-xl border border-white/10 bg-white/4 p-3 font-mono text-[0.75rem] text-white outline-none placeholder:text-white/18 transition-all focus:border-[rgba(140,220,255,0.28)] focus:bg-white/6'
 
-export default function TextareaImport({ className = '', ...props }: Props) {
+export function TextareaImport({ className = '', ...props }: Props) {
   return <Textarea className={[BASE, className].filter(Boolean).join(' ')} {...props} />
 }
 

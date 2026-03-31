@@ -5,7 +5,7 @@ type InlineBadgeProps = {
   className?: string
 }
 
-export default function InlineBadge({ children, className }: InlineBadgeProps) {
+export function InlineBadge({ children, className }: InlineBadgeProps) {
   return (
     <span
       className={[

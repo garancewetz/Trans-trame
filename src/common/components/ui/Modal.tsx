@@ -1,6 +1,6 @@
 import { ChevronLeft, X } from 'lucide-react'
 import type { FormEvent, ReactNode } from 'react'
-import Button from './Button'
+import { Button } from './Button'
 
 type ModalProps = {
   open: boolean
@@ -18,7 +18,7 @@ type ModalProps = {
   containerClassName?: string
 }
 
-export default function Modal({
+export function Modal({
   open,
   title,
   children,

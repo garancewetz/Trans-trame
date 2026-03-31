@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 
-export default function Tooltip({
+export function Tooltip({
   content,
   children,
   delayMs = 120,

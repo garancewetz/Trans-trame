@@ -8,7 +8,7 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 
   type?: string
 }
 
-export default function SearchInput({ value, onChange, className, style, type = 'text', ...props }: Props) {
+export function SearchInput({ value, onChange, className, style, type = 'text', ...props }: Props) {
   return (
     <input
       value={value}

@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 import { Move, ChevronDown } from 'lucide-react'
-import Button from './Button'
+import { Button } from './Button'
 
 const KeyCap = ({ children }) => (
   <span
@@ -46,7 +46,7 @@ const HintRow = ({ keys, label }) => (
   </div>
 )
 
-export default function KeyboardHints() {
+export function KeyboardHints() {
   const [collapsed, setCollapsed] = useState(false)
   const panelId = useId()
 

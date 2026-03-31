@@ -1,5 +1,5 @@
 import type { TextareaHTMLAttributes } from 'react'
-import Textarea from './Textarea'
+import { Textarea } from './Textarea'
 
 type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   className?: string
@@ -8,7 +8,7 @@ type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
 const BASE =
   'w-full resize-none bg-transparent text-[0.9rem] font-mono italic text-white/80 placeholder:text-white/20 outline-none'
 
-export default function TextareaInline({ className = '', ...props }: Props) {
+export function TextareaInline({ className = '', ...props }: Props) {
   return <Textarea className={[BASE, className].filter(Boolean).join(' ')} {...props} />
 }
 

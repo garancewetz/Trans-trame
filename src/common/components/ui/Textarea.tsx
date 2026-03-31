@@ -10,5 +10,4 @@ const Textarea = forwardRef<HTMLTextAreaElement, Props>(function Textarea({ clas
   return <textarea ref={ref} className={className} style={style} {...props} />
 })
 
-export default Textarea
-
+export { Textarea }

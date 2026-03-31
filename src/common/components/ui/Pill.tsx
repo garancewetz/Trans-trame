@@ -7,7 +7,7 @@ type PillProps = {
   className?: string
 }
 
-export default function Pill({ children, suffix, title, className }: PillProps) {
+export function Pill({ children, suffix, title, className }: PillProps) {
   return (
     <span
       className={[

@@ -13,7 +13,7 @@ const SIZE_CLASS: Record<NonNullable<Props['size']>, string> = {
   default: 'h-2 w-2',
 }
 
-export default function AxesDot({ axes, size = 'default', className = '', style, ...props }: Props) {
+export function AxesDot({ axes, size = 'default', className = '', style, ...props }: Props) {
   return (
     <span
       className={['shrink-0 rounded-full', SIZE_CLASS[size], className].filter(Boolean).join(' ')}

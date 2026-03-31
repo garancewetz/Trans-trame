@@ -5,7 +5,7 @@ type SectionHeadingProps = {
   className?: string
 }
 
-export default function SectionHeading({ children, className }: SectionHeadingProps) {
+export function SectionHeading({ children, className }: SectionHeadingProps) {
   return (
     <h3
       className={[

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/core/supabase'
 
 /** Payload générique pour insert/update Supabase (schéma non généré). */
 export type DbRow = Record<string, unknown>

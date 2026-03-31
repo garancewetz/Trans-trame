@@ -92,7 +92,7 @@ function resolveVariant(v: ButtonVariant): Exclude<ButtonVariant, 'buttonIcon'> 
   return v === 'buttonIcon' ? 'icon' : v
 }
 
-export default function Button({
+export function Button({
   variant = 'unstyled',
   tone,
   active = false,

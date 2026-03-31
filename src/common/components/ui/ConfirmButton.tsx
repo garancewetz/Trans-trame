@@ -10,7 +10,7 @@ type ConfirmButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick
   type?: 'button' | 'submit'
 }
 
-export default function ConfirmButton({
+export function ConfirmButton({
   confirmed,
   label,
   confirmLabel,

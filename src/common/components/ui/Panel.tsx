@@ -7,7 +7,7 @@ type Props = {
 } & HTMLAttributes<HTMLDivElement>
 
 // Panel est utilisé comme wrapper div dans ce projet.
-export default function Panel({ className, style, children, ...props }: Props) {
+export function Panel({ className, style, children, ...props }: Props) {
   return (
     <div className={className} style={style} {...props}>
       {children}

@@ -3,7 +3,7 @@ type CountBadgeProps = {
   className?: string
 }
 
-export default function CountBadge({ count, className }: CountBadgeProps) {
+export function CountBadge({ count, className }: CountBadgeProps) {
   return (
     <span
       className={[

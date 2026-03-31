@@ -7,7 +7,7 @@ type FormFieldProps = {
   className?: string
 }
 
-export default function FormField({
+export function FormField({
   label,
   children,
   as: Tag = 'label',

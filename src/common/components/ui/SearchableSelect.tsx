@@ -1,7 +1,7 @@
 import { Search, X } from 'lucide-react'
 import type { ReactNode } from 'react'
-import Button from './Button'
-import TextInput from './TextInput'
+import { Button } from './Button'
+import { TextInput } from './TextInput'
 
 type SearchableSelectProps<T> = {
   query: string
@@ -15,7 +15,7 @@ type SearchableSelectProps<T> = {
   maxHeight?: string
 }
 
-export default function SearchableSelect<T>({
+export function SearchableSelect<T>({
   query,
   onQueryChange,
   results,

@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { BarChart3, LayoutGrid, BookOpen, Search, PenLine, X, Users } from 'lucide-react'
-import Button from '../../components/ui/Button'
-import SearchInput from '../../components/ui/SearchInput'
-import Logo from '../../components/Logo'
-import ViewSelector from './ViewSelector'
+import { Button } from '@/common/components/ui/Button'
+import { SearchInput } from '@/common/components/ui/SearchInput'
+import { Logo } from '@/common/components/Logo'
+import { ViewSelector } from './ViewSelector'
 import { bookAuthorDisplay } from '@/lib/authorUtils'
-import CountBadge from '../../components/ui/CountBadge'
+import { CountBadge } from '@/common/components/ui/CountBadge'
 
-export default function Navbar({ search, filters, view, catalogue }) {
+export function Navbar({ search, filters, view, catalogue }) {
   const {
     ref: searchRef,
     query: globalSearch,
