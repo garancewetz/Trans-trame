@@ -2,9 +2,9 @@ import type { Book } from '@/domain/types'
 import type { AuthorNode } from '@/lib/authorUtils'
 import { bookAuthorDisplay } from '@/lib/authorUtils'
 import { axesGradient } from '@/lib/categories'
-import Button from '../../components/ui/Button'
-import Modal from '../../components/ui/Modal'
-import ConfirmButton from '../../components/ui/ConfirmButton'
+import { Button } from '@/common/components/ui/Button'
+import { Modal } from '@/common/components/ui/Modal'
+import { ConfirmButton } from '@/common/components/ui/ConfirmButton'
 
 type Props = {
   orphanModal: boolean
@@ -16,7 +16,7 @@ type Props = {
   setOrphanConfirm: (v: boolean) => void
 }
 
-export default function TableOrphanModal({
+export function TableOrphanModal({
   orphanModal,
   orphans,
   authorsMap,

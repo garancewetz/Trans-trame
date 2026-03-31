@@ -1,6 +1,6 @@
-import AddBookForm from '../add-book-form/AddBookForm'
+import { AddBookForm } from '../add-book-form/AddBookForm'
 
-export default function AdminPanel({
+export function AdminPanel({
   panelTab,
   selectedNode,
   previousPanelTab,

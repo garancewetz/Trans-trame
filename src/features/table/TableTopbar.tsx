@@ -1,8 +1,8 @@
 import { ArrowLeft, Merge, Search, Sparkles, X, Zap } from 'lucide-react'
-import Button from '../../components/ui/Button'
-import TextInput from '../../components/ui/TextInput'
+import { Button } from '@/common/components/ui/Button'
+import { TextInput } from '@/common/components/ui/TextInput'
 
-export default function TableTopbar({
+export function TableTopbar({
   onClose,
   tab,
   setTab,

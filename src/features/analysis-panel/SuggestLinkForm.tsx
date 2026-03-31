@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { bookAuthorDisplay } from '@/lib/authorUtils'
-import Button from '../../components/ui/Button'
-import TextInput from '../../components/ui/TextInput'
+import { Button } from '@/common/components/ui/Button'
+import { TextInput } from '@/common/components/ui/TextInput'
 
-export default function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
+export function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
   const [show, setShow] = useState(false)
   const [source, setSource] = useState('')
   const [target, setTarget] = useState('')

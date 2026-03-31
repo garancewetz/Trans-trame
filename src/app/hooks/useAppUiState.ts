@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Author, Book, GraphData, Link } from '@/domain/types'
-import useGlobalSearch from '../../features/shell/hooks/useGlobalSearch'
+import { useGlobalSearch } from '../../features/shell/hooks/useGlobalSearch'
 
 type GraphTapNode = Book | Author
 
@@ -64,12 +64,16 @@ export function useAppUiState(graphData: GraphData, authors: Author[]) {
     setPanelTab('details')
   }, [])
 
-  const handleSelectAuthorFromPanel = useCallback((authorId: string) => {
+  const handleSelectAuthorFromPanel = useCallback((authorId: string | null) => {
     setLinkContextNode(null)
     setSelectedLink(null)
     setPeekNodeId(null)
     setSelectedNode(null)
     setPanelTab('details')
+    if (authorId === null) {
+      setSelectedAuthor(null)
+      return
+    }
     setSelectedAuthor((prev) => (prev === authorId ? null : authorId))
   }, [])
 

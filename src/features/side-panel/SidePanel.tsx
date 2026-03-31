@@ -1,11 +1,11 @@
 import { X, PanelRightClose } from 'lucide-react'
-import Button from '../../components/ui/Button'
-import AdminPanel from './AdminPanel'
-import EmptyState from './EmptyState'
-import LinkDetails from './LinkDetails'
-import NodeDetails from './NodeDetails'
+import { Button } from '@/common/components/ui/Button'
+import { AdminPanel } from './AdminPanel'
+import { EmptyState } from './EmptyState'
+import { LinkDetails } from './LinkDetails'
+import { NodeDetails } from './NodeDetails'
 
-export default function SidePanel(props) {
+export function SidePanel(props) {
   const {
     panelOpen,
     panelTab,

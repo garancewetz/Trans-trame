@@ -1,4 +1,4 @@
-import { AXES_MIGRATION, type Axis } from '@/lib/categories'
+import { AXES_MIGRATION } from '@/lib/categories'
 import type { Author, Book, Link } from '@/domain/types'
 
 /** Entrées minimales pour persistance (hook / migration). */
@@ -44,7 +44,7 @@ export function sanitizeAxes(axes: unknown, axesColors: AxesColorMap): string[] 
   const allowed = new Set(Object.keys(axesColors))
   return axes
     .map((a) => (typeof a === 'string' ? (AXES_MIGRATION[a] ?? a) : String(a)))
-    .filter((a): a is string => typeof a === 'string' && allowed.has(a as Axis))
+    .filter((a): a is string => typeof a === 'string' && allowed.has(a))
 }
 
 export function sanitizeBook<T extends Record<string, unknown>>(node: T, axesColors: AxesColorMap): T {
@@ -58,7 +58,7 @@ export function sanitizeAuthor<T extends Record<string, unknown>>(author: T, axe
 }
 
 export function normalizeId(v: unknown): unknown {
-  if (v && typeof v === 'object' && 'id' in v) return (v as { id: unknown }).id
+  if (v && typeof v === 'object' && 'id' in v) return Reflect.get(v, 'id')
   return v
 }
 

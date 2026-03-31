@@ -3,8 +3,8 @@ import { BarChart3, X, Network, Quote, EyeOff, Activity } from 'lucide-react'
 import { AXES_COLORS } from '@/lib/categories'
 import { bookAuthorDisplay } from '@/lib/authorUtils'
 import type { AuthorNode } from '@/lib/authorUtils'
-import Button from '../../components/ui/Button'
-import Panel from '../../components/ui/Panel'
+import { Button } from '@/common/components/ui/Button'
+import { Panel } from '@/common/components/ui/Panel'
 import {
   computeAxisStats,
   computeCommunityActivity,
@@ -185,4 +185,4 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
   )
 })
 
-export default AnalysisPanel
+export { AnalysisPanel }

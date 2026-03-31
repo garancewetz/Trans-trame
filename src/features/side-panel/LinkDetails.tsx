@@ -2,11 +2,11 @@ import { ArrowRight, ArrowLeft, LinkIcon, BookCopy, ExternalLink, Trash2, Pencil
 import { useRef, useState } from 'react'
 import { bookAuthorDisplay } from '@/lib/authorUtils'
 import { blendAxesColors } from '@/lib/categories'
-import Button from '../../components/ui/Button'
-import TextareaInline from '../../components/ui/TextareaInline'
-import InlineBadge from '../../components/ui/InlineBadge'
+import { Button } from '@/common/components/ui/Button'
+import { TextareaInline } from '@/common/components/ui/TextareaInline'
+import { InlineBadge } from '@/common/components/ui/InlineBadge'
 
-export default function LinkDetails({
+export function LinkDetails({
   selectedLink,
   getLinkNodes,
   linkContextNode,
@@ -39,7 +39,8 @@ export default function LinkDetails({
     : 'bg-linear-to-br from-[rgba(140,220,255,0.8)] to-[rgba(80,160,255,0.9)] text-white'
 
   const excerpt = (selectedLink?.citation_text || selectedLink?.context || '').trim()
-  const citationAxisColor = blendAxesColors((linkContextNode?.axes || relatedNode?.axes || []) as readonly string[])
+  const axesForCitation = linkContextNode?.axes ?? relatedNode?.axes
+  const citationAxisColor = blendAxesColors(axesForCitation)
   const citationMetaYear = linkContextNode?.year ?? relatedNode?.year ?? source?.year ?? target?.year
 
   const commitField = (field) => {

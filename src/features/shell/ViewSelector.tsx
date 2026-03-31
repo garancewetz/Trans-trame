@@ -1,13 +1,13 @@
 import { Orbit, GitFork } from 'lucide-react'
-import Button from '../../components/ui/Button'
-import Tooltip from '../../components/ui/Tooltip'
+import { Button } from '@/common/components/ui/Button'
+import { Tooltip } from '@/common/components/ui/Tooltip'
 
 const VIEWS = [
   { id: 'constellation', label: 'Constellation', icon: Orbit, hint: 'Exploration libre' },
   { id: 'genealogy', label: 'Généalogie', icon: GitFork, hint: 'Frise chronologique en arcs' },
 ]
 
-export default function ViewSelector({ currentView, onViewChange, inline = false, discreet = false }) {
+export function ViewSelector({ currentView, onViewChange, inline = false, discreet = false }) {
   return (
     <div className={inline ? '' : 'fixed left-5 top-[66px] z-30'}>
       <div

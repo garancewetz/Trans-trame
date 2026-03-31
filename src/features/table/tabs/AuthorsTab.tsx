@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { BookPlus, Check, Merge, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { authorName } from '@/lib/authorUtils'
-import Button from '@/components/ui/Button'
-import TextInput from '@/components/ui/TextInput'
+import { Button } from '@/common/components/ui/Button'
+import { TextInput } from '@/common/components/ui/TextInput'
 import { INPUT, TD } from '../tableConstants'
 import { TH } from '../TableSubcomponents'
-import TableMergeAuthorsModal from '../TableMergeAuthorsModal'
+import { TableMergeAuthorsModal } from '../TableMergeAuthorsModal'
 import type { Author, AuthorId, Book } from '@/domain/types'
 
 type AuthorsTabProps = {
@@ -21,7 +21,7 @@ type AuthorsTabProps = {
   onMergeAuthors?: (fromAuthorId: AuthorId, keepAuthorId: AuthorId) => unknown
 }
 
-export default function AuthorsTab({
+export function AuthorsTab({
   authors,
   books,
   search = '',

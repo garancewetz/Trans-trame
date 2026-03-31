@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Author, Book } from '@/domain/types'
 import { bookAuthorDisplay, buildAuthorsMap } from '@/lib/authorUtils'
 import { axesGradient } from '@/lib/categories'
-import Button from '../../components/ui/Button'
+import { Button } from '@/common/components/ui/Button'
 
 type TextsPanelProps = {
   open: boolean
@@ -15,7 +15,7 @@ type TextsPanelProps = {
   peekNodeId?: string | null
 }
 
-export default function TextsPanel({
+export function TextsPanel({
   open,
   onClose,
   nodes,

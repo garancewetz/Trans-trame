@@ -9,7 +9,7 @@ import {
   type SetStateAction,
 } from 'react'
 import type { Book, GraphData, TimelineRange } from '@/domain/types'
-import Button from '../../components/ui/Button'
+import { Button } from '@/common/components/ui/Button'
 
 type TimelineProps = {
   graphData: GraphData
@@ -17,7 +17,7 @@ type TimelineProps = {
   onRangeChange: Dispatch<SetStateAction<TimelineRange | null>>
 }
 
-export default function Timeline({ graphData, timelineRange, onRangeChange }: TimelineProps) {
+export function Timeline({ graphData, timelineRange, onRangeChange }: TimelineProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const playRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -87,7 +87,7 @@ export default function Timeline({ graphData, timelineRange, onRangeChange }: Ti
       e.currentTarget.setPointerCapture(e.pointerId)
       updateFromPointer(e)
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `updateFromPointer` reads latest range from refs/state each event; listing it would recreate the handler every render.
     [minYear, maxYear]
   )
 
@@ -96,7 +96,7 @@ export default function Timeline({ graphData, timelineRange, onRangeChange }: Ti
       if (!isDragging) return
       updateFromPointer(e)
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- same as handlePointerDown: stable closure over `updateFromPointer` would churn dependencies without benefit.
     [isDragging, minYear, maxYear]
   )
 

@@ -1,13 +1,13 @@
 import { ArrowDown, ArrowLeft, X } from 'lucide-react'
 import { bookAuthorDisplay } from '@/lib/authorUtils'
 import { axesGradient } from '@/lib/categories'
-import Button from '../../components/ui/Button'
-import TextInput from '../../components/ui/TextInput'
-import Textarea from '../../components/ui/Textarea'
-import FormField from '../../components/ui/FormField'
-import NodePicker from './NodePicker'
+import { Button } from '@/common/components/ui/Button'
+import { TextInput } from '@/common/components/ui/TextInput'
+import { Textarea } from '@/common/components/ui/Textarea'
+import { FormField } from '@/common/components/ui/FormField'
+import { NodePicker } from './NodePicker'
 
-export default function LinkForm({
+export function LinkForm({
   onSubmit,
   onRequestBack,
   linkForm,

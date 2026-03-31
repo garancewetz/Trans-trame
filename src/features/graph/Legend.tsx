@@ -1,8 +1,16 @@
 import { useState } from 'react'
 import { Tags, ChevronDown } from 'lucide-react'
-import { AXES_LABELS } from '@/lib/categories'
-import Button from '../../components/ui/Button'
-import CountBadge from '../../components/ui/CountBadge'
+import { AXES_LABELS, type Axis } from '@/lib/categories'
+
+function isAxisKey(axis: string): axis is Axis {
+  return axis in AXES_LABELS
+}
+
+function axisLabelOrRaw(axis: string): string {
+  return isAxisKey(axis) ? AXES_LABELS[axis] : axis
+}
+import { Button } from '@/common/components/ui/Button'
+import { CountBadge } from '@/common/components/ui/CountBadge'
 
 type LegendProps = {
   axesColors: Record<string, string>
@@ -14,7 +22,7 @@ type LegendProps = {
   clearFilter: () => void
 }
 
-export default function Legend({
+export function Legend({
   axesColors,
   axisCountsByAxis,
   activeFilter,
@@ -55,8 +63,7 @@ export default function Legend({
               const isActive = activeFilter === axis
               const isHovered = hoveredFilter === axis
 
-              const axisLabel =
-                AXES_LABELS[axis as keyof typeof AXES_LABELS] ?? axis
+              const axisLabel = axisLabelOrRaw(axis)
 
               return (
                 <Button

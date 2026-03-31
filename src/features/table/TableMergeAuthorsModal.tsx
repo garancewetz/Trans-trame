@@ -1,9 +1,9 @@
 import { Merge } from 'lucide-react'
 import type { Author, AuthorId } from '@/domain/types'
-import Button from '../../components/ui/Button'
-import Modal from '../../components/ui/Modal'
-import RadioCard from '../../components/ui/RadioCard'
-import ConfirmButton from '../../components/ui/ConfirmButton'
+import { Button } from '@/common/components/ui/Button'
+import { Modal } from '@/common/components/ui/Modal'
+import { RadioCard } from '@/common/components/ui/RadioCard'
+import { ConfirmButton } from '@/common/components/ui/ConfirmButton'
 import { authorName } from '@/lib/authorUtils'
 
 type Props = {
@@ -18,7 +18,7 @@ type Props = {
   bookCountByAuthor?: Map<AuthorId, number>
 }
 
-export default function TableMergeAuthorsModal({
+export function TableMergeAuthorsModal({
   open,
   authorsToMerge,
   keepId,

@@ -118,7 +118,8 @@ export function migrateData(
   books.forEach((book) => {
     // Livre déjà migré : a des authorIds → pas de changement nécessaire
     if (book.authorIds && book.authorIds.length > 0) {
-      updatedBooks.push(book as BookNode & { authorIds: string[] })
+      const authorIds = book.authorIds
+      updatedBooks.push({ ...book, authorIds })
       return
     }
 
@@ -127,7 +128,7 @@ export function migrateData(
 
     // Livre sans auteur
     if (!fn && !ln) {
-      updatedBooks.push({ ...(book as BookNode), authorIds: [] })
+      updatedBooks.push({ ...book, authorIds: [] })
       return
     }
 
@@ -148,7 +149,7 @@ export function migrateData(
     }
 
     updatedBooks.push({
-      ...(book as BookNode),
+      ...book,
       authorIds: [author.id],
     })
   })

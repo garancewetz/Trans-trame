@@ -1,9 +1,9 @@
 import { ArrowRight, BookCopy, Check, Eye, Link2, Pencil, Search, Trash2 } from 'lucide-react'
 import { bookAuthorDisplay, type AuthorNode } from '@/lib/authorUtils'
-import AxesDot from '@/components/ui/AxesDot'
-import Button from '@/components/ui/Button'
-import TextInput from '@/components/ui/TextInput'
-import Textarea from '@/components/ui/Textarea'
+import { AxesDot } from '@/common/components/ui/AxesDot'
+import { Button } from '@/common/components/ui/Button'
+import { TextInput } from '@/common/components/ui/TextInput'
+import { Textarea } from '@/common/components/ui/Textarea'
 import { INPUT } from '../tableConstants'
 import { NodeSearch } from '../TableSubcomponents'
 import type { Book, BookId, Link } from '@/domain/types'
@@ -44,7 +44,7 @@ type LinksTabProps = {
   onRevealBookLine?: (bookId: BookId) => void
 }
 
-export default function LinksTab({
+export function LinksTab({
   nodes,
   authorsMap,
   linkSourceNode,

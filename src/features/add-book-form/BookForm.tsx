@@ -1,29 +1,34 @@
-import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type { Author, Book } from '@/domain/types'
 import type { AuthorNode } from '@/lib/authorUtils'
 import { Controller } from 'react-hook-form'
-import { X, Merge, Trash2, Pin } from 'lucide-react'
+import { Pin } from 'lucide-react'
 import { bookAuthorDisplay } from '@/lib/authorUtils'
-import { axesGradient } from '@/lib/categories'
-import Button from '../../components/ui/Button'
-import TextInput from '../../components/ui/TextInput'
-import Textarea from '../../components/ui/Textarea'
-import FormField from '../../components/ui/FormField'
-import Pill from '../../components/ui/Pill'
-import SearchableSelect from '../../components/ui/SearchableSelect'
+import { Button } from '@/common/components/ui/Button'
+import { TextInput } from '@/common/components/ui/TextInput'
+import { Textarea } from '@/common/components/ui/Textarea'
+import { FormField } from '@/common/components/ui/FormField'
+import { Pill } from '@/common/components/ui/Pill'
 import { AuthorPicker } from '../table/TableSubcomponents'
-import AxisSelector from './AxisSelector'
-import DuplicateWarning from './DuplicateWarning'
+import { AxisSelector } from './AxisSelector'
+import { DuplicateWarning } from './DuplicateWarning'
+import { BookFormEditDangerZone } from './BookFormEditDangerZone'
 
-type BookFormValues = {
+export type BookFormValues = {
   title: string
   authorIds: string[]
-  year?: number | null
+  /** Form field value (string while typing; normalized on submit). */
+  year: string | number | null | undefined
   axes: string[]
   description?: string
   stickyAuthor?: boolean
+}
+
+export type BookRecentDraft = {
+  title: string
+  authorIds: string[]
+  year: number | null
 }
 
 type Props = {
@@ -33,17 +38,17 @@ type Props = {
   bookForm: UseFormReturn<BookFormValues>
   toggleAxis: (axisId: string) => void
   possibleDuplicates: Book[]
-  editNode: Book | null
+  editNode: Book | null | undefined
   nodes: Book[]
   onDeleteBook?: (id: string) => void
   onMergeBooks?: (fromId: string, toId: string) => void
-  recentQueue: Book[]
+  recentQueue: BookRecentDraft[]
   authorsMap: Map<string, AuthorNode>
   authors: Author[]
   onAddAuthor?: (author: Author) => void
 }
 
-export default function BookForm({
+export function BookForm({
   mode,
   inputClass,
   onSubmit,
@@ -61,37 +66,6 @@ export default function BookForm({
 }: Props) {
   const { register, control, watch } = bookForm
   const selectedAxes = watch('axes') || []
-
-  const [mergeSearch, setMergeSearch] = useState('')
-  const [mergeTarget, setMergeTarget] = useState<Book | null>(null)
-  const [mergeConfirm, setMergeConfirm] = useState(false)
-  const [deleteConfirm, setDeleteConfirm] = useState(false)
-
-  const mergeResults = useMemo(() => {
-    const q = mergeSearch.toLowerCase().trim()
-    if (!q || !editNode) return []
-    return (nodes || []).filter(
-      (n) =>
-        n.id !== editNode.id &&
-        (n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q))
-    )
-  }, [mergeSearch, nodes, editNode, authorsMap])
-
-  const handleMerge = () => {
-    if (!mergeTarget || !editNode) return
-    if (!mergeConfirm) { setMergeConfirm(true); return }
-    onMergeBooks?.(editNode.id, mergeTarget.id)
-    setMergeSearch('')
-    setMergeTarget(null)
-    setMergeConfirm(false)
-  }
-
-  const handleDelete = () => {
-    if (!editNode) return
-    if (!deleteConfirm) { setDeleteConfirm(true); return }
-    onDeleteBook?.(editNode.id)
-    setDeleteConfirm(false)
-  }
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-[18px]">
@@ -215,86 +189,13 @@ export default function BookForm({
       )}
 
       {mode === 'edit' && editNode && (
-        <div className="mt-4 rounded-xl border border-white/8 bg-white/2 p-4">
-          <h4 className="mb-4 text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-white/25">
-            Zone dangereuse
-          </h4>
-
-          <div className="mb-4">
-            <p className="mb-2 text-[0.75rem] text-white/40">
-              Fusionner cet ouvrage dans un autre (les liens seront transférés)
-            </p>
-            {!mergeTarget ? (
-              <SearchableSelect<Book>
-                query={mergeSearch}
-                onQueryChange={setMergeSearch}
-                results={mergeResults}
-                getKey={(n) => n.id}
-                onSelect={(n) => { setMergeTarget(n); setMergeSearch(''); setMergeConfirm(false) }}
-                placeholder="Rechercher l'ouvrage cible…"
-                emptyMessage="Aucun ouvrage trouvé"
-                renderItem={(n) => (
-                  <>
-                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: axesGradient(n.axes) }} />
-                    <span className="min-w-0">
-                      <strong className="block text-[0.82rem] font-semibold text-white">{n.title}</strong>
-                      <span className="mt-0.5 block text-[0.72rem] text-white/35">
-                        {bookAuthorDisplay(n, authorsMap)}{n.year ? `, ${n.year}` : ''}
-                      </span>
-                    </span>
-                  </>
-                )}
-              />
-            ) : (
-              <div className="flex items-center gap-2">
-                <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                  <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ background: axesGradient(mergeTarget.axes) }}
-                  />
-                  <span className="min-w-0 truncate text-[0.82rem] text-white">
-                    {mergeTarget.title}
-                  </span>
-                  <Button
-                    variant="icon"
-                    className="ml-auto shrink-0"
-                    type="button"
-                    onClick={() => { setMergeTarget(null); setMergeConfirm(false) }}
-                  >
-                    <X size={14} />
-                  </Button>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  outlineWeight="strong"
-                  tone="merge"
-                  active={mergeConfirm}
-                  icon={<Merge size={12} />}
-                  className="shrink-0"
-                  onClick={handleMerge}
-                >
-                  {mergeConfirm ? 'Confirmer' : 'Fusionner'}
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <Button
-              type="button"
-              variant="outline"
-              outlineWeight="strong"
-              tone="danger"
-              active={deleteConfirm}
-              icon={<Trash2 size={12} />}
-              onClick={handleDelete}
-              onBlur={() => setDeleteConfirm(false)}
-            >
-              {deleteConfirm ? 'Confirmer la suppression' : 'Supprimer l\u2019ouvrage'}
-            </Button>
-          </div>
-        </div>
+        <BookFormEditDangerZone
+          editNode={editNode}
+          nodes={nodes}
+          authorsMap={authorsMap}
+          onMergeBooks={onMergeBooks}
+          onDeleteBook={onDeleteBook}
+        />
       )}
     </form>
   )

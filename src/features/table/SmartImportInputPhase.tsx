@@ -1,11 +1,11 @@
 import { Link2, X, Zap } from 'lucide-react'
-import Button from '../../components/ui/Button'
-import TextInput from '../../components/ui/TextInput'
-import TextareaImport from '../../components/ui/TextareaImport'
+import { Button } from '@/common/components/ui/Button'
+import { TextInput } from '@/common/components/ui/TextInput'
+import { TextareaImport } from '@/common/components/ui/TextareaImport'
 import { NodeSearch } from './TableSubcomponents'
 import { INPUT } from './tableConstants'
 
-export default function SmartImportInputPhase({
+export function SmartImportInputPhase({
   rawText,
   setRawText,
   masterNode,

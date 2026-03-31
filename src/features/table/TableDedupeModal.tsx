@@ -1,7 +1,7 @@
 import type { Book } from '@/domain/types'
-import Button from '../../components/ui/Button'
-import Modal from '../../components/ui/Modal'
-import ConfirmButton from '../../components/ui/ConfirmButton'
+import { Button } from '@/common/components/ui/Button'
+import { Modal } from '@/common/components/ui/Modal'
+import { ConfirmButton } from '@/common/components/ui/ConfirmButton'
 
 type Props = {
   dedupeModal: boolean
@@ -12,7 +12,7 @@ type Props = {
   setDedupeConfirm: (v: boolean) => void
 }
 
-export default function TableDedupeModal({
+export function TableDedupeModal({
   dedupeModal,
   duplicateGroups,
   handleCleanDupes,

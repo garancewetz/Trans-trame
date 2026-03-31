@@ -2,10 +2,10 @@ import { Merge } from 'lucide-react'
 import type { Book, BookId } from '@/domain/types'
 import type { AuthorNode } from '@/lib/authorUtils'
 import { bookAuthorDisplay } from '@/lib/authorUtils'
-import Button from '../../components/ui/Button'
-import Modal from '../../components/ui/Modal'
-import RadioCard from '../../components/ui/RadioCard'
-import ConfirmButton from '../../components/ui/ConfirmButton'
+import { Button } from '@/common/components/ui/Button'
+import { Modal } from '@/common/components/ui/Modal'
+import { RadioCard } from '@/common/components/ui/RadioCard'
+import { ConfirmButton } from '@/common/components/ui/ConfirmButton'
 
 type Props = {
   mergeModal: boolean
@@ -20,7 +20,7 @@ type Props = {
   setMergeModal: (v: boolean) => void
 }
 
-export default function TableMergeModal({
+export function TableMergeModal({
   mergeModal,
   mergeNodes,
   nodes,

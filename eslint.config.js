@@ -48,4 +48,11 @@ export default defineConfig([
       'react-hooks/refs': 'off',
     },
   }),
+  {
+    files: ['src/features/graph/Graph.tsx'],
+    rules: {
+      // @ts-nocheck documenté dans rules.md (types react-force-graph-2d vs domaine).
+      '@typescript-eslint/ban-ts-comment': 'off',
+    },
+  },
 ])

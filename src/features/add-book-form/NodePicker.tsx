@@ -1,11 +1,11 @@
 import { Search, X } from 'lucide-react'
 import { axesGradient } from '@/lib/categories'
 import { bookAuthorDisplay } from '@/lib/authorUtils'
-import Button from '../../components/ui/Button'
-import TextInput from '../../components/ui/TextInput'
-import FormField from '../../components/ui/FormField'
+import { Button } from '@/common/components/ui/Button'
+import { TextInput } from '@/common/components/ui/TextInput'
+import { FormField } from '@/common/components/ui/FormField'
 
-export default function NodePicker({
+export function NodePicker({
   label,
   value,
   onChange,

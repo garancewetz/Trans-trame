@@ -1,9 +1,9 @@
 import { AlertTriangle, Check, GitMerge, Info, Plus } from 'lucide-react'
-import Button from '../../components/ui/Button'
-import TextInput from '../../components/ui/TextInput'
+import { Button } from '@/common/components/ui/Button'
+import { TextInput } from '@/common/components/ui/TextInput'
 import { AxisDots } from './TableSubcomponents'
 
-export default function SmartImportPreviewRow({
+export function SmartImportPreviewRow({
   item,
   checked,
   mergedIds,

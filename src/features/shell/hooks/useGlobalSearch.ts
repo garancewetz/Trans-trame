@@ -21,7 +21,7 @@ type UseGlobalSearchProps = {
   onSelectAuthor?: (authorId: string) => void
 }
 
-export default function useGlobalSearch({
+export function useGlobalSearch({
   nodes,
   authors = [],
   onSelectNode,

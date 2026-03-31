@@ -1,16 +1,15 @@
 import { useRef } from 'react'
-import type { AnalysisPanelImperativeHandle } from '@/features/analysis-panel/AnalysisPanel'
-import type { GraphImperativeHandle } from '@/features/graph/Graph'
-import Legend from '@/features/graph/Legend'
-import Navbar from '@/features/shell/Navbar'
-import SidePanel from '@/features/side-panel/SidePanel'
-import TableView from '@/features/table/TableView'
-import Timeline from '@/features/timeline/Timeline'
-import TextsPanel from '@/features/texts-panel/TextsPanel'
-import AuthorsPanel from '@/features/authors-panel/AuthorsPanel'
+import { AnalysisPanel, type AnalysisPanelImperativeHandle } from '@/features/analysis-panel/AnalysisPanel'
+import { Graph, type GraphImperativeHandle } from '@/features/graph/Graph'
+import { Legend } from '@/features/graph/Legend'
+import { Navbar } from '@/features/shell/Navbar'
+import { SidePanel } from '@/features/side-panel/SidePanel'
+import { TableView } from '@/features/table/TableView'
+import { Timeline } from '@/features/timeline/Timeline'
+import { TextsPanel } from '@/features/texts-panel/TextsPanel'
+import { AuthorsPanel } from '@/features/authors-panel/AuthorsPanel'
 import { AXES_COLORS } from '@/lib/categories'
 import { useAppData } from './AppDataContext'
-import { AnalysisPanelAny, GraphAny } from './graphForwardRefCasts'
 import { useAppDerivedData } from './hooks/useAppDerivedData'
 import { useAppNavbarProps } from './hooks/useAppNavbarProps'
 import { useAppSidePanelProps } from './hooks/useAppSidePanelProps'
@@ -18,7 +17,7 @@ import { useAppTableViewProps } from './hooks/useAppTableViewProps'
 import { useAppTimelineAndLayout } from './hooks/useAppTimelineAndLayout'
 import { useAppUiState } from './hooks/useAppUiState'
 
-export default function App() {
+export function App() {
   const {
     graphData,
     books,
@@ -132,7 +131,7 @@ export default function App() {
   return (
     <div className="relative h-screen w-full overflow-hidden">
       <div className="absolute inset-0 z-0">
-        <GraphAny
+        <Graph
           ref={graphRef}
           graphData={timeline.filteredGraphData}
           authors={authors}
@@ -169,12 +168,14 @@ export default function App() {
         onRangeChange={timeline.setTimelineRange}
       />
 
-      <AnalysisPanelAny
+      <AnalysisPanel
         ref={analysisPanelRef}
         graphData={timeline.filteredGraphData}
         activeFilter={ui.activeFilter}
-        onFilterChange={ui.toggleFilter}
-        onAddLink={handleAddLink}
+        onFilterChange={(axis) => {
+          if (axis === null) ui.clearActiveFilter()
+          else ui.toggleFilter(axis)
+        }}
         showTrigger={false}
         authorsMap={derived.authorsMap}
       />

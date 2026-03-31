@@ -1,7 +1,7 @@
 import { AXES, AXES_COLORS, AXES_LABELS } from '@/lib/categories'
-import Button from '../../components/ui/Button'
+import { Button } from '@/common/components/ui/Button'
 
-export default function AxisSelector({ selectedAxes, toggleAxis }) {
+export function AxisSelector({ selectedAxes, toggleAxis }) {
   return (
     <fieldset className="flex flex-col gap-2">
       <legend className="mb-1 text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">

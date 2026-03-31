@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { createContext, useContext } from 'react'
 import { AXES_COLORS } from '@/lib/categories'
-import useGraphData from '../features/graph/hooks/useGraphData'
+import { useGraphData } from '../features/graph/hooks/useGraphData'
 
 type AppDataValue = ReturnType<typeof useGraphData>
 

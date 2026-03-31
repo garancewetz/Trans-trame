@@ -1,1 +1,1 @@
-export { default } from './tabs/BooksTab'
+export { BooksTab } from './tabs/BooksTab'

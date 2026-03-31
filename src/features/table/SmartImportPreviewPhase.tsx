@@ -1,8 +1,8 @@
 import { AlertTriangle, Check, Info, Link2, Loader2, Zap } from 'lucide-react'
-import Button from '../../components/ui/Button'
-import SmartImportPreviewRow from './SmartImportPreviewRow'
+import { Button } from '@/common/components/ui/Button'
+import { SmartImportPreviewRow } from './SmartImportPreviewRow'
 
-export default function SmartImportPreviewPhase({
+export function SmartImportPreviewPhase({
   parsed,
   checked,
   mergedIds,

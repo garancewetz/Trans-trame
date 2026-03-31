@@ -1,2 +1,2 @@
-export { default } from './tabs/AuthorsTab'
+export { AuthorsTab } from './tabs/AuthorsTab'
 

@@ -3,19 +3,30 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Author, Book } from '@/domain/types'
 import { authorName } from '@/lib/authorUtils'
 import { axesGradient } from '@/lib/categories'
-import Button from '../../components/ui/Button'
-import TextInput from '../../components/ui/TextInput'
+import { Button } from '@/common/components/ui/Button'
+import { TextInput } from '@/common/components/ui/TextInput'
 
-export default function AuthorsPanel({
+type Props = {
+  open: boolean
+  onClose: () => void
+  authors?: Author[]
+  books?: Book[]
+  selectedAuthorId: string | null
+  onSelectAuthor?: (authorId: string | null) => void
+  onAddWorkForAuthor?: (authorName?: string) => void
+  onOpenAddBookFromSearch?: (searchQuery?: string) => void
+}
+
+export function AuthorsPanel({
   open,
   onClose,
-  authors = [] as Author[],
-  books = [] as Book[],
+  authors = [],
+  books = [],
   selectedAuthorId,
   onSelectAuthor,
   onAddWorkForAuthor,
   onOpenAddBookFromSearch,
-}) {
+}: Props) {
   const [q, setQ] = useState('')
 
   useEffect(() => {

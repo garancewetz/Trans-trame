@@ -1,89 +1,15 @@
-import { AXIS_KEYWORDS } from '@/lib/keywords.constants'
+import { narrowAxes } from '@/lib/categories'
+import {
+  capitalizeWord,
+  isAuthorInitial,
+  looksLikeName,
+  parseAuthorString,
+} from './parseSmartInput.authorString'
+import { detectAxes } from './parseSmartInput.detectAxes'
+import type { ExistingNode, ParsedAuthor, ParsedBook } from './parseSmartInput.types'
+import { titleSimilarity } from './parseSmartInput.titleSimilarity'
 
 const CURRENT_YEAR = new Date().getFullYear()
-
-// ── Auto-tagging par mots-clés ──────────────────────────────────────────────
-
-/**
- * Détecte les axes pertinents à partir du texte brut d'une ligne bibliographique.
- * Retourne un tableau d'axes (ex. ['QUEER', 'HEALTH']).
- */
-function detectAxes(rawLine: string): string[] {
-  const text = rawLine.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim()
-  const matched: string[] = []
-  for (const [axis, keywords] of Object.entries(AXIS_KEYWORDS)) {
-    for (const kw of keywords) {
-      if (text.includes(kw.normalize('NFD').replace(/\p{Diacritic}/gu, ''))) {
-        matched.push(axis)
-        break
-      }
-    }
-  }
-  return matched
-}
-
-function capitalize(str) {
-  if (!str) return ''
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
-}
-
-function isInitial(s) {
-  return /^[A-ZÀ-Ü]\.?$/.test(s.trim())
-}
-
-const NAME_PARTICLES = new Set([
-  'de', 'du', 'des', 'von', 'van', 'di', 'da', 'le', 'la', 'el', 'al',
-  'ben', 'ibn', 'del', 'della', 'der', 'den', 'het', 'los', 'las',
-])
-
-/** Vérifie qu'une chaîne ressemble à un nom de personne (au moins un mot
- *  capitalisé qui n'est pas une simple particule nobiliaire). */
-function looksLikeName(str) {
-  const words = str.trim().split(/[\s-]+/)
-  return words.some(
-    (w) => /^[A-ZÀ-ÖØ-Ý]/.test(w) && !NAME_PARTICLES.has(w.toLowerCase()),
-  )
-}
-
-/**
- * Tente de décomposer une chaîne brute en {firstName, lastName}.
- * Gère : "BEAUVOIR Simone", "bell hooks", "Ahmed", "J. Butler"
- */
-function parseAuthorString(raw) {
-  const s = raw.trim()
-  if (!s) return { firstName: '', lastName: '' }
-
-  // ALL CAPS cluster = nom de famille
-  const capsMatch = s.match(
-    /\b([A-ZÀÁÂÃÄÇÈÉÊËÌÍÎÏÑÒÓÔÙÚÛÜÝ]{2,}(?:[- ][A-ZÀÁÂÃÄÇÈÉÊËÌÍÎÏÑÒÓÔÙÚÛÜÝ]{2,})*)\b/
-  )
-  if (capsMatch) {
-    const ln = capsMatch[1].split(/[\s-]+/).map(capitalize).join(' ')
-    const fn = s
-      .replace(capsMatch[1], '')
-      .replace(/^[,.\s]+|[,.\s]+$/g, '')
-      .trim()
-    return { firstName: fn, lastName: ln }
-  }
-
-  const words = s.split(/\s+/).filter(Boolean)
-  if (words.length === 1) return { firstName: '', lastName: words[0] }
-
-  // Première lettre minuscule → prénom (ex. "bell hooks")
-  if (/^[a-zàáâãäçèéêëìíîïñòóôùúûü]/.test(words[0])) {
-    return { firstName: words[0], lastName: words.slice(1).join(' ') }
-  }
-
-  // Initiale seule (J.) → initiale = prénom
-  if (isInitial(words[0])) {
-    return { firstName: words[0].replace('.', ''), lastName: words.slice(1).join(' ') }
-  }
-
-  // Défaut : premier mot = prénom, reste = nom
-  return { firstName: words[0], lastName: words.slice(1).join(' ') }
-}
-
-type ParsedAuthorName = { firstName: string; lastName: string }
 
 function parseLine(rawLine: string) {
   // ── 1. Strip leading bullet points / numbered lists ───────────────────────
@@ -111,7 +37,7 @@ function parseLine(rawLine: string) {
   let lastName = ''
   let title = ''
   let edition = ''
-  let authors: ParsedAuthorName[] = []
+  let authors: ParsedAuthor[] = []
 
   // ── 4. Multi-auteurs : "Pardo et Delor" / "Smith & Jones" / "A, B et C" ──
   // Détecte une liste d'auteurs avant le titre (séparés par et|&|,)
@@ -185,7 +111,7 @@ function parseLine(rawLine: string) {
         }
       }
 
-      lastName = capsCluster.split(/[\s-]+/).map(capitalize).join(' ')
+      lastName = capsCluster.split(/[\s-]+/).map(capitalizeWord).join(' ')
       firstName = authorPart
         .replace(capsCluster, '')
         .replace(/^[,.\s]+|[,.\s]+$/g, '')
@@ -215,7 +141,7 @@ function parseLine(rawLine: string) {
           let titleIndex
           if (words.length === 1) {
             lastName = words[0]
-            if (parts.length >= 3 && isInitial(parts[1])) {
+            if (parts.length >= 3 && isAuthorInitial(parts[1])) {
               firstName = parts[1].replace('.', '').trim()
               titleIndex = 2
             } else {
@@ -258,29 +184,8 @@ function parseLine(rawLine: string) {
     edition: edition.trim(),
     year: year || CURRENT_YEAR,
     yearMissing: !year,
-    axes: detectAxes(rawLine),
+    axes: narrowAxes(detectAxes(rawLine)),
   }
-}
-
-// Normalize title for comparison: lowercase, strip punctuation, collapse spaces
-function normTitle(s) {
-  return s
-    .toLowerCase()
-    .replace(/[^\wàáâãäçèéêëìíîïñòóôùúûü\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-// Returns overlap ratio [0–1] between two normalized title strings
-function titleSimilarity(a, b) {
-  const s1 = normTitle(a)
-  const s2 = normTitle(b)
-  if (!s1 || !s2) return 0
-  if (s1 === s2) return 1
-  const longer = s1.length >= s2.length ? s1 : s2
-  const shorter = s1.length >= s2.length ? s2 : s1
-  if (longer.includes(shorter)) return shorter.length / longer.length
-  return 0
 }
 
 /**
@@ -293,16 +198,15 @@ function titleSimilarity(a, b) {
  *   isFuzzyDuplicate   — similarité élevée (≥ 0.82) mais pas exacte
  *   existingNode       — nœud existant correspondant (si doublon)
  */
-export function parseSmartInput(text: string, existingNodes: Array<{ title?: string }> = []) {
+export function parseSmartInput(text: string, existingNodes: ExistingNode[] = []): ParsedBook[] {
   const lines = text.split('\n').map((l) => l.trim()).filter((l) => l.length > 3)
 
   return lines
-    .map((line) => {
+    .map((line): ParsedBook | null => {
       const parsed = parseLine(line)
       if (!parsed || !parsed.title) return null
 
-      // Find the best matching existing node
-      let bestNode: { title?: string } | null = null
+      let bestNode: ExistingNode | null = null
       let bestScore = 0
       for (const n of existingNodes) {
         const score = titleSimilarity(n.title, parsed.title)
@@ -321,5 +225,5 @@ export function parseSmartInput(text: string, existingNodes: Array<{ title?: str
         raw: line,
       }
     })
-    .filter(Boolean)
+    .filter((row): row is ParsedBook => row != null)
 }

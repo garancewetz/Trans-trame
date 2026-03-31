@@ -4,8 +4,8 @@ import type { Author, AuthorId, Book, BookId } from '@/domain/types'
 import type { AuthorNode } from '@/lib/authorUtils'
 import { authorName, bookAuthorDisplay } from '@/lib/authorUtils'
 import { AXES, AXES_COLORS, AXES_LABELS, axesGradient, type Axis } from '@/lib/categories'
-import Button from '../../components/ui/Button'
-import TextInput from '../../components/ui/TextInput'
+import { Button } from '@/common/components/ui/Button'
+import { TextInput } from '@/common/components/ui/TextInput'
 import { INPUT } from './tableConstants'
 
 export function AxisDots({

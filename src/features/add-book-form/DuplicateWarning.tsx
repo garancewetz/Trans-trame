@@ -2,7 +2,7 @@ import { TriangleAlert } from 'lucide-react'
 import { axesGradient } from '@/lib/categories'
 import { bookAuthorDisplay } from '@/lib/authorUtils'
 
-export default function DuplicateWarning({ possibleDuplicates, authorsMap }) {
+export function DuplicateWarning({ possibleDuplicates, authorsMap }) {
   if (!possibleDuplicates || possibleDuplicates.length === 0) return null
 
   return (

@@ -1,7 +1,7 @@
 import type { Author } from '@/domain/types'
-import Button from '../../components/ui/Button'
-import Modal from '../../components/ui/Modal'
-import ConfirmButton from '../../components/ui/ConfirmButton'
+import { Button } from '@/common/components/ui/Button'
+import { Modal } from '@/common/components/ui/Modal'
+import { ConfirmButton } from '@/common/components/ui/ConfirmButton'
 import { authorName } from '@/lib/authorUtils'
 
 type Props = {
@@ -13,7 +13,7 @@ type Props = {
   setConfirm: (v: boolean) => void
 }
 
-export default function TableAuthorDedupeModal({
+export function TableAuthorDedupeModal({
   open,
   duplicateGroups,
   handleMergeDupes,

@@ -1,10 +1,10 @@
 import { Pencil, ArrowRight, ArrowLeft, LinkIcon, Plus } from 'lucide-react'
 import { bookAuthorDisplay } from '@/lib/authorUtils'
-import AxisBadge from '../../components/ui/AxisBadge'
-import Button from '../../components/ui/Button'
-import SectionHeading from '../../components/ui/SectionHeading'
+import { AxisBadge } from '@/common/components/ui/AxisBadge'
+import { Button } from '@/common/components/ui/Button'
+import { SectionHeading } from '@/common/components/ui/SectionHeading'
 
-export default function NodeDetails({
+export function NodeDetails({
   selectedNode,
   AXES_COLORS,
   sameAuthorBooks,

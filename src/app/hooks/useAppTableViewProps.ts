@@ -1,6 +1,11 @@
 import type { Author, Book, BookId, Link } from '@/domain/types'
 import type { TableViewProps } from '@/features/table/TableView'
 
+function tableInitialTabFromState(tab: string): NonNullable<TableViewProps['initialTab']> {
+  if (tab === 'authors' || tab === 'links') return tab
+  return 'books'
+}
+
 /** Props pour `<TableView />` (mode tableau plein écran). */
 export function useAppTableViewProps({
   books,
@@ -104,7 +109,7 @@ export function useAppTableViewProps({
       setFlashNodeIds(ids)
       setTimeout(() => setFlashNodeIds(null), 4000)
     },
-    initialTab: tableInitialTab as TableViewProps['initialTab'],
+    initialTab: tableInitialTabFromState(tableInitialTab),
     initialLinkSourceId: tableLinkSourceId,
   }
 }

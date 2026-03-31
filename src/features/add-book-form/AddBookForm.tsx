@@ -3,8 +3,10 @@ import { useForm, useWatch } from 'react-hook-form'
 import type { Author, AuthorId, Book, BookId, Link } from '@/domain/types'
 import type { AuthorNode } from '@/lib/authorUtils'
 import { bookAuthorDisplay } from '@/lib/authorUtils'
-import BookForm from './BookForm'
-import LinkForm from './LinkForm'
+import { BookForm, type BookFormValues, type BookRecentDraft } from './BookForm'
+import { bookDefaultValues } from './addBookFormDefaults'
+import { useAddBookFormActions } from './useAddBookFormActions'
+import { LinkForm } from './LinkForm'
 
 /** Référence stable pour éviter un nouveau `[]` à chaque rendu (exhaustive-deps / useMemo). */
 const EMPTY_AUTHOR_IDS: string[] = []
@@ -30,32 +32,7 @@ type AddBookFormProps = {
   onRequestBack?: () => void
 }
 
-function bookDefaultValues(
-  mode: AddBookFormProps['mode'],
-  editNode: Book | null | undefined,
-  bookPrefill: BookPrefill | null
-) {
-  if (mode === 'edit' && editNode) {
-    return {
-      title: editNode.title || '',
-      authorIds: Array.isArray(editNode.authorIds) ? [...editNode.authorIds] : [],
-      year: String(editNode.year || ''),
-      axes: Array.isArray(editNode.axes) ? editNode.axes : [],
-      description: editNode.description || '',
-      stickyAuthor: false,
-    }
-  }
-  return {
-    title: '',
-    authorIds: bookPrefill?.authorIds ? [...bookPrefill.authorIds] : [],
-    year: '',
-    axes: [],
-    description: '',
-    stickyAuthor: false,
-  }
-}
-
-export default function AddBookForm({
+export function AddBookForm({
   nodes,
   authors,
   onAddAuthor,
@@ -75,7 +52,7 @@ export default function AddBookForm({
 }: AddBookFormProps) {
   const bookPrefill = mode === 'book' && prefilledAuthor ? prefilledAuthor : null
 
-  const bookForm = useForm({
+  const bookForm = useForm<BookFormValues>({
     defaultValues: bookDefaultValues(mode, editNode, bookPrefill),
   })
 
@@ -91,7 +68,7 @@ export default function AddBookForm({
   useEffect(() => {
     if (mode !== 'book' && mode !== 'edit') return
     bookForm.reset(bookDefaultValues(mode, editNode, bookPrefill))
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- voir ci-dessus
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `bookForm` omitted: listing it retriggers reset loops; we only sync when mode, edit target, or prefill signature changes.
   }, [mode, editNode?.id, bookPrefill?.authorIds?.join(','), bookForm])
 
   useEffect(() => {
@@ -104,8 +81,7 @@ export default function AddBookForm({
   const authorIdsRaw = useWatch({ control: bookForm.control, name: 'authorIds' })
   const authorIdsWatch = authorIdsRaw ?? EMPTY_AUTHOR_IDS
 
-  type RecentDraft = { title: string; authorIds: string[]; year: number | null }
-  const [recentQueue, setRecentQueue] = useState<RecentDraft[]>([])
+  const [recentQueue, setRecentQueue] = useState<BookRecentDraft[]>([])
 
   const [sourceSearch, setSourceSearch] = useState('')
   const [targetSearch, setTargetSearch] = useState('')
@@ -158,77 +134,19 @@ export default function AddBookForm({
     })
   }, [titleWatch, authorIdsWatch, nodes, mode])
 
-  const submitAddBook = (data) => {
-    if (!data.title.trim() || !data.authorIds?.length) return
-    const book: Partial<Book> & Pick<Book, 'id' | 'title' | 'type'> = {
-      id: crypto.randomUUID(),
-      type: 'book',
-      title: data.title.trim(),
-      authorIds: data.authorIds,
-      year: parseInt(data.year, 10) || null,
-      axes: data.axes || [],
-      description: (data.description || '').trim(),
-    }
-    onAddBook?.(book)
-    setRecentQueue((prev) =>
-      [
-        {
-          title: book.title,
-          authorIds: book.authorIds ?? [],
-          year: book.year ?? null,
-        },
-        ...prev,
-      ].slice(0, 3)
-    )
-    bookForm.reset({
-      title: '',
-      authorIds: data.stickyAuthor ? [...data.authorIds] : [],
-      year: '',
-      axes: [],
-      description: '',
-      stickyAuthor: data.stickyAuthor,
-    })
-  }
-
-  const submitEditBook = (data) => {
-    if (!editNode || !data.title.trim() || !data.authorIds?.length) return
-    onUpdateBook?.({
-      ...editNode,
-      title: data.title.trim(),
-      authorIds: data.authorIds,
-      year: parseInt(data.year, 10) || null,
-      axes: data.axes || [],
-      description: (data.description || '').trim(),
-    })
-  }
-
-  const submitAddLink = (data) => {
-    if (!sourceId || targetIds.length === 0) return
-    const validTargets = targetIds.filter((tid) => tid !== sourceId)
-    if (validTargets.length === 0) return
-    validTargets.forEach((tid) => {
-      onAddLink?.({
-        source: sourceId,
-        target: tid,
-        citation_text: (data.citationText || '').trim(),
-        edition: (data.edition || '').trim(),
-        page: (data.page || '').trim(),
-        context: (data.context || '').trim(),
-      })
-    })
-    setTargetIds([])
-    setTargetSearch('')
-    linkForm.reset({ citationText: '', edition: '', page: '', context: '' })
-  }
-
-  const toggleAxis = (axis) => {
-    const cur = bookForm.getValues('axes') || []
-    bookForm.setValue(
-      'axes',
-      cur.includes(axis) ? cur.filter((a) => a !== axis) : [...cur, axis],
-      { shouldDirty: true }
-    )
-  }
+  const { submitAddBook, submitEditBook, submitAddLink, toggleAxis } = useAddBookFormActions({
+    bookForm,
+    linkForm,
+    editNode,
+    onAddBook,
+    onUpdateBook,
+    onAddLink,
+    sourceId,
+    targetIds,
+    setTargetIds,
+    setTargetSearch,
+    setRecentQueue,
+  })
 
   const inputClass =
     'w-full rounded-[10px] border border-white/10 bg-white/5 px-4 py-3 text-[0.85rem] text-white outline-none transition-all placeholder:text-white/25 focus:border-[rgba(140,220,255,0.4)] focus:bg-white/10 focus:shadow-[0_0_0_3px_rgba(140,220,255,0.06)]'
