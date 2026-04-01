@@ -1,3 +1,51 @@
+import type { RefObject } from 'react'
+import type { ForceGraphMethods } from 'react-force-graph-2d'
+
+export const NODE_FOCUS_ZOOM = 1.9
+
+export function syncedZoomToFit(
+  fg: ForceGraphMethods | null | undefined,
+  camRef: RefObject<{ x: number; y: number; zoom: number }>,
+  duration: number,
+  padding: number,
+) {
+  if (!fg?.zoomToFit) return
+  fg.zoomToFit(duration, padding)
+  setTimeout(() => {
+    const z = Reflect.get(fg, 'zoom') as (() => number) | undefined
+    const zoom = typeof z === 'function' ? z.call(fg) : undefined
+    if (typeof zoom === 'number' && Number.isFinite(zoom)) camRef.current.zoom = zoom
+  }, duration + 50)
+}
+
+export function animateCameraToNode(
+  fg: ForceGraphMethods,
+  camRef: RefObject<{ x: number; y: number; zoom: number }>,
+  velRef: RefObject<{ moveX: number; moveY: number; zoom: number }>,
+  targetX: number,
+  targetY: number,
+): () => void {
+  velRef.current = { moveX: 0, moveY: 0, zoom: 0 }
+  const startX = camRef.current.x
+  const startY = camRef.current.y
+  const startZoom = camRef.current.zoom
+  const t0 = performance.now()
+  const DURATION = 800
+  let rafId: number
+  function step(now: number) {
+    const t = Math.min((now - t0) / DURATION, 1)
+    const ease = t < 1 ? t * (2 - t) : 1
+    camRef.current.x = startX + (targetX - startX) * ease
+    camRef.current.y = startY + (targetY - startY) * ease
+    camRef.current.zoom = startZoom + (NODE_FOCUS_ZOOM - startZoom) * ease
+    fg.centerAt(camRef.current.x, camRef.current.y, 0)
+    fg.zoom(camRef.current.zoom, 0)
+    if (t < 1) rafId = requestAnimationFrame(step)
+  }
+  rafId = requestAnimationFrame(step)
+  return () => cancelAnimationFrame(rafId)
+}
+
 export function setupKeyboardHandlers({ keysRef, onSpace }) {
   const BLOCKED = [
     'arrowup', 'arrowdown', 'arrowleft', 'arrowright',
@@ -38,8 +86,6 @@ export function startPanZoomLoop({ fgRef, keysRef, velRef, animFrameRef, camRef 
   const ZOOM_ACCEL = 0.008
   const MAX_ZOOM_VEL = 0.07
   const DAMP = 0.82
-  const BOUNDS = 900
-
   const animate = () => {
     animFrameRef.current = requestAnimationFrame(animate)
     const fg = fgRef.current
@@ -67,9 +113,6 @@ export function startPanZoomLoop({ fgRef, keysRef, velRef, animFrameRef, camRef 
       const scale = cam.zoom || 1
       cam.x += vel.moveX / scale
       cam.y += vel.moveY / scale
-      // Clamp
-      cam.x = Math.max(-BOUNDS, Math.min(BOUNDS, cam.x))
-      cam.y = Math.max(-BOUNDS, Math.min(BOUNDS, cam.y))
       fg.centerAt(cam.x, cam.y, 0)
     }
 

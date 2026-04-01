@@ -10,9 +10,21 @@ import {
   setupMouseDragHandlers,
   setupWheelZoomHandlers,
   startPanZoomLoop,
+  syncedZoomToFit,
+  animateCameraToNode,
 } from '../cameraControls'
-import { drawNode, getNodeRadius } from '../nodeObject'
+import { drawNode, getNodeRadius, clearHoverAnim } from '../nodeObject'
 import { drawGenealogyOverlay } from '../axisLabels'
+import {
+  FORCE_CHARGE_AUTHOR,
+  FORCE_CHARGE_BOOK,
+  FORCE_CHARGE_DIST_MAX,
+  FORCE_LINK_DIST_AUTHOR_BOOK,
+  FORCE_LINK_DIST_CITATION,
+  FORCE_COLLIDE_RADIUS,
+} from '../layoutEngine'
+import { useFlashAnimation } from '../hooks/useFlashAnimation'
+import { useGraphLayout } from '../hooks/useGraphLayout'
 
 import type { GraphData, Link, Book, Author, AuthorId } from '@/types/domain'
 import { normalizeEndpointId } from '../domain/graphDataModel'
@@ -25,23 +37,6 @@ function graphInstanceRefresh(fg: ForceGraphMethods | null | undefined) {
   if (typeof fn === 'function') fn.call(fg)
 }
 
-/** zoomToFit wrapper that syncs camRef after the animation completes. */
-function syncedZoomToFit(
-  fg: ForceGraphMethods | null | undefined,
-  camRef: React.MutableRefObject<{ x: number; y: number; zoom: number }>,
-  duration: number,
-  padding: number,
-) {
-  if (!fg?.zoomToFit) return
-  fg.zoomToFit(duration, padding)
-  // After the animation finishes, read the real zoom/center back into camRef
-  setTimeout(() => {
-    const z = Reflect.get(fg, 'zoom') as (() => number) | undefined
-    const zoom = typeof z === 'function' ? z.call(fg) : undefined
-    if (typeof zoom === 'number' && Number.isFinite(zoom)) camRef.current.zoom = zoom
-  }, duration + 50)
-}
-
 function isBookOrAuthor(node: object | null | undefined): node is Book | Author {
   if (node == null || typeof node !== 'object') return false
   const t = Reflect.get(node, 'type')
@@ -49,20 +44,6 @@ function isBookOrAuthor(node: object | null | undefined): node is Book | Author 
 }
 
 const SHOW_STARFIELD = false
-/** Zoom appliqué au centrage sur un nœud sélectionné (plus bas = moins rapproché). */
-const NODE_FOCUS_ZOOM = 1.9
-
-/** Paramètres force-directed (vue constellation) : aéré pour éviter l’effet spaghetti. */
-const FORCE_CHARGE_AUTHOR = -1800
-const FORCE_CHARGE_BOOK = -1200
-const FORCE_CHARGE_DIST_MAX = 1400
-const FORCE_LINK_DIST_AUTHOR_BOOK = 100
-const FORCE_LINK_DIST_CITATION = 280
-const FORCE_GENEALOGY_LINK_AUTHOR_BOOK = 52
-const FORCE_GENEALOGY_LINK_CITATION = 128
-const FORCE_X_YEAR_SPREAD = 980
-const FORCE_Y_CENTER_STRENGTH = 0.095
-const FORCE_COLLIDE_RADIUS = 25
 
 type GraphNode = Book & { citedBy?: number }
 type GraphLink = Link
@@ -120,33 +101,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   const animFrameRef = useRef<number | null>(null)
   const selectedNodeRef = useRef(selectedNode)
 
-  // Flash animation for newly imported nodes
-  const flashNodeIdsRef = useRef(new Set<string>())
-  const flashAlphaRef = useRef(0)
-  const flashRafRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    flashNodeIdsRef.current = new Set(flashNodeIds || [])
-    if (!flashNodeIds?.size) return
-
-    const startTime = Date.now()
-    const DURATION = 3500
-
-    function tick() {
-      const elapsed = Date.now() - startTime
-      const progress = Math.min(elapsed / DURATION, 1)
-      flashAlphaRef.current = 1 - progress
-      graphInstanceRefresh(fgRef.current)
-      if (progress < 1) {
-        flashRafRef.current = requestAnimationFrame(tick)
-      } else {
-        flashNodeIdsRef.current = new Set()
-      }
-    }
-    if (flashRafRef.current) cancelAnimationFrame(flashRafRef.current)
-    flashRafRef.current = requestAnimationFrame(tick)
-    return () => { if (flashRafRef.current) cancelAnimationFrame(flashRafRef.current) }
-  }, [flashNodeIds])
+  const { flashNodeIdsRef, flashAlphaRef } = useFlashAnimation({ flashNodeIds, fgRef })
 
   useEffect(() => {
     selectedNodeRef.current = selectedNode
@@ -165,6 +120,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   useEffect(() => setupMouseDragHandlers({ containerRef, velRef, hoveredNodeRef }), [])
   useEffect(() => setupWheelZoomHandlers({ containerRef, fgRef, velRef, camRef }), [])
   useEffect(() => startPanZoomLoop({ fgRef, keysRef, velRef, animFrameRef, camRef }), [])
+  useEffect(() => clearHoverAnim, [])
 
   const { anchorIds, connectedLinks, connectedNodes, citationsByNodeId, linkWeights, degreeByNodeId } = useGraphDerivedLinkState({
     graphData,
@@ -173,139 +129,19 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     selectedNode,
   })
 
-  // Apply layout positions when view mode changes
-  const prevViewRef = useRef(viewMode)
-  useEffect(() => {
-    const fg = fgRef.current
-    if (!fg) return
-
-    const timer = setTimeout(() => {
-      if (layoutPositions) {
-        graphData.nodes.forEach((node) => {
-          const pos = layoutPositions.get(node.id)
-          if (pos) {
-            node.fx = pos.fx
-            node.fy = pos.fy
-          }
-        })
-        const charge = fg.d3Force('charge')
-        if (charge) charge.strength(-30)
-        const link = fg.d3Force('link')
-        if (link) {
-          link.distance((l) =>
-            l.type === 'author-book' ? FORCE_GENEALOGY_LINK_AUTHOR_BOOK : FORCE_GENEALOGY_LINK_CITATION
-          )
-        }
-
-        // Fit all nodes in view after layout positions are applied
-        syncedZoomToFit(fg, camRef, 1200, 80)
-      } else {
-        graphData.nodes.forEach((node) => {
-          node.fx = undefined
-          node.fy = undefined
-        })
-        const charge = fg.d3Force('charge')
-        if (charge) {
-          charge
-            .strength((node) => (node.type === 'author' ? FORCE_CHARGE_AUTHOR : FORCE_CHARGE_BOOK))
-            .distanceMax(FORCE_CHARGE_DIST_MAX)
-        }
-        const link = fg.d3Force('link')
-        if (link) {
-          link.distance((l) =>
-            l.type === 'author-book' ? FORCE_LINK_DIST_AUTHOR_BOOK : FORCE_LINK_DIST_CITATION
-          )
-        }
-
-        // Constellation "horizontale" : compresser Y et étaler X (chronologie approximative)
-        // sans figer les positions (on garde la dynamique d3-force).
-        const years = graphData.nodes.map((n) => n.year).filter((y): y is number => typeof y === 'number')
-        const minYear = years.length ? Math.min(...years) : 1800
-        const maxYear = years.length ? Math.max(...years) : 2025
-        const midYear = (minYear + maxYear) / 2
-        const span = Math.max(1, maxYear - minYear)
-
-        const forceX = fg.d3Force('x')
-        if (forceX) {
-          const strengthFn = Reflect.get(forceX, 'strength')
-          if (typeof strengthFn === 'function') {
-            // Isolated nodes (no edges) get a strong X pull so they don't drift far
-            strengthFn.call(forceX, (node: GraphNode) => {
-              const deg = degreeByNodeId.get(node.id) || 0
-              return deg === 0 ? 0.35 : 0.06
-            })
-          }
-          const xFn = Reflect.get(forceX, 'x')
-          if (typeof xFn === 'function') {
-            xFn.call(forceX, (node: GraphNode) => {
-              const y = typeof node?.year === 'number' ? node.year : null
-              if (!y) return 0
-              const t = (y - midYear) / span
-              return t * FORCE_X_YEAR_SPREAD
-            })
-          }
-        }
-
-        const forceY = fg.d3Force('y')
-        if (forceY) {
-          const strengthFn = Reflect.get(forceY, 'strength')
-          if (typeof strengthFn === 'function') {
-            // Isolated nodes get a stronger Y pull toward center
-            strengthFn.call(forceY, (node: GraphNode) => {
-              const deg = degreeByNodeId.get(node.id) || 0
-              return deg === 0 ? 0.4 : FORCE_Y_CENTER_STRENGTH
-            })
-          }
-          const yFn = Reflect.get(forceY, 'y')
-          if (typeof yFn === 'function') yFn.call(forceY, 0)
-        }
-
-        fg.d3ReheatSimulation()
-        // Fit to view after simulation settles a bit
-        setTimeout(() => { syncedZoomToFit(fg, camRef, 1200, 80) }, 800)
-      }
-      prevViewRef.current = viewMode
-    }, 100)
-
-    return () => clearTimeout(timer)
-  }, [layoutPositions, viewMode, graphData.nodes, degreeByNodeId])
+  useGraphLayout({ fgRef, camRef, graphData, layoutPositions, viewMode, degreeByNodeId })
 
   useEffect(() => {
     const fg = fgRef.current
     if (!fg) return
     const focusId = selectedNode?.id || peekNodeId
     if (!focusId) return
-    // Always resolve the live force-graph node object (has up-to-date x/y from d3)
     const liveNode = graphData.nodes?.find((n) => n.id === focusId)
     if (!liveNode) return
     const px = liveNode.fx ?? liveNode.x
     const py = liveNode.fy ?? liveNode.y
     if (typeof px !== 'number' || typeof py !== 'number') return
-    // Kill any residual pan/zoom velocity so the loop doesn't fight the centering
-    velRef.current = { moveX: 0, moveY: 0, zoom: 0 }
-    // Animate centering via RAF + instant centerAt(0) to stay in sync with the
-    // custom camera system (d3 transitions can conflict with the panZoomLoop).
-    const targetX = px
-    const targetY = py
-    const startX = camRef.current.x
-    const startY = camRef.current.y
-    const startZoom = camRef.current.zoom
-    const fgRef_ = fg
-    const t0 = performance.now()
-    const DURATION = 800
-    let rafId: number
-    function step(now: number) {
-      const t = Math.min((now - t0) / DURATION, 1)
-      const ease = t < 1 ? t * (2 - t) : 1 // ease-out quad
-      camRef.current.x = startX + (targetX - startX) * ease
-      camRef.current.y = startY + (targetY - startY) * ease
-      camRef.current.zoom = startZoom + (NODE_FOCUS_ZOOM - startZoom) * ease
-      fgRef_.centerAt(camRef.current.x, camRef.current.y, 0)
-      fgRef_.zoom(camRef.current.zoom, 0)
-      if (t < 1) rafId = requestAnimationFrame(step)
-    }
-    rafId = requestAnimationFrame(step)
-    return () => cancelAnimationFrame(rafId)
+    return animateCameraToNode(fg, camRef, velRef, px, py)
   }, [selectedNode, peekNodeId, viewMode, graphData.nodes])
 
   // Links and neighbor nodes connected to hovered node (refs for perf — no re-render)

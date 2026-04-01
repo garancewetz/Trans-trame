@@ -3,6 +3,17 @@
  * Returns a Map<nodeId, {fx, fy, fz}> or null for constellation (free layout).
  */
 
+export const FORCE_CHARGE_AUTHOR = -1800
+export const FORCE_CHARGE_BOOK = -1200
+export const FORCE_CHARGE_DIST_MAX = 1400
+export const FORCE_LINK_DIST_AUTHOR_BOOK = 100
+export const FORCE_LINK_DIST_CITATION = 280
+export const FORCE_GENEALOGY_LINK_AUTHOR_BOOK = 52
+export const FORCE_GENEALOGY_LINK_CITATION = 128
+export const FORCE_X_YEAR_SPREAD = 980
+export const FORCE_Y_CENTER_STRENGTH = 0.095
+export const FORCE_COLLIDE_RADIUS = 25
+
 // ─── CONSTELLATION (default) ───────────────────────────────────────
 export function constellationLayout() {
   return null // Let d3-force do its thing freely
