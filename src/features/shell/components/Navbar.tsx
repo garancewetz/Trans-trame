@@ -30,6 +30,9 @@ export function Navbar({ search, filters, view, catalogue }) {
     selectedAuthorId,
     selectedAuthorName,
     clearSelectedAuthor,
+    selectedNodeId,
+    selectedNodeTitle,
+    clearSelectedNode,
   } = filters
 
   const {
@@ -73,6 +76,14 @@ export function Navbar({ search, filters, view, catalogue }) {
           prefix: 'Période',
           value: `${timelineRange.start}–${timelineRange.end}`,
           clear: () => clearTimelineFilter?.(),
+        }
+      : null,
+    selectedNodeId
+      ? {
+          key: 'node',
+          prefix: 'Ouvrage',
+          value: selectedNodeTitle || selectedNodeId,
+          clear: () => clearSelectedNode?.(),
         }
       : null,
   ].filter((x): x is FilterPill => x != null)

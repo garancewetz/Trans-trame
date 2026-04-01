@@ -74,6 +74,8 @@ export function GraphApp() {
     clearTimelineFilter: timeline.clearTimelineFilter,
     selectedAuthor: ui.selectedAuthor,
     setSelectedAuthor: ui.setSelectedAuthor,
+    selectedNode: ui.selectedNode,
+    clearSelectedNode: ui.handleClosePanel,
     viewMode: timeline.viewMode,
     handleViewChange: timeline.handleViewChange,
     tableMode: ui.tableMode,

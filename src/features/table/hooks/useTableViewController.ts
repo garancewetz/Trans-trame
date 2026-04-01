@@ -25,7 +25,7 @@ export function useTableViewController({
   const [focusAuthorId, setFocusAuthorId] = useState<AuthorId | null>(null)
   const [booksPrefill, setBooksPrefill] = useState<null | { nonce: string; authorId: AuthorId }>(null)
 
-  /** Évite de réappliquer un auteur prérempli à chaque retour sur l’onglet Ouvrages. */
+  /** Évite de réappliquer un auteur prérempli à chaque retour sur l'onglet Ouvrages. */
   useEffect(() => {
     if (tab !== 'books') setBooksPrefill(null)
   }, [tab])
@@ -41,7 +41,7 @@ export function useTableViewController({
 
   const didPrefillLinkSearchFromInitialSource = useRef(false)
 
-  /** Même logique que depuis l’onglet Ouvrages : titre dans la recherche liens (barre du haut). */
+  /** Même logique que depuis l'onglet Ouvrages : titre dans la recherche liens (barre du haut). */
   useEffect(() => {
     if (didPrefillLinkSearchFromInitialSource.current) return
     if (!initialLinkSourceId) return

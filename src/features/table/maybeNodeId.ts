@@ -1,4 +1,4 @@
-/** Extrait l’id d’un nœud D3 / graphe (string ou objet avec id). */
+/** Extrait l'id d'un nœud D3 / graphe (string ou objet avec id). */
 export function maybeNodeId(v: unknown): string | null {
   if (typeof v === 'string') return v
   if (v && typeof v === 'object' && 'id' in v) {

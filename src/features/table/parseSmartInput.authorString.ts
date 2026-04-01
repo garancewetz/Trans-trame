@@ -14,7 +14,7 @@ const NAME_PARTICLES = new Set([
   'ben', 'ibn', 'del', 'della', 'der', 'den', 'het', 'los', 'las',
 ])
 
-/** Au moins un mot capitalisé qui n’est pas une simple particule. */
+/** Au moins un mot capitalisé qui n'est pas une simple particule. */
 export function looksLikeName(str: string): boolean {
   const words = str.trim().split(/[\s-]+/)
   return words.some(

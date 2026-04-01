@@ -6,14 +6,13 @@ import {
   FORCE_CHARGE_DIST_MAX,
   FORCE_LINK_DIST_AUTHOR_BOOK,
   FORCE_LINK_DIST_CITATION,
+  FORCE_LINK_STRENGTH,
   FORCE_GENEALOGY_LINK_AUTHOR_BOOK,
   FORCE_GENEALOGY_LINK_CITATION,
   FORCE_X_YEAR_SPREAD,
-  FORCE_X_YEAR_STRENGTH_HIGH,
-  FORCE_X_YEAR_STRENGTH_LOW,
+  FORCE_X_YEAR_STRENGTH,
   FORCE_Y_CENTER_STRENGTH,
   chargeStrengthForNode,
-  yearSpreadBlendForDegree,
 } from '../layoutEngine'
 import type { GraphData } from '@/types/domain'
 
@@ -50,14 +49,15 @@ export function useGraphLayout({ fgRef, camRef, graphData, layoutPositions, view
           node.fx = undefined
           node.fy = undefined
         })
+
         fg.d3Force('charge')
           .strength((node) => chargeStrengthForNode(node, degreeByNodeId))
           .distanceMax(FORCE_CHARGE_DIST_MAX)
-        fg.d3Force('link').distance((l) =>
-          l.type === 'author-book' ? FORCE_LINK_DIST_AUTHOR_BOOK : FORCE_LINK_DIST_CITATION
-        )
+        fg.d3Force('link')
+          .distance((l) => l.type === 'author-book' ? FORCE_LINK_DIST_AUTHOR_BOOK : FORCE_LINK_DIST_CITATION)
+          .strength(FORCE_LINK_STRENGTH)
 
-        // Années : uniquement les ouvrages avec une année — échelle douce, récent à droite (x croissant).
+        // Force X temporelle : tendance douce vers l'annee, recent -> droite.
         const years = graphData.nodes.map((n) => n.year).filter((y) => typeof y === 'number')
         const minYear = years.length ? Math.min(...years) : 1800
         const maxYear = years.length ? Math.max(...years) : 2025
@@ -66,25 +66,18 @@ export function useGraphLayout({ fgRef, camRef, graphData, layoutPositions, view
 
         const forceX = fg.d3Force('x')
         if (forceX) {
-          Reflect.get(forceX, 'strength')?.call(forceX, (node) => {
-            const deg = degreeByNodeId.get(node.id) || 0
-            return deg <= 1 ? FORCE_X_YEAR_STRENGTH_HIGH : FORCE_X_YEAR_STRENGTH_LOW
-          })
+          Reflect.get(forceX, 'strength')?.call(forceX, FORCE_X_YEAR_STRENGTH)
           Reflect.get(forceX, 'x')?.call(forceX, (node) => {
             const y = typeof node?.year === 'number' ? node.year : null
             if (y == null) return 0
-            const deg = degreeByNodeId.get(node.id) || 0
-            const yearX = ((y - midYear) / span) * FORCE_X_YEAR_SPREAD
-            return yearX * yearSpreadBlendForDegree(deg)
+            return ((y - midYear) / span) * FORCE_X_YEAR_SPREAD
           })
         }
 
+        // Force Y : aplatissement vertical fort pour former un nuage horizontal.
         const forceY = fg.d3Force('y')
         if (forceY) {
-          Reflect.get(forceY, 'strength')?.call(forceY, (node) => {
-            const deg = degreeByNodeId.get(node.id) || 0
-            return deg === 0 ? 0.4 : FORCE_Y_CENTER_STRENGTH
-          })
+          Reflect.get(forceY, 'strength')?.call(forceY, FORCE_Y_CENTER_STRENGTH)
           Reflect.get(forceY, 'y')?.call(forceY, 0)
         }
 

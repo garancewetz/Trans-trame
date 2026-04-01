@@ -50,6 +50,6 @@ export type GraphData = {
   links: Link[]
 }
 
-/** Plage d’années sélectionnée sur la timeline (état utilisateur, peut être partiellement hors bornes avant clamp). */
+/** Plage d'années sélectionnée sur la timeline (état utilisateur, peut être partiellement hors bornes avant clamp). */
 export type TimelineRange = { start: number; end: number }
 

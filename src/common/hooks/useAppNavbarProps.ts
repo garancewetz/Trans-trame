@@ -24,6 +24,8 @@ export function useAppNavbarProps({
   clearTimelineFilter,
   selectedAuthor,
   setSelectedAuthor,
+  selectedNode,
+  clearSelectedNode,
   viewMode,
   handleViewChange,
   tableMode,
@@ -50,6 +52,8 @@ export function useAppNavbarProps({
   clearTimelineFilter: () => void
   selectedAuthor: string | null
   setSelectedAuthor: (id: string | null) => void
+  selectedNode: { id: string; title?: string } | null
+  clearSelectedNode: () => void
   viewMode: string
   handleViewChange: (mode: string) => void
   tableMode: boolean
@@ -82,6 +86,9 @@ export function useAppNavbarProps({
       selectedAuthorId: selectedAuthor,
       selectedAuthorName: selectedAuthor ? authorName(authorsMap.get(selectedAuthor) || {}) : null,
       clearSelectedAuthor: () => setSelectedAuthor(null),
+      selectedNodeId: selectedNode?.id ?? null,
+      selectedNodeTitle: selectedNode?.title ?? null,
+      clearSelectedNode,
     },
     view: {
       mode: viewMode,

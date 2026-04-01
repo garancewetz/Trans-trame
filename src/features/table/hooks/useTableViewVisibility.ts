@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-/** Animation d’entrée du volet table (opacity / translate). */
+/** Animation d'entrée du volet table (opacity / translate). */
 export function useTableViewVisibility() {
   const [visible, setVisible] = useState(false)
   useEffect(() => {

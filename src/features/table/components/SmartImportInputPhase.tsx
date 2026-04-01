@@ -70,8 +70,8 @@ export function SmartImportInputPhase({
               value={linkDirection}
               onChange={(e) => setLinkDirection(e.target.value)}
             >
-              <option value="master-cites-imported">L’œuvre source cite chaque ouvrage importé</option>
-              <option value="imported-cites-master">Chaque ouvrage importé cite l’œuvre source</option>
+              <option value="master-cites-imported">L'œuvre source cite chaque ouvrage importé</option>
+              <option value="imported-cites-master">Chaque ouvrage importé cite l'œuvre source</option>
             </select>
             <TextInput
               variant="table"

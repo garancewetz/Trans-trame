@@ -1,4 +1,4 @@
-// Auto-tagging par mots-clés (utilisé pour détecter les axes dans l’import)
+// Auto-tagging par mots-clés (utilisé pour détecter les axes dans l'import)
 import type { Axis } from './categories.constants'
 
 export const AXIS_KEYWORDS: Record<Axis, string[]> = {

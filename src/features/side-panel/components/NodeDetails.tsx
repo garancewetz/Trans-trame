@@ -4,7 +4,6 @@ import {
   ArrowRight,
   ArrowLeft,
   Plus,
-  ExternalLink,
   Link2,
 } from 'lucide-react'
 import {
@@ -141,15 +140,6 @@ export function NodeDetails({
               <Pencil size={12} /> Modifier
             </span>
           </Button>
-          <Link
-            to={{ pathname: '/', search: mapBookUrlSearch(selectedNode.id) }}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Même vue dans un nouvel onglet (?book=…)"
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/10 bg-transparent px-3 py-1.5 text-[0.75rem] font-medium text-white/38 transition-colors hover:border-white/18 hover:text-white/65"
-          >
-            <ExternalLink size={12} /> Nouvel onglet
-          </Link>
         </div>
       </div>
 

@@ -3,34 +3,27 @@
  * Returns a Map<nodeId, {fx, fy, fz}> or null for constellation (free layout).
  */
 
-export const FORCE_CHARGE_AUTHOR = -1800
-export const FORCE_CHARGE_BOOK = -1200
-export const FORCE_CHARGE_DIST_MAX = 1400
-export const FORCE_LINK_DIST_AUTHOR_BOOK = 100
-export const FORCE_LINK_DIST_CITATION = 280
+export const FORCE_CHARGE_AUTHOR = -300
+export const FORCE_CHARGE_BOOK = -200
+export const FORCE_CHARGE_DIST_MAX = 800
+export const FORCE_LINK_DIST_AUTHOR_BOOK = 80
+export const FORCE_LINK_DIST_CITATION = 120
+export const FORCE_LINK_STRENGTH = 0.2
 export const FORCE_GENEALOGY_LINK_AUTHOR_BOOK = 52
 export const FORCE_GENEALOGY_LINK_CITATION = 128
-/** Amplitude horizontale de la tendance chronologique (récent → droite), en coordonnées graphe. */
-export const FORCE_X_YEAR_SPREAD = 1180
-export const FORCE_Y_CENTER_STRENGTH = 0.095
+/** Amplitude horizontale de la tendance chronologique (recent -> droite), en coordonnees graphe. */
+export const FORCE_X_YEAR_SPREAD = 7180
+/** Strength de la tendance X vers l'annee -- faible pour laisser les noeuds s'etaler librement. */
+export const FORCE_X_YEAR_STRENGTH = 0.02
+/** Aplatissement vertical : force qui ramene les noeuds vers la ligne d'horizon. */
+export const FORCE_Y_CENTER_STRENGTH = 0.35
 
-/** Intensité de la force X « par année » (constellation seulement) — faible = tendance, pas grille stricte. */
-export const FORCE_X_YEAR_STRENGTH_HIGH = 0.1
-export const FORCE_X_YEAR_STRENGTH_LOW = 0.085
 export const FORCE_COLLIDE_RADIUS = 25
 
 /** Livres sans lien : répulsion plus faible pour ne pas les expulser du nuage. */
 export const FORCE_CHARGE_BOOK_ISOLATE_MULT = 0.48
 /** Un seul lien : intermédiaire. */
 export const FORCE_CHARGE_BOOK_LOW_MULT = 0.74
-
-/**
- * Cible X « année » atténuée : les isolés restent plus près du centre (galaxie),
- * au lieu d’être projetés au bord de la frise chronologique.
- * (Valeurs un peu plus hautes = tendance temporelle plus lisible tout en restant souple.)
- */
-export const FORCE_X_YEAR_BLEND_DEG0 = 0.44
-export const FORCE_X_YEAR_BLEND_DEG1 = 0.72
 
 type ChargeNode = { id?: string; type?: string }
 
@@ -40,12 +33,6 @@ export function chargeStrengthForNode(node: ChargeNode, degreeByNodeId: Map<stri
   if (d <= 0) return FORCE_CHARGE_BOOK * FORCE_CHARGE_BOOK_ISOLATE_MULT
   if (d === 1) return FORCE_CHARGE_BOOK * FORCE_CHARGE_BOOK_LOW_MULT
   return FORCE_CHARGE_BOOK
-}
-
-export function yearSpreadBlendForDegree(deg: number): number {
-  if (deg <= 0) return FORCE_X_YEAR_BLEND_DEG0
-  if (deg === 1) return FORCE_X_YEAR_BLEND_DEG1
-  return 1
 }
 
 // ─── CONSTELLATION (default) ───────────────────────────────────────

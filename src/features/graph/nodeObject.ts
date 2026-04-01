@@ -168,7 +168,7 @@ export function getNodePointerHitRadius(
   const scale = Number.isFinite(globalScale) && globalScale > 0 ? globalScale : 1
   if (node.type === 'author') {
     const BASE_R = 9
-    const maxOuterRing = BASE_R + 6 + 4 // aligné sur l’anneau hover max dans drawAuthorNode
+    const maxOuterRing = BASE_R + 6 + 4 // aligné sur l'anneau hover max dans drawAuthorNode
     return maxOuterRing + POINTER_PAD
   }
   const baseR = getNodeRadius(node, citationCount, degree)

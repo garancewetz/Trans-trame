@@ -1,5 +1,6 @@
 import clsx from 'clsx'
-import { X, PanelRightClose } from 'lucide-react'
+import { X, PanelRightClose, ChevronRight, ChevronLeft, ArrowLeft } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/common/components/ui/Button'
 import { AdminPanel } from './AdminPanel'
 import { EmptyState } from './EmptyState'
@@ -23,11 +24,11 @@ export function SidePanel(props) {
     setSelectedLink,
     setLinkContextNode,
   } = props
+  const [panelCollapsed, setPanelCollapsed] = useState(false)
   const isAdminTab = panelTab === 'edit'
   const isDualPanelMode = panelTab === 'details' && Boolean(selectedNode && selectedLink && linkContextNode)
   const hasEmptyDetails = panelTab === 'details' && !selectedNode && !selectedLink
 
-  /** Fiche ouvrage + édition : grand panneau aligné sur l’ancienne « fiche » (modifiable). */
   const useWideBookPanel =
     panelOpen &&
     !isDualPanelMode &&
@@ -35,15 +36,15 @@ export function SidePanel(props) {
     (panelTab === 'details' || panelTab === 'edit')
 
   const asideClass = clsx(
-    'fixed right-0 top-0 z-50 h-screen overflow-hidden border-l transition-[transform,width] duration-300 ease-in-out',
-    !panelOpen && 'w-[380px] translate-x-full',
-    panelOpen && 'translate-x-0',
-    /* Fiche + citation : ~2× la largeur fiche (s’agrandit par rapport à la fiche seule, pas 2×380px). */
-    panelOpen &&
-      isDualPanelMode &&
-      'w-[min(100vw,84rem)] border-white/12 bg-[#06030f]/[0.98] backdrop-blur-xl shadow-[-20px_0_80px_rgba(0,0,0,0.45)]',
-    panelOpen && useWideBookPanel && 'w-[min(100vw,42rem)] border-white/12 bg-[#06030f]/[0.98] backdrop-blur-xl shadow-[-20px_0_80px_rgba(0,0,0,0.45)]',
-    panelOpen && !isDualPanelMode && !useWideBookPanel && 'w-[380px] border-white/10 bg-[rgba(8,4,20,0.92)] backdrop-blur-2xl',
+    'fixed right-0 top-0 z-50 h-screen overflow-hidden border-l transition-transform duration-300 ease-in-out',
+    !panelOpen && 'translate-x-full',
+    panelOpen && !panelCollapsed && 'translate-x-0',
+    panelOpen && panelCollapsed && 'translate-x-[calc(100%-2.5rem)]',
+    isDualPanelMode
+      ? 'w-[min(100vw,84rem)] border-white/12 bg-[#06030f]/[0.98] backdrop-blur-xl shadow-[-20px_0_80px_rgba(0,0,0,0.45)]'
+      : useWideBookPanel
+        ? 'w-[min(100vw,42rem)] border-white/12 bg-[#06030f]/[0.98] backdrop-blur-xl shadow-[-20px_0_80px_rgba(0,0,0,0.45)]'
+        : 'w-[380px] border-white/10 bg-[rgba(8,4,20,0.92)] backdrop-blur-2xl',
   )
 
   const closeToContextNode = (node) => {
@@ -70,8 +71,19 @@ export function SidePanel(props) {
 
   return (
     <aside className={asideClass}>
-      {isDualPanelMode ? (
-        <div className="grid h-full w-full min-w-0 grid-cols-2">
+      {/* Bande collapse — colonne fixe a gauche, fond distinct */}
+      {panelOpen && (
+        <div
+          className="absolute left-0 top-0 z-30 flex h-full w-7 cursor-pointer items-center justify-center bg-white/4 text-white/40 transition-colors hover:bg-white/8 hover:text-white/80"
+          title={panelCollapsed ? 'Agrandir le panneau' : 'Reduire le panneau'}
+          onClick={() => setPanelCollapsed((c) => !c)}
+        >
+          {panelCollapsed ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+        </div>
+      )}
+
+      {panelOpen && panelCollapsed ? null : isDualPanelMode ? (
+        <div className="grid h-full w-full min-w-0 grid-cols-2 overflow-hidden pl-7">
           <div className="relative min-w-0 overflow-y-auto border-r border-white/10">
             <Button
               type="button"
@@ -106,14 +118,26 @@ export function SidePanel(props) {
           </div>
         </div>
       ) : (
-        <div className="relative h-full w-full overflow-y-auto">
-          <Button
-            type="button"
-            className="absolute right-3 top-3 z-20 cursor-pointer bg-transparent text-white/40 transition-colors hover:text-white"
-            onClick={handleClosePanel}
-          >
-            <X size={20} />
-          </Button>
+        <div className="relative h-full w-full overflow-y-auto pl-7">
+          <div className="absolute right-3 top-3 z-20 flex items-center gap-1">
+            {isAdminTab && (
+              <Button
+                type="button"
+                title="Retour sans enregistrer"
+                className="cursor-pointer bg-transparent text-white/40 transition-colors hover:text-white"
+                onClick={() => setPanelTab('details')}
+              >
+                <ArrowLeft size={18} />
+              </Button>
+            )}
+            <Button
+              type="button"
+              className="cursor-pointer bg-transparent text-white/40 transition-colors hover:text-white"
+              onClick={handleClosePanel}
+            >
+              <X size={20} />
+            </Button>
+          </div>
           {panelTab === 'details' && selectedNode && <NodeDetails {...props} onOpenTable={props.onOpenTable} />}
           {panelTab === 'details' && !selectedNode && selectedLink && (
             <LinkDetails
