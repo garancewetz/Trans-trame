@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "gen-types": "supabase gen types typescript --project-id nfecgzmehlloxctfyfao > src/types/supabase.ts",
+    "stress-seed": "node scripts/stress-seed.mjs",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",

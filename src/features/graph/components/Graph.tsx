@@ -13,15 +13,14 @@ import {
   syncedZoomToFit,
   animateCameraToNode,
 } from '../cameraControls'
-import { drawNode, getNodeRadius, clearHoverAnim } from '../nodeObject'
+import { drawNode, getNodePointerHitRadius, getNodeRadius, clearHoverAnim } from '../nodeObject'
 import { drawGenealogyOverlay } from '../axisLabels'
 import {
-  FORCE_CHARGE_AUTHOR,
-  FORCE_CHARGE_BOOK,
   FORCE_CHARGE_DIST_MAX,
   FORCE_LINK_DIST_AUTHOR_BOOK,
   FORCE_LINK_DIST_CITATION,
   FORCE_COLLIDE_RADIUS,
+  chargeStrengthForNode,
 } from '../layoutEngine'
 import { useFlashAnimation } from '../hooks/useFlashAnimation'
 import { useGraphLayout } from '../hooks/useGraphLayout'
@@ -167,7 +166,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     // Les auteurs ont une répulsion plus forte pour créer des "systèmes stellaires" distincts
     fg
       .d3Force('charge')
-      .strength((node) => (node.type === 'author' ? FORCE_CHARGE_AUTHOR : FORCE_CHARGE_BOOK))
+      .strength((node) => chargeStrengthForNode(node, degreeByNodeId))
       .distanceMax(FORCE_CHARGE_DIST_MAX)
     // Citations (livre→livre) : ressort plus long pour aérer ; auteur→livre reste compact
     fg.d3Force('link').distance((link) =>
@@ -244,12 +243,17 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   )
 
   const nodePointerAreaPaint = useCallback(
-    (node, color, ctx) => {
-      const r = getNodeRadius(node, citationsByNodeId.get(node.id) || 0, degreeByNodeId.get(node.id) || 0)
+    (node, color, ctx, globalScale) => {
+      const r = getNodePointerHitRadius(
+        node,
+        citationsByNodeId.get(node.id) || 0,
+        degreeByNodeId.get(node.id) || 0,
+        globalScale,
+      )
       if (!Number.isFinite(node?.x) || !Number.isFinite(node?.y) || !Number.isFinite(r) || r <= 0) return
       ctx.fillStyle = color
       ctx.beginPath()
-      ctx.arc(node.x, node.y, r + 2, 0, Math.PI * 2)
+      ctx.arc(node.x, node.y, r, 0, Math.PI * 2)
       ctx.fill()
     },
     [citationsByNodeId, degreeByNodeId]

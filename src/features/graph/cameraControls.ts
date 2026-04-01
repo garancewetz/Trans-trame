@@ -3,6 +3,14 @@ import type { ForceGraphMethods } from 'react-force-graph-2d'
 
 export const NODE_FOCUS_ZOOM = 1.9
 
+/** Zoom min / max gérés à la main (enableZoomInteraction désactivé sur le graphe). */
+const MIN_ZOOM = 0.02
+const MAX_ZOOM = 8
+
+function clampZoom(z: number): number {
+  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z))
+}
+
 export function syncedZoomToFit(
   fg: ForceGraphMethods | null | undefined,
   camRef: RefObject<{ x: number; y: number; zoom: number }>,
@@ -125,7 +133,7 @@ export function startPanZoomLoop({ fgRef, keysRef, velRef, animFrameRef, camRef 
     vel.zoom = Math.max(-MAX_ZOOM_VEL, Math.min(MAX_ZOOM_VEL, vel.zoom))
 
     if (Math.abs(vel.zoom) > 0.001) {
-      cam.zoom = Math.max(0.15, Math.min(8, cam.zoom * (1 + vel.zoom)))
+      cam.zoom = clampZoom(cam.zoom * (1 + vel.zoom))
       fg.zoom(cam.zoom, 0)
     }
   }
@@ -192,7 +200,7 @@ export function setupWheelZoomHandlers({ containerRef, fgRef, velRef, camRef }) 
     const cam = camRef.current
 
     const delta = -e.deltaY * ZOOM_FACTOR
-    cam.zoom = Math.max(0.15, Math.min(8, cam.zoom * (1 + delta)))
+    cam.zoom = clampZoom(cam.zoom * (1 + delta))
     fg.zoom(cam.zoom, 0)
 
     // Cancel keyboard zoom inertia

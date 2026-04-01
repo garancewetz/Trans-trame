@@ -3,8 +3,6 @@ import { useEffect, type RefObject } from 'react'
 import type { ForceGraphMethods } from 'react-force-graph-2d'
 import { syncedZoomToFit } from '../cameraControls'
 import {
-  FORCE_CHARGE_AUTHOR,
-  FORCE_CHARGE_BOOK,
   FORCE_CHARGE_DIST_MAX,
   FORCE_LINK_DIST_AUTHOR_BOOK,
   FORCE_LINK_DIST_CITATION,
@@ -12,6 +10,8 @@ import {
   FORCE_GENEALOGY_LINK_CITATION,
   FORCE_X_YEAR_SPREAD,
   FORCE_Y_CENTER_STRENGTH,
+  chargeStrengthForNode,
+  yearSpreadBlendForDegree,
 } from '../layoutEngine'
 import type { GraphData } from '@/types/domain'
 
@@ -49,7 +49,7 @@ export function useGraphLayout({ fgRef, camRef, graphData, layoutPositions, view
           node.fy = undefined
         })
         fg.d3Force('charge')
-          .strength((node) => (node.type === 'author' ? FORCE_CHARGE_AUTHOR : FORCE_CHARGE_BOOK))
+          .strength((node) => chargeStrengthForNode(node, degreeByNodeId))
           .distanceMax(FORCE_CHARGE_DIST_MAX)
         fg.d3Force('link').distance((l) =>
           l.type === 'author-book' ? FORCE_LINK_DIST_AUTHOR_BOOK : FORCE_LINK_DIST_CITATION
@@ -65,12 +65,14 @@ export function useGraphLayout({ fgRef, camRef, graphData, layoutPositions, view
         if (forceX) {
           Reflect.get(forceX, 'strength')?.call(forceX, (node) => {
             const deg = degreeByNodeId.get(node.id) || 0
-            return deg === 0 ? 0.35 : 0.06
+            return deg <= 1 ? 0.075 : 0.06
           })
           Reflect.get(forceX, 'x')?.call(forceX, (node) => {
             const y = typeof node?.year === 'number' ? node.year : null
             if (!y) return 0
-            return ((y - midYear) / span) * FORCE_X_YEAR_SPREAD
+            const deg = degreeByNodeId.get(node.id) || 0
+            const yearX = ((y - midYear) / span) * FORCE_X_YEAR_SPREAD
+            return yearX * yearSpreadBlendForDegree(deg)
           })
         }
 

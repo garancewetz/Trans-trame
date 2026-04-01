@@ -14,6 +14,34 @@ export const FORCE_X_YEAR_SPREAD = 980
 export const FORCE_Y_CENTER_STRENGTH = 0.095
 export const FORCE_COLLIDE_RADIUS = 25
 
+/** Livres sans lien : répulsion plus faible pour ne pas les expulser du nuage. */
+export const FORCE_CHARGE_BOOK_ISOLATE_MULT = 0.48
+/** Un seul lien : intermédiaire. */
+export const FORCE_CHARGE_BOOK_LOW_MULT = 0.74
+
+/**
+ * Cible X « année » atténuée : les isolés restent plus près du centre (galaxie),
+ * au lieu d’être projetés au bord de la frise chronologique.
+ */
+export const FORCE_X_YEAR_BLEND_DEG0 = 0.26
+export const FORCE_X_YEAR_BLEND_DEG1 = 0.52
+
+type ChargeNode = { id?: string; type?: string }
+
+export function chargeStrengthForNode(node: ChargeNode, degreeByNodeId: Map<string, number>): number {
+  if (node?.type === 'author') return FORCE_CHARGE_AUTHOR
+  const d = node?.id != null ? (degreeByNodeId.get(node.id) ?? 0) : 0
+  if (d <= 0) return FORCE_CHARGE_BOOK * FORCE_CHARGE_BOOK_ISOLATE_MULT
+  if (d === 1) return FORCE_CHARGE_BOOK * FORCE_CHARGE_BOOK_LOW_MULT
+  return FORCE_CHARGE_BOOK
+}
+
+export function yearSpreadBlendForDegree(deg: number): number {
+  if (deg <= 0) return FORCE_X_YEAR_BLEND_DEG0
+  if (deg === 1) return FORCE_X_YEAR_BLEND_DEG1
+  return 1
+}
+
 // ─── CONSTELLATION (default) ───────────────────────────────────────
 export function constellationLayout() {
   return null // Let d3-force do its thing freely

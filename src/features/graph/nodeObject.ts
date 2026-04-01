@@ -153,6 +153,28 @@ function hoveredRadius(baseR, hover, globalScale) {
   return Math.max(baseR + hover * 12, minR)
 }
 
+const POINTER_PAD = 3
+
+/**
+ * Rayon pour `nodePointerAreaPaint` : au moins celui du nœud **entièrement** survolé,
+ * pour ne pas perdre le hover quand le disque grossit (le pointeur reste dans la zone peinte).
+ */
+export function getNodePointerHitRadius(
+  node: { type?: string },
+  citationCount: number,
+  degree: number,
+  globalScale: number,
+): number {
+  const scale = Number.isFinite(globalScale) && globalScale > 0 ? globalScale : 1
+  if (node.type === 'author') {
+    const BASE_R = 9
+    const maxOuterRing = BASE_R + 6 + 4 // aligné sur l’anneau hover max dans drawAuthorNode
+    return maxOuterRing + POINTER_PAD
+  }
+  const baseR = getNodeRadius(node, citationCount, degree)
+  return hoveredRadius(baseR, 1, scale) + POINTER_PAD
+}
+
 // ── Author node ───────────────────────────────────────────────────────────────
 
 function drawAuthorNode(node, ctx, globalScale, opts) {
