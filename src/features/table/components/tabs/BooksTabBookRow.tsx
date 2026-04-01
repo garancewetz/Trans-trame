@@ -1,4 +1,6 @@
-import { Check, Link2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Check, ExternalLink, Link2 } from 'lucide-react'
+import { mapBookUrlSearch } from '@/common/utils/bookSlug'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
 import { OutlineBadge } from '@/common/components/ui/OutlineBadge'
@@ -29,6 +31,7 @@ type Props = {
   onAddAuthor?: (author: Author) => unknown
   onFocusAuthorInAuthorsTab?: (authorId: AuthorId) => unknown
   onOpenLinksForBook?: (node: Book) => unknown
+  onOpenWorkDetail?: (bookId: BookId) => unknown
 }
 
 export function BooksTabBookRow({
@@ -52,6 +55,7 @@ export function BooksTabBookRow({
   onAddAuthor,
   onFocusAuthorInAuthorsTab,
   onOpenLinksForBook,
+  onOpenWorkDetail,
 }: Props) {
   return (
     <tr
@@ -76,7 +80,7 @@ export function BooksTabBookRow({
           <Check size={9} />
         </Button>
       </td>
-      <td className={TD}>
+      <td className={`${TD} min-w-0 max-w-36`}>
         {isEditTitle ? (
           <TextInput
             variant="table"
@@ -88,8 +92,11 @@ export function BooksTabBookRow({
             onKeyDown={(e) => { if (e.key === 'Enter') commitNodeEdit(); if (e.key === 'Escape') setEditingCell(null) }}
           />
         ) : (
-          <span className="cursor-text px-0.5 hover:text-white"
-            onClick={() => { setEditingCell({ nodeId: node.id, field: 'title' }); setEditingValue(node.title) }}>
+          <span
+            className="block cursor-text truncate px-0.5 hover:text-white"
+            title={node.title}
+            onClick={() => { setEditingCell({ nodeId: node.id, field: 'title' }); setEditingValue(node.title) }}
+          >
             {node.title}
           </span>
         )}
@@ -164,6 +171,29 @@ export function BooksTabBookRow({
           axes={narrowAxes(node.axes)}
           onChange={(newAxes) => { onUpdateBook?.({ ...node, axes: newAxes }); onLastEdited?.(node.id) }}
         />
+      </td>
+      <td className="px-2 py-2">
+        {onOpenWorkDetail ? (
+          <Button
+            type="button"
+            title="Ouvrir la grande fiche ouvrage"
+            onClick={() => onOpenWorkDetail(node.id)}
+            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-2 py-0.5 text-[0.65rem] font-semibold text-white/45 transition-all hover:border-[rgba(168,85,247,0.4)] hover:bg-[rgba(168,85,247,0.1)] hover:text-[rgba(200,170,255,0.95)]"
+          >
+            Détails
+          </Button>
+        ) : (
+          <Link
+            to={{ pathname: '/', search: mapBookUrlSearch(node.id) }}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Ouvrir la carte sur cet ouvrage (nouvel onglet, ?book=…)"
+            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-2 py-0.5 text-[0.65rem] font-semibold text-white/45 transition-all hover:border-[rgba(168,85,247,0.4)] hover:bg-[rgba(168,85,247,0.1)] hover:text-[rgba(200,170,255,0.95)]"
+          >
+            <ExternalLink size={10} className="shrink-0" />
+            Détails
+          </Link>
+        )}
       </td>
       <td className="px-3 py-2">
         <Button

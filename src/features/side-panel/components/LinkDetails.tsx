@@ -249,7 +249,6 @@ export function LinkDetails({
 
         <blockquote
           className="rounded-md border-l-4 bg-white/5 px-4 py-3 font-serif text-[1.05rem] italic leading-relaxed text-white/85 backdrop-blur-md"
-          style={{ borderLeftColor: citationAxisColor }}
         >
           {editingField === 'citation_text' ? (
             <TextareaInline

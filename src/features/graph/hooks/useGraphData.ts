@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { Author, Book, BookId, Link } from '@/types/domain'
 import { devWarn } from '@/common/utils/logger'
@@ -40,7 +40,9 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
   // ── TanStack Query: initial load ─────────────────────────────────────────────
   const { data: datasetData, isLoading, isError } = useGraphDataset(axesColors)
 
-  useEffect(() => {
+  // useLayoutEffect : appliquer le jeu de données avant le paint pour éviter un flash « not found »
+  // (ex. `/?book=…` alors que `nodes` est encore vide un frame après isLoading === false).
+  useLayoutEffect(() => {
     if (!datasetData) return
     setBooks(datasetData.books)
     setAuthors(datasetData.authors)

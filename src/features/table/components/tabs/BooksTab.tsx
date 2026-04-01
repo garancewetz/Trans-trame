@@ -20,9 +20,9 @@ type BooksTabProps = {
   onBookAdded?: (title: string) => unknown
   onOpenLinksForBook?: (node: Book) => unknown
   onFocusAuthorInAuthorsTab?: (authorId: AuthorId) => unknown
+  onOpenWorkDetail?: (bookId: BookId) => unknown
   initialAuthorIds?: AuthorId[]
   autoFocusTitle?: boolean
-  focusBookId?: BookId | null
 }
 
 export function BooksTab({
@@ -39,9 +39,9 @@ export function BooksTab({
   onBookAdded,
   onOpenLinksForBook,
   onFocusAuthorInAuthorsTab,
+  onOpenWorkDetail,
   initialAuthorIds = [],
   autoFocusTitle = false,
-  focusBookId,
 }: BooksTabProps) {
   const [editingAuthorsNodeId, setEditingAuthorsNodeId] = useState<BookId | null>(null)
   const [sortCol, setSortCol] = useState('lastName')
@@ -78,14 +78,6 @@ export function BooksTab({
     if (!autoFocusTitle) return
     setTimeout(() => titleInputRef.current?.focus(), 0)
   }, [autoFocusTitle])
-
-  useEffect(() => {
-    if (!focusBookId) return
-    setTimeout(() => {
-      const el = document.querySelector(`[data-book-row-id="${focusBookId}"]`)
-      el?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
-    }, 50)
-  }, [focusBookId])
 
   const handleNodeSort = (col: string) => {
     if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
@@ -212,6 +204,7 @@ export function BooksTab({
         onAddAuthor={onAddAuthor}
         onFocusAuthorInAuthorsTab={onFocusAuthorInAuthorsTab}
         onOpenLinksForBook={onOpenLinksForBook}
+        onOpenWorkDetail={onOpenWorkDetail}
       />
 
       <TableMergeModal

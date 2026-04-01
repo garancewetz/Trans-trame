@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { buildAuthorsMap } from '@/common/utils/authorUtils'
 import type { Author, AuthorId, Book, BookId } from '@/types/domain'
 import type { TableViewProps } from '../tableViewTypes'
@@ -23,8 +23,12 @@ export function useTableViewController({
 
   const [tab, setTab] = useState<TableViewProps['initialTab']>(initialTab)
   const [focusAuthorId, setFocusAuthorId] = useState<AuthorId | null>(null)
-  const [focusBookId, setFocusBookId] = useState<BookId | null>(null)
   const [booksPrefill, setBooksPrefill] = useState<null | { nonce: string; authorId: AuthorId }>(null)
+
+  /** Évite de réappliquer un auteur prérempli à chaque retour sur l’onglet Ouvrages. */
+  useEffect(() => {
+    if (tab !== 'books') setBooksPrefill(null)
+  }, [tab])
 
   const [search, setSearch] = useState('')
   const [addedQueue, setAddedQueue] = useState<string[]>([])
@@ -34,6 +38,19 @@ export function useTableViewController({
   const [linkSourceNode, setLinkSourceNode] = useState<Book | null>(
     () => (initialLinkSourceId ? nodes.find((n) => n.id === initialLinkSourceId) ?? null : null),
   )
+
+  const didPrefillLinkSearchFromInitialSource = useRef(false)
+
+  /** Même logique que depuis l’onglet Ouvrages : titre dans la recherche liens (barre du haut). */
+  useEffect(() => {
+    if (didPrefillLinkSearchFromInitialSource.current) return
+    if (!initialLinkSourceId) return
+    const n = nodes.find((b) => b.id === initialLinkSourceId)
+    const title = (n?.title || '').trim()
+    if (!title) return
+    setLinkSearch(title)
+    didPrefillLinkSearchFromInitialSource.current = true
+  }, [initialLinkSourceId, nodes])
 
   const focusAuthorInAuthorsTab = (authorId: AuthorId) => {
     if (!authorId) return
@@ -94,22 +111,13 @@ export function useTableViewController({
     onDeleteAuthor?.(fromAuthorId)
   }
 
-  const revealBookLine = (bookId: BookId) => {
-    if (!bookId) return
-    setTab('books')
-    setFocusBookId(bookId)
-    setTimeout(() => {
-      const el = document.querySelector(`[data-book-row-id="${bookId}"]`)
-      el?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
-    }, 50)
-  }
-
   const openLinksForBook = (node: Book) => {
     if (!node) return
     setTab('links')
     setLinkSourceNode(node)
     setLinkCheckedIds(new Set<BookId>())
     setChecklistSearch('')
+    setLinkSearch((node.title || '').trim())
   }
 
   const toggleChecklist = (id: BookId) => {
@@ -190,7 +198,6 @@ export function useTableViewController({
     tab,
     setTab,
     focusAuthorId,
-    focusBookId,
     booksPrefill,
     setBooksPrefill,
     search,
@@ -237,7 +244,6 @@ export function useTableViewController({
     newLinksCount,
     groupedLinks,
     mergeAuthors,
-    revealBookLine,
     openLinksForBook,
     toggleChecklist,
     handleTisser,

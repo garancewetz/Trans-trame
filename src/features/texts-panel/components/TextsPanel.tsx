@@ -14,6 +14,7 @@ type TextsPanelProps = {
   onSelectNode?: (node: Book) => void
   onPeekNode?: (node: Book) => void
   peekNodeId?: string | null
+  onOpenWorkDetail?: (bookId: string) => void
 }
 
 export function TextsPanel({
@@ -24,6 +25,7 @@ export function TextsPanel({
   onSelectNode,
   onPeekNode,
   peekNodeId,
+  onOpenWorkDetail,
 }: TextsPanelProps) {
   const [q, setQ] = useState('')
 
@@ -124,20 +126,39 @@ export function TextsPanel({
                       </div>
                     </div>
                   </Button>
-                  {typeof onPeekNode === 'function' && (
+                  <div className="flex shrink-0 flex-col border-l border-white/10 sm:flex-row">
+                    {typeof onPeekNode === 'function' && (
+                      <Button
+                        type="button"
+                        className="cursor-pointer px-2.5 py-2 text-white/35 transition-colors hover:bg-white/10 hover:text-[rgba(168,130,255,0.95)] sm:py-0"
+                        aria-label={`Voir ce nœud sur la carte (${n.title})`}
+                        title="Voir le nœud sur la carte (aperçu)"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onPeekNode(n)
+                        }}
+                      >
+                        <Eye size={18} strokeWidth={2} />
+                      </Button>
+                    )}
                     <Button
                       type="button"
-                      className="shrink-0 cursor-pointer border-l border-white/10 px-2.5 text-white/35 transition-colors hover:bg-white/10 hover:text-[rgba(168,130,255,0.95)]"
-                      aria-label={`Voir ce texte sur le graphe (${n.title})`}
-                      title="Voir sur le graphe sans zoom"
+                      disabled={!onOpenWorkDetail}
+                      title="Grande fiche ouvrage"
+                      className={[
+                        'inline-flex cursor-pointer items-center justify-center gap-1 border-t border-white/10 px-2 py-2 text-[0.65rem] font-semibold transition-colors sm:border-l sm:border-t-0 sm:px-2.5',
+                        onOpenWorkDetail
+                          ? 'text-white/40 hover:bg-white/10 hover:text-[rgba(200,170,255,0.95)]'
+                          : 'cursor-not-allowed text-white/15',
+                      ].join(' ')}
                       onClick={(e) => {
                         e.stopPropagation()
-                        onPeekNode(n)
+                        onOpenWorkDetail?.(n.id)
                       }}
                     >
-                      <Eye size={18} strokeWidth={2} />
+                      Détails
                     </Button>
-                  )}
+                  </div>
                 </div>
               )
             })

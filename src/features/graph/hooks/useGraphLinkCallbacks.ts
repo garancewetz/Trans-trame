@@ -1,6 +1,25 @@
 import { useCallback, type MutableRefObject } from 'react'
-import { blendAxesColors } from '@/common/utils/categories'
+import {
+  LINK_CITED_BY_COLOR_STRONG,
+  LINK_CITES_COLOR_STRONG,
+  linkCitedByRgba,
+  linkCitesRgba,
+} from '@/common/constants/linkRelationColors'
 import { normalizeEndpointId } from '../domain/graphDataModel'
+
+/** Sens du lien book→book : source cite la cible. */
+function citationAnchorRole(
+  link: { source: unknown; target: unknown; type?: string },
+  anchorIds: Set<string> | null,
+): 'cites' | 'citedBy' | null {
+  if (!anchorIds || link.type === 'author-book') return null
+  const srcId = normalizeEndpointId(link.source)
+  const tgtId = normalizeEndpointId(link.target)
+  if (!srcId || !tgtId) return null
+  if (anchorIds.has(srcId)) return 'cites'
+  if (anchorIds.has(tgtId)) return 'citedBy'
+  return null
+}
 
 type Args = {
   hasSelection: boolean
@@ -11,13 +30,6 @@ type Args = {
   linkWeights: Map<string, number>
   hoveredNodeRef: MutableRefObject<unknown>
   hoveredLinksRef: MutableRefObject<Set<string>>
-}
-
-function withAlpha(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return `rgba(${r},${g},${b},${alpha})`
 }
 
 export function useGraphLinkCallbacks({
@@ -62,21 +74,29 @@ export function useGraphLinkCallbacks({
   const linkColor = useCallback(
     (link) => {
       if (hoveredNodeRef.current && isLinkHovered(link)) return 'rgba(0,0,0,0)'
-      if (hoveredNodeRef.current && !hasSelection && !isLinkHovered(link)) return 'rgba(140, 220, 255, 0.03)'
+      if (hoveredNodeRef.current && !hasSelection && !isLinkHovered(link)) return linkCitesRgba(0.03)
       if (link.type === 'author-book') {
-        if (isLinkActive(link)) return 'rgba(180, 220, 255, 0.45)'
-        return 'rgba(140, 200, 255, 0.10)'
+        if (isLinkActive(link)) return linkCitesRgba(0.45)
+        return linkCitesRgba(0.1)
       }
       if (viewMode === 'genealogy') {
-        if (!hasSelection) return 'rgba(190, 210, 255, 0.6)'
-        if (isLinkActive(link)) return 'rgba(220, 238, 255, 0.95)'
-        return 'rgba(160, 185, 235, 0.35)'
+        if (!hasSelection) return linkCitesRgba(0.45)
+        if (isLinkActive(link)) {
+          const role = citationAnchorRole(link, anchorIds)
+          if (role === 'citedBy') return linkCitedByRgba(0.95)
+          return linkCitesRgba(0.95)
+        }
+        return linkCitesRgba(0.28)
       }
-      if (!hasSelection && !activeFilter) return 'rgba(140, 220, 255, 0.15)'
-      if (isLinkActive(link)) return 'rgba(190, 240, 255, 0.85)'
-      return 'rgba(140, 220, 255, 0.10)'
+      if (!hasSelection && !activeFilter) return linkCitesRgba(0.15)
+      if (isLinkActive(link)) {
+        const role = citationAnchorRole(link, anchorIds)
+        if (role === 'citedBy') return linkCitedByRgba(0.85)
+        return linkCitesRgba(0.85)
+      }
+      return linkCitesRgba(0.1)
     },
-    [hasSelection, activeFilter, isLinkActive, isLinkHovered, viewMode],
+    [hasSelection, activeFilter, isLinkActive, isLinkHovered, viewMode, anchorIds],
   )
 
   const linkWidth = useCallback(
@@ -102,11 +122,10 @@ export function useGraphLinkCallbacks({
     (link, ctx, globalScale) => {
       if (!hoveredNodeRef.current || hasSelection) return
       if (!isLinkHovered(link)) return
+      if (link.type === 'author-book') return
       const src = link.source
       const tgt = link.target
       if (!src || !tgt || !Number.isFinite(src.x) || !Number.isFinite(tgt.x)) return
-      const srcColor = blendAxesColors(src.axes || [])
-      const tgtColor = blendAxesColors(tgt.axes || [])
       const weight = getLinkWeight(link)
       const isStrong = weight > 1
       const lineWidth = (isStrong ? 2.2 : 1.4) / globalScale
@@ -121,10 +140,10 @@ export function useGraphLinkCallbacks({
         ctx.bezierCurveTo(cp[0], cp[1], cp[2], cp[3], tgt.x, tgt.y)
       }
       const grad = ctx.createLinearGradient(src.x, src.y, tgt.x, tgt.y)
-      grad.addColorStop(0, withAlpha(srcColor, isStrong ? 1.0 : 0.9))
-      grad.addColorStop(0.25, withAlpha(srcColor, 0.7))
-      grad.addColorStop(0.6, withAlpha(tgtColor, 0.35))
-      grad.addColorStop(1, withAlpha(tgtColor, isStrong ? 0.45 : 0.2))
+      grad.addColorStop(0, linkCitesRgba(isStrong ? 1.0 : 0.9))
+      grad.addColorStop(0.25, linkCitesRgba(0.7))
+      grad.addColorStop(0.6, linkCitedByRgba(0.35))
+      grad.addColorStop(1, linkCitedByRgba(isStrong ? 0.45 : 0.2))
       ctx.strokeStyle = grad
       ctx.lineWidth = lineWidth
       ctx.stroke()
@@ -136,13 +155,17 @@ export function useGraphLinkCallbacks({
     (link) => {
       if (link.type === 'author-book') return 'rgba(0,0,0,0)'
       if (hoveredNodeRef.current && !hasSelection && isLinkHovered(link)) {
-        const src = typeof link.source === 'object' ? link.source : null
-        if (src) return withAlpha(blendAxesColors(src.axes || []), 0.8)
+        return linkCitedByRgba(0.85)
       }
-      if (!hasSelection) return 'rgba(140, 220, 255, 0.5)'
-      return isLinkActive(link) ? '#b4e6ff' : 'rgba(255,255,255,0.05)'
+      if (!hasSelection) return linkCitesRgba(0.5)
+      if (isLinkActive(link)) {
+        const role = citationAnchorRole(link, anchorIds)
+        if (role === 'citedBy') return LINK_CITED_BY_COLOR_STRONG
+        return LINK_CITES_COLOR_STRONG
+      }
+      return 'rgba(255,255,255,0.05)'
     },
-    [hasSelection, isLinkActive, isLinkHovered],
+    [hasSelection, isLinkActive, isLinkHovered, anchorIds],
   )
 
   const linkDirectionalArrowLength = useCallback(
@@ -180,22 +203,26 @@ export function useGraphLinkCallbacks({
   const linkDirectionalParticleColor = useCallback(
     (link) => {
       if (hoveredNodeRef.current && !hasSelection && isLinkHovered(link)) {
-        const src = typeof link.source === 'object' ? link.source : null
-        if (src) return withAlpha(blendAxesColors(src.axes || []), 0.9)
+        return linkCitesRgba(0.9)
       }
-      return viewMode === 'genealogy'
-        ? !hasSelection
-          ? 'rgba(140, 220, 255, 0.6)'
-          : isLinkActive(link)
-            ? '#b4e6ff'
-            : 'rgba(140, 220, 255, 0.22)'
-        : !hasSelection
-          ? 'rgba(140, 220, 255, 0.6)'
-          : isLinkActive(link)
-            ? '#b4e6ff'
-            : 'rgba(255,255,255,0.05)'
+      if (viewMode === 'genealogy') {
+        if (!hasSelection) return linkCitesRgba(0.6)
+        if (isLinkActive(link)) {
+          const role = citationAnchorRole(link, anchorIds)
+          if (role === 'citedBy') return LINK_CITED_BY_COLOR_STRONG
+          return LINK_CITES_COLOR_STRONG
+        }
+        return linkCitesRgba(0.22)
+      }
+      if (!hasSelection) return linkCitesRgba(0.6)
+      if (isLinkActive(link)) {
+        const role = citationAnchorRole(link, anchorIds)
+        if (role === 'citedBy') return LINK_CITED_BY_COLOR_STRONG
+        return LINK_CITES_COLOR_STRONG
+      }
+      return 'rgba(255,255,255,0.05)'
     },
-    [hasSelection, isLinkActive, isLinkHovered, viewMode],
+    [hasSelection, isLinkActive, isLinkHovered, viewMode, anchorIds],
   )
 
   return {

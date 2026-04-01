@@ -9,6 +9,8 @@ import {
   FORCE_GENEALOGY_LINK_AUTHOR_BOOK,
   FORCE_GENEALOGY_LINK_CITATION,
   FORCE_X_YEAR_SPREAD,
+  FORCE_X_YEAR_STRENGTH_HIGH,
+  FORCE_X_YEAR_STRENGTH_LOW,
   FORCE_Y_CENTER_STRENGTH,
   chargeStrengthForNode,
   yearSpreadBlendForDegree,
@@ -55,6 +57,7 @@ export function useGraphLayout({ fgRef, camRef, graphData, layoutPositions, view
           l.type === 'author-book' ? FORCE_LINK_DIST_AUTHOR_BOOK : FORCE_LINK_DIST_CITATION
         )
 
+        // Années : uniquement les ouvrages avec une année — échelle douce, récent à droite (x croissant).
         const years = graphData.nodes.map((n) => n.year).filter((y) => typeof y === 'number')
         const minYear = years.length ? Math.min(...years) : 1800
         const maxYear = years.length ? Math.max(...years) : 2025
@@ -65,11 +68,11 @@ export function useGraphLayout({ fgRef, camRef, graphData, layoutPositions, view
         if (forceX) {
           Reflect.get(forceX, 'strength')?.call(forceX, (node) => {
             const deg = degreeByNodeId.get(node.id) || 0
-            return deg <= 1 ? 0.075 : 0.06
+            return deg <= 1 ? FORCE_X_YEAR_STRENGTH_HIGH : FORCE_X_YEAR_STRENGTH_LOW
           })
           Reflect.get(forceX, 'x')?.call(forceX, (node) => {
             const y = typeof node?.year === 'number' ? node.year : null
-            if (!y) return 0
+            if (y == null) return 0
             const deg = degreeByNodeId.get(node.id) || 0
             const yearX = ((y - midYear) / span) * FORCE_X_YEAR_SPREAD
             return yearX * yearSpreadBlendForDegree(deg)

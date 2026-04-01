@@ -43,6 +43,7 @@ export type BooksTabBooksTableProps = {
   onAddAuthor?: (author: Author) => unknown
   onFocusAuthorInAuthorsTab?: (authorId: AuthorId) => unknown
   onOpenLinksForBook?: (node: Book) => unknown
+  onOpenWorkDetail?: (bookId: BookId) => unknown
 }
 
 export function BooksTabBooksTable({
@@ -81,6 +82,7 @@ export function BooksTabBooksTable({
   onAddAuthor,
   onFocusAuthorInAuthorsTab,
   onOpenLinksForBook,
+  onOpenWorkDetail,
 }: BooksTabBooksTableProps) {
   return (
     <div className="flex-1 overflow-auto">
@@ -101,7 +103,7 @@ export function BooksTabBooksTable({
                 <Check size={9} />
               </Button>
             </th>
-            <TH col="title" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="min-w-[200px]">
+            <TH col="title" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="min-w-0 max-w-36">
               Titre
             </TH>
             <TH col="lastName" activeCol={sortCol} dir={sortDir} onSort={onNodeSort}>
@@ -112,6 +114,9 @@ export function BooksTabBooksTable({
             </TH>
             <th className="w-40 px-3 py-2.5 text-left text-[0.6rem] font-semibold uppercase tracking-[1.5px] text-white/32">
               Axes
+            </th>
+            <th className="w-[5.5rem] px-2 py-2.5 text-left text-[0.6rem] font-semibold uppercase tracking-[1.5px] text-white/32">
+              Détails
             </th>
             <th className="w-20 px-3 py-2.5 text-left text-[0.6rem] font-semibold uppercase tracking-[1.5px] text-white/32">
               Liens
@@ -158,6 +163,7 @@ export function BooksTabBooksTable({
               onAddAuthor={onAddAuthor}
               onFocusAuthorInAuthorsTab={onFocusAuthorInAuthorsTab}
               onOpenLinksForBook={onOpenLinksForBook}
+              onOpenWorkDetail={onOpenWorkDetail}
             />
           ))}
         </tbody>

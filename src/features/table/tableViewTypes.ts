@@ -20,4 +20,8 @@ export type TableViewProps = {
   initialTab?: 'books' | 'authors' | 'links'
   initialLinkSourceId?: BookId | null
   onImportComplete?: (nodeIds: BookId[]) => void
+  /** Ferme le tableau, sélectionne l’ouvrage sur la carte et ouvre le panneau détail. */
+  onFocusBookOnMap?: (bookId: BookId) => void
+  /** Ouvre la grande fiche ouvrage (panneau). */
+  onOpenWorkDetail?: (bookId: BookId) => void
 }

@@ -41,7 +41,7 @@ export function BooksTabAddRow({
       <td className="px-3 py-1.5 text-center">
         <Plus size={11} className="text-[rgba(140,220,255,0.35)]" />
       </td>
-      <td className="px-2 py-1.5">
+      <td className="min-w-0 max-w-36 px-2 py-1.5">
         <TextInput
           variant="table"
           ref={titleInputRef}
@@ -84,6 +84,7 @@ export function BooksTabAddRow({
           </Button>
         </div>
       </td>
+      <td />
       <td />
     </tr>
   )

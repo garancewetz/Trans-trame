@@ -41,7 +41,8 @@ type LinksTabProps = {
   deletingLinkId: string | null
   setDeletingLinkId: (id: string | null) => void
   onDeleteLink: (linkId: string) => void
-  onRevealBookLine?: (bookId: BookId) => void
+  onFocusBookOnMap?: (bookId: BookId) => void
+  onOpenWorkDetail?: (bookId: BookId) => void
 }
 
 export function LinksTab({
@@ -68,7 +69,8 @@ export function LinksTab({
   deletingLinkId,
   setDeletingLinkId,
   onDeleteLink,
-  onRevealBookLine,
+  onFocusBookOnMap,
+  onOpenWorkDetail,
 }: LinksTabProps) {
   return (
     <div className="flex flex-1 overflow-hidden">
@@ -183,23 +185,42 @@ export function LinksTab({
                           </Button>
 
                           {link.targetNode && (
-                            <Button
-                              type="button"
-                              onClick={() => {
-                                const t = link.targetNode
-                                if (t) onRevealBookLine?.(t.id)
-                              }}
-                              disabled={isDeleting}
-                              className={[
-                                'shrink-0 cursor-pointer rounded border px-1 py-0.5 text-[0.6rem] transition-all',
-                                isDeleting
-                                  ? 'border-transparent text-white/12 opacity-50 cursor-not-allowed'
-                                  : 'border-[rgba(255,255,255,0.12)] bg-white/4 text-white/55 opacity-100 hover:border-[rgba(140,220,255,0.35)] hover:bg-[rgba(140,220,255,0.08)] hover:text-[rgba(140,220,255,0.9)]',
-                              ].join(' ')}
-                              title="Voir l'ouvrage"
-                            >
-                              <Eye size={9} />
-                            </Button>
+                            <>
+                              <Button
+                                type="button"
+                                onClick={() => {
+                                  const t = link.targetNode
+                                  if (t) onFocusBookOnMap?.(t.id)
+                                }}
+                                disabled={isDeleting || !onFocusBookOnMap}
+                                className={[
+                                  'shrink-0 cursor-pointer rounded border px-1 py-0.5 text-[0.6rem] transition-all',
+                                  isDeleting || !onFocusBookOnMap
+                                    ? 'border-transparent text-white/12 opacity-50 cursor-not-allowed'
+                                    : 'border-[rgba(255,255,255,0.12)] bg-white/4 text-white/55 opacity-100 hover:border-[rgba(140,220,255,0.35)] hover:bg-[rgba(140,220,255,0.08)] hover:text-[rgba(140,220,255,0.9)]',
+                                ].join(' ')}
+                                title="Voir le nœud sur la carte"
+                              >
+                                <Eye size={9} />
+                              </Button>
+                              <Button
+                                type="button"
+                                onClick={() => {
+                                  const t = link.targetNode
+                                  if (t) onOpenWorkDetail?.(t.id)
+                                }}
+                                disabled={isDeleting || !onOpenWorkDetail}
+                                className={[
+                                  'inline-flex shrink-0 cursor-pointer items-center gap-0.5 rounded border px-1.5 py-0.5 text-[0.58rem] font-semibold transition-all',
+                                  isDeleting || !onOpenWorkDetail
+                                    ? 'pointer-events-none border-transparent text-white/12 opacity-40 cursor-not-allowed'
+                                    : 'border-white/10 bg-white/4 text-white/45 hover:border-[rgba(168,85,247,0.35)] hover:bg-[rgba(168,85,247,0.08)] hover:text-[rgba(200,170,255,0.95)]',
+                                ].join(' ')}
+                                title="Grande fiche ouvrage"
+                              >
+                                Détails
+                              </Button>
+                            </>
                           )}
 
                           <Button

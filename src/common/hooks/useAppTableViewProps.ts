@@ -17,6 +17,8 @@ export function useAppTableViewProps({
   lastEditedNodeId,
   setLastEditedNodeId,
   setSelectedNode,
+  setSelectedLink,
+  setLinkContextNode,
   setPanelTab,
   setTableMode,
   setTableInitialTab,
@@ -43,6 +45,8 @@ export function useAppTableViewProps({
   lastEditedNodeId: string | null
   setLastEditedNodeId: (id: string | null) => void
   setSelectedNode: (n: Book | null) => void
+  setSelectedLink: (l: Link | null) => void
+  setLinkContextNode: (n: Book | null) => void
   setPanelTab: (t: string) => void
   setTableMode: (v: boolean) => void
   setTableInitialTab: (t: string) => void
@@ -63,6 +67,16 @@ export function useAppTableViewProps({
   handleDeleteLink: (linkId: string) => void
   handleMergeBooks: (fromNodeId: BookId, intoNodeId: BookId) => boolean
 }): TableViewProps {
+  const openBookInSidePanel = (bookId: BookId) => {
+    const node = books.find((n) => n.id === bookId)
+    if (!node) return
+    setSelectedLink(null)
+    setLinkContextNode(null)
+    setSelectedNode(node)
+    setPanelTab('details')
+    setTableMode(false)
+  }
+
   return {
     nodes: books,
     links,
@@ -111,5 +125,7 @@ export function useAppTableViewProps({
     },
     initialTab: tableInitialTabFromState(tableInitialTab),
     initialLinkSourceId: tableLinkSourceId,
+    onFocusBookOnMap: openBookInSidePanel,
+    onOpenWorkDetail: openBookInSidePanel,
   }
 }

@@ -32,6 +32,8 @@ export function TableView(props: TableViewProps) {
     onClose,
     onLastEdited,
     onImportComplete,
+    onFocusBookOnMap,
+    onOpenWorkDetail,
   } = props
 
   const c = useTableViewController(props)
@@ -86,9 +88,9 @@ export function TableView(props: TableViewProps) {
           onBookAdded={(title) => c.setAddedQueue((prev) => [title, ...prev].slice(0, 5))}
           onOpenLinksForBook={c.openLinksForBook}
           onFocusAuthorInAuthorsTab={c.focusAuthorInAuthorsTab}
+          onOpenWorkDetail={onOpenWorkDetail}
           initialAuthorIds={c.booksPrefill?.authorId ? [c.booksPrefill.authorId] : []}
           autoFocusTitle={Boolean(c.booksPrefill?.authorId)}
-          focusBookId={c.focusBookId}
         />
       )}
 
@@ -137,7 +139,8 @@ export function TableView(props: TableViewProps) {
           deletingLinkId={c.deletingLinkId}
           setDeletingLinkId={c.setDeletingLinkId}
           onDeleteLink={(id) => onDeleteLink?.(id)}
-          onRevealBookLine={c.revealBookLine}
+          onFocusBookOnMap={onFocusBookOnMap}
+          onOpenWorkDetail={onOpenWorkDetail}
         />
       )}
 

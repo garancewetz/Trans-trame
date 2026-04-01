@@ -1,15 +1,102 @@
-import { Pencil, ArrowRight, ArrowLeft, Plus } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import {
+  Pencil,
+  ArrowRight,
+  ArrowLeft,
+  Plus,
+  ExternalLink,
+  Link2,
+} from 'lucide-react'
+import {
+  LINK_CITED_BY_COLOR_STRONG,
+  LINK_CITED_BY_ICON,
+  LINK_CITED_BY_ROW_BORDER,
+  LINK_CITED_BY_ROW_HOVER_BG,
+  LINK_CITES_COLOR_STRONG,
+  LINK_CITES_ICON,
+  LINK_CITES_ROW_BORDER,
+  LINK_CITES_ROW_HOVER_BG,
+  LINK_CITES_COLOR,
+  LINK_CITED_BY_COLOR,
+} from '@/common/constants/linkRelationColors'
+import { mapBookUrlSearch } from '@/common/utils/bookSlug'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { AxisBadge } from '@/common/components/ui/AxisBadge'
 import { Button } from '@/common/components/ui/Button'
-import { SectionHeading } from '@/common/components/ui/SectionHeading'
-import { ReferenceRow } from '@/common/components/ui/ReferenceRow'
+import { linkExcerpt, refMetaLine } from '@/features/books/workPageCopy'
+import type { AuthorNode } from '@/common/utils/authorUtils'
+import type { Book, Link as GraphLink } from '@/types/domain'
+
+type RefVariant = 'cites' | 'citedBy'
+
+const PANEL_REF_ROW_STYLES: Record<
+  RefVariant,
+  { border: string; hoverBg: string; accent: string; label: string }
+> = {
+  cites: {
+    border: LINK_CITES_ROW_BORDER,
+    hoverBg: LINK_CITES_ROW_HOVER_BG,
+    accent: LINK_CITES_COLOR,
+    label: 'Cite',
+  },
+  citedBy: {
+    border: LINK_CITED_BY_ROW_BORDER,
+    hoverBg: LINK_CITED_BY_ROW_HOVER_BG,
+    accent: LINK_CITED_BY_COLOR,
+    label: 'Cité par',
+  },
+}
+
+function PanelRefRow({
+  variant,
+  title,
+  meta,
+  excerpt,
+  onClick,
+}: {
+  variant: RefVariant
+  title?: string
+  meta?: string
+  excerpt?: string
+  onClick: () => void
+}) {
+  const s = PANEL_REF_ROW_STYLES[variant]
+  const excerptText = excerpt?.trim()
+
+  return (
+    <li className="border-b border-white/6 last:border-0">
+      <button
+        type="button"
+        className="group block w-full cursor-pointer rounded-r-lg border-l-2 py-4 pl-3 text-left transition-colors hover:bg-(--ref-hover-bg) focus:outline-none focus-visible:ring-1 focus-visible:ring-white/20"
+        style={{
+          borderLeftColor: s.border,
+          ['--ref-hover-bg' as string]: s.hoverBg,
+        }}
+        onClick={onClick}
+      >
+        <span
+          className="mb-1 inline-flex items-center gap-1 text-[0.65rem] font-bold uppercase tracking-[0.04em]"
+          style={{ color: s.accent }}
+        >
+          <Link2 size={10} /> {s.label}
+        </span>
+        <span className="block text-[0.95rem] font-medium text-white/88 group-hover:text-white">
+          {title ?? '—'}
+        </span>
+        {meta ? <span className="mt-1 block text-[0.75rem] text-white/32">{meta}</span> : null}
+        {excerptText ? (
+          <p className="mt-2.5 text-[0.82rem] leading-relaxed text-white/38">&ldquo;{excerptText}&rdquo;</p>
+        ) : null}
+      </button>
+    </li>
+  )
+}
 
 export function NodeDetails({
   selectedNode,
-  AXES_COLORS,
   sameAuthorBooks,
   authorsMap,
+  AXES_COLORS,
   setPanelTab,
   setSelectedNode,
   setSelectedLink,
@@ -18,59 +105,69 @@ export function NodeDetails({
   getOutgoingRefs,
   getIncomingRefs,
 }) {
-  const displayAuthor = (book) => bookAuthorDisplay(book, authorsMap || new Map())
-
-  const refMeta = (other, link) => {
-    const parts: string[] = []
-    if (other) {
-      const a = displayAuthor(other)
-      if (a) parts.push(a)
-      if (other.year) parts.push(other.year)
-    }
-    if (link?.page) parts.push(link.page)
-    return parts.join(' — ')
-  }
-
-  const linkExcerpt = (link) => (link?.citation_text || link?.context || '').trim()
+  const map = authorsMap || new Map<string, AuthorNode>()
+  const axes = (selectedNode.axes || []).filter(Boolean)
 
   return (
-    <div className="px-6 pb-8 pt-12">
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div className="flex flex-wrap gap-1.5">
-          {(selectedNode.axes || []).map((axis) => (
-            <AxisBadge key={axis} color={AXES_COLORS[axis]}>
-              {axis}
-            </AxisBadge>
-          ))}
+    <div className="px-6 pb-10 pt-14 text-[#ece9ff]">
+      <div className="mb-10 flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          {axes.length > 0 && (
+            <div className="mb-4 flex flex-wrap gap-1.5">
+              {axes.map((axis) => (
+                <AxisBadge key={axis} color={AXES_COLORS?.[axis] ?? '#94a3b8'}>
+                  {axis}
+                </AxisBadge>
+              ))}
+            </div>
+          )}
+          <h2 className="text-[1.5rem] font-semibold leading-[1.2] tracking-tight text-white md:text-[1.65rem]">
+            {selectedNode.title}
+          </h2>
+          <p className="mt-5 text-[0.95rem] leading-relaxed text-white/42">
+            {bookAuthorDisplay(selectedNode, map)}
+            {selectedNode.year != null && (
+              <span className="text-white/28"> · {selectedNode.year}</span>
+            )}
+          </p>
         </div>
-
-        <Button
-          type="button"
-          className="cursor-pointer rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.75rem] font-semibold text-white/60 transition-all hover:border-[rgba(168,85,247,0.5)] hover:bg-[rgba(168,85,247,0.2)] hover:text-white"
-          onClick={() => setPanelTab('edit')}
-        >
-          <span className="inline-flex items-center gap-1.5"><Pencil size={12} /> Modifier</span>
-        </Button>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          <Button
+            type="button"
+            className="cursor-pointer rounded-lg border border-white/10 bg-transparent px-3 py-1.5 text-[0.75rem] font-medium text-white/40 transition-colors hover:border-white/18 hover:bg-white/4 hover:text-white/70"
+            onClick={() => setPanelTab('edit')}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Pencil size={12} /> Modifier
+            </span>
+          </Button>
+          <Link
+            to={{ pathname: '/', search: mapBookUrlSearch(selectedNode.id) }}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Même vue dans un nouvel onglet (?book=…)"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/10 bg-transparent px-3 py-1.5 text-[0.75rem] font-medium text-white/38 transition-colors hover:border-white/18 hover:text-white/65"
+          >
+            <ExternalLink size={12} /> Nouvel onglet
+          </Link>
+        </div>
       </div>
 
-      <h2 className="mb-1 text-[1.3rem] font-bold leading-snug text-white">{selectedNode.title}</h2>
-      <p className="mb-0.5 text-[0.95rem] italic text-white/55">{displayAuthor(selectedNode)}</p>
-      <p className="mb-3.5 text-[0.85rem] text-white/35">{selectedNode.year}</p>
-      {selectedNode.description && (
-        <p className="mb-4 text-[0.88rem] leading-relaxed text-white/60">{selectedNode.description}</p>
-      )}
+      {selectedNode.description ? (
+        <p className="mb-12 text-[0.92rem] leading-[1.7] text-white/48">{selectedNode.description}</p>
+      ) : null}
 
       {sameAuthorBooks.length > 0 && (
-        <>
-          <SectionHeading>
-            Autres ouvrages de {displayAuthor(selectedNode)} ({sameAuthorBooks.length})
-          </SectionHeading>
-          <ul className="mb-5 flex list-none flex-col gap-2 border-b border-white/10 pb-5">
-            {sameAuthorBooks.map((n) => (
-              <li key={n.id}>
-                <Button
+        <section className="mb-12">
+          <h3 className="mb-4 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-white/28">
+            Même auteur
+          </h3>
+          <ul className="divide-y divide-white/6">
+            {sameAuthorBooks.map((n: Book) => (
+              <li key={n.id} className="py-3.5 first:pt-0">
+                <button
                   type="button"
-                  className="w-full cursor-pointer rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 text-left transition-all hover:border-white/20 hover:bg-white/8"
+                  className="block w-full cursor-pointer text-left text-[0.92rem] text-white/75 transition-colors hover:text-white"
                   onClick={() => {
                     setLinkContextNode(null)
                     setSelectedLink(null)
@@ -78,75 +175,84 @@ export function NodeDetails({
                     setPanelTab('details')
                   }}
                 >
-                  <strong className="mb-0.5 block text-[0.88rem] text-white">{n.title}</strong>
-                  <span className="text-[0.75rem] text-white/30">{n.year}</span>
-                </Button>
+                  <span className="font-medium">{n.title}</span>
+                  {n.year != null && (
+                    <span className="ml-2 text-[0.8rem] font-normal text-white/30">{n.year}</span>
+                  )}
+                </button>
               </li>
             ))}
           </ul>
-        </>
+        </section>
       )}
 
-      <div className="mb-5 flex flex-wrap gap-2 border-b border-white/10 pb-5">
-        <Button
+      <div className="mb-10">
+        <button
           type="button"
-          className="cursor-pointer rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.75rem] font-semibold text-[rgba(140,220,255,0.7)] transition-all hover:border-[rgba(140,220,255,0.5)] hover:bg-[rgba(140,220,255,0.15)] hover:text-white"
+          className="text-[0.8rem] font-medium text-white/38 underline-offset-4 transition-colors hover:text-[rgba(140,220,255,0.85)] hover:underline"
           onClick={() => onOpenTable?.('links', selectedNode.id)}
         >
-          <span className="inline-flex items-center gap-1.5"><Plus size={12} /> Tisser un lien…</span>
-        </Button>
+          <span className="inline-flex items-center gap-1.5">
+            <Plus size={12} className="opacity-70" /> Tisser un lien…
+          </span>
+        </button>
       </div>
 
-      {getOutgoingRefs(selectedNode).length > 0 && (
-        <>
-          <SectionHeading>
-            <ArrowRight size={14} className="inline text-[rgba(140,220,255,0.8)]" />
-            {' '}Références citées ({getOutgoingRefs(selectedNode).length})
-          </SectionHeading>
-          <ul className="flex list-none flex-col gap-2">
-            {getOutgoingRefs(selectedNode).map(({ link, other }, i) => (
-              <ReferenceRow
-                key={i}
-                label="cite"
-                color="rgba(140,220,255,0.7)"
-                title={other?.title}
-                meta={refMeta(other, link)}
-                excerpt={linkExcerpt(link)}
-                onClick={() => {
-                  setLinkContextNode(selectedNode)
-                  setSelectedLink(link)
-                }}
-              />
-            ))}
-          </ul>
-        </>
-      )}
+      <div className="space-y-10">
+        {getOutgoingRefs(selectedNode).length > 0 && (
+          <section>
+            <h3
+              className="mb-3 flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.2em]"
+              style={{ color: LINK_CITES_COLOR_STRONG }}
+            >
+              <ArrowRight size={13} style={{ color: LINK_CITES_ICON }} />
+              Références citées
+            </h3>
+            <ul>
+              {getOutgoingRefs(selectedNode).map(({ link, other }: { link: GraphLink; other: Book | null }, i: number) => (
+                <PanelRefRow
+                  key={link.id ?? `o-${i}`}
+                  variant="cites"
+                  title={other?.title}
+                  meta={refMetaLine(other, link, map)}
+                  excerpt={linkExcerpt(link)}
+                  onClick={() => {
+                    setLinkContextNode(selectedNode)
+                    setSelectedLink(link)
+                  }}
+                />
+              ))}
+            </ul>
+          </section>
+        )}
 
-      {getIncomingRefs(selectedNode).length > 0 && (
-        <>
-          <SectionHeading>
-            <ArrowLeft size={14} className="inline text-[rgba(255,171,64,0.8)]" />
-            {' '}Cité par ({getIncomingRefs(selectedNode).length})
-          </SectionHeading>
-          <ul className="flex list-none flex-col gap-2">
-            {getIncomingRefs(selectedNode).map(({ link, other }, i) => (
-              <ReferenceRow
-                key={i}
-                label="cité par"
-                color="rgba(255,171,64,0.7)"
-                title={other?.title}
-                meta={refMeta(other, link)}
-                excerpt={linkExcerpt(link)}
-                onClick={() => {
-                  setLinkContextNode(selectedNode)
-                  setSelectedLink(link)
-                }}
-              />
-            ))}
-          </ul>
-        </>
-      )}
+        {getIncomingRefs(selectedNode).length > 0 && (
+          <section>
+            <h3
+              className="mb-3 flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.2em]"
+              style={{ color: LINK_CITED_BY_COLOR_STRONG }}
+            >
+              <ArrowLeft size={13} style={{ color: LINK_CITED_BY_ICON }} />
+              Cité par
+            </h3>
+            <ul>
+              {getIncomingRefs(selectedNode).map(({ link, other }: { link: GraphLink; other: Book | null }, i: number) => (
+                <PanelRefRow
+                  key={link.id ?? `i-${i}`}
+                  variant="citedBy"
+                  title={other?.title}
+                  meta={refMetaLine(other, link, map)}
+                  excerpt={linkExcerpt(link)}
+                  onClick={() => {
+                    setLinkContextNode(selectedNode)
+                    setSelectedLink(link)
+                  }}
+                />
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
     </div>
   )
 }
-

@@ -10,8 +10,13 @@ export const FORCE_LINK_DIST_AUTHOR_BOOK = 100
 export const FORCE_LINK_DIST_CITATION = 280
 export const FORCE_GENEALOGY_LINK_AUTHOR_BOOK = 52
 export const FORCE_GENEALOGY_LINK_CITATION = 128
-export const FORCE_X_YEAR_SPREAD = 980
+/** Amplitude horizontale de la tendance chronologique (récent → droite), en coordonnées graphe. */
+export const FORCE_X_YEAR_SPREAD = 1180
 export const FORCE_Y_CENTER_STRENGTH = 0.095
+
+/** Intensité de la force X « par année » (constellation seulement) — faible = tendance, pas grille stricte. */
+export const FORCE_X_YEAR_STRENGTH_HIGH = 0.1
+export const FORCE_X_YEAR_STRENGTH_LOW = 0.085
 export const FORCE_COLLIDE_RADIUS = 25
 
 /** Livres sans lien : répulsion plus faible pour ne pas les expulser du nuage. */
@@ -22,9 +27,10 @@ export const FORCE_CHARGE_BOOK_LOW_MULT = 0.74
 /**
  * Cible X « année » atténuée : les isolés restent plus près du centre (galaxie),
  * au lieu d’être projetés au bord de la frise chronologique.
+ * (Valeurs un peu plus hautes = tendance temporelle plus lisible tout en restant souple.)
  */
-export const FORCE_X_YEAR_BLEND_DEG0 = 0.26
-export const FORCE_X_YEAR_BLEND_DEG1 = 0.52
+export const FORCE_X_YEAR_BLEND_DEG0 = 0.44
+export const FORCE_X_YEAR_BLEND_DEG1 = 0.72
 
 type ChargeNode = { id?: string; type?: string }
 
