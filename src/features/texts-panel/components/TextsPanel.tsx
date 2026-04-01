@@ -1,9 +1,10 @@
-import { Eye, Search, X } from 'lucide-react'
+import { Eye, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { Author, Book } from '@/types/domain'
 import { bookAuthorDisplay, buildAuthorsMap } from '@/common/utils/authorUtils'
 import { axesGradient } from '@/common/utils/categories'
 import { Button } from '@/common/components/ui/Button'
+import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
 
 type TextsPanelProps = {
   open: boolean
@@ -82,15 +83,13 @@ export function TextsPanel({
           </Button>
         </div>
 
-        <div className="relative mb-4">
-          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/25" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Rechercher un texte..."
-            className="w-full rounded-[10px] border border-white/10 bg-white/5 px-9 py-[9px] text-[0.82rem] text-white outline-none placeholder:text-white/25 backdrop-blur-lg transition-all focus:border-[rgba(168,130,255,0.4)] focus:bg-white/10"
-          />
-        </div>
+        <SearchInputWithClear
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Rechercher un texte..."
+          focusTone="violet"
+          className="mb-4"
+        />
 
         <div className="space-y-2">
           {filtered.length === 0 ? (

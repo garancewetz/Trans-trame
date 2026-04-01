@@ -5,6 +5,7 @@ import { blendAxesColors } from '@/common/utils/categories'
 import { Button } from '@/common/components/ui/Button'
 import { TextareaInline } from '@/common/components/ui/TextareaInline'
 import { InlineBadge } from '@/common/components/ui/InlineBadge'
+import { InlineEditField } from '@/common/components/ui/InlineEditField'
 
 export function LinkDetails({
   selectedLink,
@@ -125,37 +126,22 @@ export function LinkDetails({
             {relatedNode?.year ? ` — ${relatedNode.year}` : ''}
           </p>
       
-          {editingField === 'page' ? (
-            <div className="mb-3">
-              <label className="mb-0.5 block text-[0.58rem] font-semibold uppercase tracking-[1px] text-white/30">Passage</label>
-              <input
-                autoFocus
-                className="w-full rounded-md border border-white/10 bg-white/4 px-2 py-1 font-mono text-[0.72rem] text-white outline-none focus:border-[rgba(140,220,255,0.28)]"
-                value={draftPage}
-                onChange={(e) => setDraftPage(e.target.value)}
-                onBlur={() => { commitField('page'); setEditingField(null) }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') cancelEdit()
-                  if (e.key === 'Enter') { commitField('page'); setEditingField(null) }
-                }}
-              />
-            </div>
-          ) : (
-            <p className="mb-3 flex items-center justify-between gap-2 text-[0.76rem] font-semibold uppercase tracking-[0.5px] text-white/45">
-              <span>Passage: {selectedLink.page || 'p.—'}</span>
-              <Button
-                type="button"
-                className="shrink-0 cursor-pointer rounded border border-white/10 bg-white/5 px-2 py-0.5 text-[0.6rem] font-semibold text-white/60 transition-all hover:border-white/20 hover:bg-white/8"
-                onClick={() => {
-                  setDraftPage(selectedLink.page || '')
-                  startEdit('page')
-                }}
-                title="Modifier le passage"
-              >
-                Modifier
-              </Button>
-            </p>
-          )}
+          <p className="mb-3 flex items-center justify-between gap-2 text-[0.76rem] font-semibold uppercase tracking-[0.5px] text-white/45">
+            <span>Passage:</span>
+            <InlineEditField
+              editing={editingField === 'page'}
+              value={draftPage}
+              onChange={setDraftPage}
+              onCommit={() => { commitField('page'); setEditingField(null) }}
+              onCancel={cancelEdit}
+              onStartEdit={() => {
+                setDraftPage(selectedLink.page || '')
+                startEdit('page')
+              }}
+              displayValue={selectedLink.page || 'p.—'}
+              editTitle="Modifier le passage"
+            />
+          </p>
         </>
       ) : (
         <>
@@ -295,35 +281,20 @@ export function LinkDetails({
 
       <p className="mb-4 inline-flex items-center gap-1.5 text-[0.8rem] text-white/40">
         <BookCopy size={12} className="shrink-0 text-white/50" />
-        {editingField === 'edition' ? (
-          <input
-            autoFocus
-            className="w-full rounded-md border border-white/10 bg-white/4 px-2 py-1 font-mono text-[0.72rem] text-white outline-none focus:border-[rgba(140,220,255,0.28)]"
-            value={draftEdition}
-            onChange={(e) => setDraftEdition(e.target.value)}
-            onBlur={() => { commitField('edition'); setEditingField(null) }}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') cancelEdit()
-              if (e.key === 'Enter') { commitField('edition'); setEditingField(null) }
-            }}
-            placeholder="éd.—"
-          />
-        ) : (
-          <span className="inline-flex items-center gap-2">
-            {selectedLink.edition || 'éd.—'}
-            <Button
-              type="button"
-              className="shrink-0 cursor-pointer rounded border border-white/10 bg-white/5 px-2 py-0.5 text-[0.6rem] font-semibold text-white/60 transition-all hover:border-white/20 hover:bg-white/8"
-              onClick={() => {
-                setDraftEdition(selectedLink.edition || '')
-                startEdit('edition')
-              }}
-              title="Modifier l'édition"
-            >
-              Modifier
-            </Button>
-          </span>
-        )}
+        <InlineEditField
+          editing={editingField === 'edition'}
+          value={draftEdition}
+          onChange={setDraftEdition}
+          onCommit={() => { commitField('edition'); setEditingField(null) }}
+          onCancel={cancelEdit}
+          onStartEdit={() => {
+            setDraftEdition(selectedLink.edition || '')
+            startEdit('edition')
+          }}
+          displayValue={selectedLink.edition || 'éd.—'}
+          placeholder="éd.—"
+          editTitle="Modifier l'édition"
+        />
       </p>
     </div>
   )

@@ -1,8 +1,9 @@
-import { Pencil, ArrowRight, ArrowLeft, LinkIcon, Plus } from 'lucide-react'
+import { Pencil, ArrowRight, ArrowLeft, Plus } from 'lucide-react'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { AxisBadge } from '@/common/components/ui/AxisBadge'
 import { Button } from '@/common/components/ui/Button'
 import { SectionHeading } from '@/common/components/ui/SectionHeading'
+import { ReferenceRow } from '@/common/components/ui/ReferenceRow'
 
 export function NodeDetails({
   selectedNode,
@@ -104,19 +105,18 @@ export function NodeDetails({
           </SectionHeading>
           <ul className="flex list-none flex-col gap-2">
             {getOutgoingRefs(selectedNode).map(({ link, other }, i) => (
-              <li
+              <ReferenceRow
                 key={i}
-                className="cursor-pointer rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 transition-all hover:border-[rgba(140,220,255,0.25)] hover:bg-[rgba(140,220,255,0.08)]"
+                label="cite"
+                color="rgba(140,220,255,0.7)"
+                title={other?.title}
+                meta={refMeta(other, link)}
+                excerpt={linkExcerpt(link)}
                 onClick={() => {
                   setLinkContextNode(selectedNode)
                   setSelectedLink(link)
                 }}
-              >
-                <span className="mb-1 inline-flex items-center gap-1 text-[0.68rem] font-bold uppercase tracking-[0.5px] text-[rgba(140,220,255,0.7)]"><LinkIcon size={10} /> cite</span>
-                <strong className="mb-0.5 block text-[0.88rem] text-white">{other?.title}</strong>
-                <span className="text-[0.75rem] text-white/30">{refMeta(other, link)}</span>
-                <p className="mt-1.5 text-[0.8rem] italic leading-relaxed text-white/45">{linkExcerpt(link) || '—'}</p>
-              </li>
+              />
             ))}
           </ul>
         </>
@@ -130,19 +130,18 @@ export function NodeDetails({
           </SectionHeading>
           <ul className="flex list-none flex-col gap-2">
             {getIncomingRefs(selectedNode).map(({ link, other }, i) => (
-              <li
+              <ReferenceRow
                 key={i}
-                className="cursor-pointer rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 transition-all hover:border-[rgba(255,171,64,0.25)] hover:bg-[rgba(255,171,64,0.08)]"
+                label="cité par"
+                color="rgba(255,171,64,0.7)"
+                title={other?.title}
+                meta={refMeta(other, link)}
+                excerpt={linkExcerpt(link)}
                 onClick={() => {
                   setLinkContextNode(selectedNode)
                   setSelectedLink(link)
                 }}
-              >
-                <span className="mb-1 inline-flex items-center gap-1 text-[0.68rem] font-bold uppercase tracking-[0.5px] text-[rgba(255,171,64,0.7)]"><LinkIcon size={10} /> cité par</span>
-                <strong className="mb-0.5 block text-[0.88rem] text-white">{other?.title}</strong>
-                <span className="text-[0.75rem] text-white/30">{refMeta(other, link)}</span>
-                <p className="mt-1.5 text-[0.8rem] italic leading-relaxed text-white/45">{linkExcerpt(link) || '—'}</p>
-              </li>
+              />
             ))}
           </ul>
         </>

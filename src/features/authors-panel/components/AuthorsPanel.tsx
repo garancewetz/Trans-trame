@@ -1,10 +1,10 @@
-import { Plus, Search, X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { Author, Book } from '@/types/domain'
 import { authorName } from '@/common/utils/authorUtils'
 import { axesGradient } from '@/common/utils/categories'
 import { Button } from '@/common/components/ui/Button'
-import { TextInput } from '@/common/components/ui/TextInput'
+import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
 
 type Props = {
   open: boolean
@@ -95,16 +95,13 @@ export function AuthorsPanel({
           </div>
         </div>
 
-        <div className="relative mb-4">
-          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/25" />
-          <TextInput
-            variant="default"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Rechercher un·e auteur·ice..."
-            className="px-9 py-[9px] text-[0.82rem] backdrop-blur-lg focus:border-[rgba(255,180,130,0.4)]"
-          />
-        </div>
+        <SearchInputWithClear
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Rechercher un·e auteur·ice..."
+          focusTone="amber"
+          className="mb-4"
+        />
 
         <div className="space-y-1">
           {filtered.length === 0 && q.trim() ? (

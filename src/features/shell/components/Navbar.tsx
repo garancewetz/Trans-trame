@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { BarChart3, LayoutGrid, BookOpen, Search, PenLine, X, Users } from 'lucide-react'
+import { BarChart3, LayoutGrid, BookOpen, PenLine, X, Users } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
-import { SearchInput } from '@/common/components/ui/SearchInput'
+import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
 import { Logo } from '@/common/components/Logo'
 import { ViewSelector } from './ViewSelector'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
@@ -127,31 +127,17 @@ export function Navbar({ search, filters, view, catalogue }) {
 
           {/* Global search */}
           <div className="relative w-80 shrink-0 md:w-[420px]" ref={searchRef}>
-            <div className="pointer-events-none absolute left-3 top-1/2 flex -translate-y-1/2 text-white/25">
-              <Search size={15} />
-            </div>
-            <SearchInput
-              className="w-full rounded-[10px] border border-white/10 bg-white/5 px-9 py-[9px] text-[0.82rem] text-white outline-none backdrop-blur-lg transition-all placeholder:text-white/25 focus:border-[rgba(168,130,255,0.4)] focus:bg-white/10 focus:shadow-[0_0_0_3px_rgba(168,130,255,0.08)]"
-              type="text"
+            <SearchInputWithClear
               placeholder="Rechercher un ouvrage ou un·e auteur·ice…"
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
+              onClear={() => {
+                setGlobalSearch('')
+                setSearchFocused(false)
+              }}
               onFocus={() => setSearchFocused(true)}
+              focusTone="violet"
             />
-            {globalSearch && (
-              <Button
-                variant="ghost"
-                layout="inline"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2"
-                onClick={() => {
-                  setGlobalSearch('')
-                  setSearchFocused(false)
-                }}
-                type="button"
-              >
-                <X size={16} />
-              </Button>
-            )}
 
             {/* Dropdown */}
             {searchFocused && globalSearch.trim() && (

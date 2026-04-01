@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
+import { SearchResultsDropdown } from '@/common/components/ui/SearchResultsDropdown'
 
 export function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
   const [show, setShow] = useState(false)
@@ -16,13 +17,17 @@ export function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
   const sourceResults = useMemo(() => {
     const q = sourceSearch.toLowerCase().trim()
     if (!q) return []
-    return bookNodes.filter((n) => n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q))
+    return bookNodes
+      .filter((n) => n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q))
+      .map((n) => ({ ...n, meta: bookAuthorDisplay(n, authorsMap) }))
   }, [bookNodes, sourceSearch, authorsMap])
 
   const targetResults = useMemo(() => {
     const q = targetSearch.toLowerCase().trim()
     if (!q) return []
-    return bookNodes.filter((n) => n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q))
+    return bookNodes
+      .filter((n) => n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q))
+      .map((n) => ({ ...n, meta: bookAuthorDisplay(n, authorsMap) }))
   }, [bookNodes, targetSearch, authorsMap])
 
   const handleSubmit = (e) => {
@@ -72,28 +77,16 @@ export function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
         placeholder={source ? 'Changer la source…' : 'Rechercher la source…'}
       />
       {sourceSearch.trim() && (
-        <div className="mb-2.5 max-h-[160px] overflow-y-auto rounded border border-white/10 bg-white/5 p-1">
-          {sourceResults.length === 0 ? (
-            <div className="px-2 py-2 text-center text-[0.7rem] text-white/35">Aucun résultat</div>
-          ) : (
-            <ul className="flex list-none flex-col">
-              {sourceResults.map((n) => (
-                <li key={n.id}>
-                  <Button
-                    type="button"
-                    className="w-full cursor-pointer rounded bg-transparent px-2 py-2 text-left text-[0.7rem] text-white/75 transition-colors hover:bg-white/10"
-                    onClick={() => {
-                      setSource(n.id)
-                      setSourceSearch('')
-                    }}
-                  >
-                    {n.title} — <span className="text-white/35">{bookAuthorDisplay(n, authorsMap)}</span>
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <SearchResultsDropdown
+          results={sourceResults}
+          onPick={(n) => {
+            setSource(n.id)
+            setSourceSearch('')
+          }}
+          emptyLabel="Aucun résultat"
+          maxHeight="max-h-[160px]"
+          className="mb-2.5"
+        />
       )}
 
       <label className="mb-1 block text-[0.62rem] uppercase text-white/30">Cible</label>
@@ -108,28 +101,16 @@ export function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
         placeholder={target ? 'Changer la cible…' : 'Rechercher la cible…'}
       />
       {targetSearch.trim() && (
-        <div className="mb-3 max-h-[160px] overflow-y-auto rounded border border-white/10 bg-white/5 p-1">
-          {targetResults.length === 0 ? (
-            <div className="px-2 py-2 text-center text-[0.7rem] text-white/35">Aucun résultat</div>
-          ) : (
-            <ul className="flex list-none flex-col">
-              {targetResults.map((n) => (
-                <li key={n.id}>
-                  <Button
-                    type="button"
-                    className="w-full cursor-pointer rounded bg-transparent px-2 py-2 text-left text-[0.7rem] text-white/75 transition-colors hover:bg-white/10"
-                    onClick={() => {
-                      setTarget(n.id)
-                      setTargetSearch('')
-                    }}
-                  >
-                    {n.title} — <span className="text-white/35">{bookAuthorDisplay(n, authorsMap)}</span>
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <SearchResultsDropdown
+          results={targetResults}
+          onPick={(n) => {
+            setTarget(n.id)
+            setTargetSearch('')
+          }}
+          emptyLabel="Aucun résultat"
+          maxHeight="max-h-[160px]"
+          className="mb-3"
+        />
       )}
 
       <div className="flex gap-2">

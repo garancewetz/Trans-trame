@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { BookPlus, Check, Merge, Plus, Sparkles, Trash2 } from 'lucide-react'
-import { authorName } from '@/common/utils/authorUtils'
+import { Check, Merge, Sparkles, Trash2 } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
-import { INPUT, TD } from '../../tableConstants'
+import { INPUT } from '../../tableConstants'
 import { TH } from '../TableSubcomponents'
 import { TableMergeAuthorsModal } from '../TableMergeAuthorsModal'
+import { AuthorTableRow } from '../AuthorTableRow'
+import { useAuthorsTabState } from '../../hooks/useAuthorsTabState'
 import type { Author, AuthorId, Book } from '@/types/domain'
+import { Plus } from 'lucide-react'
 
 type AuthorsTabProps = {
   authors: Author[]
@@ -33,163 +34,38 @@ export function AuthorsTab({
   focusAuthorId,
   onMergeAuthors,
 }: AuthorsTabProps) {
-  const [editingCell, setEditingCell] = useState<null | { authorId: AuthorId; field: 'firstName' | 'lastName' }>(null) // { authorId, field }
-  const [editingValue, setEditingValue] = useState('')
-  const [selectedIds, setSelectedIds] = useState<Set<AuthorId>>(new Set())
-  const [bulkConfirm, setBulkConfirm] = useState(false)
-  const [migrating, setMigrating] = useState(false)
-  const [migrateResult, setMigrateResult] = useState<{
-    newAuthors: number
-    updatedBooks: number
-  } | null>(null)
-
-  const [mergeModal, setMergeModal] = useState(false)
-  const [mergeKeepId, setMergeKeepId] = useState<AuthorId | null>(null)
-  const [mergeConfirm, setMergeConfirm] = useState(false)
-
-  const [sortCol, setSortCol] = useState('lastName')
-  const [sortDir, setSortDir] = useState('asc')
-  const [inputFirstName, setInputFirstName] = useState('')
-  const [inputLastName, setInputLastName] = useState('')
-  const firstNameRef = useRef<HTMLInputElement | null>(null)
-
-  useEffect(() => {
-    if (!focusAuthorId) return
-    const el = document.querySelector(`[data-author-row-id="${focusAuthorId}"]`)
-    if (el && el instanceof HTMLElement) {
-      el.scrollIntoView({ block: 'center' })
-    }
-  }, [focusAuthorId])
-
-  const legacyCount = books.filter((b) => !b.authorIds?.length && (b.firstName || b.lastName)).length
-
-  const handleMigrate = async () => {
-    if (!onMigrateData) return
-    setMigrating(true)
-    setMigrateResult(null)
-    const result = await onMigrateData()
-    setMigrating(false)
-    setMigrateResult(result)
-  }
-
-  const bookCountByAuthor = useMemo(() => {
-    const map = new Map()
-    books.forEach((b) => {
-      ;(b.authorIds || []).forEach((aid) => {
-        map.set(aid, (map.get(aid) || 0) + 1)
-      })
-    })
-    return map
-  }, [books])
-
-  const mergeAuthorsList = useMemo(() => {
-    if (selectedIds.size !== 2) return []
-    const ids = new Set(selectedIds)
-    return (authors || []).filter((a) => ids.has(a.id))
-  }, [authors, selectedIds])
-
-  const filteredAuthors = useMemo(() => {
-    const q = search.toLowerCase().trim()
-    let list = [...authors]
-    if (q) {
-      list = list.filter(
-        (a) =>
-          `${a.firstName ?? ''} ${a.lastName ?? ''}`.toLowerCase().includes(q) ||
-          (a.lastName ?? '').toLowerCase().includes(q) ||
-          (a.firstName ?? '').toLowerCase().includes(q)
-      )
-    }
-    list.sort((a, b) => {
-      let va, vb
-      switch (sortCol) {
-        case 'lastName':
-          va = (a.lastName || '').toLowerCase()
-          vb = (b.lastName || '').toLowerCase()
-          break
-        case 'firstName':
-          va = (a.firstName || '').toLowerCase()
-          vb = (b.firstName || '').toLowerCase()
-          break
-        case 'bookCount':
-          va = bookCountByAuthor.get(a.id) || 0
-          vb = bookCountByAuthor.get(b.id) || 0
-          break
-        default:
-          va = ''; vb = ''
-      }
-      if (va < vb) return sortDir === 'asc' ? -1 : 1
-      if (va > vb) return sortDir === 'asc' ? 1 : -1
-      return 0
-    })
-    return list
-  }, [authors, search, sortCol, sortDir, bookCountByAuthor])
-
-  const handleSort = (col) => {
-    if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    else { setSortCol(col); setSortDir('asc') }
-  }
-
-  const allSelected = filteredAuthors.length > 0 && filteredAuthors.every((a) => selectedIds.has(a.id))
-  const someSelected = selectedIds.size > 0 && !allSelected
-
-  const toggleAll = () => {
-    if (allSelected || someSelected) setSelectedIds(new Set())
-    else setSelectedIds(new Set(filteredAuthors.map((a) => a.id)))
-  }
-
-  const toggleRow = (id) =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-
-  const handleBulkDelete = () => {
-    if (!bulkConfirm) { setBulkConfirm(true); return }
-    selectedIds.forEach((id) => onDeleteAuthor(id))
-    setSelectedIds(new Set())
-    setBulkConfirm(false)
-  }
-
-  const clearSelection = () => setSelectedIds(new Set())
-
-  const handleAddAuthor = () => {
-    if (!inputLastName.trim()) return
-    onAddAuthor({
-      id: `auth_${crypto.randomUUID().slice(0, 8)}`,
-      type: 'author',
-      firstName: inputFirstName.trim(),
-      lastName: inputLastName.trim(),
-      axes: [],
-    })
-    setInputFirstName('')
-    setInputLastName('')
-    setTimeout(() => firstNameRef.current?.focus(), 0)
-  }
-
-  const commitEdit = () => {
-    if (!editingCell) return
-    const { authorId, field } = editingCell
-    const author = authors.find((a) => a.id === authorId)
-    if (!author) { setEditingCell(null); return }
-    const val = editingValue.trim()
-    if (val !== (author[field] || '')) {
-      onUpdateAuthor({ ...author, [field]: val })
-    }
-    setEditingCell(null)
-  }
-
-  const handleConfirmMerge = () => {
-    if (!mergeKeepId || mergeAuthorsList.length !== 2) return
-    if (!mergeConfirm) { setMergeConfirm(true); return }
-    const from = mergeAuthorsList.find((a) => a.id !== mergeKeepId)
-    if (from) onMergeAuthors?.(from.id, mergeKeepId)
-    setMergeModal(false)
-    setMergeKeepId(null)
-    setMergeConfirm(false)
-    clearSelection()
-  }
+  const {
+    editingCell, setEditingCell,
+    editingValue, setEditingValue,
+    selectedIds, setSelectedIds,
+    bulkConfirm, setBulkConfirm,
+    migrating,
+    migrateResult,
+    mergeModal, setMergeModal,
+    mergeKeepId, setMergeKeepId,
+    mergeConfirm, setMergeConfirm,
+    sortCol, sortDir,
+    inputFirstName, setInputFirstName,
+    inputLastName, setInputLastName,
+    firstNameRef,
+    legacyCount,
+    bookCountByAuthor,
+    mergeAuthorsList,
+    filteredAuthors,
+    allSelected, someSelected,
+    handleMigrate,
+    handleSort,
+    toggleAll,
+    toggleRow,
+    handleBulkDelete,
+    handleAddAuthor,
+    commitEdit,
+    handleConfirmMerge,
+  } = useAuthorsTabState({
+    authors, books, search,
+    onAddAuthor, onUpdateAuthor, onDeleteAuthor,
+    onMigrateData, onMergeAuthors, focusAuthorId,
+  })
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -301,15 +177,9 @@ export function AuthorsTab({
                     <Check size={9} />
                   </Button>
                 </th>
-                <TH col="lastName" activeCol={sortCol} dir={sortDir} onSort={handleSort} className="min-w-[140px]">
-                  Nom
-                </TH>
-                <TH col="firstName" activeCol={sortCol} dir={sortDir} onSort={handleSort} className="min-w-[140px]">
-                  Prénom
-                </TH>
-                <TH col="bookCount" activeCol={sortCol} dir={sortDir} onSort={handleSort} className="w-20">
-                  Ouvrages
-                </TH>
+                <TH col="lastName" activeCol={sortCol} dir={sortDir} onSort={handleSort} className="min-w-[140px]">Nom</TH>
+                <TH col="firstName" activeCol={sortCol} dir={sortDir} onSort={handleSort} className="min-w-[140px]">Prénom</TH>
+                <TH col="bookCount" activeCol={sortCol} dir={sortDir} onSort={handleSort} className="w-20">Ouvrages</TH>
                 <th className="w-24 px-3 py-2.5" />
               </tr>
 
@@ -354,118 +224,23 @@ export function AuthorsTab({
             </thead>
 
             <tbody>
-              {filteredAuthors.map((author, i) => {
-                const isSelected = selectedIds.has(author.id)
-                const isEditFirst = editingCell?.authorId === author.id && editingCell?.field === 'firstName'
-                const isEditLast = editingCell?.authorId === author.id && editingCell?.field === 'lastName'
-                const bookCount = bookCountByAuthor.get(author.id) || 0
-
-                return (
-                  <tr
-                    key={author.id}
-                    data-author-row-id={author.id}
-                    className={[
-                      'group border-b border-white/4 transition-colors',
-                      focusAuthorId === author.id ? 'bg-[rgba(140,220,255,0.08)] ring-1 ring-[rgba(140,220,255,0.45)]' : '',
-                      isSelected ? 'bg-[rgba(0,255,135,0.025)]' : i % 2 === 0 ? 'bg-white/[0.003]' : '',
-                      'hover:bg-white/2.5',
-                    ].join(' ')}
-                  >
-                    {/* Checkbox */}
-                    <td className="px-3 py-2">
-                      <Button
-                        type="button"
-                        onClick={() => toggleRow(author.id)}
-                        className={[
-                          'flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded border transition-all',
-                          isSelected
-                            ? 'border-[#00FF87] bg-[rgba(0,255,135,0.18)] text-[#00FF87]'
-                            : 'border-white/14 text-transparent hover:border-white/28',
-                        ].join(' ')}
-                      >
-                        <Check size={9} />
-                      </Button>
-                    </td>
-
-                    {/* Nom */}
-                    <td className={TD}>
-                      {isEditLast ? (
-                        <TextInput
-                          variant="table"
-                          autoFocus
-                          className={INPUT}
-                          value={editingValue}
-                          onChange={(e) => setEditingValue(e.target.value)}
-                          onBlur={commitEdit}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') commitEdit()
-                            if (e.key === 'Escape') setEditingCell(null)
-                          }}
-                        />
-                      ) : (
-                        <span
-                          className="block min-h-[1.2em] cursor-text px-0.5 hover:text-white"
-                          onClick={() => {
-                            setEditingCell({ authorId: author.id, field: 'lastName' })
-                            setEditingValue(author.lastName || '')
-                          }}
-                        >
-                          {author.lastName ? author.lastName.toUpperCase() : <span className="text-white/18">—</span>}
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Prénom */}
-                    <td className={TD}>
-                      {isEditFirst ? (
-                        <TextInput
-                          variant="table"
-                          autoFocus
-                          className={INPUT}
-                          value={editingValue}
-                          onChange={(e) => setEditingValue(e.target.value)}
-                          onBlur={commitEdit}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') commitEdit()
-                            if (e.key === 'Escape') setEditingCell(null)
-                          }}
-                        />
-                      ) : (
-                        <span
-                          className="block min-h-[1.2em] cursor-text px-0.5 text-white/55 hover:text-white"
-                          onClick={() => {
-                            setEditingCell({ authorId: author.id, field: 'firstName' })
-                            setEditingValue(author.firstName || '')
-                          }}
-                        >
-                          {author.firstName || <span className="text-white/18">—</span>}
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Compte ouvrages */}
-                    <td className="px-3 py-2">
-                      <span className="font-mono text-[0.75rem] tabular-nums text-white/35">
-                        {bookCount || <span className="text-white/18">—</span>}
-                      </span>
-                    </td>
-
-                    {/* Ajouter un ouvrage */}
-                    <td className="px-3 py-2 text-right">
-                      {onAddBookForAuthor && (
-                        <Button
-                          type="button"
-                          title={`Ajouter un ouvrage pour ${authorName(author)}`}
-                          onClick={() => onAddBookForAuthor(author)}
-                          className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/8 px-1.5 py-0.5 text-[0.62rem] font-semibold text-white/65 opacity-100 transition-all hover:border-[rgba(140,220,255,0.35)] hover:text-[rgba(140,220,255,0.85)]"
-                        >
-                          <BookPlus size={10} /> Ouvrage
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
+              {filteredAuthors.map((author, i) => (
+                <AuthorTableRow
+                  key={author.id}
+                  author={author}
+                  index={i}
+                  isSelected={selectedIds.has(author.id)}
+                  focusAuthorId={focusAuthorId}
+                  bookCount={bookCountByAuthor.get(author.id) || 0}
+                  editingCell={editingCell}
+                  editingValue={editingValue}
+                  setEditingValue={setEditingValue}
+                  setEditingCell={setEditingCell}
+                  commitEdit={commitEdit}
+                  toggleRow={toggleRow}
+                  onAddBookForAuthor={onAddBookForAuthor}
+                />
+              ))}
             </tbody>
           </table>
         </div>
@@ -485,4 +260,3 @@ export function AuthorsTab({
     </div>
   )
 }
-

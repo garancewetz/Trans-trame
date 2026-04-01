@@ -13,10 +13,11 @@ import {
 } from '../cameraControls'
 import { drawNode, getNodeRadius } from '../nodeObject'
 import { drawGenealogyOverlay } from '../axisLabels'
-import { blendAxesColors } from '@/common/utils/categories'
+
 import type { GraphData, Link, Book, Author, AuthorId } from '@/types/domain'
 import { normalizeEndpointId } from '../domain/graphDataModel'
 import { useGraphDerivedLinkState } from '../hooks/useGraphDerivedLinkState'
+import { useGraphLinkCallbacks } from '../hooks/useGraphLinkCallbacks'
 
 function graphInstanceRefresh(fg: ForceGraphMethods | null | undefined) {
   if (!fg) return
@@ -165,6 +166,13 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   useEffect(() => setupWheelZoomHandlers({ containerRef, fgRef, velRef, camRef }), [])
   useEffect(() => startPanZoomLoop({ fgRef, keysRef, velRef, animFrameRef, camRef }), [])
 
+  const { anchorIds, connectedLinks, connectedNodes, citationsByNodeId, linkWeights, degreeByNodeId } = useGraphDerivedLinkState({
+    graphData,
+    selectedAuthorId,
+    peekNodeId,
+    selectedNode,
+  })
+
   // Apply layout positions when view mode changes
   const prevViewRef = useRef(viewMode)
   useEffect(() => {
@@ -220,7 +228,13 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         const forceX = fg.d3Force('x')
         if (forceX) {
           const strengthFn = Reflect.get(forceX, 'strength')
-          if (typeof strengthFn === 'function') strengthFn.call(forceX, 0.06)
+          if (typeof strengthFn === 'function') {
+            // Isolated nodes (no edges) get a strong X pull so they don't drift far
+            strengthFn.call(forceX, (node: GraphNode) => {
+              const deg = degreeByNodeId.get(node.id) || 0
+              return deg === 0 ? 0.35 : 0.06
+            })
+          }
           const xFn = Reflect.get(forceX, 'x')
           if (typeof xFn === 'function') {
             xFn.call(forceX, (node: GraphNode) => {
@@ -235,7 +249,13 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         const forceY = fg.d3Force('y')
         if (forceY) {
           const strengthFn = Reflect.get(forceY, 'strength')
-          if (typeof strengthFn === 'function') strengthFn.call(forceY, FORCE_Y_CENTER_STRENGTH)
+          if (typeof strengthFn === 'function') {
+            // Isolated nodes get a stronger Y pull toward center
+            strengthFn.call(forceY, (node: GraphNode) => {
+              const deg = degreeByNodeId.get(node.id) || 0
+              return deg === 0 ? 0.4 : FORCE_Y_CENTER_STRENGTH
+            })
+          }
           const yFn = Reflect.get(forceY, 'y')
           if (typeof yFn === 'function') yFn.call(forceY, 0)
         }
@@ -248,7 +268,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     }, 100)
 
     return () => clearTimeout(timer)
-  }, [layoutPositions, viewMode, graphData.nodes])
+  }, [layoutPositions, viewMode, graphData.nodes, degreeByNodeId])
 
   useEffect(() => {
     const fg = fgRef.current
@@ -287,13 +307,6 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     rafId = requestAnimationFrame(step)
     return () => cancelAnimationFrame(rafId)
   }, [selectedNode, peekNodeId, viewMode, graphData.nodes])
-
-  const { anchorIds, connectedLinks, connectedNodes, citationsByNodeId, linkWeights, degreeByNodeId } = useGraphDerivedLinkState({
-    graphData,
-    selectedAuthorId,
-    peekNodeId,
-    selectedNode,
-  })
 
   // Links and neighbor nodes connected to hovered node (refs for perf — no re-render)
   const hoveredLinksRef = useRef(new Set<string>())
@@ -406,39 +419,27 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     [citationsByNodeId, degreeByNodeId]
   )
 
-  const isLinkActive = useCallback(
-    (link) => {
-      if (!anchorIds) return false
-      const srcId = normalizeEndpointId(link.source)
-      const tgtId = normalizeEndpointId(link.target)
-      if (!srcId || !tgtId) return false
-      return connectedLinks.has(`${srcId}-${tgtId}`)
-    },
-    [anchorIds, connectedLinks]
-  )
-
-  const isLinkHovered = useCallback(
-    (link) => {
-      const srcId = normalizeEndpointId(link.source)
-      const tgtId = normalizeEndpointId(link.target)
-      if (!srcId || !tgtId) return false
-      return hoveredLinksRef.current.has(`${srcId}-${tgtId}`)
-    },
-    []
-  )
-
-  const getLinkWeight = useCallback(
-    (link) => {
-      const srcId = normalizeEndpointId(link.source)
-      const tgtId = normalizeEndpointId(link.target)
-      if (!srcId || !tgtId) return 1
-      const key = [srcId, tgtId].sort().join('-')
-      return linkWeights.get(key) || 1
-    },
-    [linkWeights]
-  )
-
   const hasSelection = Boolean(anchorIds)
+
+  const {
+    linkColor,
+    linkWidth,
+    linkCanvasObject,
+    arrowColor,
+    linkDirectionalArrowLength,
+    linkDirectionalParticles,
+    linkDirectionalParticleWidth,
+    linkDirectionalParticleColor,
+  } = useGraphLinkCallbacks({
+    hasSelection,
+    activeFilter,
+    viewMode,
+    anchorIds,
+    connectedLinks,
+    linkWeights,
+    hoveredNodeRef,
+    hoveredLinksRef,
+  })
 
   // Auto recadrage (vue d'ensemble) : au chargement / changement de vue,
   // s'assurer que le graphe "tient" dans l'écran pour voir plus de connexions d'un coup d'œil.
@@ -457,115 +458,6 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
       syncedZoomToFit(fg, camRef, duration, 80)
     },
     [hasSelection, activeFilter],
-  )
-
-  const linkColor = useCallback(
-    (link) => {
-      // Hovered links are drawn by linkCanvasObject — return transparent to avoid double-draw
-      if (hoveredNodeRef.current && isLinkHovered(link)) return 'rgba(0,0,0,0)'
-
-      // Hover focus: dim non-connected links to near-invisible
-      if (hoveredNodeRef.current && !hasSelection && !isLinkHovered(link)) return 'rgba(140, 220, 255, 0.03)'
-
-      // Liens auteur→livre : fin et discret (lien structurel, pas une citation)
-      if (link.type === 'author-book') {
-        if (isLinkActive(link)) return 'rgba(180, 220, 255, 0.45)'
-        return 'rgba(140, 200, 255, 0.10)'
-      }
-
-      if (viewMode === 'genealogy') {
-        if (!hasSelection) return 'rgba(190, 210, 255, 0.6)'
-        if (isLinkActive(link)) return 'rgba(220, 238, 255, 0.95)'
-        return 'rgba(160, 185, 235, 0.35)'
-      }
-      // Baseline opacity reduced to 0.15 to declutter the default view
-      if (!hasSelection && !activeFilter) return 'rgba(140, 220, 255, 0.15)'
-      if (isLinkActive(link)) return 'rgba(190, 240, 255, 0.85)'
-      return 'rgba(140, 220, 255, 0.10)'
-    },
-    [hasSelection, activeFilter, isLinkActive, isLinkHovered, viewMode]
-  )
-
-  const linkWidth = useCallback(
-    (link) => {
-      // Liens auteur→livre : toujours fins
-      if (link.type === 'author-book') {
-        return isLinkActive(link) ? 1.2 : 0.5
-      }
-
-      const weight = getLinkWeight(link)
-      const isStrong = weight > 1
-
-      if (viewMode === 'genealogy') {
-        if (!hasSelection) return isStrong ? 1.8 : 1.4
-        return isLinkActive(link) ? (isStrong ? 3.0 : 2.6) : 1
-      }
-      if (!hasSelection && !hoveredNodeRef.current) return isStrong ? 1.0 : 0.5
-      if (isLinkActive(link)) return isStrong ? 2.8 : 2.2
-      if (hoveredNodeRef.current && isLinkHovered(link)) return isStrong ? 1.5 : 1.0
-      return 0.5
-    },
-    [hasSelection, isLinkActive, isLinkHovered, getLinkWeight, viewMode]
-  )
-
-  // Custom canvas drawing for hovered links — gradient from source to target color
-  const linkCanvasObject = useCallback(
-    (link, ctx, globalScale) => {
-      // Only draw gradient for links connected to hovered node (and not selected, to not conflict)
-      if (!hoveredNodeRef.current || hasSelection) return
-      if (!isLinkHovered(link)) return
-
-      const src = link.source
-      const tgt = link.target
-      if (!src || !tgt || !Number.isFinite(src.x) || !Number.isFinite(tgt.x)) return
-
-      const srcColor = blendAxesColors(src.axes || [])
-      const tgtColor = blendAxesColors(tgt.axes || [])
-
-      const weight = getLinkWeight(link)
-      const isStrong = weight > 1
-      const lineWidth = (isStrong ? 2.2 : 1.4) / globalScale
-
-      // Build the path (respecting curvature via __controlPoints)
-      ctx.beginPath()
-      ctx.moveTo(src.x, src.y)
-      const cp = link.__controlPoints
-      if (!cp) {
-        ctx.lineTo(tgt.x, tgt.y)
-      } else if (cp.length === 2) {
-        ctx.quadraticCurveTo(cp[0], cp[1], tgt.x, tgt.y)
-      } else {
-        ctx.bezierCurveTo(cp[0], cp[1], cp[2], cp[3], tgt.x, tgt.y)
-      }
-
-      // Create gradient along the link direction
-      // Source (the book that cites) is bright and opaque, fading toward target
-      const grad = ctx.createLinearGradient(src.x, src.y, tgt.x, tgt.y)
-      grad.addColorStop(0, withAlpha(srcColor, isStrong ? 1.0 : 0.9))
-      grad.addColorStop(0.25, withAlpha(srcColor, 0.7))
-      grad.addColorStop(0.6, withAlpha(tgtColor, 0.35))
-      grad.addColorStop(1, withAlpha(tgtColor, isStrong ? 0.45 : 0.2))
-
-      ctx.strokeStyle = grad
-      ctx.lineWidth = lineWidth
-      ctx.stroke()
-    },
-    [hasSelection, isLinkHovered, getLinkWeight]
-  )
-
-  const arrowColor = useCallback(
-    (link) => {
-      // Liens auteur→livre : pas de flèche directionnelle
-      if (link.type === 'author-book') return 'rgba(0,0,0,0)'
-      // When hovering a node, color arrows by source node color
-      if (hoveredNodeRef.current && !hasSelection && isLinkHovered(link)) {
-        const src = typeof link.source === 'object' ? link.source : null
-        if (src) return withAlpha(blendAxesColors(src.axes || []), 0.8)
-      }
-      if (!hasSelection) return 'rgba(140, 220, 255, 0.5)'
-      return isLinkActive(link) ? '#b4e6ff' : 'rgba(255,255,255,0.05)'
-    },
-    [hasSelection, isLinkActive, isLinkHovered]
   )
 
   const onRenderFramePre = useCallback(
@@ -636,48 +528,13 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
           const dist = Math.abs(tx - sx)
           return Math.min(0.55 + dist / 700, 1.4)
         }}
-        linkDirectionalArrowLength={(link) => {
-          if (hoveredNodeRef.current && !hasSelection) return isLinkHovered(link) ? 6 : 0
-          return !hasSelection ? 4 : isLinkActive(link) ? 7 : 3
-        }}
+        linkDirectionalArrowLength={linkDirectionalArrowLength}
         linkDirectionalArrowRelPos={0.88}
         linkDirectionalArrowColor={arrowColor}
-        linkDirectionalParticles={(link) => {
-          // During hover focus: only show particles on hovered links
-          if (hoveredNodeRef.current && !hasSelection) return isLinkHovered(link) ? 3 : 0
-          if (viewMode === 'genealogy') {
-            if (!hasSelection) return 2
-            return isLinkActive(link) ? 6 : 2
-          }
-          return !hasSelection ? 2 : isLinkActive(link) ? 5 : 0
-        }}
-        linkDirectionalParticleWidth={(link) => {
-          if (hoveredNodeRef.current && !hasSelection) return isLinkHovered(link) ? 2 : 0
-          if (viewMode === 'genealogy') {
-            if (!hasSelection) return 1
-            return isLinkActive(link) ? 2 : 1
-          }
-          return !hasSelection ? 1 : isLinkActive(link) ? 2 : 0
-        }}
+        linkDirectionalParticles={linkDirectionalParticles}
+        linkDirectionalParticleWidth={linkDirectionalParticleWidth}
         linkDirectionalParticleSpeed={0.004}
-        linkDirectionalParticleColor={(link) => {
-          // Hovered links: particles take the source node color
-          if (hoveredNodeRef.current && !hasSelection && isLinkHovered(link)) {
-            const src = typeof link.source === 'object' ? link.source : null
-            if (src) return withAlpha(blendAxesColors(src.axes || []), 0.9)
-          }
-          return viewMode === 'genealogy'
-            ? !hasSelection
-              ? 'rgba(140, 220, 255, 0.6)'
-              : isLinkActive(link)
-                ? '#b4e6ff'
-                : 'rgba(140, 220, 255, 0.22)'
-            : !hasSelection
-              ? 'rgba(140, 220, 255, 0.6)'
-              : isLinkActive(link)
-                ? '#b4e6ff'
-                : 'rgba(255,255,255,0.05)'
-        }}
+        linkDirectionalParticleColor={linkDirectionalParticleColor}
         backgroundColor="#06030f"
         onEngineInit={handleInit}
         onEngineStop={() => {
@@ -692,11 +549,5 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   )
 })
 
-function withAlpha(hex, alpha) {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return `rgba(${r},${g},${b},${alpha})`
-}
 
 export { Graph }

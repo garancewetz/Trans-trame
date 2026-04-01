@@ -10,9 +10,7 @@
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:strict": "tsc -p tsconfig.strict.json --noEmit",
-    "preview": "vite preview",
-    "stress-seed": "node --env-file=.env.local scripts/stress-seed.mjs seed",
-    "stress-seed:clean": "node --env-file=.env.local scripts/stress-seed.mjs clean"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.100.1",

@@ -1,10 +1,10 @@
-import { ArrowDown, ArrowLeft, X } from 'lucide-react'
+import { ArrowDown, ArrowLeft } from 'lucide-react'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
-import { axesGradient } from '@/common/utils/categories'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { Textarea } from '@/common/components/ui/Textarea'
 import { FormField } from '@/common/components/ui/FormField'
+import { SelectedItemsPills } from '@/common/components/ui/SelectedItemsPills'
 import { NodePicker } from './NodePicker'
 
 export function LinkForm({
@@ -81,30 +81,7 @@ export function LinkForm({
         </span>
 
         {/* Selected target pills */}
-        {selectedTargets.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {selectedTargets.map((t) => (
-              <span
-                key={t.id}
-                className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/15 bg-white/8 pl-2 pr-1.5 py-1 text-[0.75rem] text-white/75"
-              >
-                <span
-                  className="h-2 w-2 shrink-0 rounded-full"
-                  style={{ background: axesGradient(t.axes) }}
-                />
-                <span className="max-w-[160px] truncate">{t.title}</span>
-                <Button
-                  type="button"
-                  onClick={() => removeTarget(t.id)}
-                  className="ml-0.5 shrink-0 cursor-pointer rounded-full bg-transparent p-0.5 text-white/35 transition-colors hover:bg-white/15 hover:text-white"
-                  aria-label={`Retirer ${t.title}`}
-                >
-                  <X size={11} />
-                </Button>
-              </span>
-            ))}
-          </div>
-        )}
+        <SelectedItemsPills items={selectedTargets} onRemove={removeTarget} />
 
         {/* Target search input */}
         <NodePicker
