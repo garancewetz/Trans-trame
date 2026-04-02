@@ -3,6 +3,7 @@ import { AnalysisPanel, type AnalysisPanelImperativeHandle } from '@/features/an
 import { Graph, type GraphImperativeHandle } from '@/features/graph/components/Graph'
 import { Legend } from '@/features/graph/components/Legend'
 import { Navbar } from '@/features/shell/components/Navbar'
+import { VisualizationView } from '@/features/visualizations/VisualizationView'
 import { SidePanel } from '@/features/side-panel/components/SidePanel'
 import { TableView } from '@/features/table/components/TableView'
 import { Timeline } from '@/features/timeline/components/Timeline'
@@ -146,24 +147,34 @@ export function GraphApp() {
     handleMergeBooks,
   })
 
+  const isGraphView = timeline.viewMode === 'constellation'
+
   return (
     <div className="relative h-screen w-full overflow-hidden">
       <div className="absolute inset-0 z-0">
-        <Graph
-          ref={graphRef}
-          graphData={timeline.filteredGraphData}
-          authors={authors}
-          selectedNode={ui.selectedNode}
-          selectedAuthorId={ui.selectedAuthor}
-          peekNodeId={ui.peekNodeId}
-          activeFilter={ui.activeFilter}
-          hoveredFilter={ui.hoveredFilter}
-          onNodeClick={ui.handleNodeClick}
-          onLinkClick={ui.handleLinkClick}
-          layoutPositions={timeline.layoutPositions}
-          viewMode={timeline.viewMode}
-          flashNodeIds={ui.flashNodeIds}
-        />
+        {isGraphView ? (
+          <Graph
+            ref={graphRef}
+            graphData={timeline.filteredGraphData}
+            authors={authors}
+            selectedNode={ui.selectedNode}
+            selectedAuthorId={ui.selectedAuthor}
+            peekNodeId={ui.peekNodeId}
+            activeFilter={ui.activeFilter}
+            hoveredFilter={ui.hoveredFilter}
+            onNodeClick={ui.handleNodeClick}
+            onLinkClick={ui.handleLinkClick}
+            layoutPositions={timeline.layoutPositions}
+            viewMode={timeline.viewMode}
+            flashNodeIds={ui.flashNodeIds}
+          />
+        ) : (
+          <VisualizationView
+            viewMode={timeline.viewMode}
+            graphData={timeline.filteredGraphData}
+            onNodeClick={ui.handleNodeClick}
+          />
+        )}
       </div>
 
       <Navbar {...navbarProps} />

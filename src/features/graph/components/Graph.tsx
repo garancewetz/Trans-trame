@@ -303,11 +303,8 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   const onRenderFramePre = useCallback(
     (ctx, globalScale) => {
       if (SHOW_STARFIELD) drawStarField(ctx, globalScale)
-      if (viewMode === 'genealogy') {
-        drawGenealogyOverlay(ctx, globalScale)
-      }
     },
-    [viewMode]
+    []
   )
 
   const onRenderFramePost = useCallback(
@@ -361,13 +358,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         linkCanvasObject={linkCanvasObject}
         linkColor={linkColor}
         linkWidth={linkWidth}
-        linkCurvature={(link) => {
-          if (viewMode !== 'genealogy') return 0.15
-          const sx = link.source?.fx ?? link.source?.x ?? 0
-          const tx = link.target?.fx ?? link.target?.x ?? 0
-          const dist = Math.abs(tx - sx)
-          return Math.min(0.55 + dist / 700, 1.4)
-        }}
+        linkCurvature={0.15}
         linkDirectionalArrowLength={linkDirectionalArrowLength}
         linkDirectionalArrowRelPos={0.88}
         linkDirectionalArrowColor={arrowColor}
