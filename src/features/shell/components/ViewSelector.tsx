@@ -1,11 +1,10 @@
-import { Orbit, BarChart2, Circle, Waves } from 'lucide-react'
+import { Orbit, BarChart2, Circle } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { Tooltip } from '@/common/components/ui/Tooltip'
 
 const VIEWS = [
   { id: 'constellation', label: 'Constellation', icon: Orbit, hint: 'Exploration libre' },
   { id: 'histcite', label: 'HistCite', icon: BarChart2, hint: 'Généalogie chronologique' },
-  { id: 'alluvial', label: 'Alluvions', icon: Waves, hint: 'Flux par décennie' },
   { id: 'dendrogram', label: 'Dendrogramme', icon: Circle, hint: 'Arborescence circulaire' },
 ]
 

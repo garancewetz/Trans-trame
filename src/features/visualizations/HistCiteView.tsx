@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react'
-import type { Book, GraphData } from '@/types/domain'
+import type { Book, Author, GraphData } from '@/types/domain'
+import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { useVizSize } from './useVizSize'
 import { usePanZoom } from './usePanZoom'
-import { getCitationEdges, axisColor, shortTitle, linearScale } from './utils'
+import { getCitationEdges, shortTitle, linearScale } from './utils'
+import { HoverLabel } from './HoverLabel'
+import { SvgDefs, nodeFill, getLinkStyle, getParticleConfig, LinkParticles, getNodeVisual } from './SvgDefs'
 
 const PAD = { left: 70, right: 70, top: 80, bottom: 64 }
 const NODE_R = 5
@@ -10,13 +13,15 @@ const STACK_GAP = 16
 
 interface Props {
   graphData: GraphData
+  authors: Author[]
   onNodeClick?: (node: Book) => void
 }
 
-export function HistCiteView({ graphData, onNodeClick }: Props) {
+export function HistCiteView({ graphData, authors, onNodeClick }: Props) {
   const { ref, w, h } = useVizSize()
   const { svgRef, transformStr, hasMoved, reset, svgHandlers } = usePanZoom()
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   const books = useMemo(
     () =>
@@ -28,6 +33,12 @@ export function HistCiteView({ graphData, onNodeClick }: Props) {
 
   const edges = useMemo(() => getCitationEdges(graphData.links), [graphData.links])
   const bookMap = useMemo(() => new Map(graphData.nodes.map((n) => [n.id, n])), [graphData.nodes])
+
+  const nodeAxesSet = useMemo(() => {
+    const m = new Map<string, string[]>()
+    for (const b of books) m.set(b.id, b.axes ?? [])
+    return m
+  }, [books])
 
   const { minYear, maxYear } = useMemo(() => {
     const years = books.map((b) => b.year)
@@ -59,10 +70,9 @@ export function HistCiteView({ graphData, onNodeClick }: Props) {
       const cpX = (src.x + tgt.x) / 2
       const dx = Math.abs(src.x - tgt.x)
       const cpY = Math.min(src.y, tgt.y) - Math.max(32, dx * 0.38)
-      const book = bookMap.get(sourceId)
-      return [{ d: `M ${src.x} ${src.y} Q ${cpX} ${cpY} ${tgt.x} ${tgt.y}`, color: axisColor(book?.axes), sourceId, targetId }]
+      return [{ d: `M ${src.x} ${src.y} Q ${cpX} ${cpY} ${tgt.x} ${tgt.y}`, sourceId, targetId }]
     })
-  }, [edges, nodePositions, bookMap])
+  }, [edges, nodePositions])
 
   const ticks = useMemo(() => {
     const innerW = w - PAD.left - PAD.right
@@ -74,6 +84,26 @@ export function HistCiteView({ graphData, onNodeClick }: Props) {
     }
     return result
   }, [w, h, minYear, maxYear])
+
+  const relatedIds = useMemo(() => {
+    if (!selectedId) return null
+    const ids = new Set<string>()
+    for (const { sourceId, targetId } of edges) {
+      if (sourceId === selectedId) ids.add(targetId)
+      if (targetId === selectedId) ids.add(sourceId)
+    }
+    return ids
+  }, [selectedId, edges])
+
+  const hoveredNeighborIds = useMemo(() => {
+    if (!hoveredId) return null
+    const ids = new Set<string>()
+    for (const { sourceId, targetId } of edges) {
+      if (sourceId === hoveredId) ids.add(targetId)
+      if (targetId === hoveredId) ids.add(sourceId)
+    }
+    return ids
+  }, [hoveredId, edges])
 
   const baselineY = h - PAD.bottom
 
@@ -88,20 +118,29 @@ export function HistCiteView({ graphData, onNodeClick }: Props) {
   return (
     <div ref={ref} className="absolute inset-0 bg-[#080c1e] overflow-hidden">
       <svg ref={svgRef} width={w} height={h} {...svgHandlers}>
+        <SvgDefs nodeAxesSet={nodeAxesSet} />
         <g transform={transformStr}>
           {/* Citation arcs */}
           {arcs.map((arc, i) => {
-            const isRelated = selectedId && (arc.sourceId === selectedId || arc.targetId === selectedId)
+            const style = getLinkStyle(arc.sourceId, arc.targetId, selectedId, hoveredId)
             return (
               <path
                 key={i}
                 d={arc.d}
                 fill="none"
-                stroke={arc.color}
-                strokeOpacity={selectedId ? (isRelated ? 0.8 : 0.06) : 0.28}
-                strokeWidth={isRelated ? 2 : 1.4}
+                stroke={style.stroke}
+                strokeOpacity={style.strokeOpacity}
+                strokeWidth={style.strokeWidth}
+                markerEnd={style.markerEnd}
               />
             )
+          })}
+
+          {/* Link particles */}
+          {arcs.map((arc, i) => {
+            const config = getParticleConfig(arc.sourceId, arc.targetId, selectedId, hoveredId)
+            if (!config) return null
+            return <LinkParticles key={`p${i}`} d={arc.d} config={config} linkIndex={i} />
           })}
 
           {/* Baseline */}
@@ -128,26 +167,37 @@ export function HistCiteView({ graphData, onNodeClick }: Props) {
           {books.map((book) => {
             const pos = nodePositions.get(book.id)
             if (!pos) return null
-            const color = axisColor(book.axes)
-            const isSelected = book.id === selectedId
+            const fill = nodeFill(book.axes)
+            const nv = getNodeVisual(book.id, NODE_R, selectedId, relatedIds, hoveredId, hoveredNeighborIds)
             return (
-              <g key={book.id} onClick={() => handleNodeClick(book)} style={{ cursor: 'pointer' }}>
-                <title>{`${book.title} (${book.year})`}</title>
-                {isSelected && (
-                  <circle cx={pos.x} cy={pos.y} r={NODE_R + 5} fill={color} fillOpacity={0.25} />
+              <g
+                key={book.id}
+                onClick={() => handleNodeClick(book)}
+                onMouseEnter={() => setHoveredId(book.id)}
+                onMouseLeave={() => setHoveredId(null)}
+                style={{ cursor: 'pointer' }}
+              >
+                {nv.glowR != null && (
+                  <circle cx={pos.x} cy={pos.y} r={nv.glowR} fill={fill} fillOpacity={nv.glowOpacity} />
                 )}
                 <circle
                   cx={pos.x}
                   cy={pos.y}
-                  r={isSelected ? NODE_R + 2 : NODE_R}
-                  fill={color}
-                  fillOpacity={selectedId && !isSelected ? 0.3 : 0.88}
-                  stroke={isSelected ? color : 'none'}
-                  strokeWidth={1.5}
+                  r={nv.r}
+                  fill={fill}
+                  fillOpacity={nv.opacity}
                 />
               </g>
             )
           })}
+
+          {/* Hover label */}
+          {hoveredId && (() => {
+            const pos = nodePositions.get(hoveredId)
+            const book = bookMap.get(hoveredId) as Book | undefined
+            if (!pos || !book) return null
+            return <HoverLabel x={pos.x} y={pos.y - NODE_R - 6} author={bookAuthorDisplay(book, authors)} title={book.title} />
+          })()}
         </g>
       </svg>
 

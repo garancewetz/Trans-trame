@@ -1,21 +1,26 @@
 import { useMemo, useState } from 'react'
-import type { Book, GraphData } from '@/types/domain'
+import type { Book, Author, GraphData } from '@/types/domain'
+import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { useVizSize } from './useVizSize'
 import { usePanZoom } from './usePanZoom'
-import { getCitationEdges, axisColor, shortTitle } from './utils'
+import { getCitationEdges, shortTitle } from './utils'
+import { HoverLabel } from './HoverLabel'
+import { SvgDefs, nodeFill, getLinkStyle, getParticleConfig, LinkParticles, getNodeVisual } from './SvgDefs'
 import { AXES, AXES_COLORS, AXES_LABELS } from '@/common/utils/categories'
 
 const TWO_PI = Math.PI * 2
 
 interface Props {
   graphData: GraphData
+  authors: Author[]
   onNodeClick?: (node: Book) => void
 }
 
-export function CircularDendrogramView({ graphData, onNodeClick }: Props) {
+export function CircularDendrogramView({ graphData, authors, onNodeClick }: Props) {
   const { ref, w, h } = useVizSize()
   const { svgRef, transformStr, hasMoved, reset, svgHandlers } = usePanZoom()
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   const edges = useMemo(() => getCitationEdges(graphData.links), [graphData.links])
 
@@ -23,6 +28,12 @@ export function CircularDendrogramView({ graphData, onNodeClick }: Props) {
     () => graphData.nodes.filter((n) => n.type === 'book') as Book[],
     [graphData.nodes],
   )
+
+  const nodeAxesSet = useMemo(() => {
+    const m = new Map<string, string[]>()
+    for (const b of books) m.set(b.id, b.axes ?? [])
+    return m
+  }, [books])
 
   const sortedBooks = useMemo(() => {
     const axisOrder = Object.fromEntries(AXES.map((a, i) => [a, i]))
@@ -52,7 +63,6 @@ export function CircularDendrogramView({ graphData, onNodeClick }: Props) {
     return { x: cx + Math.cos(angle) * R, y: cy + Math.sin(angle) * R }
   }
 
-  // Related IDs for selected node
   const relatedIds = useMemo(() => {
     if (!selectedId) return null
     const ids = new Set<string>()
@@ -63,6 +73,16 @@ export function CircularDendrogramView({ graphData, onNodeClick }: Props) {
     return ids
   }, [selectedId, edges])
 
+  const hoveredNeighborIds = useMemo(() => {
+    if (!hoveredId) return null
+    const ids = new Set<string>()
+    for (const { sourceId, targetId } of edges) {
+      if (sourceId === hoveredId) ids.add(targetId)
+      if (targetId === hoveredId) ids.add(sourceId)
+    }
+    return ids
+  }, [hoveredId, edges])
+
   const chords = useMemo(() => {
     return edges.flatMap(({ sourceId, targetId }) => {
       if (!bookAngles.has(sourceId) || !bookAngles.has(targetId)) return []
@@ -71,20 +91,13 @@ export function CircularDendrogramView({ graphData, onNodeClick }: Props) {
       const cpFactor = 0.18
       const cpX = cx + (src.x - cx) * cpFactor + (tgt.x - cx) * cpFactor
       const cpY = cy + (src.y - cy) * cpFactor + (tgt.y - cy) * cpFactor
-      const book = bookMap.get(sourceId)
-      const isRelated = selectedId
-        ? sourceId === selectedId || targetId === selectedId
-        : false
       return [{
         d: `M ${src.x} ${src.y} Q ${cpX} ${cpY} ${tgt.x} ${tgt.y}`,
-        color: axisColor(book?.axes),
-        opacity: selectedId ? (isRelated ? 0.85 : 0.04) : 0.18,
-        width: isRelated ? 2.5 : 1,
         sourceId,
         targetId,
       }]
     })
-  }, [edges, bookAngles, selectedId, cx, cy, bookMap, R])
+  }, [edges, bookAngles, cx, cy, R])
 
   const axisArcs = useMemo(() => {
     const arcR = R + 14
@@ -140,11 +153,30 @@ export function CircularDendrogramView({ graphData, onNodeClick }: Props) {
   return (
     <div ref={ref} className="absolute inset-0 bg-[#080c1e] overflow-hidden">
       <svg ref={svgRef} width={w} height={h} {...svgHandlers}>
+        <SvgDefs nodeAxesSet={nodeAxesSet} />
         <g transform={transformStr}>
           {/* Chords */}
-          {chords.map((c, i) => (
-            <path key={i} d={c.d} fill="none" stroke={c.color} strokeOpacity={c.opacity} strokeWidth={c.width} />
-          ))}
+          {chords.map((c, i) => {
+            const style = getLinkStyle(c.sourceId, c.targetId, selectedId, hoveredId)
+            return (
+              <path
+                key={i}
+                d={c.d}
+                fill="none"
+                stroke={style.stroke}
+                strokeOpacity={style.strokeOpacity}
+                strokeWidth={style.strokeWidth}
+                markerEnd={style.markerEnd}
+              />
+            )
+          })}
+
+          {/* Link particles */}
+          {chords.map((c, i) => {
+            const config = getParticleConfig(c.sourceId, c.targetId, selectedId, hoveredId)
+            if (!config) return null
+            return <LinkParticles key={`p${i}`} d={c.d} config={config} linkIndex={i} />
+          })}
 
           {/* Axis arcs */}
           {axisArcs.map((arc, i) => (
@@ -154,57 +186,60 @@ export function CircularDendrogramView({ graphData, onNodeClick }: Props) {
           {/* Book nodes */}
           {sortedBooks.map((book) => {
             const { x, y } = pos(book.id)
-            const color = axisColor(book.axes)
-            const isSelected = book.id === selectedId
-            const isRelated = relatedIds?.has(book.id) ?? false
-            const dimmed = selectedId && !isSelected && !isRelated
+            const fill = nodeFill(book.axes)
+            const nv = getNodeVisual(book.id, nodeR, selectedId, relatedIds, hoveredId, hoveredNeighborIds)
             return (
               <g
                 key={book.id}
                 onClick={() => handleNodeClick(book)}
+                onMouseEnter={() => setHoveredId(book.id)}
+                onMouseLeave={() => setHoveredId(null)}
                 style={{ cursor: 'pointer' }}
               >
-                <title>{`${book.title}${book.year ? ` (${book.year})` : ''}`}</title>
-                {isSelected && (
-                  <circle cx={x} cy={y} r={nodeR + 6} fill={color} fillOpacity={0.2} />
+                {nv.glowR != null && (
+                  <circle cx={x} cy={y} r={nv.glowR} fill={fill} fillOpacity={nv.glowOpacity} />
                 )}
-                <circle
-                  cx={x}
-                  cy={y}
-                  r={isSelected ? nodeR + 2 : isRelated ? nodeR + 1 : nodeR}
-                  fill={color}
-                  fillOpacity={dimmed ? 0.15 : isSelected ? 1 : 0.8}
-                />
+                <circle cx={x} cy={y} r={nv.r} fill={fill} fillOpacity={nv.opacity} />
               </g>
             )
           })}
 
-          {/* Labels: always show for selected and its relations */}
+          {/* Labels: show for selected, its relations, hovered and hovered neighbors */}
           {sortedBooks.map((book) => {
+            const isSelected = book.id === selectedId
+            const isRelated = relatedIds?.has(book.id) ?? false
+            const isHovered = book.id === hoveredId
+            const isHoverNeighbor = hoveredNeighborIds?.has(book.id) ?? false
+            if (!isSelected && !isRelated && !isHovered && !isHoverNeighbor) return null
             const angle = bookAngles.get(book.id) ?? 0
-            const { x, y } = pos(book.id)
             const lx = cx + Math.cos(angle) * labelR
             const ly = cy + Math.sin(angle) * labelR
             const anchor = Math.cos(angle) > 0.1 ? 'start' : Math.cos(angle) < -0.1 ? 'end' : 'middle'
-            const isSelected = book.id === selectedId
-            const isRelated = relatedIds?.has(book.id) ?? false
-            if (!isSelected && !isRelated) return null
-            const color = axisColor(book.axes)
+            const fill = nodeFill(book.axes)
+            const prominent = isSelected || isHovered
             return (
               <text
                 key={`lbl-${book.id}`}
                 x={lx}
                 y={ly}
                 textAnchor={anchor}
-                fontSize={isSelected ? 12 : 10}
-                fill={isSelected ? 'rgba(255,255,255,0.95)' : color}
+                fontSize={prominent ? 12 : 10}
+                fill={prominent ? 'rgba(255,255,255,0.95)' : fill}
                 fontFamily="sans-serif"
-                fontWeight={isSelected ? 700 : 400}
+                fontWeight={prominent ? 700 : 400}
               >
                 {shortTitle(book.title, 32)}
               </text>
             )
           })}
+
+          {/* Hover label */}
+          {hoveredId && (() => {
+            const { x, y } = pos(hoveredId)
+            const book = bookMap.get(hoveredId)
+            if (!book) return null
+            return <HoverLabel x={x} y={y - nodeR - 6} author={bookAuthorDisplay(book, authors)} title={book.title} />
+          })()}
         </g>
       </svg>
 

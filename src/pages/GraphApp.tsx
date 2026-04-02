@@ -172,6 +172,7 @@ export function GraphApp() {
           <VisualizationView
             viewMode={timeline.viewMode}
             graphData={timeline.filteredGraphData}
+            authors={authors}
             onNodeClick={ui.handleNodeClick}
           />
         )}
