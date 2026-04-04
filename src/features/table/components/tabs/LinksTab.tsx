@@ -137,7 +137,7 @@ export function LinksTab({
                         className="group rounded-md px-2 py-1.5 transition-colors hover:bg-white/4"
                       >
                         <div className="flex items-start gap-2">
-                          <ArrowRight size={11} className="mt-0.5 shrink-0 text-[rgba(140,220,255,0.25)]" />
+                          <ArrowRight size={11} className="mt-0.5 shrink-0 text-cyan/25" />
                           <div className="min-w-0 flex-1">
                             <span className="block font-mono text-[0.76rem] text-white/75 truncate">
                               <span className="inline-flex items-center gap-1.5">
@@ -176,8 +176,8 @@ export function LinksTab({
                             className={[
                               'shrink-0 cursor-pointer rounded border px-1 py-0.5 text-[0.6rem] transition-all',
                               isExpanded
-                                ? 'border-[rgba(140,220,255,0.35)] text-[rgba(140,220,255,0.8)]'
-                                : 'border-[rgba(140,220,255,0.22)] bg-[rgba(140,220,255,0.06)] text-[rgba(140,220,255,0.75)] opacity-100 hover:border-[rgba(140,220,255,0.35)] hover:bg-[rgba(140,220,255,0.12)] hover:text-[rgba(140,220,255,0.9)]',
+                                ? 'border-cyan/35 text-cyan/80'
+                                : 'border-cyan/22 bg-cyan/6 text-cyan/75 opacity-100 hover:border-cyan/35 hover:bg-cyan/12 hover:text-cyan/90',
                             ].join(' ')}
                             title="Modifier la citation"
                           >
@@ -197,7 +197,7 @@ export function LinksTab({
                                   'shrink-0 cursor-pointer rounded border px-1 py-0.5 text-[0.6rem] transition-all',
                                   isDeleting || !onFocusBookOnMap
                                     ? 'border-transparent text-white/12 opacity-50 cursor-not-allowed'
-                                    : 'border-[rgba(255,255,255,0.12)] bg-white/4 text-white/55 opacity-100 hover:border-[rgba(140,220,255,0.35)] hover:bg-[rgba(140,220,255,0.08)] hover:text-[rgba(140,220,255,0.9)]',
+                                    : 'border-white/12 bg-white/4 text-white/55 opacity-100 hover:border-cyan/35 hover:bg-cyan/8 hover:text-cyan/90',
                                 ].join(' ')}
                                 title="Voir le nœud sur la carte"
                               >
@@ -214,7 +214,7 @@ export function LinksTab({
                                   'inline-flex shrink-0 cursor-pointer items-center gap-0.5 rounded border px-1.5 py-0.5 text-[0.58rem] font-semibold transition-all',
                                   isDeleting || !onOpenWorkDetail
                                     ? 'pointer-events-none border-transparent text-white/12 opacity-40 cursor-not-allowed'
-                                    : 'border-white/10 bg-white/4 text-white/45 hover:border-[rgba(168,85,247,0.35)] hover:bg-[rgba(168,85,247,0.08)] hover:text-[rgba(200,170,255,0.95)]',
+                                    : 'border-white/10 bg-white/4 text-white/45 hover:border-violet/35 hover:bg-violet/8 hover:text-violet/95',
                                 ].join(' ')}
                                 title="Grande fiche ouvrage"
                               >
@@ -234,8 +234,8 @@ export function LinksTab({
                             className={[
                               'shrink-0 cursor-pointer rounded border px-1 py-0.5 text-[0.6rem] transition-all',
                               isDeleting
-                                ? 'border-[rgba(255,55,55,0.45)] text-[rgba(255,100,100,0.8)]'
-                                : 'border-[rgba(255,55,55,0.22)] bg-[rgba(255,55,55,0.06)] text-[rgba(255,120,120,0.65)] opacity-100 hover:border-[rgba(255,55,55,0.32)] hover:bg-[rgba(255,55,55,0.12)] hover:text-[rgba(255,140,140,0.85)]',
+                                ? 'border-red/45 text-red/80'
+                                : 'border-red/22 bg-red/6 text-red/65 opacity-100 hover:border-red/32 hover:bg-red/12 hover:text-red/85',
                             ].join(' ')}
                             title={isDeleting ? 'Confirmer' : 'Supprimer'}
                           >

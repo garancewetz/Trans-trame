@@ -1,4 +1,5 @@
-import { Merge, Trash2 } from 'lucide-react'
+import { ClipboardCopy, Merge, Trash2 } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/common/components/ui/Button'
 
 type Props = {
@@ -9,6 +10,7 @@ type Props = {
   onCancelSelection: () => void
   showMerge: boolean
   onOpenMergeModal: () => void
+  onExport: () => string
 }
 
 export function BooksTabSelectionBar({
@@ -19,8 +21,18 @@ export function BooksTabSelectionBar({
   onCancelSelection,
   showMerge,
   onOpenMergeModal,
+  onExport,
 }: Props) {
+  const [copied, setCopied] = useState(false)
+
   if (selectedCount === 0) return null
+
+  const handleExport = async () => {
+    const text = onExport()
+    await navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
 
   return (
     <div className="flex shrink-0 items-center gap-3 border-b border-white/6 bg-white/1.5 px-5 py-2">
@@ -31,11 +43,19 @@ export function BooksTabSelectionBar({
         <Button
           type="button"
           onClick={onOpenMergeModal}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[rgba(255,200,60,0.3)] bg-[rgba(255,200,60,0.07)] px-3 py-1.5 text-[0.7rem] font-semibold text-[rgba(255,210,100,0.75)] transition-all hover:bg-[rgba(255,200,60,0.14)]"
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-amber/30 bg-amber/[0.07] px-3 py-1.5 text-[0.7rem] font-semibold text-amber/75 transition-all hover:bg-amber/[0.14]"
         >
           <Merge size={12} /> Fusionner
         </Button>
       )}
+      <Button
+        type="button"
+        onClick={handleExport}
+        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-cyan/25 bg-cyan/5 px-3 py-1.5 text-[0.7rem] font-semibold text-cyan/65 transition-all hover:bg-cyan/12"
+      >
+        <ClipboardCopy size={11} />
+        {copied ? 'Copié !' : `Exporter (${selectedCount})`}
+      </Button>
       <Button
         type="button"
         onClick={onBulkDelete}
@@ -43,8 +63,8 @@ export function BooksTabSelectionBar({
         className={[
           'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.7rem] font-semibold transition-all',
           bulkDeleteConfirm
-            ? 'border-[rgba(255,70,70,0.55)] bg-[rgba(255,70,70,0.1)] text-[rgba(255,120,120,0.9)]'
-            : 'border-[rgba(255,70,70,0.22)] text-[rgba(255,90,90,0.55)] hover:bg-[rgba(255,70,70,0.07)]',
+            ? 'border-red/[0.55] bg-red/10 text-red/90'
+            : 'border-red/22 text-red/55 hover:bg-red/[0.07]',
         ].join(' ')}
       >
         <Trash2 size={11} />

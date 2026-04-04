@@ -68,7 +68,7 @@ export function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
       <label className="mb-1 block text-[0.62rem] uppercase text-white/30">Source</label>
       <TextInput
         variant="table"
-        className="mb-2 rounded border border-white/10 bg-white/5 px-2 py-1.5 text-[0.7rem] placeholder:text-white/25"
+        className="mb-2 rounded border border-white/10 bg-white/5 px-2 py-1.5 text-[0.7rem] placeholder:text-white/35"
         value={sourceSearch || (selectedSource ? `${selectedSource.title} — ${bookAuthorDisplay(selectedSource, authorsMap)}` : '')}
         onChange={(e) => {
           if (source) setSource('')
@@ -92,7 +92,7 @@ export function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
       <label className="mb-1 block text-[0.62rem] uppercase text-white/30">Cible</label>
       <TextInput
         variant="table"
-        className="mb-2 rounded border border-white/10 bg-white/5 px-2 py-1.5 text-[0.7rem] placeholder:text-white/25"
+        className="mb-2 rounded border border-white/10 bg-white/5 px-2 py-1.5 text-[0.7rem] placeholder:text-white/35"
         value={targetSearch || (selectedTarget ? `${selectedTarget.title} — ${bookAuthorDisplay(selectedTarget, authorsMap)}` : '')}
         onChange={(e) => {
           if (target) setTarget('')

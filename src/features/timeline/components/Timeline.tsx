@@ -156,7 +156,7 @@ export function Timeline({ graphData, timelineRange, onRangeChange }: TimelinePr
       <div
         className="w-full px-3 pb-3 backdrop-blur-xl"
       >
-        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[rgba(8,12,30,0.72)] px-3 py-2 backdrop-blur-xl"
+        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-bg-overlay/72 px-3 py-2 backdrop-blur-xl"
           style={{ background: 'rgba(8, 12, 30, 0.35)', backdropFilter: 'blur(18px)' }}
         >
         {/* Play/pause */}

@@ -6,8 +6,8 @@ export function DuplicateWarning({ possibleDuplicates, authorsMap }) {
   if (!possibleDuplicates || possibleDuplicates.length === 0) return null
 
   return (
-    <div className="rounded-[10px] border border-[rgba(255,204,0,0.3)] bg-[rgba(255,204,0,0.06)] px-4 py-3">
-      <p className="mb-2 inline-flex items-center gap-1.5 text-[0.78rem] font-semibold text-[rgba(255,204,0,0.9)]">
+    <div className="rounded-[10px] border border-amber/30 bg-amber/6 px-4 py-3">
+      <p className="mb-2 inline-flex items-center gap-1.5 text-[0.78rem] font-semibold text-amber/90">
         <TriangleAlert size={14} /> Doublon possible d&eacute;tect&eacute;
       </p>
       <ul className="flex list-none flex-col gap-1.5">

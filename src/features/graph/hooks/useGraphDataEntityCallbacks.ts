@@ -212,7 +212,7 @@ export function useGraphDataEntityCallbacks({
 
   const handleAddBook = useCallback(
     (book: Book | (Partial<Book> & Pick<Book, 'id' | 'title'>)) =>
-      addBookMutation.mutate(book as Book),
+      addBookMutation.mutateAsync(book as Book),
     [addBookMutation]
   )
 

@@ -41,7 +41,7 @@ export function TableView(props: TableViewProps) {
   return (
     <div
       className={clsx(
-        'fixed inset-0 z-50 flex flex-col bg-[rgba(4,6,20,0.99)] backdrop-blur-xl',
+        'fixed inset-0 z-50 flex flex-col bg-bg-overlay/99 backdrop-blur-xl',
         'transition-all duration-200',
         c.visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3',
       )}

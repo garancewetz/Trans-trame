@@ -102,7 +102,7 @@ export function Navbar({ search, filters, view, catalogue }) {
 
   return (
     <>
-    <header className="pointer-events-none fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[rgba(5,9,28,0.75)] px-4 backdrop-blur-xl *:pointer-events-auto">
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-bg-overlay/75 px-4 backdrop-blur-xl *:pointer-events-auto">
       <div className="flex items-center justify-between gap-3 py-2">
         <div className="flex min-w-0 items-center gap-2.5">
           <h1 className="flex items-center gap-2 text-[0.95rem] font-semibold text-white/90">
@@ -152,7 +152,7 @@ export function Navbar({ search, filters, view, catalogue }) {
 
             {/* Dropdown */}
             {searchFocused && globalSearch.trim() && (
-              <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-[300px] overflow-y-auto rounded-xl border border-white/10 bg-[rgba(12,6,28,0.95)] p-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+              <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-[300px] overflow-y-auto rounded-xl border border-white/10 bg-bg-overlay/95 p-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
                 {searchResults.length === 0 ? (
                   <div className="p-2">
                     <p className="px-2 py-2 text-center text-[0.8rem] text-white/30">
@@ -238,7 +238,7 @@ export function Navbar({ search, filters, view, catalogue }) {
             Catalogue
           </Button>
           {openGroup === 'catalogue' && (
-            <div className="absolute right-0 top-[calc(100%+6px)] z-50 flex min-w-[280px] flex-col gap-1 rounded-xl border border-white/10 bg-[rgba(12,6,28,0.95)] p-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+            <div className="absolute right-0 top-[calc(100%+6px)] z-50 flex min-w-[280px] flex-col gap-1 rounded-xl border border-white/10 bg-bg-overlay/95 p-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
               <Button
                 variant="outline"
                 frosted
@@ -299,7 +299,7 @@ export function Navbar({ search, filters, view, catalogue }) {
         {activeFilterItems.map((item) => (
           <span
             key={item.key}
-            className="inline-flex max-w-[min(100%,22rem)] items-center gap-2 rounded-lg border border-white/25 bg-[rgba(10,16,38,0.92)] px-1.5 py-1 pl-3 shadow-[0_4px_24px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150"
+            className="inline-flex max-w-[min(100%,22rem)] items-center gap-2 rounded-lg border border-white/25 bg-bg-overlay/92 px-1.5 py-1 pl-3 shadow-[0_4px_24px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150"
           >
             <span className="flex min-w-0 flex-1 items-baseline gap-2">
               <span className="shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-white/50">

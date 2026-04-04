@@ -108,7 +108,7 @@ export function NodeDetails({
   const axes = (selectedNode.axes || []).filter(Boolean)
 
   return (
-    <div className="px-6 pb-10 pt-14 text-[#ece9ff]">
+    <div className="px-6 pb-10 pt-14 text-text-main">
       <div className="mb-10 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           {axes.length > 0 && (
@@ -179,7 +179,7 @@ export function NodeDetails({
       <div className="mb-10">
         <button
           type="button"
-          className="text-[0.8rem] font-medium text-white/38 underline-offset-4 transition-colors hover:text-[rgba(140,220,255,0.85)] hover:underline"
+          className="text-[0.8rem] font-medium text-white/38 underline-offset-4 transition-colors hover:text-cyan/85 hover:underline"
           onClick={() => onOpenTable?.('links', selectedNode.id)}
         >
           <span className="inline-flex items-center gap-1.5">

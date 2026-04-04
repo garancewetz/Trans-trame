@@ -87,7 +87,7 @@ export function BooksTabBooksTable({
   return (
     <div className="flex-1 overflow-auto">
       <table className="w-full border-collapse">
-        <thead className="sticky top-0 z-20 bg-[rgba(4,6,20,0.98)]">
+        <thead className="sticky top-0 z-20 bg-bg-overlay/98">
           <tr className="border-b border-white/6">
             <th className="w-9 px-3 py-2.5">
               <Button
@@ -95,8 +95,8 @@ export function BooksTabBooksTable({
                 type="button"
                 className={[
                   'flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded border transition-all',
-                  allSelected ? 'border-[#00FF87] bg-[rgba(0,255,135,0.18)] text-[#00FF87]'
-                    : someSelected ? 'border-[rgba(0,255,135,0.38)] bg-[rgba(0,255,135,0.07)] text-[rgba(0,255,135,0.55)]'
+                  allSelected ? 'border-green bg-green/18 text-green'
+                    : someSelected ? 'border-green/38 bg-green/[0.07] text-green/[0.55]'
                     : 'border-white/14 text-transparent hover:border-white/28',
                 ].join(' ')}
               >

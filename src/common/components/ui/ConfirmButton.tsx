@@ -28,11 +28,11 @@ export function ConfirmButton({
   const toneClass =
     tone === 'delete'
       ? confirmed
-        ? 'border-[rgba(255,70,70,0.55)] bg-[rgba(255,70,70,0.1)] text-[rgba(255,120,120,0.9)]'
-        : 'border-[rgba(255,180,60,0.3)] bg-[rgba(255,180,60,0.06)] text-[rgba(255,200,100,0.8)] hover:bg-[rgba(255,180,60,0.12)]'
+        ? 'border-red/[0.55] bg-red/10 text-red/90'
+        : 'border-amber/30 bg-amber/6 text-amber/80 hover:bg-amber/12'
       : confirmed
-        ? 'border-[rgba(255,200,60,0.55)] bg-[rgba(255,200,60,0.12)] text-[rgba(255,215,100,0.9)] hover:bg-[rgba(255,200,60,0.2)]'
-        : 'border-[rgba(255,200,60,0.28)] bg-[rgba(255,200,60,0.06)] text-[rgba(255,210,80,0.7)] hover:bg-[rgba(255,200,60,0.12)]'
+        ? 'border-amber/[0.55] bg-amber/12 text-amber/90 hover:bg-amber/20'
+        : 'border-amber/[0.28] bg-amber/6 text-amber/70 hover:bg-amber/12'
 
   const content = confirmed ? confirmLabel : label
 

@@ -53,7 +53,7 @@ export function AxisDots({
         <Plus size={8} />
       </Button>
       {open && (
-        <div className="absolute left-0 top-[calc(100%+4px)] z-50 flex flex-wrap gap-1 rounded-lg border border-white/10 bg-[rgba(6,4,20,0.98)] p-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
+        <div className="absolute left-0 top-[calc(100%+4px)] z-50 flex flex-wrap gap-1 rounded-lg border border-white/10 bg-bg-overlay/98 p-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
           {AXES.map((axis) => {
             const active = axes.includes(axis)
             return (
@@ -197,7 +197,7 @@ export function AuthorPicker({
         />
       </div>
       {open && (suggestions.length > 0 || canCreate) && (
-        <ul className="absolute left-0 right-0 top-[calc(100%+3px)] z-50 list-none rounded-lg border border-white/10 bg-[rgba(6,4,20,0.98)] p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+        <ul className="absolute left-0 right-0 top-[calc(100%+3px)] z-50 list-none rounded-lg border border-white/10 bg-bg-overlay/98 p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur-xl">
           {suggestions.map((a) => (
             <li key={a.id}>
               <Button
@@ -218,8 +218,8 @@ export function AuthorPicker({
                 className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors hover:bg-white/8"
                 onClick={handleCreate}
               >
-                <Plus size={10} className="shrink-0 text-[rgba(140,220,255,0.6)]" />
-                <span className="font-mono text-[0.74rem] text-[rgba(140,220,255,0.75)]">
+                <Plus size={10} className="shrink-0 text-cyan/60" />
+                <span className="font-mono text-[0.74rem] text-cyan/75">
                   Créer «&nbsp;{query.trim()}&nbsp;»
                 </span>
               </Button>
@@ -290,7 +290,7 @@ export function NodeSearch({
         </div>
       )}
       {open && results.length > 0 && (
-        <div className="absolute left-0 right-0 top-[calc(100%+3px)] z-50 max-h-[180px] overflow-y-auto rounded-lg border border-white/10 bg-[rgba(6,4,20,0.98)] p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+        <div className="absolute left-0 right-0 top-[calc(100%+3px)] z-50 max-h-[180px] overflow-y-auto rounded-lg border border-white/10 bg-bg-overlay/98 p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl">
           {results.map((n) => (
             <Button
               key={n.id}
@@ -316,9 +316,9 @@ export function NodeSearch({
 function SortIcon({ active, dir }) {
   if (!active) return <ChevronUp size={10} className="text-white/18" />
   return dir === 'asc' ? (
-    <ChevronUp size={10} className="text-[#00FF87]" />
+    <ChevronUp size={10} className="text-green" />
   ) : (
-    <ChevronDown size={10} className="text-[#00FF87]" />
+    <ChevronDown size={10} className="text-green" />
   )
 }
 

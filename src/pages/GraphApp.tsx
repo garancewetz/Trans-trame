@@ -9,6 +9,7 @@ import { TableView } from '@/features/table/components/TableView'
 import { Timeline } from '@/features/timeline/components/Timeline'
 import { TextsPanel } from '@/features/texts-panel/components/TextsPanel'
 import { AuthorsPanel } from '@/features/authors-panel/components/AuthorsPanel'
+import { KeyboardHints } from '@/common/components/ui/KeyboardHints'
 import { AXES_COLORS } from '@/common/utils/categories'
 import { useAppData } from '@/core/AppDataContext'
 import { useAppDerivedData } from '@/common/hooks/useAppDerivedData'
@@ -177,6 +178,8 @@ export function GraphApp() {
           />
         )}
       </div>
+
+      <KeyboardHints />
 
       <Navbar {...navbarProps} />
 

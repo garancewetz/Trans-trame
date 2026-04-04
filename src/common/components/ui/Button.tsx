@@ -69,16 +69,16 @@ const GLASS_TONE: Record<
   { hover: string; active: string }
 > = {
   cyan: {
-    hover: 'hover:border-[rgba(130,200,255,0.5)] hover:bg-[rgba(130,200,255,0.2)] hover:text-white',
-    active: 'border-[rgba(130,200,255,0.6)] bg-[rgba(130,200,255,0.25)] text-white',
+    hover: 'hover:border-cyan/50 hover:bg-cyan/20 hover:text-white',
+    active: 'border-cyan/60 bg-cyan/25 text-white',
   },
   amber: {
-    hover: 'hover:border-[rgba(255,180,130,0.5)] hover:bg-[rgba(255,180,130,0.2)] hover:text-white',
-    active: 'border-[rgba(255,180,130,0.6)] bg-[rgba(255,180,130,0.35)] text-white',
+    hover: 'hover:border-peach/50 hover:bg-peach/20 hover:text-white',
+    active: 'border-peach/60 bg-peach/35 text-white',
   },
   sky: {
-    hover: 'hover:border-[rgba(90,200,255,0.5)] hover:bg-[rgba(90,200,255,0.2)] hover:text-white',
-    active: 'border-[rgba(90,200,255,0.5)] bg-[rgba(90,200,255,0.2)] text-white',
+    hover: 'hover:border-cyan/50 hover:bg-cyan/20 hover:text-white',
+    active: 'border-cyan/50 bg-cyan/20 text-white',
   },
 }
 
@@ -132,7 +132,7 @@ export function Button({
       if (t === 'mint' && active) {
         classes = clsx(
           classes,
-          'border-[rgba(0,255,135,0.5)] bg-[rgba(0,255,135,0.12)] text-[#00FF87]'
+          'border-green/50 bg-green/12 text-green'
         )
       } else if (t === 'mint' || !t || t === 'neutral') {
         classes = clsx(
@@ -161,14 +161,14 @@ export function Button({
     if (outlineWeight === 'accent' && t === 'magic') {
       classes = clsx(
         classes,
-        'border-[rgba(140,220,255,0.22)] bg-[rgba(140,220,255,0.05)] text-[rgba(140,220,255,0.6)] hover:border-[rgba(140,220,255,0.38)] hover:bg-[rgba(140,220,255,0.1)] hover:text-[rgba(140,220,255,0.9)]'
+        'border-cyan/22 bg-cyan/5 text-cyan/60 hover:border-cyan/38 hover:bg-cyan/10 hover:text-cyan/90'
       )
     }
     if (outlineWeight === 'faint' && t === 'warning') {
       classes = clsx(
         classes,
         emphasis
-          ? 'border-[rgba(255,180,60,0.28)] text-[rgba(255,200,100,0.65)] hover:bg-[rgba(255,180,60,0.08)] hover:text-[rgba(255,200,100,0.9)]'
+          ? 'border-amber/[0.28] text-amber/65 hover:bg-amber/8 hover:text-amber/90'
           : 'cursor-default border-white/5 text-white/18'
       )
     }
@@ -176,7 +176,7 @@ export function Button({
       classes = clsx(
         classes,
         emphasis
-          ? 'border-white/10 text-white/40 hover:border-[rgba(255,210,0,0.28)] hover:text-[rgba(255,210,100,0.75)]'
+          ? 'border-white/10 text-white/40 hover:border-amber/[0.28] hover:text-amber/75'
           : 'cursor-default border-white/5 text-white/18'
       )
     }
@@ -184,7 +184,7 @@ export function Button({
       classes = clsx(
         classes,
         active
-          ? 'border-[rgba(255,171,64,0.6)] bg-[rgba(255,171,64,0.15)] text-[rgba(255,200,100,0.95)] hover:bg-[rgba(255,171,64,0.25)]'
+          ? 'border-orange/60 bg-orange/15 text-amber/95 hover:bg-orange/25'
           : 'border-white/15 bg-white/5 text-white/60 hover:border-white/30 hover:text-white'
       )
     }
@@ -192,8 +192,8 @@ export function Button({
       classes = clsx(
         classes,
         active
-          ? 'border-[rgba(255,80,80,0.6)] bg-[rgba(255,80,80,0.15)] text-[rgba(255,140,140,0.95)] hover:bg-[rgba(255,80,80,0.25)]'
-          : 'border-white/10 bg-transparent text-white/30 hover:border-[rgba(255,80,80,0.3)] hover:text-[rgba(255,140,140,0.7)]'
+          ? 'border-red/60 bg-red/15 text-red/95 hover:bg-red/25'
+          : 'border-white/10 bg-transparent text-white/30 hover:border-red/30 hover:text-red/70'
       )
     }
   } else if (v === 'ghost') {
@@ -206,7 +206,7 @@ export function Button({
       classes = clsx(
         'flex w-full cursor-pointer items-center rounded-lg bg-transparent text-left transition-colors',
         t === 'violet'
-          ? 'gap-2.5 px-3 py-2.5 text-white hover:bg-[rgba(168,130,255,0.12)]'
+          ? 'gap-2.5 px-3 py-2.5 text-white hover:bg-violet/12'
           : 'gap-2.5 px-3.5 py-2.5 text-white hover:bg-white/10'
       )
     } else {

@@ -75,7 +75,7 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
 
       <Panel
         className={[
-          'fixed right-0 top-0 z-50 h-screen w-[380px] overflow-hidden border-l border-white/10 bg-[rgba(8,4,20,0.92)] backdrop-blur-2xl',
+          'fixed right-0 top-0 z-50 h-screen w-[380px] overflow-hidden border-l border-white/10 bg-bg-overlay/92 backdrop-blur-2xl',
           'transform transition-transform duration-300 ease-in-out',
           open ? 'translate-x-0' : 'translate-x-full',
         ].join(' ')}

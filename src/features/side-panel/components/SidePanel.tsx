@@ -41,10 +41,10 @@ export function SidePanel(props) {
     panelOpen && !panelCollapsed && 'translate-x-0',
     panelOpen && panelCollapsed && 'translate-x-[calc(100%-2.5rem)]',
     isDualPanelMode
-      ? 'w-[min(100vw,84rem)] border-white/12 bg-[#06030f]/[0.98] backdrop-blur-xl shadow-[-20px_0_80px_rgba(0,0,0,0.45)]'
+      ? 'w-[min(100vw,84rem)] border-white/12 bg-bg-base/[0.98] backdrop-blur-xl shadow-[-20px_0_80px_rgba(0,0,0,0.45)]'
       : useWideBookPanel
-        ? 'w-[min(100vw,42rem)] border-white/12 bg-[#06030f]/[0.98] backdrop-blur-xl shadow-[-20px_0_80px_rgba(0,0,0,0.45)]'
-        : 'w-[380px] border-white/10 bg-[rgba(8,4,20,0.92)] backdrop-blur-2xl',
+        ? 'w-[min(100vw,42rem)] border-white/12 bg-bg-base/[0.98] backdrop-blur-xl shadow-[-20px_0_80px_rgba(0,0,0,0.45)]'
+        : 'w-[380px] border-white/10 bg-bg-overlay/92 backdrop-blur-2xl',
   )
 
   const closeToContextNode = (node) => {

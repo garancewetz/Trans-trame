@@ -7,7 +7,7 @@ import { getCitationEdges, shortTitle, linearScale } from './utils'
 import { HoverLabel } from './HoverLabel'
 import { SvgDefs, nodeFill, getLinkStyle, getParticleConfig, LinkParticles, getNodeVisual } from './SvgDefs'
 
-const PAD = { left: 70, right: 70, top: 80, bottom: 64 }
+const PAD = { left: 70, right: 70, top: 80, bottom: 96 }
 const NODE_R = 5
 const STACK_GAP = 16
 
@@ -42,7 +42,7 @@ export function HistCiteView({ graphData, authors, onNodeClick }: Props) {
 
   const { minYear, maxYear } = useMemo(() => {
     const years = books.map((b) => b.year)
-    return { minYear: Math.min(...years, 1960), maxYear: Math.max(...years, 2025) }
+    return { minYear: Math.min(...years), maxYear: Math.max(...years, 2025) }
   }, [books])
 
   const nodePositions = useMemo(() => {
@@ -116,7 +116,7 @@ export function HistCiteView({ graphData, authors, onNodeClick }: Props) {
   const selectedBook = selectedId ? (bookMap.get(selectedId) as (Book & { year: number }) | undefined) : null
 
   return (
-    <div ref={ref} className="absolute inset-0 bg-[#080c1e] overflow-hidden">
+    <div ref={ref} className="absolute inset-0 bg-bg-base overflow-hidden">
       <svg ref={svgRef} width={w} height={h} {...svgHandlers}>
         <SvgDefs nodeAxesSet={nodeAxesSet} />
         <g transform={transformStr}>
@@ -208,7 +208,7 @@ export function HistCiteView({ graphData, authors, onNodeClick }: Props) {
 
       {/* Selected book tooltip */}
       {selectedBook && (
-        <div className="pointer-events-none absolute bottom-10 left-1/2 -translate-x-1/2 rounded-lg border border-white/10 bg-[rgba(8,12,30,0.92)] px-4 py-2 text-center backdrop-blur-md">
+        <div className="pointer-events-none absolute bottom-10 left-1/2 -translate-x-1/2 rounded-lg border border-white/10 bg-bg-overlay/92 px-4 py-2 text-center backdrop-blur-md">
           <div className="text-[12px] font-semibold text-white/90">{selectedBook.title}</div>
           <div className="text-[10px] text-white/40">{selectedBook.year}</div>
         </div>

@@ -151,7 +151,7 @@ export function CircularDendrogramView({ graphData, authors, onNodeClick }: Prop
   const selectedBook = selectedId ? bookMap.get(selectedId) : null
 
   return (
-    <div ref={ref} className="absolute inset-0 bg-[#080c1e] overflow-hidden">
+    <div ref={ref} className="absolute inset-0 bg-bg-base overflow-hidden">
       <svg ref={svgRef} width={w} height={h} {...svgHandlers}>
         <SvgDefs nodeAxesSet={nodeAxesSet} />
         <g transform={transformStr}>
@@ -250,7 +250,7 @@ export function CircularDendrogramView({ graphData, authors, onNodeClick }: Prop
 
       {/* Selected tooltip */}
       {selectedBook && (
-        <div className="pointer-events-none absolute bottom-10 left-1/2 -translate-x-1/2 rounded-lg border border-white/10 bg-[rgba(8,12,30,0.92)] px-4 py-2 text-center backdrop-blur-md">
+        <div className="pointer-events-none absolute bottom-10 left-1/2 -translate-x-1/2 rounded-lg border border-white/10 bg-bg-overlay/92 px-4 py-2 text-center backdrop-blur-md">
           <div className="text-[12px] font-semibold text-white/90">{selectedBook.title}</div>
           <div className="text-[10px] text-white/40">
             {selectedBook.year} · {selectedBook.axes?.join(', ')} · {relatedIds?.size ?? 0} connexions

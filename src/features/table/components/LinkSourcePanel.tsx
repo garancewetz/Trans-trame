@@ -71,7 +71,7 @@ export function LinkSourcePanel({
               <Search size={11} className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-white/22" />
               <TextInput
                 variant="table"
-                className="rounded-md border border-white/8 bg-white/4 py-1 pl-6 pr-2 text-[0.72rem] focus:border-[rgba(140,220,255,0.28)]"
+                className="rounded-md border border-white/8 bg-white/4 py-1 pl-6 pr-2 text-[0.72rem] focus:border-cyan/[0.28]"
                 placeholder="Filtrer les cibles…"
                 value={checklistSearch}
                 onChange={(e) => setChecklistSearch(e.target.value)}
@@ -94,7 +94,7 @@ export function LinkSourcePanel({
                   className={[
                     'flex cursor-pointer items-center gap-2.5 px-3 py-2 transition-colors hover:bg-white/4',
                     existing ? 'cursor-default opacity-40' : '',
-                    linkCheckedIds.has(n.id) ? 'bg-[rgba(0,255,135,0.04)]' : '',
+                    linkCheckedIds.has(n.id) ? 'bg-green/4' : '',
                   ].join(' ')}
                 >
                   <span
@@ -103,7 +103,7 @@ export function LinkSourcePanel({
                       checked
                         ? existing
                           ? 'border-white/25 bg-white/10 text-white/40'
-                          : 'border-[#00FF87] bg-[rgba(0,255,135,0.18)] text-[#00FF87]'
+                          : 'border-green bg-green/18 text-green'
                         : 'border-white/15 text-transparent',
                     ].join(' ')}
                   >
@@ -138,7 +138,7 @@ export function LinkSourcePanel({
               type="button"
               onClick={handleTisser}
               disabled={newLinksCount === 0}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-[rgba(140,220,255,0.28)] bg-[rgba(140,220,255,0.07)] py-2 text-[0.76rem] font-semibold text-[rgba(140,220,255,0.82)] transition-all hover:bg-[rgba(140,220,255,0.14)] disabled:cursor-not-allowed disabled:opacity-25"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-cyan/35 bg-cyan/10 py-2 text-[0.76rem] font-semibold text-cyan/85 transition-all hover:bg-cyan/18 disabled:cursor-not-allowed disabled:opacity-25"
             >
               <Link2 size={13} />
               {newLinksCount > 0 ? `Tisser ${newLinksCount} lien${newLinksCount > 1 ? 's' : ''}` : 'Tisser'}

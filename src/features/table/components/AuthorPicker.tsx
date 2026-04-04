@@ -124,7 +124,7 @@ export function AuthorPicker({
         />
       </div>
       {open && (suggestions.length > 0 || canCreate) && (
-        <ul className="absolute left-0 right-0 top-[calc(100%+3px)] z-50 list-none rounded-lg border border-white/10 bg-[rgba(6,4,20,0.98)] p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+        <ul className="absolute left-0 right-0 top-[calc(100%+3px)] z-50 list-none rounded-lg border border-white/10 bg-bg-overlay/98 p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur-xl">
           {suggestions.map((a) => (
             <li key={a.id}>
               <Button
@@ -145,8 +145,8 @@ export function AuthorPicker({
                 className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors hover:bg-white/8"
                 onClick={handleCreate}
               >
-                <Plus size={10} className="shrink-0 text-[rgba(140,220,255,0.6)]" />
-                <span className="font-mono text-[0.74rem] text-[rgba(140,220,255,0.75)]">
+                <Plus size={10} className="shrink-0 text-cyan/60" />
+                <span className="font-mono text-[0.74rem] text-cyan/75">
                   Créer «&nbsp;{query.trim()}&nbsp;»
                 </span>
               </Button>

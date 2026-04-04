@@ -18,7 +18,7 @@ export function Pill({ children, suffix, title, className }: PillProps) {
         .join(' ')}
       title={title}
     >
-      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#00FF87] opacity-70" />
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-green opacity-70" />
       <span className="truncate">{children}</span>
       {suffix != null && (
         <span className="shrink-0 tabular-nums text-white/30">{suffix}</span>

@@ -47,12 +47,12 @@ const HintRow = ({ keys, label }) => (
 )
 
 export function KeyboardHints() {
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   const panelId = useId()
 
   return (
     <div
-      className={`pointer-events-auto absolute bottom-20 right-6 z-20 flex select-none flex-col rounded-[10px] border border-white/10 bg-[rgba(6,3,15,0.45)] px-4 backdrop-blur-2xl backdrop-saturate-150 ${collapsed ? 'py-2' : 'py-3'}`}
+      className={`pointer-events-auto absolute top-[68px] right-6 z-20 flex select-none flex-col rounded-[10px] border border-white/10 bg-bg-base/45 px-4 backdrop-blur-2xl backdrop-saturate-150 py-3`}
     >
       <Button
         type="button"
@@ -60,7 +60,7 @@ export function KeyboardHints() {
         aria-expanded={!collapsed}
         aria-controls={panelId}
         aria-label={collapsed ? 'Développer les raccourcis de déplacement' : 'Réduire les raccourcis de déplacement'}
-        className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-md text-left text-[0.62rem] font-bold uppercase tracking-[2px] text-white/30 outline-none transition-colors hover:text-white/45 focus-visible:ring-1 focus-visible:ring-white/20 ${collapsed ? '' : 'min-h-9'}`}
+        className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-md text-left text-[0.62rem] font-bold uppercase tracking-[2px] text-white/30 outline-none transition-colors hover:text-white/45 focus-visible:ring-1 focus-visible:ring-white/20 min-h-9`}
       >
         <span className="inline-flex min-w-0 items-center gap-1.5">
           <Move size={12} className="shrink-0" />

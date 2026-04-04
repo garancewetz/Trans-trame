@@ -22,7 +22,7 @@ export function SmartImportModal(props: SmartImportModalProps) {
     <Modal
       open={open}
       title="Import Magique"
-      titleIcon={<Zap size={14} className="text-[rgba(140,220,255,0.7)]" />}
+      titleIcon={<Zap size={14} className="text-cyan/70" />}
       onClose={c.handleClose}
       onBack={c.phase === 'preview' ? c.goBack : undefined}
       as="form"

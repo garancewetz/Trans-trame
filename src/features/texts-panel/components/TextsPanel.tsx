@@ -64,7 +64,7 @@ export function TextsPanel({
   return (
     <aside
       className={[
-        'fixed left-0 top-0 z-50 h-screen w-[380px] overflow-hidden border-r border-white/10 bg-[rgba(8,4,20,0.92)] backdrop-blur-2xl transition-transform duration-300 ease-in-out',
+        'fixed left-0 top-0 z-50 h-screen w-[380px] overflow-hidden border-r border-white/10 bg-bg-overlay/92 backdrop-blur-2xl transition-transform duration-300 ease-in-out',
         open ? 'translate-x-0' : '-translate-x-[420px]',
       ].join(' ')}
     >
@@ -105,7 +105,7 @@ export function TextsPanel({
                   className={[
                     'flex w-full items-stretch gap-1 rounded-lg border backdrop-blur-xl transition-all',
                     isPeeked
-                      ? 'border-[rgba(168,130,255,0.45)] bg-[rgba(168,130,255,0.1)]'
+                      ? 'border-violet/45 bg-violet/10'
                       : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/8',
                   ].join(' ')}
                 >
@@ -130,7 +130,7 @@ export function TextsPanel({
                     {typeof onPeekNode === 'function' && (
                       <Button
                         type="button"
-                        className="cursor-pointer px-2.5 py-2 text-white/35 transition-colors hover:bg-white/10 hover:text-[rgba(168,130,255,0.95)] sm:py-0"
+                        className="cursor-pointer px-2.5 py-2 text-white/35 transition-colors hover:bg-white/10 hover:text-violet/95 sm:py-0"
                         aria-label={`Voir ce nœud sur la carte (${n.title})`}
                         title="Voir le nœud sur la carte (aperçu)"
                         onClick={(e) => {
@@ -148,7 +148,7 @@ export function TextsPanel({
                       className={[
                         'inline-flex cursor-pointer items-center justify-center gap-1 border-t border-white/10 px-2 py-2 text-[0.65rem] font-semibold transition-colors sm:border-l sm:border-t-0 sm:px-2.5',
                         onOpenWorkDetail
-                          ? 'text-white/40 hover:bg-white/10 hover:text-[rgba(200,170,255,0.95)]'
+                          ? 'text-white/40 hover:bg-white/10 hover:text-violet/95'
                           : 'cursor-not-allowed text-white/15',
                       ].join(' ')}
                       onClick={(e) => {

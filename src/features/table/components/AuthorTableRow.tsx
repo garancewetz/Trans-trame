@@ -42,8 +42,8 @@ export function AuthorTableRow({
       data-author-row-id={author.id}
       className={[
         'group border-b border-white/4 transition-colors',
-        focusAuthorId === author.id ? 'bg-[rgba(140,220,255,0.08)] ring-1 ring-[rgba(140,220,255,0.45)]' : '',
-        isSelected ? 'bg-[rgba(0,255,135,0.025)]' : index % 2 === 0 ? 'bg-white/[0.003]' : '',
+        focusAuthorId === author.id ? 'bg-cyan/8 ring-1 ring-cyan/45' : '',
+        isSelected ? 'bg-green/[0.025]' : index % 2 === 0 ? 'bg-white/[0.003]' : '',
         'hover:bg-white/2.5',
       ].join(' ')}
     >
@@ -55,7 +55,7 @@ export function AuthorTableRow({
           className={[
             'flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded border transition-all',
             isSelected
-              ? 'border-[#00FF87] bg-[rgba(0,255,135,0.18)] text-[#00FF87]'
+              ? 'border-green bg-green/18 text-green'
               : 'border-white/14 text-transparent hover:border-white/28',
           ].join(' ')}
         >
@@ -133,7 +133,7 @@ export function AuthorTableRow({
             type="button"
             title={`Ajouter un ouvrage pour ${authorName(author)}`}
             onClick={() => onAddBookForAuthor(author)}
-            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/8 px-1.5 py-0.5 text-[0.62rem] font-semibold text-white/65 opacity-100 transition-all hover:border-[rgba(140,220,255,0.35)] hover:text-[rgba(140,220,255,0.85)]"
+            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/8 px-1.5 py-0.5 text-[0.62rem] font-semibold text-white/65 opacity-100 transition-all hover:border-cyan/35 hover:text-cyan/85"
           >
             <BookPlus size={10} /> Ouvrage
           </Button>

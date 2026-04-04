@@ -6,7 +6,7 @@ type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
 }
 
 const BASE =
-  'w-full resize-none bg-transparent text-[0.9rem] font-mono italic text-white/80 placeholder:text-white/20 outline-none'
+  'w-full resize-none bg-transparent text-[0.9rem] font-mono italic text-white/80 placeholder:text-white/30 outline-none'
 
 export function TextareaInline({ className = '', ...props }: Props) {
   return <Textarea className={[BASE, className].filter(Boolean).join(' ')} {...props} />

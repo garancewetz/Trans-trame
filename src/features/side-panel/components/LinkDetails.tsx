@@ -35,9 +35,9 @@ export function LinkDetails({
   const relationBadgeLabel = isContextPanel ? (contextIsSource ? 'cite' : 'est cite par') : 'Lien'
   const relationBadgeClass = isContextPanel
     ? contextIsSource
-      ? 'bg-[rgba(140,220,255,0.2)] text-[rgba(140,220,255,0.95)]'
-      : 'bg-[rgba(255,171,64,0.22)] text-[rgba(255,171,64,0.95)]'
-    : 'bg-linear-to-br from-[rgba(140,220,255,0.8)] to-[rgba(80,160,255,0.9)] text-white'
+      ? 'bg-cyan/20 text-cyan/95'
+      : 'bg-orange/22 text-orange/95'
+    : 'bg-linear-to-br from-cyan/80 to-blue/90 text-white'
 
   const excerpt = (selectedLink?.citation_text || selectedLink?.context || '').trim()
   const axesForCitation = linkContextNode?.axes ?? relatedNode?.axes
@@ -146,8 +146,8 @@ export function LinkDetails({
       ) : (
         <>
           <p className="mb-2 text-[0.78rem] text-white/55">
-            Lecture simple: <strong className="text-[rgba(255,171,64,0.9)]">ouvrage qui cite</strong> <ArrowRight size={12} className="mx-1 inline text-white/35" />
-            <strong className="text-[rgba(140,220,255,0.9)]">ouvrage cite</strong>
+            Lecture simple: <strong className="text-orange/90">ouvrage qui cite</strong> <ArrowRight size={12} className="mx-1 inline text-white/35" />
+            <strong className="text-cyan/90">ouvrage cite</strong>
           </p>
           <h2 className="mb-1 flex items-center gap-2 text-[1.1rem] font-bold leading-snug text-white">
             {source?.title} <ArrowRight size={16} className="shrink-0 text-white/40" /> {target?.title}
@@ -182,7 +182,7 @@ export function LinkDetails({
         {!isContextPanel && source && !contextIsSource && (
           <Button
             type="button"
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.75rem] font-semibold text-[rgba(255,171,64,0.75)] transition-all hover:border-[rgba(255,171,64,0.45)] hover:bg-[rgba(255,171,64,0.15)] hover:text-white"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.75rem] font-semibold text-orange/75 transition-all hover:border-orange/45 hover:bg-orange/15 hover:text-white"
             onClick={() => onOpenNode?.(source)}
           >
             <ExternalLink size={12} />
@@ -192,7 +192,7 @@ export function LinkDetails({
         {!isContextPanel && target && !contextIsTarget && (
           <Button
             type="button"
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.75rem] font-semibold text-[rgba(140,220,255,0.75)] transition-all hover:border-[rgba(140,220,255,0.5)] hover:bg-[rgba(140,220,255,0.15)] hover:text-white"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.75rem] font-semibold text-cyan/75 transition-all hover:border-cyan/50 hover:bg-cyan/15 hover:text-white"
             onClick={() => onOpenNode?.(target)}
           >
             <ExternalLink size={12} />
@@ -214,7 +214,7 @@ export function LinkDetails({
             </Button>
 
             {isActionsOpen && (
-              <div className="absolute right-0 z-10 mt-2 w-[220px] overflow-hidden rounded-lg border border-white/10 bg-[rgba(8,4,20,0.72)] backdrop-blur-xl">
+              <div className="absolute right-0 z-10 mt-2 w-[220px] overflow-hidden rounded-lg border border-white/10 bg-bg-overlay/72 backdrop-blur-xl">
                 <button
                   type="button"
                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.82rem] font-semibold text-white/80 hover:bg-white/8"

@@ -12,9 +12,9 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 
 }
 
 const FOCUS_TONE = {
-  violet: 'focus:border-[rgba(168,130,255,0.4)] focus:shadow-[0_0_0_3px_rgba(168,130,255,0.08)]',
-  amber: 'focus:border-[rgba(255,180,130,0.4)]',
-  cyan: 'focus:border-[rgba(140,220,255,0.4)] focus:shadow-[0_0_0_3px_rgba(140,220,255,0.06)]',
+  violet: 'focus:border-violet/40 focus:shadow-[0_0_0_3px_rgba(168,130,255,0.08)]',
+  amber: 'focus:border-peach/40',
+  cyan: 'focus:border-cyan/40 focus:shadow-[0_0_0_3px_rgba(140,220,255,0.06)]',
 } as const
 
 export function SearchInputWithClear({
@@ -44,7 +44,7 @@ export function SearchInputWithClear({
         value={value}
         onChange={onChange}
         className={clsx(
-          'w-full rounded-[10px] border border-white/10 bg-white/5 px-9 py-[9px] text-[0.82rem] text-white outline-none backdrop-blur-lg transition-all placeholder:text-white/25 focus:bg-white/10',
+          'w-full rounded-[10px] border border-white/10 bg-white/5 px-9 py-[9px] text-[0.82rem] text-white outline-none backdrop-blur-lg transition-all placeholder:text-white/35 focus:bg-white/10',
           FOCUS_TONE[focusTone],
         )}
         {...props}

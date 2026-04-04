@@ -48,7 +48,7 @@ export function AxisDots({
         <Plus size={8} />
       </Button>
       {open && (
-        <div className="absolute left-0 top-[calc(100%+4px)] z-50 flex flex-wrap gap-1 rounded-lg border border-white/10 bg-[rgba(6,4,20,0.98)] p-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
+        <div className="absolute left-0 top-[calc(100%+4px)] z-50 flex flex-wrap gap-1 rounded-lg border border-white/10 bg-bg-overlay/98 p-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
           {AXES.map((axis) => {
             const active = axes.includes(axis)
             return (

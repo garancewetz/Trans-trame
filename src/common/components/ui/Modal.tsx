@@ -64,7 +64,7 @@ export function Modal({
   )
 
   const containerCls = [
-    'w-full rounded-2xl border border-white/10 bg-[rgba(6,5,20,0.98)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.65)]',
+    'w-full rounded-2xl border border-white/10 bg-bg-overlay/98 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.65)]',
     maxWidth,
     containerClassName,
   ]

@@ -62,7 +62,7 @@ export function BooksTabBookRow({
       data-book-row-id={node.id}
       className={[
         'group border-b border-white/4 transition-colors',
-        isSelected ? 'bg-[rgba(0,255,135,0.025)]' : rowIndex % 2 === 0 ? 'bg-white/[0.003]' : '',
+        isSelected ? 'bg-green/[0.025]' : rowIndex % 2 === 0 ? 'bg-white/[0.003]' : '',
         'hover:bg-white/2.5',
       ].join(' ')}
     >
@@ -73,7 +73,7 @@ export function BooksTabBookRow({
           className={[
             'flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded border transition-all',
             isSelected
-              ? 'border-[#00FF87] bg-[rgba(0,255,135,0.18)] text-[#00FF87]'
+              ? 'border-green bg-green/18 text-green'
               : 'border-white/14 text-transparent hover:border-white/28',
           ].join(' ')}
         >
@@ -178,7 +178,7 @@ export function BooksTabBookRow({
             type="button"
             title="Ouvrir la grande fiche ouvrage"
             onClick={() => onOpenWorkDetail(node.id)}
-            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-2 py-0.5 text-[0.65rem] font-semibold text-white/45 transition-all hover:border-[rgba(168,85,247,0.4)] hover:bg-[rgba(168,85,247,0.1)] hover:text-[rgba(200,170,255,0.95)]"
+            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-2 py-0.5 text-[0.65rem] font-semibold text-white/45 transition-all hover:border-violet/40 hover:bg-violet/10 hover:text-violet/95"
           >
             Détails
           </Button>
@@ -188,7 +188,7 @@ export function BooksTabBookRow({
             target="_blank"
             rel="noopener noreferrer"
             title="Ouvrir la carte sur cet ouvrage (nouvel onglet, ?book=…)"
-            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-2 py-0.5 text-[0.65rem] font-semibold text-white/45 transition-all hover:border-[rgba(168,85,247,0.4)] hover:bg-[rgba(168,85,247,0.1)] hover:text-[rgba(200,170,255,0.95)]"
+            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-2 py-0.5 text-[0.65rem] font-semibold text-white/45 transition-all hover:border-violet/40 hover:bg-violet/10 hover:text-violet/95"
           >
             <ExternalLink size={10} className="shrink-0" />
             Détails
@@ -202,7 +202,7 @@ export function BooksTabBookRow({
           onClick={() => {
             onOpenLinksForBook?.(node)
           }}
-          className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-1.5 py-0.5 font-mono text-[0.7rem] text-white/45 transition-all hover:border-[rgba(140,220,255,0.35)] hover:bg-[rgba(140,220,255,0.07)] hover:text-[rgba(140,220,255,0.8)]"
+          className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-1.5 py-0.5 font-mono text-[0.7rem] text-white/45 transition-all hover:border-cyan/35 hover:bg-cyan/[0.07] hover:text-cyan/80"
         >
           {linkCount}
           <Link2 size={10} className="shrink-0" />

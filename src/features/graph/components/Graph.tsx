@@ -3,7 +3,6 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRe
 import ForceGraph2D from 'react-force-graph-2d'
 import type { ForceGraphMethods } from 'react-force-graph-2d'
 import { forceCollide } from 'd3-force-3d'
-import { KeyboardHints } from '@/common/components/ui/KeyboardHints'
 import { drawStarField } from '../scene'
 import {
   setupKeyboardHandlers,
@@ -366,7 +365,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         linkDirectionalParticleWidth={linkDirectionalParticleWidth}
         linkDirectionalParticleSpeed={0.004}
         linkDirectionalParticleColor={linkDirectionalParticleColor}
-        backgroundColor="#06030f"
+        backgroundColor={getComputedStyle(document.documentElement).getPropertyValue('--color-bg-base').trim()}
         onEngineInit={handleInit}
         onEngineStop={() => {
           // Le recadrage est plus fiable une fois la simulation stabilisée.
@@ -375,7 +374,6 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         onRenderFramePre={onRenderFramePre}
         onRenderFramePost={onRenderFramePost}
       />
-      <KeyboardHints />
     </div>
   )
 })

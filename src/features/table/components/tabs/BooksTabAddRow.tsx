@@ -37,9 +37,9 @@ export function BooksTabAddRow({
   onAddAuthor,
 }: Props) {
   return (
-    <tr className="border-b border-[rgba(140,220,255,0.1)] bg-[rgba(140,220,255,0.02)]">
+    <tr className="border-b border-cyan/15 bg-cyan/4">
       <td className="px-3 py-1.5 text-center">
-        <Plus size={11} className="text-[rgba(140,220,255,0.35)]" />
+        <Plus size={11} className="text-cyan/50" />
       </td>
       <td className="min-w-0 max-w-36 px-2 py-1.5">
         <TextInput
@@ -78,7 +78,7 @@ export function BooksTabAddRow({
             type="button"
             onClick={onAddBookRow}
             disabled={!inputTitle.trim()}
-            className="shrink-0 cursor-pointer rounded-md border border-[rgba(140,220,255,0.28)] bg-[rgba(140,220,255,0.07)] px-2 py-1 text-[0.65rem] font-semibold text-[rgba(140,220,255,0.75)] transition-all hover:bg-[rgba(140,220,255,0.14)] disabled:cursor-not-allowed disabled:opacity-25"
+            className="shrink-0 cursor-pointer rounded-md border border-cyan/35 bg-cyan/10 px-2 py-1 text-[0.65rem] font-semibold text-cyan/85 transition-all hover:bg-cyan/18 disabled:cursor-not-allowed disabled:opacity-25"
           >
             + Ajouter
           </Button>

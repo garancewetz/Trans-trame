@@ -135,9 +135,14 @@ function parseLine(rawLine: string) {
       if (parts.length >= 2) {
         const firstPart = parts[0]
         const words = firstPart.split(/\s+/).filter(Boolean)
-        const looksLikeAuthor = words.length <= 4
+        // Title-first heuristic: if the second part looks like an author name
+        // and the first part doesn't strongly look like one, treat as Title, Author
+        const secondPart = parts[1] || ''
+        const secondWords = secondPart.split(/\s+/).filter(Boolean)
+        const secondLooksLikeName = secondWords.length >= 2 && secondWords.length <= 4 && looksLikeName(secondPart)
+        const firstLooksLikeAuthor = words.length <= 4 && looksLikeName(firstPart) && !secondLooksLikeName
 
-        if (looksLikeAuthor) {
+        if (firstLooksLikeAuthor) {
           let titleIndex
           if (words.length === 1) {
             lastName = words[0]
@@ -163,7 +168,24 @@ function parseLine(rawLine: string) {
           if (editionParts.length) edition = editionParts.join(', ').replace(/\.$/, '').trim()
         } else {
           title = firstPart.replace(/\.$/, '').trim()
-          const editionParts = parts.slice(1)
+          const rest = parts.slice(1)
+          const authorParts: string[] = []
+          const editionParts: string[] = []
+          for (const p of rest) {
+            const w = p.split(/\s+/).filter(Boolean)
+            if (w.length <= 4 && looksLikeName(p) && !authorParts.length && !editionParts.length) {
+              authorParts.push(p)
+            } else if (authorParts.length && w.length <= 4 && looksLikeName(p) && !editionParts.length) {
+              authorParts.push(p)
+            } else {
+              editionParts.push(p)
+            }
+          }
+          if (authorParts.length) {
+            authors = authorParts.map(parseAuthorString)
+            firstName = authors[0]?.firstName || ''
+            lastName = authors[0]?.lastName || ''
+          }
           if (editionParts.length) edition = editionParts.join(', ').replace(/\.$/, '').trim()
         }
       } else {

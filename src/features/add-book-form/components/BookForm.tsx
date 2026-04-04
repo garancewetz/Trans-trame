@@ -98,7 +98,7 @@ export function BookForm({
                 onAddAuthor={onAddAuthor}
               />
               {fieldState.error?.message && (
-                <span className="text-[0.68rem] text-[rgba(255,140,140,0.85)]">{fieldState.error.message}</span>
+                <span className="text-[0.68rem] text-red/85">{fieldState.error.message}</span>
               )}
             </>
           )}
@@ -117,7 +117,7 @@ export function BookForm({
                 className={[
                   'relative h-5 w-9 shrink-0 rounded-full border transition-all duration-200',
                   value
-                    ? 'border-[rgba(0,255,135,0.6)] bg-[rgba(0,255,135,0.25)]'
+                    ? 'border-green/60 bg-green/25'
                     : 'border-white/15 bg-white/5',
                 ].join(' ')}
                 aria-checked={value}
@@ -126,12 +126,12 @@ export function BookForm({
                 <span
                   className={[
                     'absolute top-0.5 h-3.5 w-3.5 rounded-full transition-all duration-200',
-                    value ? 'left-[18px] bg-[#00FF87]' : 'left-0.5 bg-white/30',
+                    value ? 'left-[18px] bg-green' : 'left-0.5 bg-white/30',
                   ].join(' ')}
                 />
               </Button>
               <span className="inline-flex items-center gap-1.5 text-[0.75rem] text-white/50 transition-colors">
-                <Pin size={11} className={value ? 'text-[#00FF87]' : 'text-white/30'} />
+                <Pin size={11} className={value ? 'text-green' : 'text-white/30'} />
                 Garder les auteur·ices pour la suite
               </span>
             </label>
@@ -164,7 +164,7 @@ export function BookForm({
 
       <Button
         type="submit"
-        className="mt-1 w-full cursor-pointer rounded-[10px] bg-linear-to-br from-[rgba(140,220,255,0.7)] to-[rgba(80,160,255,0.9)] px-5 py-3.5 text-[0.85rem] font-semibold text-white shadow-[0_4px_20px_rgba(140,220,255,0.15)] transition-all hover:-translate-y-px hover:from-[rgba(140,220,255,0.9)] hover:to-[rgba(80,160,255,1)] hover:shadow-[0_4px_24px_rgba(140,220,255,0.3)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
+        className="mt-1 w-full cursor-pointer rounded-[10px] bg-linear-to-br from-cyan/70 to-blue/90 px-5 py-3.5 text-[0.85rem] font-semibold text-white shadow-[0_4px_20px_rgba(140,220,255,0.15)] transition-all hover:-translate-y-px hover:from-cyan/90 hover:to-blue/100 hover:shadow-[0_4px_24px_rgba(140,220,255,0.3)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
       >
         {mode === 'edit' ? 'Enregistrer les modifications' : 'Ajouter l\u2019ouvrage'}
       </Button>

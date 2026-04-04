@@ -166,6 +166,19 @@ export function BooksTab({
           setMergeConfirm(false)
           setMergeModal(true)
         }}
+        onExport={() => {
+          const selected = (nodes || []).filter((n) => selectedIds.has(n.id))
+          return selected
+            .map((n) => {
+              const authorNames = (n.authorIds || [])
+                .map((id) => authorsMap.get(id))
+                .filter(Boolean)
+                .map((a) => [a!.firstName, a!.lastName].filter(Boolean).join(' '))
+                .join(', ')
+              return [n.title, authorNames, n.year].filter(Boolean).join(', ')
+            })
+            .join('\n')
+        }}
       />
 
       <BooksTabBooksTable

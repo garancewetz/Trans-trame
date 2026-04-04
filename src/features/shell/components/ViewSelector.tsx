@@ -14,7 +14,7 @@ export function ViewSelector({ currentView, onViewChange, inline = false, discre
       <div
         className={[
           'flex items-center gap-1 rounded-[8px] border border-white/10 p-1 backdrop-blur-md',
-          inline && discreet ? 'border-white/5 bg-transparent p-0.5' : inline ? 'bg-white/5' : 'bg-[rgba(8,12,30,0.9)]',
+          inline && discreet ? 'border-white/5 bg-transparent p-0.5' : inline ? 'bg-white/5' : 'bg-bg-overlay/90',
         ].join(' ')}
       >
         {VIEWS.map((item) => {
