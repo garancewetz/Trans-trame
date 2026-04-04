@@ -38,15 +38,15 @@ export function LinkForm({
         <Button
           type="button"
           onClick={() => onRequestBack()}
-          className="inline-flex items-center gap-1.5 cursor-pointer bg-transparent text-left text-[0.78rem] font-semibold text-white/50 transition-colors hover:text-white"
+          className="inline-flex items-center gap-1.5 cursor-pointer bg-transparent text-left text-[0.88rem] font-semibold text-white/50 transition-colors hover:text-white"
         >
           <ArrowLeft size={14} /> Retour
         </Button>
       )}
-      <h3 className="border-b border-white/10 pb-2.5 text-[0.82rem] font-bold uppercase tracking-[2px] text-white/50">
+      <h3 className="border-b border-white/10 pb-2.5 text-[0.92rem] font-bold uppercase tracking-[2px] text-white/50">
         Nouveau lien
       </h3>
-      <p className="-mt-2 text-[0.82rem] leading-relaxed text-white/35">
+      <p className="-mt-2 text-[0.92rem] leading-relaxed text-white/35">
         Le livre <strong className="text-white/60">source</strong> cite le(s) livre(s){' '}
         <strong className="text-white/60">cible(s)</strong>.
       </p>
@@ -76,7 +76,7 @@ export function LinkForm({
 
       {/* Multi-select target section */}
       <div className="flex flex-col gap-2">
-        <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
+        <span className="text-[0.75rem] font-semibold uppercase tracking-[1px] text-white/35">
           ...{linkCount > 1 ? `ces ${linkCount} livres` : 'ce livre'}
         </span>
 
@@ -107,7 +107,7 @@ export function LinkForm({
 
       {/* Shared citation fields */}
       {linkCount > 1 && (
-        <p className="-mt-1 text-[0.73rem] text-white/30">
+        <p className="-mt-1 text-[0.82rem] text-white/30">
           Ces champs s&apos;appliquent à tous les liens créés.
         </p>
       )}
@@ -147,7 +147,7 @@ export function LinkForm({
       <Button
         type="submit"
         disabled={!sourceId || linkCount === 0}
-        className="mt-1 w-full cursor-pointer rounded-[10px] bg-linear-to-br from-cyan/70 to-blue/90 px-5 py-3.5 text-[0.85rem] font-semibold text-white shadow-[0_4px_20px_rgba(140,220,255,0.15)] transition-all hover:-translate-y-px hover:from-cyan/90 hover:to-blue/100 hover:shadow-[0_4px_24px_rgba(140,220,255,0.3)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
+        className="mt-1 w-full cursor-pointer rounded-[10px] bg-linear-to-br from-cyan/70 to-blue/90 px-5 py-3.5 text-[0.95rem] font-semibold text-white shadow-[0_4px_20px_rgba(140,220,255,0.15)] transition-all hover:-translate-y-px hover:from-cyan/90 hover:to-blue/100 hover:shadow-[0_4px_24px_rgba(140,220,255,0.3)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
       >
         {linkCount > 1 ? `Créer les ${linkCount} liens` : 'Créer un lien'}
       </Button>

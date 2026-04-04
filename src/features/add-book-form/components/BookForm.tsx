@@ -69,7 +69,7 @@ export function BookForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-[18px]">
-      <h3 className="border-b border-white/10 pb-2.5 text-[0.82rem] font-bold uppercase tracking-[2px] text-white/50">
+      <h3 className="border-b border-white/10 pb-2.5 text-[0.92rem] font-bold uppercase tracking-[2px] text-white/50">
         {mode === 'edit' ? 'Modifier l\u2019ouvrage' : 'Nouvel ouvrage'}
       </h3>
 
@@ -98,7 +98,7 @@ export function BookForm({
                 onAddAuthor={onAddAuthor}
               />
               {fieldState.error?.message && (
-                <span className="text-[0.68rem] text-red/85">{fieldState.error.message}</span>
+                <span className="text-[0.75rem] text-red/85">{fieldState.error.message}</span>
               )}
             </>
           )}
@@ -130,7 +130,7 @@ export function BookForm({
                   ].join(' ')}
                 />
               </Button>
-              <span className="inline-flex items-center gap-1.5 text-[0.75rem] text-white/50 transition-colors">
+              <span className="inline-flex items-center gap-1.5 text-[0.85rem] text-white/50 transition-colors">
                 <Pin size={11} className={value ? 'text-green' : 'text-white/30'} />
                 Garder les auteur·ices pour la suite
               </span>
@@ -164,14 +164,14 @@ export function BookForm({
 
       <Button
         type="submit"
-        className="mt-1 w-full cursor-pointer rounded-[10px] bg-linear-to-br from-cyan/70 to-blue/90 px-5 py-3.5 text-[0.85rem] font-semibold text-white shadow-[0_4px_20px_rgba(140,220,255,0.15)] transition-all hover:-translate-y-px hover:from-cyan/90 hover:to-blue/100 hover:shadow-[0_4px_24px_rgba(140,220,255,0.3)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
+        className="mt-1 w-full cursor-pointer rounded-[10px] bg-linear-to-br from-cyan/70 to-blue/90 px-5 py-3.5 text-[0.95rem] font-semibold text-white shadow-[0_4px_20px_rgba(140,220,255,0.15)] transition-all hover:-translate-y-px hover:from-cyan/90 hover:to-blue/100 hover:shadow-[0_4px_24px_rgba(140,220,255,0.3)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
       >
         {mode === 'edit' ? 'Enregistrer les modifications' : 'Ajouter l\u2019ouvrage'}
       </Button>
 
       {mode === 'book' && recentQueue && recentQueue.length > 0 && (
         <div className="flex flex-col gap-2">
-          <span className="text-[0.65rem] font-semibold uppercase tracking-[1.5px] text-white/25">
+          <span className="text-[0.75rem] font-semibold uppercase tracking-[1.5px] text-white/25">
             Ajout&eacute;s cette session
           </span>
           <div className="flex flex-wrap gap-1.5">

@@ -72,11 +72,11 @@ export function TableMergeModal({
               checked={mergeKeepId === n.id}
               onChange={() => { setMergeKeepId(n.id); setMergeConfirm(false) }}
             >
-              <strong className="block font-mono text-[0.82rem] text-white">{n.title}</strong>
-              <span className="font-mono text-[0.7rem] text-white/40">
+              <strong className="block font-mono text-[0.92rem] text-white">{n.title}</strong>
+              <span className="font-mono text-[0.8rem] text-white/40">
                 {authorDisplay}{n.year ? `, ${n.year}` : ''}
               </span>
-              <span className="ml-2 font-mono text-[0.65rem] text-white/28">
+              <span className="ml-2 font-mono text-[0.75rem] text-white/28">
                 · {bookCount} ouvrage{bookCount > 1 ? 's' : ''}
               </span>
             </RadioCard>
@@ -84,7 +84,7 @@ export function TableMergeModal({
         })}
       </div>
 
-      <p className="mb-4 text-[0.7rem] text-white/28">
+      <p className="mb-4 text-[0.8rem] text-white/28">
         Conserver :{' '}
         <strong className="text-white/55">
           {(() => {

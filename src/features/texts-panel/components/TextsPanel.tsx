@@ -5,6 +5,7 @@ import { bookAuthorDisplay, buildAuthorsMap } from '@/common/utils/authorUtils'
 import { axesGradient } from '@/common/utils/categories'
 import { Button } from '@/common/components/ui/Button'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
+import { PANEL_WIDTH } from '@/common/constants/panels'
 
 type TextsPanelProps = {
   open: boolean
@@ -64,15 +65,15 @@ export function TextsPanel({
   return (
     <aside
       className={[
-        'fixed left-0 top-0 z-50 h-screen w-[380px] overflow-hidden border-r border-white/10 bg-bg-overlay/92 backdrop-blur-2xl transition-transform duration-300 ease-in-out',
+        `fixed left-0 top-0 z-50 h-screen ${PANEL_WIDTH.default} overflow-hidden border-r border-white/10 bg-bg-overlay/92 backdrop-blur-2xl transition-transform duration-300 ease-in-out`,
         open ? 'translate-x-0' : '-translate-x-[420px]',
       ].join(' ')}
     >
       <div className="h-full overflow-y-auto px-4 pb-6 pt-4">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-[0.9rem] font-semibold text-white/90">Textes</h2>
-            <p className="text-[0.7rem] text-white/40">{nodes.length} au total</p>
+            <h2 className="text-[1rem] font-semibold text-white/90">Textes</h2>
+            <p className="text-[0.8rem] text-white/40">{nodes.length} au total</p>
           </div>
 
           <Button
@@ -95,7 +96,7 @@ export function TextsPanel({
 
         <div className="space-y-2">
           {filtered.length === 0 ? (
-            <p className="px-3 py-3 text-[0.8rem] text-white/40">Aucun texte trouvé.</p>
+            <p className="px-3 py-3 text-[0.9rem] text-white/40">Aucun texte trouvé.</p>
           ) : (
             filtered.map((n) => {
               const isPeeked = peekNodeId === n.id
@@ -119,8 +120,8 @@ export function TextsPanel({
                       style={{ background: axesGradient(n.axes) }}
                     />
                     <div className="min-w-0">
-                      <div className="truncate text-[0.86rem] font-semibold text-white/85">{n.title}</div>
-                      <div className="truncate text-[0.72rem] text-white/35">
+                      <div className="truncate text-[0.95rem] font-semibold text-white/85">{n.title}</div>
+                      <div className="truncate text-[0.82rem] text-white/35">
                         {bookAuthorDisplay(n, authorsMap)}
                         {n.year ? ` — ${n.year}` : ''}
                       </div>
@@ -146,7 +147,7 @@ export function TextsPanel({
                       disabled={!onOpenWorkDetail}
                       title="Grande fiche ouvrage"
                       className={[
-                        'inline-flex cursor-pointer items-center justify-center gap-1 border-t border-white/10 px-2 py-2 text-[0.65rem] font-semibold transition-colors sm:border-l sm:border-t-0 sm:px-2.5',
+                        'inline-flex cursor-pointer items-center justify-center gap-1 border-t border-white/10 px-2 py-2 text-[0.75rem] font-semibold transition-colors sm:border-l sm:border-t-0 sm:px-2.5',
                         onOpenWorkDetail
                           ? 'text-white/40 hover:bg-white/10 hover:text-violet/95'
                           : 'cursor-not-allowed text-white/15',

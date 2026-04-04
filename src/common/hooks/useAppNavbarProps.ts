@@ -1,6 +1,5 @@
 import type { Dispatch, RefObject, SetStateAction } from 'react'
 import { axesGradient } from '@/common/utils/categories'
-import { authorName } from '@/common/utils/authorUtils'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 import type { GraphData } from '@/types/domain'
 import type { AnalysisPanelImperativeHandle } from '@/features/analysis-panel/components/AnalysisPanel'
@@ -17,15 +16,7 @@ export function useAppNavbarProps({
   handleSearchSelect,
   authorsMap,
   handleOpenTable,
-  activeFilter,
-  clearActiveFilter,
-  clampedTimelineRange,
-  hasTimelineFilter,
-  clearTimelineFilter,
   selectedAuthor,
-  setSelectedAuthor,
-  selectedNode,
-  clearSelectedNode,
   viewMode,
   handleViewChange,
   tableMode,
@@ -45,15 +36,7 @@ export function useAppNavbarProps({
   handleSearchSelect: (item: GlobalSearchResultItem | null | undefined) => void
   authorsMap: Map<string, AuthorNode>
   handleOpenTable: (tab?: 'books' | 'authors' | 'links', linkSourceId?: string | null) => void
-  activeFilter: string | null
-  clearActiveFilter: () => void
-  clampedTimelineRange: { start: number; end: number }
-  hasTimelineFilter: boolean
-  clearTimelineFilter: () => void
   selectedAuthor: string | null
-  setSelectedAuthor: (id: string | null) => void
-  selectedNode: { id: string; title?: string } | null
-  clearSelectedNode: () => void
   viewMode: string
   handleViewChange: (mode: string) => void
   tableMode: boolean
@@ -78,17 +61,7 @@ export function useAppNavbarProps({
       onOpenTable: handleOpenTable,
     },
     filters: {
-      category: activeFilter,
-      clearCategory: clearActiveFilter,
-      timelineRange: clampedTimelineRange,
-      hasTimelineFilter,
-      clearTimelineFilter,
       selectedAuthorId: selectedAuthor,
-      selectedAuthorName: selectedAuthor ? authorName(authorsMap.get(selectedAuthor) || {}) : null,
-      clearSelectedAuthor: () => setSelectedAuthor(null),
-      selectedNodeId: selectedNode?.id ?? null,
-      selectedNodeTitle: selectedNode?.title ?? null,
-      clearSelectedNode,
     },
     view: {
       mode: viewMode,

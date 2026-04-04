@@ -51,7 +51,7 @@ export function getLinkStyle(
         markerEnd: `url(#arrow-${isCite ? 'cite' : 'cited-by'})`,
       }
     }
-    return { stroke: rgba(CITE, 1), strokeOpacity: 0.03, strokeWidth: 0.5, markerEnd: undefined }
+    return { stroke: rgba(CITE, 1), strokeOpacity: 0.08, strokeWidth: 0.5, markerEnd: undefined }
   }
 
   const isActive = selectedId === sourceId || selectedId === targetId
@@ -99,7 +99,7 @@ export function getNodeVisual(
   if (hasHoverFocus) {
     if (isHovered) return { opacity: 1, r: baseR + 2, glowR: baseR + 6, glowOpacity: 0.3 }
     if (isHoverNeighbor) return { opacity: 1, r: baseR + 1, glowR: baseR + 5, glowOpacity: 0.15 }
-    return { opacity: 0.05, r: baseR, glowR: null, glowOpacity: 0 }
+    return { opacity: 0.18, r: baseR, glowR: null, glowOpacity: 0 }
   }
 
   // Selection focus
@@ -208,10 +208,11 @@ type LinkParticleProps = {
 /** Animated dots flowing along a link path. */
 export const LinkParticles = memo(function LinkParticles({ d, config, linkIndex }: LinkParticleProps) {
   const { count, r, color, dur } = config
+  const durSeconds = parseFloat(dur)
   return (
     <>
       {Array.from({ length: count }, (_, i) => {
-        const beginOffset = `${((i / count) * 100).toFixed(0)}%`
+        const beginOffset = `${((i / count) * durSeconds).toFixed(2)}s`
         return (
           <circle key={`${linkIndex}-p${i}`} r={r} fill={color} opacity={0.9}>
             <animateMotion
@@ -223,6 +224,43 @@ export const LinkParticles = memo(function LinkParticles({ d, config, linkIndex 
           </circle>
         )
       })}
+    </>
+  )
+})
+
+// ── CitationLink — all-in-one SVG link component ───────────────────────────
+
+type CitationLinkProps = {
+  d: string
+  sourceId: string
+  targetId: string
+  selectedId: string | null
+  hoveredId: string | null
+  linkIndex: number
+}
+
+/** Renders a citation link path with arrow marker and animated directional particles. */
+export const CitationLink = memo(function CitationLink({
+  d,
+  sourceId,
+  targetId,
+  selectedId,
+  hoveredId,
+  linkIndex,
+}: CitationLinkProps) {
+  const style = getLinkStyle(sourceId, targetId, selectedId, hoveredId)
+  const config = getParticleConfig(sourceId, targetId, selectedId, hoveredId)
+  return (
+    <>
+      <path
+        d={d}
+        fill="none"
+        stroke={style.stroke}
+        strokeOpacity={style.strokeOpacity}
+        strokeWidth={style.strokeWidth}
+        markerEnd={style.markerEnd}
+      />
+      {config && <LinkParticles d={d} config={config} linkIndex={linkIndex} />}
     </>
   )
 })

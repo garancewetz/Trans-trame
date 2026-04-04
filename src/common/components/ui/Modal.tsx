@@ -57,7 +57,7 @@ export function Modal({
   const inner = (
     <>
       {titleRow}
-      {subtitle && <p className="mb-4 mt-0.5 text-[0.73rem] text-white/40">{subtitle}</p>}
+      {subtitle && <p className="mb-4 mt-0.5 text-[0.82rem] text-white/40">{subtitle}</p>}
       {children}
       {footer && <div className="flex gap-2">{footer}</div>}
     </>

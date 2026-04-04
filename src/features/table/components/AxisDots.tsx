@@ -34,7 +34,7 @@ export function AxisDots({
           type="button"
           onClick={() => toggle(axis)}
           title="Retirer"
-          className="inline-flex cursor-pointer items-center rounded-full px-1.5 py-px text-[0.58rem] font-semibold text-black/75 transition-all hover:opacity-75"
+          className="inline-flex cursor-pointer items-center rounded-full px-1.5 py-px text-[0.72rem] font-semibold text-black/75 transition-all hover:opacity-75"
           style={{ backgroundColor: AXES_COLORS[axis] }}
         >
           {AXES_LABELS[axis] ?? axis}
@@ -57,7 +57,7 @@ export function AxisDots({
                 type="button"
                 onClick={() => toggle(axis)}
                 className={[
-                  'cursor-pointer rounded-full px-2 py-0.5 text-[0.62rem] font-semibold transition-all',
+                  'cursor-pointer rounded-full px-2 py-0.5 text-[0.72rem] font-semibold transition-all',
                   active ? 'text-black/75' : 'border border-white/15 bg-white/5 text-white/45 hover:bg-white/10',
                 ].join(' ')}
                 style={active ? { backgroundColor: AXES_COLORS[axis] } : {}}

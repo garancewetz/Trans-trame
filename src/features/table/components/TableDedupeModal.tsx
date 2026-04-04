@@ -56,7 +56,7 @@ export function TableDedupeModal({
         </>
       }
     >
-      <div className="mb-4 max-h-[min(40vh,320px)] overflow-y-auto rounded-xl border border-white/8 text-[0.7rem]">
+      <div className="mb-4 max-h-[min(40vh,320px)] overflow-y-auto rounded-xl border border-white/8 text-[0.8rem]">
         {duplicateGroups.map((group, i) => (
           <div key={i} className="border-b border-white/5 px-3 py-2 last:border-0">
             <span className="font-mono text-white/70">{group[0].title}</span>

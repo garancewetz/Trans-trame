@@ -54,8 +54,8 @@ export function TableOrphanModal({
           <div key={n.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5">
             <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: axesGradient(n.axes) }} />
             <span>
-              <strong className="block font-mono text-[0.78rem] text-white">{n.title}</strong>
-              <span className="font-mono text-[0.65rem] text-white/32">
+              <strong className="block font-mono text-[0.88rem] text-white">{n.title}</strong>
+              <span className="font-mono text-[0.75rem] text-white/32">
                 {bookAuthorDisplay(n, authorsMap)}{n.year ? `, ${n.year}` : ''}
               </span>
             </span>

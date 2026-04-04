@@ -36,14 +36,14 @@ export function BooksTabSelectionBar({
 
   return (
     <div className="flex shrink-0 items-center gap-3 border-b border-white/6 bg-white/1.5 px-5 py-2">
-      <span className="font-mono text-[0.72rem] text-white/45">
+      <span className="font-mono text-[0.82rem] text-white/45">
         {selectedCount} sélectionné{selectedCount > 1 ? 's' : ''}
       </span>
       {showMerge && (
         <Button
           type="button"
           onClick={onOpenMergeModal}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-amber/30 bg-amber/[0.07] px-3 py-1.5 text-[0.7rem] font-semibold text-amber/75 transition-all hover:bg-amber/[0.14]"
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-amber/30 bg-amber/[0.07] px-3 py-1.5 text-[0.8rem] font-semibold text-amber/75 transition-all hover:bg-amber/[0.14]"
         >
           <Merge size={12} /> Fusionner
         </Button>
@@ -51,7 +51,7 @@ export function BooksTabSelectionBar({
       <Button
         type="button"
         onClick={handleExport}
-        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-cyan/25 bg-cyan/5 px-3 py-1.5 text-[0.7rem] font-semibold text-cyan/65 transition-all hover:bg-cyan/12"
+        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-cyan/25 bg-cyan/5 px-3 py-1.5 text-[0.8rem] font-semibold text-cyan/65 transition-all hover:bg-cyan/12"
       >
         <ClipboardCopy size={11} />
         {copied ? 'Copié !' : `Exporter (${selectedCount})`}
@@ -61,7 +61,7 @@ export function BooksTabSelectionBar({
         onClick={onBulkDelete}
         onBlur={onBulkDeleteBlur}
         className={[
-          'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.7rem] font-semibold transition-all',
+          'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.8rem] font-semibold transition-all',
           bulkDeleteConfirm
             ? 'border-red/[0.55] bg-red/10 text-red/90'
             : 'border-red/22 text-red/55 hover:bg-red/[0.07]',
@@ -73,7 +73,7 @@ export function BooksTabSelectionBar({
       <Button
         type="button"
         onClick={onCancelSelection}
-        className="cursor-pointer text-[0.7rem] text-white/25 hover:text-white/60"
+        className="cursor-pointer text-[0.8rem] text-white/25 hover:text-white/60"
       >
         Annuler
       </Button>

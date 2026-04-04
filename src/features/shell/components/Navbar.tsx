@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { BarChart3, LayoutGrid, BookOpen, PenLine, X, Users } from 'lucide-react'
+import { BarChart3, LayoutGrid, BookOpen, PenLine, Users } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
 import { Logo } from '@/common/components/Logo'
@@ -21,19 +21,7 @@ export function Navbar({ search, filters, view, catalogue }) {
     onOpenTable,
   } = search
 
-  const {
-    category: activeFilter,
-    clearCategory: clearActiveFilter,
-    timelineRange,
-    hasTimelineFilter,
-    clearTimelineFilter,
-    selectedAuthorId,
-    selectedAuthorName,
-    clearSelectedAuthor,
-    selectedNodeId,
-    selectedNodeTitle,
-    clearSelectedNode,
-  } = filters
+  const { selectedAuthorId } = filters
 
   const {
     mode: viewMode,
@@ -52,41 +40,6 @@ export function Navbar({ search, filters, view, catalogue }) {
 
   const groupsRef = useRef<HTMLDivElement | null>(null)
   const [openGroup, setOpenGroup] = useState<'catalogue' | null>(null)
-  type FilterPill = { key: string; prefix: string; value: string; clear: () => void }
-  const activeFilterItems: FilterPill[] = [
-    activeFilter
-      ? {
-          key: 'category',
-          prefix: 'Catégorie',
-          value: activeFilter,
-          clear: () => clearActiveFilter?.(),
-        }
-      : null,
-    selectedAuthorId
-      ? {
-          key: 'author',
-          prefix: 'Auteur·ice',
-          value: selectedAuthorName || selectedAuthorId,
-          clear: () => clearSelectedAuthor?.(),
-        }
-      : null,
-    hasTimelineFilter
-      ? {
-          key: 'timeline',
-          prefix: 'Période',
-          value: `${timelineRange.start}–${timelineRange.end}`,
-          clear: () => clearTimelineFilter?.(),
-        }
-      : null,
-    selectedNodeId
-      ? {
-          key: 'node',
-          prefix: 'Ouvrage',
-          value: selectedNodeTitle || selectedNodeId,
-          clear: () => clearSelectedNode?.(),
-        }
-      : null,
-  ].filter((x): x is FilterPill => x != null)
 
   useEffect(() => {
     function onPointerDown(e: PointerEvent) {
@@ -112,10 +65,10 @@ export function Navbar({ search, filters, view, catalogue }) {
                 Trans-Trame
                 <CountBadge
                   count={graphData.nodes.length}
-                  className="bg-white/10 px-[7px] py-px text-[0.65rem] font-bold text-white/50"
+                  className="bg-white/10 px-[7px] py-px text-[0.75rem] font-bold text-white/50"
                 />
               </span>
-              <span className="text-[0.72rem] font-semibold text-white/50">
+              <span className="text-[0.82rem] font-semibold text-white/50">
                 Cartographie de l'Intersectionnalité
               </span>
             </span>
@@ -155,7 +108,7 @@ export function Navbar({ search, filters, view, catalogue }) {
               <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-[300px] overflow-y-auto rounded-xl border border-white/10 bg-bg-overlay/95 p-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
                 {searchResults.length === 0 ? (
                   <div className="p-2">
-                    <p className="px-2 py-2 text-center text-[0.8rem] text-white/30">
+                    <p className="px-2 py-2 text-center text-[0.9rem] text-white/30">
                       Aucun r&eacute;sultat trouv&eacute;
                     </p>
                     <Button
@@ -185,10 +138,10 @@ export function Navbar({ search, filters, view, catalogue }) {
                           type="button"
                         >
                           <span className="min-w-0">
-                            <strong className="truncate text-[0.84rem] font-semibold">{item.author}</strong>
-                            <span className="block text-[0.72rem] text-white/35">Auteur·ice</span>
+                            <strong className="truncate text-[0.92rem] font-semibold">{item.author}</strong>
+                            <span className="block text-[0.82rem] text-white/35">Auteur·ice</span>
                           </span>
-                          <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[0.7rem] font-semibold text-white/60 tabular-nums">
+                          <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[0.8rem] font-semibold text-white/60 tabular-nums">
                             {item.count}
                           </span>
                         </Button>
@@ -210,8 +163,8 @@ export function Navbar({ search, filters, view, catalogue }) {
                           style={{ background: axesGradient(node.axes) }}
                         />
                         <span className="flex min-w-0 flex-col gap-px">
-                          <strong className="truncate text-[0.84rem] font-semibold">{node.title}</strong>
-                          <span className="text-[0.72rem] text-white/35">
+                          <strong className="truncate text-[0.92rem] font-semibold">{node.title}</strong>
+                          <span className="text-[0.82rem] text-white/35">
                             {bookAuthorDisplay(node, authorsMap)}, {node.year}
                           </span>
                         </span>
@@ -252,7 +205,7 @@ export function Navbar({ search, filters, view, catalogue }) {
                   Textes
                   <CountBadge
                     count={graphData.nodes.length}
-                    className="bg-white/15 px-[7px] py-px text-[0.68rem] font-bold text-white/90"
+                    className="bg-white/15 px-[7px] py-px text-[0.75rem] font-bold text-white/90"
                   />
                 </span>
               </Button>
@@ -268,7 +221,7 @@ export function Navbar({ search, filters, view, catalogue }) {
                 <span className="inline-flex items-center gap-2">
                   <Users size={14} />
                   Auteur·ices
-                  <span className="rounded-full bg-white/15 px-[7px] py-px text-[0.68rem] font-bold tabular-nums text-white/90">
+                  <span className="rounded-full bg-white/15 px-[7px] py-px text-[0.75rem] font-bold tabular-nums text-white/90">
                     {authorCount}
                   </span>
                 </span>
@@ -293,33 +246,6 @@ export function Navbar({ search, filters, view, catalogue }) {
 
     </header>
 
-    {/* Active filter pills — float below navbar, outside header flow */}
-    {activeFilterItems.length > 0 && (
-      <div className="pointer-events-auto fixed left-0 right-0 top-[49px] z-30 flex items-center gap-2 px-4 pb-2 pt-3.5">
-        {activeFilterItems.map((item) => (
-          <span
-            key={item.key}
-            className="inline-flex max-w-[min(100%,22rem)] items-center gap-2 rounded-lg border border-white/25 bg-bg-overlay/92 px-1.5 py-1 pl-3 shadow-[0_4px_24px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150"
-          >
-            <span className="flex min-w-0 flex-1 items-baseline gap-2">
-              <span className="shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-white/50">
-                {item.prefix}
-              </span>
-              <span className="min-w-0 truncate text-[0.82rem] font-medium text-white">{item.value}</span>
-            </span>
-            <Button
-              type="button"
-              variant="icon"
-              iconDensity="soft"
-              onClick={item.clear}
-              aria-label={`Retirer le filtre ${item.prefix} : ${item.value}`}
-            >
-              <X size={13} strokeWidth={2} />
-            </Button>
-          </span>
-        ))}
-      </div>
-    )}
     </>
   )
 }

@@ -103,14 +103,14 @@ export function LinkDetails({
       {source && target && (
         <div className="mb-4 rounded-md border border-white/8 bg-white/2 px-2.5 py-2">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[0.58rem] font-semibold uppercase tracking-[1px] text-white/30">Source</span>
+            <span className="text-[0.72rem] font-semibold uppercase tracking-[1px] text-white/30">Source</span>
             <span className="min-w-0 truncate text-[0.74rem] font-mono text-white/85">
               {source.title}
               {source.year ? `, ${source.year}` : ''}
             </span>
           </div>
           <div className="mt-0.5 flex items-center justify-between gap-2">
-            <span className="text-[0.58rem] font-semibold uppercase tracking-[1px] text-white/30">Cité</span>
+            <span className="text-[0.72rem] font-semibold uppercase tracking-[1px] text-white/30">Cité</span>
             <span className="min-w-0 truncate text-[0.74rem] font-mono text-white/85">
               {target.title}
               {target.year ? `, ${target.year}` : ''}
@@ -126,7 +126,7 @@ export function LinkDetails({
             {relatedNode?.year ? ` — ${relatedNode.year}` : ''}
           </p>
       
-          <p className="mb-3 flex items-center justify-between gap-2 text-[0.76rem] font-semibold uppercase tracking-[0.5px] text-white/45">
+          <p className="mb-3 flex items-center justify-between gap-2 text-[0.85rem] font-semibold uppercase tracking-[0.5px] text-white/45">
             <span>Passage:</span>
             <InlineEditField
               editing={editingField === 'page'}
@@ -145,14 +145,14 @@ export function LinkDetails({
         </>
       ) : (
         <>
-          <p className="mb-2 text-[0.78rem] text-white/55">
+          <p className="mb-2 text-[0.88rem] text-white/55">
             Lecture simple: <strong className="text-orange/90">ouvrage qui cite</strong> <ArrowRight size={12} className="mx-1 inline text-white/35" />
             <strong className="text-cyan/90">ouvrage cite</strong>
           </p>
           <h2 className="mb-1 flex items-center gap-2 text-[1.1rem] font-bold leading-snug text-white">
             {source?.title} <ArrowRight size={16} className="shrink-0 text-white/40" /> {target?.title}
           </h2>
-          <p className="mb-5 text-[0.85rem] text-white/45">
+          <p className="mb-5 text-[0.95rem] text-white/45">
             {source ? bookAuthorDisplay(source, authorsMap || []) : ''} &mdash;{' '}
             {target ? bookAuthorDisplay(target, authorsMap || []) : ''}
           </p>
@@ -161,7 +161,7 @@ export function LinkDetails({
       {linkContextNode && showBackButton && (
         <Button
           type="button"
-          className="mb-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.75rem] font-semibold text-white/70 transition-all hover:border-white/35 hover:bg-white/10 hover:text-white"
+          className="mb-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.85rem] font-semibold text-white/70 transition-all hover:border-white/35 hover:bg-white/10 hover:text-white"
           onClick={() => onBackToContextNode?.(linkContextNode)}
         >
           <ArrowLeft size={12} />
@@ -172,17 +172,17 @@ export function LinkDetails({
         {isContextPanel && relatedNode && (
           <Button
             type="button"
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.75rem] font-semibold text-white/75 transition-all hover:border-white/35 hover:bg-white/10 hover:text-white"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.85rem] font-semibold text-white/75 transition-all hover:border-white/35 hover:bg-white/10 hover:text-white"
             onClick={() => onOpenNode?.(relatedNode)}
           >
             <ExternalLink size={12} />
-            Ouvrir cet ouvrage
+            Voir cet ouvrage
           </Button>
         )}
         {!isContextPanel && source && !contextIsSource && (
           <Button
             type="button"
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.75rem] font-semibold text-orange/75 transition-all hover:border-orange/45 hover:bg-orange/15 hover:text-white"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.85rem] font-semibold text-orange/75 transition-all hover:border-orange/45 hover:bg-orange/15 hover:text-white"
             onClick={() => onOpenNode?.(source)}
           >
             <ExternalLink size={12} />
@@ -192,7 +192,7 @@ export function LinkDetails({
         {!isContextPanel && target && !contextIsTarget && (
           <Button
             type="button"
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.75rem] font-semibold text-cyan/75 transition-all hover:border-cyan/50 hover:bg-cyan/15 hover:text-white"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.85rem] font-semibold text-cyan/75 transition-all hover:border-cyan/50 hover:bg-cyan/15 hover:text-white"
             onClick={() => onOpenNode?.(target)}
           >
             <ExternalLink size={12} />
@@ -217,7 +217,7 @@ export function LinkDetails({
               <div className="absolute right-0 z-10 mt-2 w-[220px] overflow-hidden rounded-lg border border-white/10 bg-bg-overlay/72 backdrop-blur-xl">
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.82rem] font-semibold text-white/80 hover:bg-white/8"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.92rem] font-semibold text-white/80 hover:bg-white/8"
                   onClick={() => {
                     setIsActionsOpen(false)
                     if (editingField === 'citation_text') cancelEdit()
@@ -233,7 +233,7 @@ export function LinkDetails({
 
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.82rem] font-semibold text-white/80 hover:bg-white/8"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.92rem] font-semibold text-white/80 hover:bg-white/8"
                   onClick={() => {
                     setIsActionsOpen(false)
                     handleConfirmDelete()
@@ -266,7 +266,7 @@ export function LinkDetails({
             excerpt || '—'
           )}
 
-          <div className="mt-2 border-t border-white/10 pt-2 font-sans text-[0.68rem] not-italic text-white/40">
+          <div className="mt-2 border-t border-white/10 pt-2 font-sans text-[0.75rem] not-italic text-white/40">
             {[
               selectedLink.page ? `p. ${selectedLink.page}` : null,
               citationMetaYear ? String(citationMetaYear) : null,
@@ -278,7 +278,7 @@ export function LinkDetails({
         </blockquote>
       </div>
 
-      <p className="mb-4 inline-flex items-center gap-1.5 text-[0.8rem] text-white/40">
+      <p className="mb-4 inline-flex items-center gap-1.5 text-[0.9rem] text-white/40">
         <BookCopy size={12} className="shrink-0 text-white/50" />
         <InlineEditField
           editing={editingField === 'edition'}

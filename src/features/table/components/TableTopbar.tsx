@@ -56,7 +56,7 @@ export function TableTopbar({
             {t.label}
             <span
               className={[
-                'ml-1.5 rounded-full px-1.5 py-px text-[0.58rem] tabular-nums',
+                'ml-1.5 rounded-full px-1.5 py-px text-[0.72rem] tabular-nums',
                 tab === t.id ? 'bg-white/15 text-white/75' : 'bg-white/5 text-white/30',
               ].join(' ')}
             >
@@ -70,7 +70,7 @@ export function TableTopbar({
         <Search size={12} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-white/22" />
         <TextInput
           variant="table"
-          className="rounded-lg border-white/8 bg-white/4 py-1.5 pl-7 pr-6 text-[0.75rem] focus:border-cyan/[0.28] focus:bg-white/6"
+          className="rounded-lg border-white/8 bg-white/4 py-1.5 pl-7 pr-6 text-[0.85rem] focus:border-cyan/[0.28] focus:bg-white/6"
           placeholder={tab === 'books' ? 'Filtrer les ouvrages…' : tab === 'authors' ? 'Filtrer les auteur·ices…' : 'Filtrer les liens…'}
           value={tab === 'books' ? search : tab === 'authors' ? authorSearch : linkSearch}
           onChange={(e) => tab === 'books' ? setSearch(e.target.value) : tab === 'authors' ? setAuthorSearch(e.target.value) : setLinkSearch(e.target.value)}

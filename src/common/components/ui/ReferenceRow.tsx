@@ -33,14 +33,14 @@ export function ReferenceRow({ label, color, title, meta, excerpt, onClick }: Pr
       }}
     >
       <span
-        className="mb-1 inline-flex items-center gap-1 text-[0.68rem] font-bold uppercase tracking-[0.5px]"
+        className="mb-1 inline-flex items-center gap-1 text-[0.75rem] font-bold uppercase tracking-[0.5px]"
         style={{ color }}
       >
         <LinkIcon size={10} /> {label}
       </span>
       <strong className="mb-0.5 block text-[0.88rem] text-white">{title}</strong>
-      {meta && <span className="text-[0.75rem] text-white/30">{meta}</span>}
-      <p className="mt-1.5 text-[0.8rem] italic leading-relaxed text-white/45">
+      {meta && <span className="text-[0.85rem] text-white/30">{meta}</span>}
+      <p className="mt-1.5 text-[0.9rem] italic leading-relaxed text-white/45">
         {excerpt || '—'}
       </p>
     </li>

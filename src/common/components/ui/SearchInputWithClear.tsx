@@ -44,7 +44,7 @@ export function SearchInputWithClear({
         value={value}
         onChange={onChange}
         className={clsx(
-          'w-full rounded-[10px] border border-white/10 bg-white/5 px-9 py-[9px] text-[0.82rem] text-white outline-none backdrop-blur-lg transition-all placeholder:text-white/35 focus:bg-white/10',
+          'w-full rounded-[10px] border border-white/10 bg-white/5 px-9 py-[9px] text-[0.92rem] text-white outline-none backdrop-blur-lg transition-all placeholder:text-white/35 focus:bg-white/10',
           FOCUS_TONE[focusTone],
         )}
         {...props}

@@ -5,7 +5,8 @@ import { useVizSize } from './useVizSize'
 import { usePanZoom } from './usePanZoom'
 import { getCitationEdges, shortTitle, linearScale } from './utils'
 import { HoverLabel } from './HoverLabel'
-import { SvgDefs, nodeFill, getLinkStyle, getParticleConfig, LinkParticles, getNodeVisual } from './SvgDefs'
+import { SvgDefs, nodeFill, CitationLink, getNodeVisual } from './SvgDefs'
+import { nodeHoverStyle } from '@/common/utils/nodeHoverScale'
 
 const PAD = { left: 70, right: 70, top: 80, bottom: 96 }
 const NODE_R = 5
@@ -15,9 +16,11 @@ interface Props {
   graphData: GraphData
   authors: Author[]
   onNodeClick?: (node: Book) => void
+  activeFilter?: string | null
+  hoveredFilter?: string | null
 }
 
-export function HistCiteView({ graphData, authors, onNodeClick }: Props) {
+export function HistCiteView({ graphData, authors, onNodeClick, activeFilter, hoveredFilter }: Props) {
   const { ref, w, h } = useVizSize()
   const { svgRef, transformStr, hasMoved, reset, svgHandlers } = usePanZoom()
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -105,7 +108,29 @@ export function HistCiteView({ graphData, authors, onNodeClick }: Props) {
     return ids
   }, [hoveredId, edges])
 
+  const currentFilter = hoveredFilter ?? activeFilter ?? null
+
+  const nodeMatchesFilter = useMemo(() => {
+    if (!currentFilter) return null
+    const m = new Map<string, boolean>()
+    for (const b of books) m.set(b.id, (b.axes ?? []).includes(currentFilter))
+    return m
+  }, [books, currentFilter])
+
   const baselineY = h - PAD.bottom
+
+  function filterOpacity(nodeId: string): number {
+    if (!nodeMatchesFilter) return 1
+    return nodeMatchesFilter.get(nodeId) ? 1 : hoveredFilter ? 0.06 : 0.15
+  }
+
+  function linkFilterOpacity(sourceId: string, targetId: string): number {
+    if (!nodeMatchesFilter) return 1
+    const srcMatch = nodeMatchesFilter.get(sourceId) ?? false
+    const tgtMatch = nodeMatchesFilter.get(targetId) ?? false
+    if (srcMatch || tgtMatch) return 1
+    return hoveredFilter ? 0.08 : 0.12
+  }
 
   function handleNodeClick(book: Book & { year: number }) {
     if (hasMoved()) return
@@ -121,27 +146,18 @@ export function HistCiteView({ graphData, authors, onNodeClick }: Props) {
         <SvgDefs nodeAxesSet={nodeAxesSet} />
         <g transform={transformStr}>
           {/* Citation arcs */}
-          {arcs.map((arc, i) => {
-            const style = getLinkStyle(arc.sourceId, arc.targetId, selectedId, hoveredId)
-            return (
-              <path
-                key={i}
+          {arcs.map((arc, i) => (
+            <g key={i} opacity={linkFilterOpacity(arc.sourceId, arc.targetId)}>
+              <CitationLink
                 d={arc.d}
-                fill="none"
-                stroke={style.stroke}
-                strokeOpacity={style.strokeOpacity}
-                strokeWidth={style.strokeWidth}
-                markerEnd={style.markerEnd}
+                sourceId={arc.sourceId}
+                targetId={arc.targetId}
+                selectedId={selectedId}
+                hoveredId={hoveredId}
+                linkIndex={i}
               />
-            )
-          })}
-
-          {/* Link particles */}
-          {arcs.map((arc, i) => {
-            const config = getParticleConfig(arc.sourceId, arc.targetId, selectedId, hoveredId)
-            if (!config) return null
-            return <LinkParticles key={`p${i}`} d={arc.d} config={config} linkIndex={i} />
-          })}
+            </g>
+          ))}
 
           {/* Baseline */}
           <line
@@ -157,7 +173,7 @@ export function HistCiteView({ graphData, authors, onNodeClick }: Props) {
           {ticks.map(({ year, x, baselineY: by }) => (
             <g key={year}>
               <line x1={x} y1={by} x2={x} y2={by + 6} stroke="rgba(255,255,255,0.25)" strokeWidth={1} />
-              <text x={x} y={by + 20} textAnchor="middle" fontSize={11} fill="rgba(255,255,255,0.35)" fontFamily="monospace">
+              <text x={x} y={by + 20} textAnchor="middle" fontSize={13} fill="rgba(255,255,255,0.35)" fontFamily="monospace">
                 {year}
               </text>
             </g>
@@ -169,13 +185,15 @@ export function HistCiteView({ graphData, authors, onNodeClick }: Props) {
             if (!pos) return null
             const fill = nodeFill(book.axes)
             const nv = getNodeVisual(book.id, NODE_R, selectedId, relatedIds, hoveredId, hoveredNeighborIds)
+            const fOpacity = filterOpacity(book.id)
             return (
               <g
                 key={book.id}
+                opacity={fOpacity}
                 onClick={() => handleNodeClick(book)}
                 onMouseEnter={() => setHoveredId(book.id)}
                 onMouseLeave={() => setHoveredId(null)}
-                style={{ cursor: 'pointer' }}
+                style={nodeHoverStyle(hoveredId === book.id)}
               >
                 {nv.glowR != null && (
                   <circle cx={pos.x} cy={pos.y} r={nv.glowR} fill={fill} fillOpacity={nv.glowOpacity} />
@@ -202,15 +220,15 @@ export function HistCiteView({ graphData, authors, onNodeClick }: Props) {
       </svg>
 
       {/* Title */}
-      <div className="pointer-events-none absolute left-1/2 top-5 -translate-x-1/2 text-[11px] font-mono tracking-[2px] text-white/25">
+      <div className="pointer-events-none absolute left-1/2 top-5 -translate-x-1/2 text-[13px] font-mono tracking-[2px] text-white/25">
         GRAPHE DE CITATION CHRONOLOGIQUE
       </div>
 
       {/* Selected book tooltip */}
       {selectedBook && (
-        <div className="pointer-events-none absolute bottom-10 left-1/2 -translate-x-1/2 rounded-lg border border-white/10 bg-bg-overlay/92 px-4 py-2 text-center backdrop-blur-md">
-          <div className="text-[12px] font-semibold text-white/90">{selectedBook.title}</div>
-          <div className="text-[10px] text-white/40">{selectedBook.year}</div>
+        <div className="pointer-events-none absolute bottom-20 left-1/2 z-30 -translate-x-1/2 rounded-lg border border-white/10 bg-bg-overlay/92 px-4 py-2 text-center backdrop-blur-md">
+          <div className="text-[14px] font-semibold text-white/90">{selectedBook.title}</div>
+          <div className="text-[14px] text-white/40">{selectedBook.year}</div>
         </div>
       )}
 
@@ -218,14 +236,14 @@ export function HistCiteView({ graphData, authors, onNodeClick }: Props) {
       <div className="absolute bottom-3 right-3 flex gap-1">
         <button
           onClick={reset}
-          className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] text-white/40 hover:text-white/70 hover:bg-white/10 transition-colors"
+          className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[14px] text-white/40 hover:text-white/70 hover:bg-white/10 transition-colors"
           title="Réinitialiser la vue"
         >
           ⌖ reset
         </button>
       </div>
 
-      <div className="absolute bottom-3 left-3 text-[10px] text-white/20 font-mono">
+      <div className="absolute bottom-3 left-3 text-[14px] text-white/20 font-mono">
         {books.length} ouvrages · {arcs.length} citations · scroll pour zoomer · glisser pour naviguer
       </div>
     </div>

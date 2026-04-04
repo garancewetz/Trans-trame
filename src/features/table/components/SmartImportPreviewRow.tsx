@@ -68,7 +68,7 @@ export function SmartImportPreviewRow({
             <TextInput
               variant="table"
               autoFocus
-              className="w-full rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.75rem] focus:border-cyan/35 focus:bg-white/8"
+              className="w-full rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.85rem] focus:border-cyan/35 focus:bg-white/8"
               value={editingValue}
               onChange={(e) => setEditingValue(e.target.value)}
               onBlur={commitCellEdit}
@@ -80,7 +80,7 @@ export function SmartImportPreviewRow({
           ) : (
             <span
               className={[
-                'cursor-text wrap-break-word font-mono text-[0.76rem] leading-snug',
+                'cursor-text wrap-break-word font-mono text-[0.85rem] leading-snug',
                 isDup ? 'text-white/55' : 'text-white hover:text-white/80',
               ].join(' ')}
               onClick={() => {
@@ -96,7 +96,7 @@ export function SmartImportPreviewRow({
 
         {/* Author */}
         <div className="min-w-0 pr-1">
-          <div className="flex flex-col gap-0.5 font-mono text-[0.7rem]">
+          <div className="flex flex-col gap-0.5 font-mono text-[0.8rem]">
             {(item.authors?.length > 0 ? item.authors : [{ firstName: item.firstName, lastName: item.lastName }]).map((a, i) => (
               editingAuthorIndex === i ? (
                 <div
@@ -109,7 +109,7 @@ export function SmartImportPreviewRow({
                   <TextInput
                     variant="table"
                     autoFocus
-                    className="w-[45%] rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.7rem] focus:border-cyan/35 focus:bg-white/8"
+                    className="w-[45%] rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.8rem] focus:border-cyan/35 focus:bg-white/8"
                     placeholder="Prénom"
                     value={editingAuthor.firstName}
                     onChange={(e) => setEditingAuthor((p) => ({ ...p, firstName: e.target.value }))}
@@ -120,7 +120,7 @@ export function SmartImportPreviewRow({
                   />
                   <TextInput
                     variant="table"
-                    className="w-[55%] rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.7rem] focus:border-cyan/35 focus:bg-white/8"
+                    className="w-[55%] rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.8rem] focus:border-cyan/35 focus:bg-white/8"
                     placeholder="Nom"
                     value={editingAuthor.lastName}
                     onChange={(e) => setEditingAuthor((p) => ({ ...p, lastName: e.target.value }))}
@@ -150,7 +150,7 @@ export function SmartImportPreviewRow({
               <Button
                 type="button"
                 onClick={() => onAddCoAuthor?.(item.id)}
-                className="mt-0.5 inline-flex w-fit cursor-pointer items-center gap-0.5 rounded border border-white/10 bg-white/4 px-1.5 py-0.5 text-[0.58rem] text-white/35 transition-colors hover:border-cyan/30 hover:bg-cyan/[0.07] hover:text-cyan/70"
+                className="mt-0.5 inline-flex w-fit cursor-pointer items-center gap-0.5 rounded border border-white/10 bg-white/4 px-1.5 py-0.5 text-[0.72rem] text-white/35 transition-colors hover:border-cyan/30 hover:bg-cyan/[0.07] hover:text-cyan/70"
                 title="Ajouter un·e co-auteur·ice"
               >
                 <Plus size={9} /> co-auteur·ice
@@ -173,7 +173,7 @@ export function SmartImportPreviewRow({
             <TextInput
               variant="table"
               autoFocus
-              className="w-full rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.7rem] focus:border-cyan/35 focus:bg-white/8"
+              className="w-full rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.8rem] focus:border-cyan/35 focus:bg-white/8"
               value={editingValue}
               onChange={(e) => setEditingValue(e.target.value)}
               onBlur={commitCellEdit}
@@ -185,7 +185,7 @@ export function SmartImportPreviewRow({
           ) : (
             <span
               className={[
-                'group/ed relative flex cursor-text items-center gap-1 truncate font-mono text-[0.7rem]',
+                'group/ed relative flex cursor-text items-center gap-1 truncate font-mono text-[0.8rem]',
                 item.edition ? (isDup ? 'text-white/30' : 'text-white/42 hover:text-white/75') : 'text-white/15',
               ].join(' ')}
               onClick={() => {
@@ -198,7 +198,7 @@ export function SmartImportPreviewRow({
               {item.edition && (
                 <>
                   <Info size={8} className="shrink-0 text-white/20" />
-                  <span className="pointer-events-none absolute left-0 top-full z-50 mt-1 whitespace-nowrap rounded-md border border-white/10 bg-bg-overlay/95 px-2 py-1 text-[0.58rem] font-normal text-white/55 opacity-0 shadow-lg transition-opacity group-hover/ed:opacity-100">
+                  <span className="pointer-events-none absolute left-0 top-full z-50 mt-1 whitespace-nowrap rounded-md border border-white/10 bg-bg-overlay/95 px-2 py-1 text-[0.72rem] font-normal text-white/55 opacity-0 shadow-lg transition-opacity group-hover/ed:opacity-100">
                     Apparaîtra sur le lien
                   </span>
                 </>
@@ -214,7 +214,7 @@ export function SmartImportPreviewRow({
               variant="table"
               autoFocus
               type="number"
-              className="w-full rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.7rem] focus:border-cyan/35 focus:bg-white/8"
+              className="w-full rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.8rem] focus:border-cyan/35 focus:bg-white/8"
               value={editingValue}
               onChange={(e) => setEditingValue(e.target.value)}
               onBlur={commitCellEdit}
@@ -226,7 +226,7 @@ export function SmartImportPreviewRow({
           ) : (
             <span
               className={[
-                'flex cursor-text items-center gap-0.5 font-mono text-[0.7rem] tabular-nums',
+                'flex cursor-text items-center gap-0.5 font-mono text-[0.8rem] tabular-nums',
                 item.yearMissing
                   ? 'text-amber/85'
                   : isDup ? 'text-white/30' : 'text-white/42 hover:text-white/75',
@@ -259,19 +259,19 @@ export function SmartImportPreviewRow({
               className={isExact ? 'shrink-0 text-red/70' : 'shrink-0 text-amber/80'}
             />
             <span className={[
-              'text-[0.65rem]',
+              'text-[0.75rem]',
               isExact ? 'text-red/70' : 'text-amber/75',
             ].join(' ')}>
               {isExact ? 'Doublon exact' : 'Doublon possible'} —
             </span>
-            <span className="truncate font-mono text-[0.65rem] italic text-white/38">
+            <span className="truncate font-mono text-[0.75rem] italic text-white/38">
               {item.existingNode?.title}
             </span>
           </div>
           <Button
             type="button"
             onClick={() => handleMerge(item)}
-            className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md border border-cyan/20 bg-cyan/5 px-2 py-0.5 text-[0.62rem] font-semibold text-cyan/60 transition-all hover:bg-cyan/12 hover:text-cyan/90"
+            className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md border border-cyan/20 bg-cyan/5 px-2 py-0.5 text-[0.72rem] font-semibold text-cyan/60 transition-all hover:bg-cyan/12 hover:text-cyan/90"
           >
             <GitMerge size={9} /> Fusionner
           </Button>

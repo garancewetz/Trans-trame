@@ -69,15 +69,7 @@ export function GraphApp() {
     handleSearchSelect: ui.handleSearchSelect,
     authorsMap: derived.authorsMap,
     handleOpenTable: ui.handleOpenTable,
-    activeFilter: ui.activeFilter,
-    clearActiveFilter: ui.clearActiveFilter,
-    clampedTimelineRange: timeline.clampedTimelineRange,
-    hasTimelineFilter: timeline.hasTimelineFilter,
-    clearTimelineFilter: timeline.clearTimelineFilter,
     selectedAuthor: ui.selectedAuthor,
-    setSelectedAuthor: ui.setSelectedAuthor,
-    selectedNode: ui.selectedNode,
-    clearSelectedNode: ui.handleClosePanel,
     viewMode: timeline.viewMode,
     handleViewChange: timeline.handleViewChange,
     tableMode: ui.tableMode,
@@ -175,6 +167,8 @@ export function GraphApp() {
             graphData={timeline.filteredGraphData}
             authors={authors}
             onNodeClick={ui.handleNodeClick}
+            activeFilter={ui.activeFilter}
+            hoveredFilter={ui.hoveredFilter}
           />
         )}
       </div>
@@ -194,6 +188,16 @@ export function GraphApp() {
       />
 
       <SidePanel {...sidePanelProps} />
+
+      {/* Selected book tooltip — constellation mode only (other views handle their own) */}
+      {isGraphView && ui.selectedNode && (
+        <div className="pointer-events-none absolute bottom-20 left-1/2 z-30 -translate-x-1/2 rounded-lg border border-white/10 bg-bg-overlay/92 px-4 py-2 text-center backdrop-blur-md">
+          <div className="text-[14px] font-semibold text-white/90">{ui.selectedNode.title}</div>
+          {ui.selectedNode.year && (
+            <div className="text-[14px] text-white/40">{ui.selectedNode.year}</div>
+          )}
+        </div>
+      )}
 
       <Timeline
         graphData={graphData}

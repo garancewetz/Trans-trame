@@ -112,13 +112,13 @@ export function BooksTabBooksTable({
             <TH col="year" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="w-20">
               Année
             </TH>
-            <th className="w-40 px-3 py-2.5 text-left text-[0.6rem] font-semibold uppercase tracking-[1.5px] text-white/32">
+            <th className="w-40 px-3 py-2.5 text-left text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-white/32">
               Axes
             </th>
-            <th className="w-[5.5rem] px-2 py-2.5 text-left text-[0.6rem] font-semibold uppercase tracking-[1.5px] text-white/32">
+            <th className="w-[5.5rem] px-2 py-2.5 text-left text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-white/32">
               Détails
             </th>
-            <th className="w-20 px-3 py-2.5 text-left text-[0.6rem] font-semibold uppercase tracking-[1.5px] text-white/32">
+            <th className="w-20 px-3 py-2.5 text-left text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-white/32">
               Liens
             </th>
           </tr>
@@ -171,7 +171,7 @@ export function BooksTabBooksTable({
 
       {sortedNodes.length === 0 && (
         <div className="flex items-center justify-center py-16">
-          <p className="font-mono text-[0.75rem] text-white/22">
+          <p className="font-mono text-[0.85rem] text-white/22">
             {search ? `Aucun résultat pour « ${search} »` : 'Aucun ouvrage'}
           </p>
         </div>

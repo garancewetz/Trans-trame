@@ -15,7 +15,7 @@ export function FormField({
 }: FormFieldProps) {
   return (
     <Tag className={['flex flex-col gap-1.5', className].filter(Boolean).join(' ')}>
-      <span className="text-[0.68rem] font-semibold uppercase tracking-[1px] text-white/35">
+      <span className="text-[0.75rem] font-semibold uppercase tracking-[1px] text-white/35">
         {label}
       </span>
       {children}

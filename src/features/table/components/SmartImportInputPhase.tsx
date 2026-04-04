@@ -19,7 +19,7 @@ export function SmartImportInputPhase({
 }) {
   return (
     <>
-      <p className="mb-3 text-[0.73rem] text-white/40">
+      <p className="mb-3 text-[0.82rem] text-white/40">
         Colle une bibliographie, un texte OCR ou une liste d&apos;ouvrages.
         L&apos;app détectera auteurs, titres et années.
       </p>
@@ -39,7 +39,7 @@ export function SmartImportInputPhase({
       />
 
       <div className="mb-4 rounded-xl border border-white/8 bg-white/2 p-3">
-        <label className="mb-2 flex items-center gap-1.5 text-[0.65rem] font-semibold uppercase tracking-[1.2px] text-white/35">
+        <label className="mb-2 flex items-center gap-1.5 text-[0.75rem] font-semibold uppercase tracking-[1.2px] text-white/35">
           <Link2 size={10} /> Créer des liens avec…
           <span className="ml-1 font-normal normal-case tracking-normal text-white/22">(optionnel)</span>
         </label>
@@ -88,10 +88,10 @@ export function SmartImportInputPhase({
         <Button
           type="submit"
           disabled={!rawText.trim()}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-cyan/35 bg-cyan/10 px-4 py-2 text-[0.75rem] font-semibold text-cyan/85 transition-all hover:bg-cyan/18 disabled:cursor-not-allowed disabled:opacity-30"
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-cyan/35 bg-cyan/10 px-4 py-2 text-[0.85rem] font-semibold text-cyan/85 transition-all hover:bg-cyan/18 disabled:cursor-not-allowed disabled:opacity-30"
         >
           <Zap size={13} /> Analyser
-          <kbd className="ml-1 rounded border border-white/10 bg-white/5 px-1 py-px text-[0.55rem] text-white/30">⌘↵</kbd>
+          <kbd className="ml-1 rounded border border-white/10 bg-white/5 px-1 py-px text-[0.72rem] text-white/30">⌘↵</kbd>
         </Button>
       </div>
     </>

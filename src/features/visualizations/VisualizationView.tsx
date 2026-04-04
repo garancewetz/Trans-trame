@@ -7,14 +7,16 @@ interface Props {
   graphData: GraphData
   authors: Author[]
   onNodeClick?: (node: Book) => void
+  activeFilter?: string | null
+  hoveredFilter?: string | null
 }
 
-export function VisualizationView({ viewMode, graphData, authors, onNodeClick }: Props) {
+export function VisualizationView({ viewMode, graphData, authors, onNodeClick, activeFilter, hoveredFilter }: Props) {
   switch (viewMode) {
     case 'histcite':
-      return <HistCiteView graphData={graphData} authors={authors} onNodeClick={onNodeClick} />
+      return <HistCiteView graphData={graphData} authors={authors} onNodeClick={onNodeClick} activeFilter={activeFilter} hoveredFilter={hoveredFilter} />
     case 'dendrogram':
-      return <CircularDendrogramView graphData={graphData} authors={authors} onNodeClick={onNodeClick} />
+      return <CircularDendrogramView graphData={graphData} authors={authors} onNodeClick={onNodeClick} activeFilter={activeFilter} hoveredFilter={hoveredFilter} />
     default:
       return null
   }

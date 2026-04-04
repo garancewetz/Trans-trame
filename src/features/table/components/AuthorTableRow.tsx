@@ -121,7 +121,7 @@ export function AuthorTableRow({
 
       {/* Compte ouvrages */}
       <td className="px-3 py-2">
-        <span className="font-mono text-[0.75rem] tabular-nums text-white/35">
+        <span className="font-mono text-[0.85rem] tabular-nums text-white/35">
           {bookCount || <span className="text-white/18">—</span>}
         </span>
       </td>
@@ -133,7 +133,7 @@ export function AuthorTableRow({
             type="button"
             title={`Ajouter un ouvrage pour ${authorName(author)}`}
             onClick={() => onAddBookForAuthor(author)}
-            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/8 px-1.5 py-0.5 text-[0.62rem] font-semibold text-white/65 opacity-100 transition-all hover:border-cyan/35 hover:text-cyan/85"
+            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/8 px-1.5 py-0.5 text-[0.72rem] font-semibold text-white/65 opacity-100 transition-all hover:border-cyan/35 hover:text-cyan/85"
           >
             <BookPlus size={10} /> Ouvrage
           </Button>

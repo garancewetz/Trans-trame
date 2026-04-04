@@ -23,7 +23,7 @@ export function ConfirmButton({
   ...props
 }: ConfirmButtonProps) {
   const base =
-    'flex-1 cursor-pointer rounded-lg border px-4 py-2 text-[0.75rem] font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-30'
+    'flex-1 cursor-pointer rounded-lg border px-4 py-2 text-[0.85rem] font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-30'
 
   const toneClass =
     tone === 'delete'

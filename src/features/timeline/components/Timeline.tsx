@@ -183,7 +183,7 @@ export function Timeline({ graphData, timelineRange, onRangeChange }: TimelinePr
 
         {/* Min year */}
         <span
-          className="shrink-0 text-[11px] font-light tracking-wide"
+          className="shrink-0 text-[13px] font-light tracking-wide"
           style={{ color: 'rgba(255, 255, 255, 0.3)', minWidth: '32px' }}
         >
           {minYear}
@@ -268,7 +268,7 @@ export function Timeline({ graphData, timelineRange, onRangeChange }: TimelinePr
 
         {/* Max year */}
         <span
-          className="shrink-0 text-[11px] font-light tracking-wide"
+          className="shrink-0 text-[13px] font-light tracking-wide"
           style={{ color: 'rgba(255, 255, 255, 0.3)', minWidth: '32px', textAlign: 'right' }}
         >
           {maxYear}

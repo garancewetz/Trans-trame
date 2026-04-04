@@ -48,7 +48,7 @@ export function SearchResultsDropdown<T extends ResultItem>({
     >
       {results.length === 0 ? (
         <div className="p-2">
-          <p className="p-2 text-center text-[0.82rem] leading-relaxed text-white/40">
+          <p className="p-2 text-center text-[0.92rem] leading-relaxed text-white/40">
             {emptyLabel}
           </p>
           {emptyAction}
@@ -70,11 +70,11 @@ export function SearchResultsDropdown<T extends ResultItem>({
                   <>
                     {item.axes && <AxesDot axes={item.axes} size="default" className="h-2.5 w-2.5" />}
                     <span className="min-w-0">
-                      <strong className="block text-[0.85rem] font-semibold text-white">
+                      <strong className="block text-[0.95rem] font-semibold text-white">
                         {item.title}
                       </strong>
                       {item.meta && (
-                        <span className="mt-0.5 block text-[0.75rem] text-white/35">{item.meta}</span>
+                        <span className="mt-0.5 block text-[0.85rem] text-white/35">{item.meta}</span>
                       )}
                     </span>
                   </>

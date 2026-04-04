@@ -39,7 +39,7 @@ export function AxisDots({
           type="button"
           onClick={() => toggle(axis)}
           title="Retirer"
-          className="inline-flex cursor-pointer items-center rounded-full px-1.5 py-px text-[0.58rem] font-semibold text-black/75 transition-all hover:opacity-75"
+          className="inline-flex cursor-pointer items-center rounded-full px-1.5 py-px text-[0.72rem] font-semibold text-black/75 transition-all hover:opacity-75"
           style={{ backgroundColor: AXES_COLORS[axis] }}
         >
           {AXES_LABELS[axis] ?? axis}
@@ -62,7 +62,7 @@ export function AxisDots({
                 type="button"
                 onClick={() => toggle(axis)}
                 className={[
-                  'cursor-pointer rounded-full px-2 py-0.5 text-[0.62rem] font-semibold transition-all',
+                  'cursor-pointer rounded-full px-2 py-0.5 text-[0.72rem] font-semibold transition-all',
                   active ? 'text-black/75' : 'border border-white/15 bg-white/5 text-white/45 hover:bg-white/10',
                 ].join(' ')}
                 style={active ? { backgroundColor: AXES_COLORS[axis] } : {}}
@@ -157,7 +157,7 @@ export function AuthorPicker({
         {selectedAuthors.map((a) => (
           <span
             key={a.id}
-            className="inline-flex items-center gap-1 rounded-full border border-white/14 bg-white/8 px-1.5 py-px text-[0.62rem] text-white/75"
+            className="inline-flex items-center gap-1 rounded-full border border-white/14 bg-white/8 px-1.5 py-px text-[0.72rem] text-white/75"
           >
             {authorName(a)}
             <Button
@@ -170,7 +170,7 @@ export function AuthorPicker({
           </span>
         ))}
         <input
-          className="min-w-[80px] flex-1 bg-transparent text-[0.76rem] text-white placeholder-white/25 outline-none"
+          className="min-w-[80px] flex-1 bg-transparent text-[0.85rem] text-white placeholder-white/25 outline-none"
           placeholder={selectedAuthors.length === 0 ? 'Auteur·ice…' : ''}
           value={query}
           onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
@@ -284,7 +284,7 @@ export function NodeSearch({
       />
       {value && !query && (
         <div className="pointer-events-none absolute inset-0 flex items-center px-2">
-          <span className="truncate font-mono text-[0.78rem] italic text-white/65">
+          <span className="truncate font-mono text-[0.88rem] italic text-white/65">
             {value.title}
           </span>
         </div>
@@ -300,8 +300,8 @@ export function NodeSearch({
             >
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: axesGradient(n.axes) }} />
               <span>
-                <strong className="block font-mono text-[0.76rem] text-white">{n.title}</strong>
-                <span className="font-mono text-[0.63rem] text-white/30">
+                <strong className="block font-mono text-[0.85rem] text-white">{n.title}</strong>
+                <span className="font-mono text-[0.72rem] text-white/30">
                   {bookAuthorDisplay(n, authorsMap || new Map())}{n.year ? `, ${n.year}` : ''}
                 </span>
               </span>
@@ -325,7 +325,7 @@ function SortIcon({ active, dir }) {
 export function TH({ col, activeCol, dir, onSort, children, className = '' }) {
   return (
     <th
-      className={`cursor-pointer select-none px-3 py-2.5 text-left text-[0.6rem] font-semibold uppercase tracking-[1.5px] text-white/32 transition-colors hover:text-white/60 ${className}`}
+      className={`cursor-pointer select-none px-3 py-2.5 text-left text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-white/32 transition-colors hover:text-white/60 ${className}`}
       onClick={() => onSort(col)}
     >
       <span className="inline-flex items-center gap-1">

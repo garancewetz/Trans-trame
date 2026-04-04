@@ -31,7 +31,7 @@ export function SmartImportPreviewPhase({
   return (
     <>
       {/* Stats bar */}
-      <div className="mb-3 flex flex-wrap items-center gap-2 text-[0.72rem]">
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-[0.82rem]">
         <span className="text-white/40">
           {parsed.length} ligne{parsed.length > 1 ? 's' : ''} détectée{parsed.length > 1 ? 's' : ''}
         </span>
@@ -54,12 +54,12 @@ export function SmartImportPreviewPhase({
             {masterNode.title}
           </span>
         )}
-        <span className="ml-auto text-[0.65rem] text-white/22">Cliquer pour modifier</span>
+        <span className="ml-auto text-[0.75rem] text-white/22">Cliquer pour modifier</span>
       </div>
 
       {/* Table */}
       <div className="mb-4 overflow-hidden rounded-xl border border-white/8">
-        <div className="grid grid-cols-[28px_minmax(80px,1fr)_220px_80px_140px_56px] border-b border-white/6 bg-white/2.5 px-3 py-1.5 text-[0.58rem] font-semibold uppercase tracking-[1.3px] text-white/28">
+        <div className="grid grid-cols-[28px_minmax(80px,1fr)_220px_80px_140px_56px] border-b border-white/6 bg-white/2.5 px-3 py-1.5 text-[0.72rem] font-semibold uppercase tracking-[1.3px] text-white/28">
           <span />
           <span>Titre</span>
           <span>Auteur·ice</span>
@@ -67,7 +67,7 @@ export function SmartImportPreviewPhase({
           <span className="group/tip relative flex items-center gap-1">
             Édition
             <Info size={10} className="text-white/25 transition-colors group-hover/tip:text-white/50" />
-            <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-white/10 bg-bg-overlay/95 px-2.5 py-1.5 text-[0.62rem] font-normal normal-case tracking-normal text-white/65 opacity-0 shadow-lg transition-opacity group-hover/tip:opacity-100">
+            <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-white/10 bg-bg-overlay/95 px-2.5 py-1.5 text-[0.72rem] font-normal normal-case tracking-normal text-white/65 opacity-0 shadow-lg transition-opacity group-hover/tip:opacity-100">
               Info du lien, pas de l'ouvrage
             </span>
           </span>
@@ -75,7 +75,7 @@ export function SmartImportPreviewPhase({
         </div>
         <div className="max-h-[min(55vh,480px)] overflow-y-auto">
           {parsed.length === 0 && (
-            <p className="p-4 text-center text-[0.73rem] text-white/50">Aucun ouvrage reconnu.</p>
+            <p className="p-4 text-center text-[0.82rem] text-white/50">Aucun ouvrage reconnu.</p>
           )}
           {parsed.map((item) => (
             <SmartImportPreviewRow
@@ -113,7 +113,7 @@ export function SmartImportPreviewPhase({
           type="submit"
           disabled={selectedCount === 0 || injected || inserting}
           className={[
-            'inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-[0.75rem] font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-30',
+            'inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-[0.85rem] font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-30',
             injected
               ? 'border-green/50 bg-green/10 text-green'
               : 'border-green/30 bg-green/6 text-green/75 hover:bg-green/12',

@@ -78,7 +78,7 @@ export function BooksTabAddRow({
             type="button"
             onClick={onAddBookRow}
             disabled={!inputTitle.trim()}
-            className="shrink-0 cursor-pointer rounded-md border border-cyan/35 bg-cyan/10 px-2 py-1 text-[0.65rem] font-semibold text-cyan/85 transition-all hover:bg-cyan/18 disabled:cursor-not-allowed disabled:opacity-25"
+            className="shrink-0 cursor-pointer rounded-md border border-cyan/35 bg-cyan/10 px-2 py-1 text-[0.75rem] font-semibold text-cyan/85 transition-all hover:bg-cyan/18 disabled:cursor-not-allowed disabled:opacity-25"
           >
             + Ajouter
           </Button>

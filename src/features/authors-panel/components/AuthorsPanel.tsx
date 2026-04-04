@@ -5,6 +5,7 @@ import { authorName } from '@/common/utils/authorUtils'
 import { axesGradient } from '@/common/utils/categories'
 import { Button } from '@/common/components/ui/Button'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
+import { PANEL_WIDTH } from '@/common/constants/panels'
 
 type Props = {
   open: boolean
@@ -63,22 +64,22 @@ export function AuthorsPanel({
   return (
     <aside
       className={[
-        'fixed left-0 top-0 z-50 h-screen w-[380px] overflow-hidden border-r border-white/10 bg-bg-overlay/92 backdrop-blur-2xl transition-transform duration-300 ease-in-out',
+        `fixed left-0 top-0 z-50 h-screen ${PANEL_WIDTH.default} overflow-hidden border-r border-white/10 bg-bg-overlay/92 backdrop-blur-2xl transition-transform duration-300 ease-in-out`,
         open ? 'translate-x-0' : '-translate-x-[420px]',
       ].join(' ')}
     >
       <div className="h-full overflow-y-auto px-4 pb-6 pt-4">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-[0.9rem] font-semibold text-white/90">Auteur·ices</h2>
-            <p className="text-[0.7rem] text-white/40">{authorEntries.length} au total</p>
+            <h2 className="text-[1rem] font-semibold text-white/90">Auteur·ices</h2>
+            <p className="text-[0.8rem] text-white/40">{authorEntries.length} au total</p>
           </div>
 
           <div className="flex items-center gap-2">
             {selectedAuthorId && (
               <Button
                 type="button"
-                className="cursor-pointer rounded-lg border border-peach/30 bg-peach/10 px-2.5 py-1.5 text-[0.72rem] font-semibold text-peach/90 transition-colors hover:bg-peach/20"
+                className="cursor-pointer rounded-lg border border-peach/30 bg-peach/10 px-2.5 py-1.5 text-[0.82rem] font-semibold text-peach/90 transition-colors hover:bg-peach/20"
                 onClick={() => onSelectAuthor?.(null)}
               >
                 Retirer le filtre
@@ -105,9 +106,9 @@ export function AuthorsPanel({
 
         <div className="space-y-1">
           {filtered.length === 0 && q.trim() ? (
-            <p className="px-3 py-3 text-[0.8rem] text-white/40">Aucun·e auteur·ice trouvé·e pour cette recherche.</p>
+            <p className="px-3 py-3 text-[0.9rem] text-white/40">Aucun·e auteur·ice trouvé·e pour cette recherche.</p>
           ) : filtered.length === 0 ? (
-            <p className="px-3 py-3 text-[0.8rem] text-white/40">Aucun·e auteur·ice dans le graphe.</p>
+            <p className="px-3 py-3 text-[0.9rem] text-white/40">Aucun·e auteur·ice dans le graphe.</p>
           ) : (
             filtered.map((a) => {
               const isSelected = selectedAuthorId === a.id
@@ -129,10 +130,10 @@ export function AuthorsPanel({
                       ].join(' ')}
                       onClick={() => onSelectAuthor?.(isSelected ? null : a.id)}
                     >
-                      <span className={['truncate text-[0.86rem] font-semibold', isSelected ? 'text-peach/95' : 'text-white/85'].join(' ')}>
+                      <span className={['truncate text-[0.95rem] font-semibold', isSelected ? 'text-peach/95' : 'text-white/85'].join(' ')}>
                         {a.name}
                       </span>
-                      <span className={['shrink-0 rounded-full px-2 py-0.5 text-[0.7rem] font-bold tabular-nums', isSelected ? 'bg-peach/20 text-peach/80' : 'bg-white/10 text-white/50'].join(' ')}>
+                      <span className={['shrink-0 rounded-full px-2 py-0.5 text-[0.8rem] font-bold tabular-nums', isSelected ? 'bg-peach/20 text-peach/80' : 'bg-white/10 text-white/50'].join(' ')}>
                         {a.books.length}
                       </span>
                     </Button>
@@ -167,7 +168,7 @@ export function AuthorsPanel({
                               className="h-2 w-2 shrink-0 rounded-full"
                               style={{ background: axesGradient(n.axes) }}
                             />
-                            <span className="truncate text-[0.76rem] text-white/55">
+                            <span className="truncate text-[0.85rem] text-white/55">
                               {n.title}
                               {n.year ? ` (${n.year})` : ''}
                             </span>
@@ -183,7 +184,7 @@ export function AuthorsPanel({
             <div className="mt-4">
               <Button
                 type="button"
-                className="w-full cursor-pointer rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-left text-[0.82rem] font-semibold text-white/70 transition-colors hover:border-violet/45 hover:bg-violet/15 hover:text-white"
+                className="w-full cursor-pointer rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-left text-[0.92rem] font-semibold text-white/70 transition-colors hover:border-violet/45 hover:bg-violet/15 hover:text-white"
                 onClick={() => onOpenAddBookFromSearch(q)}
               >
                 Ajouter un·e auteur·ice (nouvel ouvrage)

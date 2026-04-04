@@ -58,7 +58,7 @@ export function SearchableSelect<T>({
           ].join(' ')}
         >
           {results.length === 0 ? (
-            <p className="p-2 text-center text-[0.78rem] text-white/30">{emptyMessage}</p>
+            <p className="p-2 text-center text-[0.88rem] text-white/30">{emptyMessage}</p>
           ) : (
             <ul className="flex list-none flex-col">
               {results.map((item) => (

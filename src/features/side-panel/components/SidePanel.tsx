@@ -2,6 +2,7 @@ import clsx from 'clsx'
 import { X, PanelRightClose, ChevronRight, ChevronLeft, ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/common/components/ui/Button'
+import { PANEL_WIDTH } from '@/common/constants/panels'
 import { AdminPanel } from './AdminPanel'
 import { EmptyState } from './EmptyState'
 import { LinkDetails } from './LinkDetails'
@@ -41,10 +42,10 @@ export function SidePanel(props) {
     panelOpen && !panelCollapsed && 'translate-x-0',
     panelOpen && panelCollapsed && 'translate-x-[calc(100%-2.5rem)]',
     isDualPanelMode
-      ? 'w-[min(100vw,84rem)] border-white/12 bg-bg-base/[0.98] backdrop-blur-xl shadow-[-20px_0_80px_rgba(0,0,0,0.45)]'
+      ? `${PANEL_WIDTH.dual} border-white/12 bg-bg-base/[0.98] backdrop-blur-xl shadow-[-20px_0_80px_rgba(0,0,0,0.45)]`
       : useWideBookPanel
-        ? 'w-[min(100vw,42rem)] border-white/12 bg-bg-base/[0.98] backdrop-blur-xl shadow-[-20px_0_80px_rgba(0,0,0,0.45)]'
-        : 'w-[380px] border-white/10 bg-bg-overlay/92 backdrop-blur-2xl',
+        ? `${PANEL_WIDTH.book} border-white/12 bg-bg-base/[0.98] backdrop-blur-xl shadow-[-20px_0_80px_rgba(0,0,0,0.45)]`
+        : `${PANEL_WIDTH.default} border-white/10 bg-bg-overlay/92 backdrop-blur-2xl`,
   )
 
   const closeToContextNode = (node) => {

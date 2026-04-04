@@ -7,7 +7,7 @@ type Props = Omit<HTMLAttributes<HTMLSpanElement>, 'style'> & {
 }
 
 const BASE =
-  'inline-block rounded-full px-3 py-[3px] text-[0.68rem] font-bold uppercase tracking-[0.5px] text-black'
+  'inline-block rounded-full px-3 py-[3px] text-[0.75rem] font-bold uppercase tracking-[0.5px] text-black'
 
 export function AxisBadge({ color, className = '', style, ...props }: Props) {
   return <span className={[BASE, className].filter(Boolean).join(' ')} style={{ backgroundColor: color, ...style }} {...props} />

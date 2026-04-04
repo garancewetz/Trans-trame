@@ -74,7 +74,7 @@ function PanelRefRow({
         onClick={onClick}
       >
         <span
-          className="mb-1 inline-flex items-center gap-1 text-[0.65rem] font-bold uppercase tracking-[0.04em]"
+          className="mb-1 inline-flex items-center gap-1 text-[0.75rem] font-bold uppercase tracking-[0.04em]"
           style={{ color: s.accent }}
         >
           <Link2 size={10} /> {s.label}
@@ -82,9 +82,9 @@ function PanelRefRow({
         <span className="block text-[0.95rem] font-medium text-white/88 group-hover:text-white">
           {title ?? '—'}
         </span>
-        {meta ? <span className="mt-1 block text-[0.75rem] text-white/32">{meta}</span> : null}
+        {meta ? <span className="mt-1 block text-[0.85rem] text-white/32">{meta}</span> : null}
         {excerptText ? (
-          <p className="mt-2.5 text-[0.82rem] leading-relaxed text-white/38">&ldquo;{excerptText}&rdquo;</p>
+          <p className="mt-2.5 text-[0.92rem] leading-relaxed text-white/38">&ldquo;{excerptText}&rdquo;</p>
         ) : null}
       </button>
     </li>
@@ -133,7 +133,7 @@ export function NodeDetails({
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           <Button
             type="button"
-            className="cursor-pointer rounded-lg border border-white/10 bg-transparent px-3 py-1.5 text-[0.75rem] font-medium text-white/40 transition-colors hover:border-white/18 hover:bg-white/4 hover:text-white/70"
+            className="cursor-pointer rounded-lg border border-white/10 bg-transparent px-3 py-1.5 text-[0.85rem] font-medium text-white/40 transition-colors hover:border-white/18 hover:bg-white/4 hover:text-white/70"
             onClick={() => setPanelTab('edit')}
           >
             <span className="inline-flex items-center gap-1.5">
@@ -149,7 +149,7 @@ export function NodeDetails({
 
       {sameAuthorBooks.length > 0 && (
         <section className="mb-12">
-          <h3 className="mb-4 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-white/28">
+          <h3 className="mb-4 text-[0.75rem] font-semibold uppercase tracking-[0.2em] text-white/28">
             Même auteur
           </h3>
           <ul className="divide-y divide-white/6">
@@ -167,7 +167,7 @@ export function NodeDetails({
                 >
                   <span className="font-medium">{n.title}</span>
                   {n.year != null && (
-                    <span className="ml-2 text-[0.8rem] font-normal text-white/30">{n.year}</span>
+                    <span className="ml-2 text-[0.9rem] font-normal text-white/30">{n.year}</span>
                   )}
                 </button>
               </li>
@@ -179,7 +179,7 @@ export function NodeDetails({
       <div className="mb-10">
         <button
           type="button"
-          className="text-[0.8rem] font-medium text-white/38 underline-offset-4 transition-colors hover:text-cyan/85 hover:underline"
+          className="text-[0.9rem] font-medium text-white/38 underline-offset-4 transition-colors hover:text-cyan/85 hover:underline"
           onClick={() => onOpenTable?.('links', selectedNode.id)}
         >
           <span className="inline-flex items-center gap-1.5">
@@ -192,7 +192,7 @@ export function NodeDetails({
         {getOutgoingRefs(selectedNode).length > 0 && (
           <section>
             <h3
-              className="mb-3 flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.2em]"
+              className="mb-3 flex items-center gap-2 text-[0.75rem] font-semibold uppercase tracking-[0.2em]"
               style={{ color: LINK_CITES_COLOR_STRONG }}
             >
               <ArrowRight size={13} style={{ color: LINK_CITES_ICON }} />
@@ -219,7 +219,7 @@ export function NodeDetails({
         {getIncomingRefs(selectedNode).length > 0 && (
           <section>
             <h3
-              className="mb-3 flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.2em]"
+              className="mb-3 flex items-center gap-2 text-[0.75rem] font-semibold uppercase tracking-[0.2em]"
               style={{ color: LINK_CITED_BY_COLOR_STRONG }}
             >
               <ArrowLeft size={13} style={{ color: LINK_CITED_BY_ICON }} />

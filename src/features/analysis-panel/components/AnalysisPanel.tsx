@@ -5,6 +5,7 @@ import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
 import { Panel } from '@/common/components/ui/Panel'
+import { PANEL_WIDTH } from '@/common/constants/panels'
 import {
   computeAxisStats,
   computeCommunityActivity,
@@ -64,7 +65,7 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
         <Button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="fixed right-3 top-[92px] z-30 cursor-pointer rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[0.75rem] font-semibold text-white/70 backdrop-blur-lg transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+          className="fixed right-3 top-[92px] z-30 cursor-pointer rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[0.85rem] font-semibold text-white/70 backdrop-blur-lg transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
         >
           <span className="inline-flex items-center gap-2">
             <BarChart3 size={16} />
@@ -75,7 +76,7 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
 
       <Panel
         className={[
-          'fixed right-0 top-0 z-50 h-screen w-[380px] overflow-hidden border-l border-white/10 bg-bg-overlay/92 backdrop-blur-2xl',
+          `fixed right-0 top-0 z-50 h-screen ${PANEL_WIDTH.default} overflow-hidden border-l border-white/10 bg-bg-overlay/92 backdrop-blur-2xl`,
           'transform transition-transform duration-300 ease-in-out',
           open ? 'translate-x-0' : 'translate-x-full',
         ].join(' ')}
@@ -83,8 +84,8 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
         <div className="h-full overflow-y-auto px-4 pb-6 pt-4">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <h2 className="text-[0.9rem] font-semibold text-white/90">Analyse</h2>
-              <p className="text-[0.7rem] text-white/40">Quelques repères sur la trame</p>
+              <h2 className="text-[1rem] font-semibold text-white/90">Analyse</h2>
+              <p className="text-[0.8rem] text-white/40">Quelques repères sur la trame</p>
             </div>
             <Button
               type="button"
@@ -97,7 +98,7 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
           </div>
 
           <section className="mb-6">
-            <h3 className="mb-2 text-[0.8rem] font-semibold text-white/80">Répartition des pôles</h3>
+            <h3 className="mb-2 text-[0.9rem] font-semibold text-white/80">Répartition des pôles</h3>
             <div className="flex flex-col gap-2">
               {axisStats.map(({ axis, count, pct, color }) => (
                 <Button
@@ -112,10 +113,10 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
                   ].join(' ')}
                 >
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="text-[0.8rem] font-semibold" style={{ color }}>
+                    <span className="text-[0.9rem] font-semibold" style={{ color }}>
                       {axis}
                     </span>
-                    <span className="text-[0.72rem] text-white/35 tabular-nums">
+                    <span className="text-[0.82rem] text-white/35 tabular-nums">
                       {count} — {pct}%
                     </span>
                   </div>
@@ -131,21 +132,21 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
           </section>
 
           <section className="mb-6 rounded-lg border border-white/10 bg-white/5 p-3 backdrop-blur-xl">
-            <h3 className="mb-2 inline-flex items-center gap-2 text-[0.8rem] font-semibold text-white/80">
+            <h3 className="mb-2 inline-flex items-center gap-2 text-[0.9rem] font-semibold text-white/80">
               <Network size={14} /> Densité
             </h3>
             <div className="mb-1 flex items-baseline gap-2">
               <span className="text-[1.4rem] font-bold text-white/85">{density.ratio}</span>
-              <span className="text-[0.72rem] text-white/35">liens / livre</span>
+              <span className="text-[0.82rem] text-white/35">liens / livre</span>
             </div>
-            <p className="mb-1 text-[0.75rem] text-white/50">
+            <p className="mb-1 text-[0.85rem] text-white/50">
               {density.links} soudures — {density.nodes} ouvrages
             </p>
-            <p className="text-[0.75rem] font-semibold text-white/60">{density.label}</p>
+            <p className="text-[0.85rem] font-semibold text-white/60">{density.label}</p>
           </section>
 
           <section className="mb-6">
-            <h3 className="mb-2 inline-flex items-center gap-2 text-[0.8rem] font-semibold text-white/80">
+            <h3 className="mb-2 inline-flex items-center gap-2 text-[0.9rem] font-semibold text-white/80">
               <Quote size={14} /> Œuvres les plus citées
             </h3>
             <div className="flex flex-col gap-1.5">
@@ -154,12 +155,12 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
                   key={node.id}
                   className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 backdrop-blur-xl"
                 >
-                  <span className="text-[0.9rem] font-bold text-white/40">
+                  <span className="text-[1rem] font-bold text-white/40">
                     {String(i + 1).padStart(2, '0')}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[0.86rem] font-semibold text-white/85">{node.title}</p>
-                    <p className="text-[0.72rem] text-white/35">
+                    <p className="truncate text-[0.95rem] font-semibold text-white/85">{node.title}</p>
+                    <p className="text-[0.82rem] text-white/35">
                       {bookAuthorDisplay(node, authorsMap)} — {node.citedBy} citation{node.citedBy > 1 ? 's' : ''}
                     </p>
                   </div>
@@ -171,10 +172,10 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
      
 
           <section className="mb-5 rounded-lg border border-white/10 bg-white/5 p-3 backdrop-blur-xl">
-            <h3 className="mb-2 inline-flex items-center gap-2 text-[0.8rem] font-semibold text-white/80">
+            <h3 className="mb-2 inline-flex items-center gap-2 text-[0.9rem] font-semibold text-white/80">
               <Activity size={14} /> Activité
             </h3>
-            <p className="text-[0.75rem] text-white/50">
+            <p className="text-[0.85rem] text-white/50">
               <span className="text-[1.05rem] font-bold text-white/80 tabular-nums">{communityActivity}</span> soudures récentes
             </p>
           </section>

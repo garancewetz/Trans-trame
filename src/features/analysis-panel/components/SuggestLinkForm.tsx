@@ -52,7 +52,7 @@ export function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
       <Button
         type="button"
         onClick={() => setShow(true)}
-        className="w-full cursor-pointer rounded-lg border border-white/15 bg-white/5 py-2.5 text-[0.72rem] font-bold uppercase tracking-[1.5px] text-white/70 transition-all hover:bg-white/10 hover:text-white"
+        className="w-full cursor-pointer rounded-lg border border-white/15 bg-white/5 py-2.5 text-[0.82rem] font-bold uppercase tracking-[1.5px] text-white/70 transition-all hover:bg-white/10 hover:text-white"
       >
         + Suggérer un nouveau lien
       </Button>
@@ -61,14 +61,14 @@ export function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
 
   return (
     <form onSubmit={handleSubmit} className="rounded-lg border border-white/10 bg-white/5 p-3">
-      <h4 className="mb-3 text-[0.68rem] font-bold uppercase tracking-[1.5px] text-white/70">
+      <h4 className="mb-3 text-[0.75rem] font-bold uppercase tracking-[1.5px] text-white/70">
         Nouveau lien suggéré
       </h4>
 
-      <label className="mb-1 block text-[0.62rem] uppercase text-white/30">Source</label>
+      <label className="mb-1 block text-[0.72rem] uppercase text-white/30">Source</label>
       <TextInput
         variant="table"
-        className="mb-2 rounded border border-white/10 bg-white/5 px-2 py-1.5 text-[0.7rem] placeholder:text-white/35"
+        className="mb-2 rounded border border-white/10 bg-white/5 px-2 py-1.5 text-[0.8rem] placeholder:text-white/35"
         value={sourceSearch || (selectedSource ? `${selectedSource.title} — ${bookAuthorDisplay(selectedSource, authorsMap)}` : '')}
         onChange={(e) => {
           if (source) setSource('')
@@ -89,10 +89,10 @@ export function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
         />
       )}
 
-      <label className="mb-1 block text-[0.62rem] uppercase text-white/30">Cible</label>
+      <label className="mb-1 block text-[0.72rem] uppercase text-white/30">Cible</label>
       <TextInput
         variant="table"
-        className="mb-2 rounded border border-white/10 bg-white/5 px-2 py-1.5 text-[0.7rem] placeholder:text-white/35"
+        className="mb-2 rounded border border-white/10 bg-white/5 px-2 py-1.5 text-[0.8rem] placeholder:text-white/35"
         value={targetSearch || (selectedTarget ? `${selectedTarget.title} — ${bookAuthorDisplay(selectedTarget, authorsMap)}` : '')}
         onChange={(e) => {
           if (target) setTarget('')
@@ -117,14 +117,14 @@ export function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
         <Button
           type="submit"
           disabled={!source || !target || source === target}
-          className="flex-1 cursor-pointer rounded border border-white/15 bg-white/5 py-1.5 text-[0.68rem] font-bold uppercase text-white/70 transition-all hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+          className="flex-1 cursor-pointer rounded border border-white/15 bg-white/5 py-1.5 text-[0.75rem] font-bold uppercase text-white/70 transition-all hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
         >
           Proposer
         </Button>
         <Button
           type="button"
           onClick={() => setShow(false)}
-          className="cursor-pointer rounded border border-white/10 bg-white/5 px-3 py-1.5 text-[0.68rem] text-white/40 transition-all hover:text-white/70"
+          className="cursor-pointer rounded border border-white/10 bg-white/5 px-3 py-1.5 text-[0.75rem] text-white/40 transition-all hover:text-white/70"
         >
           Annuler
         </Button>

@@ -11,7 +11,7 @@ export function Pill({ children, suffix, title, className }: PillProps) {
   return (
     <span
       className={[
-        'inline-flex max-w-full items-center gap-1.5 truncate rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[0.72rem] text-white/55',
+        'inline-flex max-w-full items-center gap-1.5 truncate rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[0.82rem] text-white/55',
         className,
       ]
         .filter(Boolean)

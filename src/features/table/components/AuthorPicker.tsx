@@ -84,7 +84,7 @@ export function AuthorPicker({
         {selectedAuthors.map((a) => (
           <span
             key={a.id}
-            className="inline-flex items-center gap-1 rounded-full border border-white/14 bg-white/8 px-1.5 py-px text-[0.62rem] text-white/75"
+            className="inline-flex items-center gap-1 rounded-full border border-white/14 bg-white/8 px-1.5 py-px text-[0.72rem] text-white/75"
           >
             {authorName(a)}
             <Button
@@ -97,7 +97,7 @@ export function AuthorPicker({
           </span>
         ))}
         <input
-          className="min-w-[80px] flex-1 bg-transparent text-[0.76rem] text-white placeholder-white/25 outline-none"
+          className="min-w-[80px] flex-1 bg-transparent text-[0.85rem] text-white placeholder-white/25 outline-none"
           placeholder={selectedAuthors.length === 0 ? 'Auteur·ice…' : ''}
           value={query}
           onChange={(e) => { setQuery(e.target.value); setOpen(true) }}

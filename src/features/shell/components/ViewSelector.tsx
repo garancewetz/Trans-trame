@@ -30,8 +30,8 @@ export function ViewSelector({ currentView, onViewChange, inline = false, discre
                 className={[
                   'flex items-center gap-1.5 rounded-full transition-all cursor-pointer',
                   inline && discreet
-                    ? 'px-2 py-1 text-[0.62rem] font-medium tracking-[0.3px]'
-                    : 'px-3 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[1px]',
+                    ? 'px-2 py-1 text-[0.72rem] font-medium tracking-[0.3px]'
+                    : 'px-3 py-1.5 text-[0.75rem] font-semibold uppercase tracking-[1px]',
                   active
                     ? inline && discreet
                       ? 'bg-white/12 text-white/85'
