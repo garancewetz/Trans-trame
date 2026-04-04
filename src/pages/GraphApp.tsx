@@ -166,6 +166,7 @@ export function GraphApp() {
             viewMode={timeline.viewMode}
             graphData={timeline.filteredGraphData}
             authors={authors}
+            selectedNode={ui.selectedNode}
             onNodeClick={ui.handleNodeClick}
             activeFilter={ui.activeFilter}
             hoveredFilter={ui.hoveredFilter}

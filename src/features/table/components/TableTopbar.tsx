@@ -1,6 +1,5 @@
-import { ArrowLeft, Merge, Search, Sparkles, X, Zap } from 'lucide-react'
+import { ArrowLeft, Merge, Sparkles, Zap } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
-import { TextInput } from '@/common/components/ui/TextInput'
 
 export function TableTopbar({
   onClose,
@@ -9,13 +8,9 @@ export function TableTopbar({
   nodes,
   links,
   authors,
-  search,
   setSearch,
-  linkSearch,
   setLinkSearch,
-  authorSearch,
   setAuthorSearch,
-  selectedIds: _selectedIds,
   orphans,
   setOrphanModal,
   setOrphanConfirm,
@@ -27,7 +22,6 @@ export function TableTopbar({
   setAuthorDedupeConfirm,
   onSmartImport,
 }) {
-  void _selectedIds
   return (
     <div className="flex shrink-0 items-center gap-3 border-b border-white/8 px-5 py-2.5">
       <Button
@@ -64,29 +58,6 @@ export function TableTopbar({
             </span>
           </Button>
         ))}
-      </div>
-
-      <div className="relative max-w-xs flex-1">
-        <Search size={12} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-white/22" />
-        <TextInput
-          variant="table"
-          className="rounded-lg border-white/8 bg-white/4 py-1.5 pl-7 pr-6 text-[0.85rem] focus:border-cyan/[0.28] focus:bg-white/6"
-          placeholder={tab === 'books' ? 'Filtrer les ouvrages…' : tab === 'authors' ? 'Filtrer les auteur·ices…' : 'Filtrer les liens…'}
-          value={tab === 'books' ? search : tab === 'authors' ? authorSearch : linkSearch}
-          onChange={(e) => tab === 'books' ? setSearch(e.target.value) : tab === 'authors' ? setAuthorSearch(e.target.value) : setLinkSearch(e.target.value)}
-        />
-        {(tab === 'books' ? search : tab === 'authors' ? authorSearch : linkSearch) && (
-          <Button
-            variant="ghost"
-            layout="inline"
-            tone="muted"
-            className="absolute right-2 top-1/2 -translate-y-1/2"
-            onClick={() => tab === 'books' ? setSearch('') : tab === 'authors' ? setAuthorSearch('') : setLinkSearch('')}
-            type="button"
-          >
-            <X size={11} />
-          </Button>
-        )}
       </div>
 
       <div className="ml-auto flex items-center gap-2">

@@ -190,23 +190,6 @@ export function LinksTab({
                                 type="button"
                                 onClick={() => {
                                   const t = link.targetNode
-                                  if (t) onFocusBookOnMap?.(t.id)
-                                }}
-                                disabled={isDeleting || !onFocusBookOnMap}
-                                className={[
-                                  'shrink-0 cursor-pointer rounded border px-1 py-0.5 text-[0.72rem] transition-all',
-                                  isDeleting || !onFocusBookOnMap
-                                    ? 'border-transparent text-white/12 opacity-50 cursor-not-allowed'
-                                    : 'border-white/12 bg-white/4 text-white/55 opacity-100 hover:border-cyan/35 hover:bg-cyan/8 hover:text-cyan/90',
-                                ].join(' ')}
-                                title="Voir le nœud sur la carte"
-                              >
-                                <Eye size={9} />
-                              </Button>
-                              <Button
-                                type="button"
-                                onClick={() => {
-                                  const t = link.targetNode
                                   if (t) onOpenWorkDetail?.(t.id)
                                 }}
                                 disabled={isDeleting || !onOpenWorkDetail}
@@ -218,7 +201,8 @@ export function LinksTab({
                                 ].join(' ')}
                                 title="Grande fiche ouvrage"
                               >
-                                Détails
+                                <Eye size={12} className="shrink-0" />
+                                Graphe
                               </Button>
                             </>
                           )}

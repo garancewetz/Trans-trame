@@ -62,6 +62,7 @@ export function SmartImportModal(props: SmartImportModalProps) {
           handleMerge={c.handleMerge}
           onAddCoAuthor={c.handleAddCoAuthor}
           onUpdateAxes={c.handleUpdateAxes}
+          onSwapFields={c.handleSwapFields}
           masterNode={c.masterNode}
           linkDirection={c.linkDirection}
           selectedCount={c.checked.size}

@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { TableTopbar } from './TableTopbar'
+import { TableFilterBar } from './TableFilterBar'
 import { BooksTab as TableBooksTab } from './tabs/BooksTab'
 import { AuthorsTab as TableAuthorsTab } from './tabs/AuthorsTab'
 import { LinksTab as TableLinksTab } from './tabs/LinksTab'
@@ -53,13 +54,9 @@ export function TableView(props: TableViewProps) {
         nodes={nodes}
         links={links}
         authors={authors}
-        search={c.search}
         setSearch={c.setSearch}
-        linkSearch={c.linkSearch}
         setLinkSearch={c.setLinkSearch}
-        authorSearch={c.authorSearch}
         setAuthorSearch={c.setAuthorSearch}
-        selectedIds={new Set()}
         orphans={c.orphans}
         setOrphanModal={c.setOrphanModal}
         setOrphanConfirm={c.setOrphanConfirm}
@@ -70,6 +67,16 @@ export function TableView(props: TableViewProps) {
         setAuthorDedupeModal={c.setAuthorDedupeModal}
         setAuthorDedupeConfirm={c.setAuthorDedupeConfirm}
         onSmartImport={() => c.setSmartImportModal(true)}
+      />
+
+      <TableFilterBar
+        tab={c.tab}
+        search={c.search}
+        setSearch={c.setSearch}
+        authorSearch={c.authorSearch}
+        setAuthorSearch={c.setAuthorSearch}
+        linkSearch={c.linkSearch}
+        setLinkSearch={c.setLinkSearch}
       />
 
       {c.tab === 'books' && (

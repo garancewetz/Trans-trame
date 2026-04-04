@@ -15,15 +15,16 @@ const STACK_GAP = 16
 interface Props {
   graphData: GraphData
   authors: Author[]
+  selectedNode?: Book | null
   onNodeClick?: (node: Book) => void
   activeFilter?: string | null
   hoveredFilter?: string | null
 }
 
-export function HistCiteView({ graphData, authors, onNodeClick, activeFilter, hoveredFilter }: Props) {
+export function HistCiteView({ graphData, authors, selectedNode, onNodeClick, activeFilter, hoveredFilter }: Props) {
   const { ref, w, h } = useVizSize()
   const { svgRef, transformStr, hasMoved, reset, svgHandlers } = usePanZoom()
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const selectedId = selectedNode?.id ?? null
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   const books = useMemo(
@@ -73,7 +74,7 @@ export function HistCiteView({ graphData, authors, onNodeClick, activeFilter, ho
       const cpX = (src.x + tgt.x) / 2
       const dx = Math.abs(src.x - tgt.x)
       const cpY = Math.min(src.y, tgt.y) - Math.max(32, dx * 0.38)
-      return [{ d: `M ${src.x} ${src.y} Q ${cpX} ${cpY} ${tgt.x} ${tgt.y}`, sourceId, targetId }]
+      return [{ d: `M ${src.x} ${src.y} Q ${cpX} ${cpY} ${tgt.x} ${tgt.y}`, sourceId, targetId, sx: src.x, sy: src.y, tx: tgt.x, ty: tgt.y }]
     })
   }, [edges, nodePositions])
 
@@ -121,7 +122,7 @@ export function HistCiteView({ graphData, authors, onNodeClick, activeFilter, ho
 
   function filterOpacity(nodeId: string): number {
     if (!nodeMatchesFilter) return 1
-    return nodeMatchesFilter.get(nodeId) ? 1 : hoveredFilter ? 0.06 : 0.15
+    return nodeMatchesFilter.get(nodeId) ? 1 : 0.15
   }
 
   function linkFilterOpacity(sourceId: string, targetId: string): number {
@@ -129,16 +130,13 @@ export function HistCiteView({ graphData, authors, onNodeClick, activeFilter, ho
     const srcMatch = nodeMatchesFilter.get(sourceId) ?? false
     const tgtMatch = nodeMatchesFilter.get(targetId) ?? false
     if (srcMatch || tgtMatch) return 1
-    return hoveredFilter ? 0.08 : 0.12
+    return 0.12
   }
 
   function handleNodeClick(book: Book & { year: number }) {
     if (hasMoved()) return
-    setSelectedId(book.id === selectedId ? null : book.id)
     onNodeClick?.(book)
   }
-
-  const selectedBook = selectedId ? (bookMap.get(selectedId) as (Book & { year: number }) | undefined) : null
 
   return (
     <div ref={ref} className="absolute inset-0 bg-bg-base overflow-hidden">
@@ -155,6 +153,10 @@ export function HistCiteView({ graphData, authors, onNodeClick, activeFilter, ho
                 selectedId={selectedId}
                 hoveredId={hoveredId}
                 linkIndex={i}
+                sx={arc.sx}
+                sy={arc.sy}
+                tx={arc.tx}
+                ty={arc.ty}
               />
             </g>
           ))}
@@ -223,14 +225,6 @@ export function HistCiteView({ graphData, authors, onNodeClick, activeFilter, ho
       <div className="pointer-events-none absolute left-1/2 top-5 -translate-x-1/2 text-[13px] font-mono tracking-[2px] text-white/25">
         GRAPHE DE CITATION CHRONOLOGIQUE
       </div>
-
-      {/* Selected book tooltip */}
-      {selectedBook && (
-        <div className="pointer-events-none absolute bottom-20 left-1/2 z-30 -translate-x-1/2 rounded-lg border border-white/10 bg-bg-overlay/92 px-4 py-2 text-center backdrop-blur-md">
-          <div className="text-[14px] font-semibold text-white/90">{selectedBook.title}</div>
-          <div className="text-[14px] text-white/40">{selectedBook.year}</div>
-        </div>
-      )}
 
       {/* Controls */}
       <div className="absolute bottom-3 right-3 flex gap-1">

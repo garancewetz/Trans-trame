@@ -14,15 +14,16 @@ const TWO_PI = Math.PI * 2
 interface Props {
   graphData: GraphData
   authors: Author[]
+  selectedNode?: Book | null
   onNodeClick?: (node: Book) => void
   activeFilter?: string | null
   hoveredFilter?: string | null
 }
 
-export function CircularDendrogramView({ graphData, authors, onNodeClick, activeFilter, hoveredFilter }: Props) {
+export function CircularDendrogramView({ graphData, authors, selectedNode, onNodeClick, activeFilter, hoveredFilter }: Props) {
   const { ref, w, h } = useVizSize()
   const { svgRef, transformStr, hasMoved, reset, svgHandlers } = usePanZoom()
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const selectedId = selectedNode?.id ?? null
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   const edges = useMemo(() => getCitationEdges(graphData.links), [graphData.links])
@@ -98,6 +99,10 @@ export function CircularDendrogramView({ graphData, authors, onNodeClick, active
         d: `M ${src.x} ${src.y} Q ${cpX} ${cpY} ${tgt.x} ${tgt.y}`,
         sourceId,
         targetId,
+        sx: src.x,
+        sy: src.y,
+        tx: tgt.x,
+        ty: tgt.y,
       }]
     })
   }, [edges, bookAngles, cx, cy, R])
@@ -156,7 +161,7 @@ export function CircularDendrogramView({ graphData, authors, onNodeClick, active
 
   function filterOpacity(nodeId: string): number {
     if (!nodeMatchesFilter) return 1
-    return nodeMatchesFilter.get(nodeId) ? 1 : hoveredFilter ? 0.06 : 0.15
+    return nodeMatchesFilter.get(nodeId) ? 1 : 0.15
   }
 
   function linkFilterOpacity(sourceId: string, targetId: string): number {
@@ -164,16 +169,13 @@ export function CircularDendrogramView({ graphData, authors, onNodeClick, active
     const srcMatch = nodeMatchesFilter.get(sourceId) ?? false
     const tgtMatch = nodeMatchesFilter.get(targetId) ?? false
     if (srcMatch || tgtMatch) return 1
-    return hoveredFilter ? 0.08 : 0.12
+    return 0.12
   }
 
   function handleNodeClick(book: Book) {
     if (hasMoved()) return
-    setSelectedId(book.id === selectedId ? null : book.id)
     onNodeClick?.(book)
   }
-
-  const selectedBook = selectedId ? bookMap.get(selectedId) : null
 
   return (
     <div ref={ref} className="absolute inset-0 bg-bg-base overflow-hidden">
@@ -190,6 +192,10 @@ export function CircularDendrogramView({ graphData, authors, onNodeClick, active
                 selectedId={selectedId}
                 hoveredId={hoveredId}
                 linkIndex={i}
+                sx={c.sx}
+                sy={c.sy}
+                tx={c.tx}
+                ty={c.ty}
               />
             </g>
           ))}
@@ -264,26 +270,6 @@ export function CircularDendrogramView({ graphData, authors, onNodeClick, active
       {/* Title */}
       <div className="pointer-events-none absolute left-1/2 top-5 -translate-x-1/2 text-[13px] font-mono tracking-[2px] text-white/25">
         ARBORESCENCE CIRCULAIRE
-      </div>
-
-      {/* Selected tooltip */}
-      {selectedBook && (
-        <div className="pointer-events-none absolute bottom-20 left-1/2 z-30 -translate-x-1/2 rounded-lg border border-white/10 bg-bg-overlay/92 px-4 py-2 text-center backdrop-blur-md">
-          <div className="text-[14px] font-semibold text-white/90">{selectedBook.title}</div>
-          <div className="text-[14px] text-white/40">
-            {selectedBook.year} · {selectedBook.axes?.join(', ')} · {relatedIds?.size ?? 0} connexions
-          </div>
-        </div>
-      )}
-
-      {/* Axis legend */}
-      <div className="absolute bottom-20 left-4 flex flex-col gap-1">
-        {axisArcs.map((arc) => (
-          <span key={arc.axis} className="flex items-center gap-1.5 text-[14px] text-white/35">
-            <span className="inline-block w-2 h-2 rounded-full" style={{ background: arc.color }} />
-            {AXES_LABELS[arc.axis as keyof typeof AXES_LABELS] ?? arc.axis}
-          </span>
-        ))}
       </div>
 
       {/* Controls */}

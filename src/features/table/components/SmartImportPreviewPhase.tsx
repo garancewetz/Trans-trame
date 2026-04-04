@@ -18,6 +18,7 @@ export function SmartImportPreviewPhase({
   handleMerge,
   onAddCoAuthor,
   onUpdateAxes,
+  onSwapFields,
   masterNode,
   linkDirection,
   selectedCount,
@@ -59,10 +60,12 @@ export function SmartImportPreviewPhase({
 
       {/* Table */}
       <div className="mb-4 overflow-hidden rounded-xl border border-white/8">
-        <div className="grid grid-cols-[28px_minmax(80px,1fr)_220px_80px_140px_56px] border-b border-white/6 bg-white/2.5 px-3 py-1.5 text-[0.72rem] font-semibold uppercase tracking-[1.3px] text-white/28">
+        <div className="grid grid-cols-[28px_minmax(80px,1fr)_20px_220px_20px_80px_140px_56px] border-b border-white/6 bg-white/2.5 px-3 py-1.5 text-[0.72rem] font-semibold uppercase tracking-[1.3px] text-white/28">
           <span />
           <span>Titre</span>
+          <span />
           <span>Auteur·ice</span>
+          <span />
           <span>Axes</span>
           <span className="group/tip relative flex items-center gap-1">
             Édition
@@ -95,6 +98,7 @@ export function SmartImportPreviewPhase({
               handleMerge={handleMerge}
               onAddCoAuthor={onAddCoAuthor}
               onUpdateAxes={onUpdateAxes}
+              onSwapFields={onSwapFields}
             />
           ))}
         </div>

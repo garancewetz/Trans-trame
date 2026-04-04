@@ -231,7 +231,7 @@ export function useGraphDataEntityCallbacks({
   )
 
   const handleAddAuthor = useCallback(
-    (author: Author) => addAuthorMutation.mutate(author),
+    (author: Author) => addAuthorMutation.mutateAsync(author),
     [addAuthorMutation]
   )
 

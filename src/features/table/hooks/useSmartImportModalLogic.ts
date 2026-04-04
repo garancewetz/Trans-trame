@@ -3,6 +3,7 @@ import type { Book } from '@/types/domain'
 import { parseSmartInput, type ParsedBook } from '../parseSmartInput'
 import { runSmartImportBatchInsert } from '../smartImportModal.batchInsert'
 import type { SmartImportModalProps } from '../smartImportModal.types'
+import { useKnownAuthors, useKnownEditions } from './useKnownData'
 
 export function useSmartImportModalLogic({
   onClose,
@@ -30,6 +31,8 @@ export function useSmartImportModalLogic({
     null | { id: string; authorIndex: number | null; firstName: string; lastName: string }
   >(null)
   const [mergedIds, setMergedIds] = useState<Set<string>>(new Set())
+  const { data: knownAuthors = [] } = useKnownAuthors()
+  const { data: knownEditions = [] } = useKnownEditions()
 
   const resetAll = () => {
     setPhase('input')
@@ -45,7 +48,7 @@ export function useSmartImportModalLogic({
   }
 
   const handleAnalyze = () => {
-    const results = parseSmartInput(rawText, existingNodes)
+    const results = parseSmartInput(rawText, existingNodes, knownAuthors, knownEditions)
     setParsed(results)
     setChecked(new Set(results.filter((r) => !r.isDuplicate).map((r) => r.id)))
     setEditingCell(null)
@@ -154,6 +157,40 @@ export function useSmartImportModalLogic({
     )
   }
 
+  const handleSwapFields = (itemId: string, swapWith: 'title' | 'edition') => {
+    setParsed((prev) =>
+      prev.map((item) => {
+        if (item.id !== itemId) return item
+        const authors = item.authors?.length > 0
+          ? item.authors
+          : [{ firstName: item.firstName || '', lastName: item.lastName || '' }]
+        const authorStr = [authors[0]?.firstName, authors[0]?.lastName].filter(Boolean).join(' ')
+        const otherVal = swapWith === 'title' ? item.title : (item.edition || '')
+
+        // Parse the other value into firstName/lastName (last word = lastName)
+        const parts = otherVal.trim().split(/\s+/)
+        let newFirst = '', newLast = ''
+        if (parts.length >= 2) {
+          newLast = parts.pop()!
+          newFirst = parts.join(' ')
+        } else {
+          newLast = otherVal.trim()
+        }
+
+        const newAuthors = [...authors]
+        newAuthors[0] = { firstName: newFirst, lastName: newLast }
+
+        return {
+          ...item,
+          [swapWith]: authorStr,
+          authors: newAuthors,
+          firstName: newFirst,
+          lastName: newLast,
+        }
+      })
+    )
+  }
+
   const handleAddCoAuthor = (itemId: string) => {
     const item = parsed.find((row) => row.id === itemId)
     if (!item) return
@@ -239,5 +276,6 @@ export function useSmartImportModalLogic({
     handleMerge,
     handleAddCoAuthor,
     handleUpdateAxes,
+    handleSwapFields,
   }
 }

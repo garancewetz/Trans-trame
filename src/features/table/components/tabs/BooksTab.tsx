@@ -60,6 +60,7 @@ export function BooksTab({
   const [inputYear, setInputYear] = useState('')
   const [inputAxes, setInputAxes] = useState<Axis[]>([])
   const titleInputRef = useRef<HTMLInputElement | null>(null)
+  const [justAddedBookId, setJustAddedBookId] = useState<BookId | null>(null)
 
   const { authorsMap, linkCountByNode, sortedNodes, mergeNodes } = useBooksTabTableDerived({
     nodes,
@@ -126,8 +127,9 @@ export function BooksTab({
   const handleAddBookRow = () => {
     if (!inputTitle.trim()) return
     const title = inputTitle.trim()
+    const newId = crypto.randomUUID()
     onAddBook?.({
-      id: crypto.randomUUID(),
+      id: newId,
       title,
       authorIds: inputAuthorIds,
       year: parseInt(inputYear, 10) || null,
@@ -138,7 +140,13 @@ export function BooksTab({
     setInputTitle('')
     setInputYear('')
     setInputAxes([])
-    setTimeout(() => titleInputRef.current?.focus(), 0)
+    setJustAddedBookId(newId)
+    setTimeout(() => {
+      titleInputRef.current?.focus()
+      const el = document.querySelector(`[data-book-row-id="${newId}"]`)
+      if (el instanceof HTMLElement) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }, 50)
+    setTimeout(() => setJustAddedBookId((prev) => (prev === newId ? null : prev)), 3000)
   }
 
   const handleConfirmMerge = () => {
@@ -184,6 +192,7 @@ export function BooksTab({
       <BooksTabBooksTable
         sortedNodes={sortedNodes}
         search={search}
+        justAddedBookId={justAddedBookId}
         authors={authors}
         authorsMap={authorsMap}
         linkCountByNode={linkCountByNode}

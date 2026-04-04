@@ -38,6 +38,7 @@ export function useAuthorsTabState({
   const [inputFirstName, setInputFirstName] = useState('')
   const [inputLastName, setInputLastName] = useState('')
   const firstNameRef = useRef<HTMLInputElement | null>(null)
+  const [justAddedAuthorId, setJustAddedAuthorId] = useState<AuthorId | null>(null)
 
   useEffect(() => {
     if (!focusAuthorId) return
@@ -140,8 +141,9 @@ export function useAuthorsTabState({
 
   const handleAddAuthor = () => {
     if (!inputLastName.trim()) return
+    const newId = `auth_${crypto.randomUUID().slice(0, 8)}`
     onAddAuthor({
-      id: `auth_${crypto.randomUUID().slice(0, 8)}`,
+      id: newId,
       type: 'author',
       firstName: inputFirstName.trim(),
       lastName: inputLastName.trim(),
@@ -149,7 +151,13 @@ export function useAuthorsTabState({
     })
     setInputFirstName('')
     setInputLastName('')
-    setTimeout(() => firstNameRef.current?.focus(), 0)
+    setJustAddedAuthorId(newId)
+    setTimeout(() => {
+      firstNameRef.current?.focus()
+      const el = document.querySelector(`[data-author-row-id="${newId}"]`)
+      if (el instanceof HTMLElement) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }, 50)
+    setTimeout(() => setJustAddedAuthorId((prev) => (prev === newId ? null : prev)), 3000)
   }
 
   const commitEdit = () => {
@@ -205,5 +213,6 @@ export function useAuthorsTabState({
     handleAddAuthor,
     commitEdit,
     handleConfirmMerge,
+    justAddedAuthorId,
   }
 }

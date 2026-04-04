@@ -61,6 +61,7 @@ export function AuthorsTab({
     handleAddAuthor,
     commitEdit,
     handleConfirmMerge,
+    justAddedAuthorId,
   } = useAuthorsTabState({
     authors, books, search,
     onAddAuthor, onUpdateAuthor, onDeleteAuthor,
@@ -229,6 +230,7 @@ export function AuthorsTab({
                   key={author.id}
                   author={author}
                   index={i}
+                  justAdded={justAddedAuthorId === author.id}
                   isSelected={selectedIds.has(author.id)}
                   focusAuthorId={focusAuthorId}
                   bookCount={bookCountByAuthor.get(author.id) || 0}

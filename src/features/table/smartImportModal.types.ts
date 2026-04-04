@@ -8,7 +8,7 @@ export type SmartImportModalProps = {
   existingAuthors?: Author[]
   authorsMap: Map<string, AuthorNode>
   onAddBook?: (book: Partial<Book> & Pick<Book, 'id' | 'title'>) => void | PromiseLike<unknown>
-  onAddAuthor?: (author: Author) => void
+  onAddAuthor?: (author: Author) => unknown
   onAddLink?: (link: Partial<Link> & Pick<Link, 'source' | 'target'>) => void
   onUpdateBook?: (book: Book) => void
   onQueued?: (titles: string[]) => void

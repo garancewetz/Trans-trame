@@ -17,14 +17,16 @@ type AuthorNameParts = { firstName?: string; lastName?: string }
 /**
  * Pour chaque auteur dans la liste, cherche un auteur existant (match prénom+nom normalisé).
  * Si absent, crée un nouveau nœud auteur via onAddAuthor et retourne son id.
+ * Returns both the resolved IDs and any promises from author creation (to await before inserting books).
  */
 export function resolveOrCreateAuthors(
   authorList: AuthorNameParts[],
   existingAuthors: Author[],
-  onAddAuthor: (a: Author) => void
-): string[] {
-  if (!authorList?.length) return []
-  const resolved: string[] = []
+  onAddAuthor: (a: Author) => unknown
+): { ids: string[]; promises: PromiseLike<unknown>[] } {
+  if (!authorList?.length) return { ids: [], promises: [] }
+  const ids: string[] = []
+  const promises: PromiseLike<unknown>[] = []
   authorList.forEach(({ firstName, lastName }) => {
     const fn = (firstName || '').trim()
     const ln = (lastName || '').trim()
@@ -33,14 +35,17 @@ export function resolveOrCreateAuthors(
       (a) => normStr(a.firstName) === normStr(fn) && normStr(a.lastName) === normStr(ln)
     )
     if (existing) {
-      resolved.push(existing.id)
+      ids.push(existing.id)
     } else {
       const newId = crypto.randomUUID()
-      onAddAuthor({ id: newId, type: 'author', firstName: fn, lastName: ln, axes: [] })
+      const result = onAddAuthor({ id: newId, type: 'author', firstName: fn, lastName: ln, axes: [] })
+      if (result && typeof (result as PromiseLike<unknown>).then === 'function') {
+        promises.push(result as PromiseLike<unknown>)
+      }
       existingAuthors.push({ id: newId, type: 'author', firstName: fn, lastName: ln, axes: [] })
-      resolved.push(newId)
+      ids.push(newId)
     }
   })
-  return resolved
+  return { ids, promises }
 }
 

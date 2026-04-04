@@ -87,6 +87,15 @@ option {
   color: var(--color-text-main);
 }
 
+/* Flash animation for newly added table rows */
+@keyframes flash-row {
+  0%   { background: rgba(140, 220, 255, 0.18); }
+  100% { background: transparent; }
+}
+.animate-flash-row {
+  animation: flash-row 2.5s ease-out forwards;
+}
+
 /* Override: remove decorative background layers */
 html, body, #root {
   background: var(--color-bg-base);

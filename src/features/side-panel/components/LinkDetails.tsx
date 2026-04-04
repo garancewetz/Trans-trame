@@ -1,4 +1,4 @@
-import { ArrowRight, ArrowLeft, LinkIcon, BookCopy, ExternalLink, Trash2, Pencil, MoreHorizontal } from 'lucide-react'
+import { ArrowRight, ArrowLeft, LinkIcon, BookCopy, ExternalLink, Trash2, Pencil, MoreHorizontal, Eye } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { blendAxesColors } from '@/common/utils/categories'
@@ -175,8 +175,8 @@ export function LinkDetails({
             className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.85rem] font-semibold text-white/75 transition-all hover:border-white/35 hover:bg-white/10 hover:text-white"
             onClick={() => onOpenNode?.(relatedNode)}
           >
-            <ExternalLink size={12} />
-            Voir cet ouvrage
+            <Eye size={12} />
+            Voir dans le Graphe
           </Button>
         )}
         {!isContextPanel && source && !contextIsSource && (

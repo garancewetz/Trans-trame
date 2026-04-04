@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Check, ExternalLink, Link2 } from 'lucide-react'
+import { Check, ExternalLink, Eye, Link2 } from 'lucide-react'
 import { mapBookUrlSearch } from '@/common/utils/bookSlug'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
@@ -13,6 +13,7 @@ import { narrowAxes } from '@/common/utils/categories'
 type Props = {
   node: Book
   rowIndex: number
+  justAdded?: boolean
   isSelected: boolean
   isEditTitle: boolean
   isEditYear: boolean
@@ -37,6 +38,7 @@ type Props = {
 export function BooksTabBookRow({
   node,
   rowIndex,
+  justAdded,
   isSelected,
   isEditTitle,
   isEditYear,
@@ -62,6 +64,7 @@ export function BooksTabBookRow({
       data-book-row-id={node.id}
       className={[
         'group border-b border-white/4 transition-colors',
+        justAdded ? 'animate-flash-row' : '',
         isSelected ? 'bg-green/[0.025]' : rowIndex % 2 === 0 ? 'bg-white/[0.003]' : '',
         'hover:bg-white/2.5',
       ].join(' ')}
@@ -80,7 +83,7 @@ export function BooksTabBookRow({
           <Check size={9} />
         </Button>
       </td>
-      <td className={`${TD} min-w-0 max-w-36`}>
+      <td className={`${TD} min-w-0`}>
         {isEditTitle ? (
           <TextInput
             variant="table"
@@ -93,8 +96,7 @@ export function BooksTabBookRow({
           />
         ) : (
           <span
-            className="block cursor-text truncate px-0.5 hover:text-white"
-            title={node.title}
+            className="block cursor-text px-0.5 leading-snug hover:text-white"
             onClick={() => { setEditingCell({ nodeId: node.id, field: 'title' }); setEditingValue(node.title) }}
           >
             {node.title}
@@ -180,7 +182,8 @@ export function BooksTabBookRow({
             onClick={() => onOpenWorkDetail(node.id)}
             className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-2 py-0.5 text-[0.75rem] font-semibold text-white/45 transition-all hover:border-violet/40 hover:bg-violet/10 hover:text-violet/95"
           >
-            Détails
+            <Eye size={12} className="shrink-0" />
+            Graphe
           </Button>
         ) : (
           <Link
@@ -190,8 +193,8 @@ export function BooksTabBookRow({
             title="Ouvrir la carte sur cet ouvrage (nouvel onglet, ?book=…)"
             className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-2 py-0.5 text-[0.75rem] font-semibold text-white/45 transition-all hover:border-violet/40 hover:bg-violet/10 hover:text-violet/95"
           >
-            <ExternalLink size={10} className="shrink-0" />
-            Détails
+            <Eye size={12} className="shrink-0" />
+            Graphe
           </Link>
         )}
       </td>

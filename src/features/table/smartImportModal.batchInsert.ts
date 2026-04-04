@@ -9,7 +9,7 @@ export async function runSmartImportBatchInsert(params: {
   parsed: ParsedBook[]
   checked: Set<string>
   existingAuthors: Author[]
-  onAddAuthor?: (author: Author) => void
+  onAddAuthor?: (author: Author) => unknown
   onAddBook?: OnAddBook
   onAddLink?: OnAddLink
   masterNode: Book | null
@@ -35,18 +35,30 @@ export async function runSmartImportBatchInsert(params: {
   const toAdd = parsed.filter((r) => checked.has(r.id))
   const newIds: string[] = []
   const localAuthors: Author[] = [...existingAuthors]
-  const insertPromises: Promise<unknown>[] = []
 
+  // Phase 1: create all author entities and wait for DB inserts to complete
+  const authorIdsByBook: string[][] = []
+  const authorPromises: PromiseLike<unknown>[] = []
   toAdd.forEach((r) => {
-    const authorIds = onAddAuthor
-      ? resolveOrCreateAuthors(r.authors || [], localAuthors, onAddAuthor)
-      : []
+    if (onAddAuthor) {
+      const { ids, promises } = resolveOrCreateAuthors(r.authors || [], localAuthors, onAddAuthor)
+      authorIdsByBook.push(ids)
+      authorPromises.push(...promises)
+    } else {
+      authorIdsByBook.push([])
+    }
+  })
+  if (authorPromises.length > 0) await Promise.all(authorPromises)
+
+  // Phase 2: insert books (authors now exist in DB, so book_authors FK won't fail)
+  const insertPromises: Promise<unknown>[] = []
+  toAdd.forEach((r, i) => {
     const pending = onAddBook?.({
       id: r.id,
       title: r.title,
       firstName: r.firstName,
       lastName: r.lastName,
-      authorIds,
+      authorIds: authorIdsByBook[i],
       year: r.year,
       axes: r.axes,
       description: '',

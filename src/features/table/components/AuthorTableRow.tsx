@@ -8,6 +8,7 @@ import type { Author, AuthorId } from '@/types/domain'
 type Props = {
   author: Author
   index: number
+  justAdded?: boolean
   isSelected: boolean
   focusAuthorId?: AuthorId | null
   bookCount: number
@@ -23,6 +24,7 @@ type Props = {
 export function AuthorTableRow({
   author,
   index,
+  justAdded,
   isSelected,
   focusAuthorId,
   bookCount,
@@ -42,6 +44,7 @@ export function AuthorTableRow({
       data-author-row-id={author.id}
       className={[
         'group border-b border-white/4 transition-colors',
+        justAdded ? 'animate-flash-row' : '',
         focusAuthorId === author.id ? 'bg-cyan/8 ring-1 ring-cyan/45' : '',
         isSelected ? 'bg-green/[0.025]' : index % 2 === 0 ? 'bg-white/[0.003]' : '',
         'hover:bg-white/2.5',

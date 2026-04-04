@@ -10,6 +10,7 @@ import { BooksTabBookRow } from './BooksTabBookRow'
 export type BooksTabBooksTableProps = {
   sortedNodes: Book[]
   search: string
+  justAddedBookId?: BookId | null
   authors: Author[]
   authorsMap: Map<string, Author>
   linkCountByNode: Map<string, number>
@@ -49,6 +50,7 @@ export type BooksTabBooksTableProps = {
 export function BooksTabBooksTable({
   sortedNodes,
   search,
+  justAddedBookId,
   authors,
   authorsMap,
   linkCountByNode,
@@ -103,10 +105,10 @@ export function BooksTabBooksTable({
                 <Check size={9} />
               </Button>
             </th>
-            <TH col="title" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="min-w-0 max-w-36">
+            <TH col="title" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="w-[40%] min-w-0">
               Titre
             </TH>
-            <TH col="lastName" activeCol={sortCol} dir={sortDir} onSort={onNodeSort}>
+            <TH col="lastName" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="w-[20%] min-w-0">
               Auteur·ice
             </TH>
             <TH col="year" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="w-20">
@@ -116,7 +118,7 @@ export function BooksTabBooksTable({
               Axes
             </th>
             <th className="w-[5.5rem] px-2 py-2.5 text-left text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-white/32">
-              Détails
+              Graphe
             </th>
             <th className="w-20 px-3 py-2.5 text-left text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-white/32">
               Liens
@@ -145,6 +147,7 @@ export function BooksTabBooksTable({
               key={node.id}
               node={node}
               rowIndex={i}
+              justAdded={justAddedBookId === node.id}
               isSelected={selectedIds.has(node.id)}
               isEditTitle={editingCell?.nodeId === node.id && editingCell?.field === 'title'}
               isEditYear={editingCell?.nodeId === node.id && editingCell?.field === 'year'}

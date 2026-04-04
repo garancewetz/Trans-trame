@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, GitMerge, Info, Plus } from 'lucide-react'
+import { AlertTriangle, ArrowRightLeft, Check, GitMerge, Info, Plus } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { AxisDots } from './TableSubcomponents'
@@ -19,6 +19,7 @@ export function SmartImportPreviewRow({
   handleMerge,
   onAddCoAuthor,
   onUpdateAxes,
+  onSwapFields,
 }) {
   const isEditTitle = editingCell?.id === item.id && editingCell?.field === 'title'
   const isEditEdition = editingCell?.id === item.id && editingCell?.field === 'edition'
@@ -33,7 +34,7 @@ export function SmartImportPreviewRow({
     <div>
       <div
         className={[
-          'grid grid-cols-[28px_minmax(80px,1fr)_220px_80px_140px_56px] items-start gap-x-1 border-b border-white/4 px-3 py-1.5 transition-colors',
+          'grid grid-cols-[28px_minmax(80px,1fr)_20px_220px_20px_80px_140px_56px] items-start gap-x-1 border-b border-white/4 px-3 py-1.5 transition-colors',
           isMerged ? 'opacity-40' : '',
           isExact && !isMerged ? 'bg-red/3' : '',
           isFuzzy && !isMerged ? 'bg-amber/3' : '',
@@ -91,6 +92,20 @@ export function SmartImportPreviewRow({
             >
               {item.title || <em className="text-white/30">Sans titre</em>}
             </span>
+          )}
+        </div>
+
+        {/* Swap title ↔ author */}
+        <div className="flex items-center justify-center">
+          {!isMerged && (
+            <button
+              type="button"
+              onClick={() => onSwapFields?.(item.id, 'title')}
+              className="cursor-pointer rounded p-0.5 text-white/15 transition-colors hover:bg-white/8 hover:text-cyan/70"
+              title="Inverser titre ↔ auteur"
+            >
+              <ArrowRightLeft size={10} />
+            </button>
           )}
         </div>
 
@@ -157,6 +172,20 @@ export function SmartImportPreviewRow({
               </Button>
             )}
           </div>
+        </div>
+
+        {/* Swap author ↔ edition */}
+        <div className="flex items-center justify-center">
+          {!isMerged && (
+            <button
+              type="button"
+              onClick={() => onSwapFields?.(item.id, 'edition')}
+              className="cursor-pointer rounded p-0.5 text-white/15 transition-colors hover:bg-white/8 hover:text-cyan/70"
+              title="Inverser auteur ↔ édition"
+            >
+              <ArrowRightLeft size={10} />
+            </button>
+          )}
         </div>
 
         {/* Axes */}

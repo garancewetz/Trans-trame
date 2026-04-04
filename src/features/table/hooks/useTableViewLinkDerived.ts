@@ -67,6 +67,7 @@ export function useTableViewLinkDerived({
         (l.sourceNode?.title || '').toLowerCase().includes(q) ||
         (l.targetNode?.title || '').toLowerCase().includes(q) ||
         bookAuthorDisplay(l.sourceNode || {}, authorsMap).toLowerCase().includes(q) ||
+        bookAuthorDisplay(l.targetNode || {}, authorsMap).toLowerCase().includes(q) ||
         ((l.citation_text || l.context || '')).toLowerCase().includes(q)
     )
   }, [resolvedLinks, linkSearch, authorsMap])

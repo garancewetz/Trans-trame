@@ -8,10 +8,42 @@ import {
 import { detectAxes } from './parseSmartInput.detectAxes'
 import type { ExistingNode, ParsedAuthor, ParsedBook } from './parseSmartInput.types'
 import { titleSimilarity } from './parseSmartInput.titleSimilarity'
+import type { KnownAuthor } from './hooks/useKnownData'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
-function parseLine(rawLine: string) {
+interface KnownDataLower {
+  editionsLower: string[]
+  authorsLower: { firstName: string; lastName: string; full: string }[]
+}
+
+function buildKnownLower(
+  knownAuthors: KnownAuthor[],
+  knownEditions: string[],
+): KnownDataLower {
+  return {
+    editionsLower: knownEditions.map((e) => e.toLowerCase()),
+    authorsLower: knownAuthors.map((a) => ({
+      firstName: a.firstName.toLowerCase(),
+      lastName: a.lastName.toLowerCase(),
+      full: `${a.firstName} ${a.lastName}`.toLowerCase().trim(),
+    })),
+  }
+}
+
+/** Returns true if `text` matches (or contains) a known edition name. */
+function isKnownEdition(text: string, editionsLower: string[]): boolean {
+  const t = text.toLowerCase().trim()
+  return editionsLower.some((e) => t === e || t.startsWith(e) || e.startsWith(t))
+}
+
+/** Returns true if `text` matches a known author (last name or full name). */
+function isKnownAuthor(text: string, authorsLower: KnownDataLower['authorsLower']): boolean {
+  const t = text.toLowerCase().trim()
+  return authorsLower.some((a) => t === a.full || t === a.lastName || t === `${a.lastName} ${a.firstName}`)
+}
+
+function parseLine(rawLine: string, known: KnownDataLower) {
   // ── 1. Strip leading bullet points / numbered lists ───────────────────────
   const line = rawLine
     .replace(/^[\s*•·◦▪▸►\-–—]+/, '')
@@ -59,7 +91,7 @@ function parseLine(rawLine: string) {
 
     // Vérifier que chaque partie ressemble à un auteur (court, pas de sous-titre)
     const looksLikeAuthors = allRawAuthors.every(
-      (a) => a.split(/\s+/).length <= 5 && looksLikeName(a),
+      (a) => a.split(/\s+/).length <= 5 && looksLikeName(a) && !isKnownEdition(a, known.editionsLower),
     )
 
     if (looksLikeAuthors) {
@@ -139,8 +171,8 @@ function parseLine(rawLine: string) {
         // and the first part doesn't strongly look like one, treat as Title, Author
         const secondPart = parts[1] || ''
         const secondWords = secondPart.split(/\s+/).filter(Boolean)
-        const secondLooksLikeName = secondWords.length >= 2 && secondWords.length <= 4 && looksLikeName(secondPart)
-        const firstLooksLikeAuthor = words.length <= 4 && looksLikeName(firstPart) && !secondLooksLikeName
+        const secondLooksLikeName = (secondWords.length >= 2 && secondWords.length <= 4 && looksLikeName(secondPart) && !isKnownEdition(secondPart, known.editionsLower)) || isKnownAuthor(secondPart, known.authorsLower)
+        const firstLooksLikeAuthor = (words.length <= 4 && looksLikeName(firstPart) && !secondLooksLikeName && !isKnownEdition(firstPart, known.editionsLower)) || isKnownAuthor(firstPart, known.authorsLower)
 
         if (firstLooksLikeAuthor) {
           let titleIndex
@@ -173,7 +205,11 @@ function parseLine(rawLine: string) {
           const editionParts: string[] = []
           for (const p of rest) {
             const w = p.split(/\s+/).filter(Boolean)
-            if (w.length <= 4 && looksLikeName(p) && !authorParts.length && !editionParts.length) {
+            if (isKnownEdition(p, known.editionsLower)) {
+              editionParts.push(p)
+            } else if (isKnownAuthor(p, known.authorsLower)) {
+              authorParts.push(p)
+            } else if (w.length <= 4 && looksLikeName(p) && !authorParts.length && !editionParts.length) {
               authorParts.push(p)
             } else if (authorParts.length && w.length <= 4 && looksLikeName(p) && !editionParts.length) {
               authorParts.push(p)
@@ -220,12 +256,18 @@ function parseLine(rawLine: string) {
  *   isFuzzyDuplicate   — similarité élevée (≥ 0.82) mais pas exacte
  *   existingNode       — nœud existant correspondant (si doublon)
  */
-export function parseSmartInput(text: string, existingNodes: ExistingNode[] = []): ParsedBook[] {
+export function parseSmartInput(
+  text: string,
+  existingNodes: ExistingNode[] = [],
+  knownAuthors: KnownAuthor[] = [],
+  knownEditions: string[] = [],
+): ParsedBook[] {
+  const known = buildKnownLower(knownAuthors, knownEditions)
   const lines = text.split('\n').map((l) => l.trim()).filter((l) => l.length > 3)
 
   return lines
     .map((line): ParsedBook | null => {
-      const parsed = parseLine(line)
+      const parsed = parseLine(line, known)
       if (!parsed || !parsed.title) return null
 
       let bestNode: ExistingNode | null = null

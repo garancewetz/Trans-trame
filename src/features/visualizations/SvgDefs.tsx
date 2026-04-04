@@ -47,27 +47,27 @@ export function getLinkStyle(
       return {
         stroke: rgba(isCite ? CITE : CITED_BY, 1),
         strokeOpacity: 0.85,
-        strokeWidth: 2,
+        strokeWidth: 1.2,
         markerEnd: `url(#arrow-${isCite ? 'cite' : 'cited-by'})`,
       }
     }
-    return { stroke: rgba(CITE, 1), strokeOpacity: 0.08, strokeWidth: 0.5, markerEnd: undefined }
+    return { stroke: rgba(CITE, 1), strokeOpacity: 0.08, strokeWidth: 0.3, markerEnd: undefined }
   }
 
   const isActive = selectedId === sourceId || selectedId === targetId
   const isCite = sourceId === selectedId
 
   if (!selectedId) {
-    return { stroke: rgba(CITE, 1), strokeOpacity: 0.15, strokeWidth: 0.8, markerEnd: 'url(#arrow-cite-faint)' }
+    return { stroke: rgba(CITE, 1), strokeOpacity: 0.15, strokeWidth: 0.5, markerEnd: 'url(#arrow-cite-faint)' }
   }
 
   if (isActive) {
     const color = isCite ? CITE : CITED_BY
     const markerId = isCite ? 'arrow-cite' : 'arrow-cited-by'
-    return { stroke: rgba(color, 1), strokeOpacity: 0.85, strokeWidth: 2.5, markerEnd: `url(#${markerId})` }
+    return { stroke: rgba(color, 1), strokeOpacity: 0.85, strokeWidth: 2, markerEnd: `url(#${markerId})` }
   }
 
-  return { stroke: rgba(CITE, 1), strokeOpacity: 0.1, strokeWidth: 0.5, markerEnd: undefined }
+  return { stroke: rgba(CITE, 1), strokeOpacity: 0.1, strokeWidth: 0.3, markerEnd: undefined }
 }
 
 // ── Node visual state (mirrors Galaxy computeNodeState) ─────────────────────
@@ -173,6 +173,16 @@ export function SvgDefs({ nodeAxesSet }: { nodeAxesSet: Map<string, string[]> })
   )
 }
 
+// ── Hover gradient helpers ──────────────────────────────────────────────────
+
+/**
+ * Build a unique gradient id for a hovered link.
+ * Mirrors the Galaxy canvas gradient: cyan at source → orange at target.
+ */
+function hoverGradientId(linkIndex: number) {
+  return `hover-grad-${linkIndex}`
+}
+
 // ── Link particles (animated dots along paths) ──────────────────────────────
 
 type ParticleConfig = { count: number; r: number; color: string; dur: string }
@@ -237,6 +247,11 @@ type CitationLinkProps = {
   selectedId: string | null
   hoveredId: string | null
   linkIndex: number
+  /** Source / target positions — needed for the hover gradient direction. */
+  sx?: number
+  sy?: number
+  tx?: number
+  ty?: number
 }
 
 /** Renders a citation link path with arrow marker and animated directional particles. */
@@ -247,15 +262,36 @@ export const CitationLink = memo(function CitationLink({
   selectedId,
   hoveredId,
   linkIndex,
+  sx,
+  sy,
+  tx,
+  ty,
 }: CitationLinkProps) {
   const style = getLinkStyle(sourceId, targetId, selectedId, hoveredId)
   const config = getParticleConfig(sourceId, targetId, selectedId, hoveredId)
+
+  const useGradient =
+    !!hoveredId && !selectedId &&
+    (sourceId === hoveredId || targetId === hoveredId) &&
+    sx != null && sy != null && tx != null && ty != null
+  const gradId = hoverGradientId(linkIndex)
+
   return (
     <>
+      {useGradient && (
+        <defs>
+          <linearGradient id={gradId} gradientUnits="userSpaceOnUse" x1={sx} y1={sy} x2={tx} y2={ty}>
+            <stop offset="0%" stopColor={rgba(CITE, 0.9)} />
+            <stop offset="25%" stopColor={rgba(CITE, 0.7)} />
+            <stop offset="60%" stopColor={rgba(CITED_BY, 0.35)} />
+            <stop offset="100%" stopColor={rgba(CITED_BY, 0.45)} />
+          </linearGradient>
+        </defs>
+      )}
       <path
         d={d}
         fill="none"
-        stroke={style.stroke}
+        stroke={useGradient ? `url(#${gradId})` : style.stroke}
         strokeOpacity={style.strokeOpacity}
         strokeWidth={style.strokeWidth}
         markerEnd={style.markerEnd}
