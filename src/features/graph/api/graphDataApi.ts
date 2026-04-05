@@ -74,3 +74,28 @@ export function insertBookAuthors(bookId: string, authorIds: string[]) {
 export function deleteBookAuthorsByBookId(bookId: string) {
   return supabase.from('book_authors').delete().eq('book_id', bookId)
 }
+
+// ── Full database export ──────────────────────────────────────────────────
+
+export async function exportFullDatabase() {
+  const { booksRes, authorsRes, linksRes, bookAuthorsRes } =
+    await loadGraphDataFromSupabase()
+
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    books: booksRes.data ?? [],
+    authors: authorsRes.data ?? [],
+    links: linksRes.data ?? [],
+    bookAuthors: bookAuthorsRes.data ?? [],
+  }
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: 'application/json',
+  })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `trans-trame-backup-${new Date().toISOString().slice(0, 10)}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}

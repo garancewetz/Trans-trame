@@ -1,5 +1,7 @@
-import { ArrowLeft, Zap } from 'lucide-react'
+import { useState } from 'react'
+import { ArrowLeft, Download, Zap } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
+import { exportFullDatabase } from '@/features/graph/api/graphDataApi'
 
 export function TableTopbar({
   onClose,
@@ -52,6 +54,7 @@ export function TableTopbar({
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <ExportButton />
         <Button
           type="button"
           variant="outline"
@@ -64,5 +67,31 @@ export function TableTopbar({
         </Button>
       </div>
     </div>
+  )
+}
+
+function ExportButton() {
+  const [busy, setBusy] = useState(false)
+
+  const handleExport = async () => {
+    setBusy(true)
+    try {
+      await exportFullDatabase()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      outlineWeight="muted"
+      icon={<Download size={11} />}
+      onClick={handleExport}
+      disabled={busy}
+    >
+      {busy ? 'Export...' : 'Exporter JSON'}
+    </Button>
   )
 }
