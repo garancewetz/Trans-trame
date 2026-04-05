@@ -1,4 +1,4 @@
-import { ClipboardCopy, Merge, Trash2 } from 'lucide-react'
+import { BookOpen, ClipboardCopy, Merge, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/common/components/ui/Button'
 
@@ -9,7 +9,9 @@ type Props = {
   onBulkDeleteBlur: () => void
   onCancelSelection: () => void
   showMerge: boolean
+  showSameWork: boolean
   onOpenMergeModal: () => void
+  onOpenSameWorkModal: () => void
   onExport: () => string
 }
 
@@ -20,7 +22,9 @@ export function BooksTabSelectionBar({
   onBulkDeleteBlur,
   onCancelSelection,
   showMerge,
+  showSameWork,
   onOpenMergeModal,
+  onOpenSameWorkModal,
   onExport,
 }: Props) {
   const [copied, setCopied] = useState(false)
@@ -39,6 +43,15 @@ export function BooksTabSelectionBar({
       <span className="font-mono text-[0.82rem] text-white/45">
         {selectedCount} sélectionné{selectedCount > 1 ? 's' : ''}
       </span>
+      {showSameWork && (
+        <Button
+          type="button"
+          onClick={onOpenSameWorkModal}
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-violet/30 bg-violet/[0.07] px-3 py-1.5 text-[0.8rem] font-semibold text-violet/75 transition-all hover:bg-violet/[0.14]"
+        >
+          <BookOpen size={12} /> Même œuvre
+        </Button>
+      )}
       {showMerge && (
         <Button
           type="button"

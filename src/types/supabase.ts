@@ -78,6 +78,7 @@ export type Database = {
           last_name: string
           title: string
           year: number | null
+          original_title: string | null
         }
         Insert: {
           axes?: string[]
@@ -88,6 +89,7 @@ export type Database = {
           last_name?: string
           title: string
           year?: number | null
+          original_title?: string | null
         }
         Update: {
           axes?: string[]
@@ -98,6 +100,7 @@ export type Database = {
           last_name?: string
           title?: string
           year?: number | null
+          original_title?: string | null
         }
         Relationships: []
       }

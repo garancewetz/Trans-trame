@@ -15,6 +15,7 @@ export type DbBookRow = {
   year?: number | null
   description?: string
   axes?: string[]
+  original_title?: string | null
 }
 
 export type DbAuthorRow = {
@@ -81,6 +82,7 @@ export function dbBookToNode(row: DbBookRow, authorIds?: string[]): Book {
     year: row.year ?? null,
     description: row.description || '',
     axes: row.axes || [],
+    originalTitle: row.original_title ?? null,
   }
 }
 
@@ -115,6 +117,7 @@ export function bookToDbRow(node: BookRowInput) {
     year: node.year ?? null,
     description: node.description || '',
     axes: node.axes || [],
+    original_title: node.originalTitle ?? null,
   }
 }
 

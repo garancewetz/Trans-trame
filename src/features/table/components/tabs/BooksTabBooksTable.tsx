@@ -89,7 +89,7 @@ export function BooksTabBooksTable({
   return (
     <div className="flex-1 overflow-auto">
       <table className="w-full border-collapse">
-        <thead className="sticky top-0 z-20 bg-bg-overlay/98">
+        <thead className="sticky top-0 z-20 bg-bg-overlay">
           <tr className="border-b border-white/6">
             <th className="w-9 px-3 py-2.5">
               <Button
@@ -105,10 +105,10 @@ export function BooksTabBooksTable({
                 <Check size={9} />
               </Button>
             </th>
-            <TH col="title" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="w-[40%] min-w-0">
+            <TH col="title" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="w-[30%] min-w-0">
               Titre
             </TH>
-            <TH col="lastName" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="w-[20%] min-w-0">
+            <TH col="lastName" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="w-[18%] min-w-0">
               Auteur·ice
             </TH>
             <TH col="year" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="w-20">

@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { GraphData, TimelineRange } from '@/types/domain'
 import { normalizeEndpointId } from '@/features/graph/domain/graphDataModel'
-import { constellationLayout } from '../../features/graph/layoutEngine'
 
 export function useAppTimelineAndLayout(graphData: GraphData) {
   const allYears = useMemo(
@@ -42,8 +41,6 @@ export function useAppTimelineAndLayout(graphData: GraphData) {
     }
   }, [graphData, clampedTimelineRange])
 
-  const layoutPositions = useMemo(() => constellationLayout(), [])
-
   const handleViewChange = useCallback((mode: string) => {
     setViewMode(mode)
   }, [])
@@ -62,7 +59,6 @@ export function useAppTimelineAndLayout(graphData: GraphData) {
     minYear,
     maxYear,
     filteredGraphData,
-    layoutPositions,
     hasTimelineFilter,
     clearTimelineFilter,
   }

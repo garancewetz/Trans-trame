@@ -183,7 +183,7 @@ export function AuthorsTab({
       {filteredAuthors.length > 0 && (
         <div className="flex-1 overflow-auto">
           <table className="w-full border-collapse">
-            <thead className="sticky top-0 z-20 bg-bg-overlay/98">
+            <thead className="sticky top-0 z-20 bg-bg-overlay">
               <tr className="border-b border-white/6">
                 <th className="w-9 px-3 py-2.5">
                   <Button
@@ -206,21 +206,22 @@ export function AuthorsTab({
               </tr>
 
               {/* Ligne d'ajout */}
-              <tr className="border-b border-cyan/15 bg-cyan/4">
-                <td className="px-3 py-1.5 text-center">
-                  <Plus size={11} className="text-cyan/50" />
+              <tr className="border-b border-cyan/20 bg-bg-overlay shadow-[0_-1px_0_var(--color-bg-overlay)]">
+                <td className="bg-cyan/6 px-3 py-1.5 align-bottom">
+                  <Plus size={11} className="mb-1.5 text-cyan/60" />
                 </td>
-                <td className="px-2 py-1.5">
+                <td className="bg-cyan/6 px-2 py-1.5 align-bottom">
+                  <span className="mb-0.5 block text-[0.65rem] font-semibold uppercase tracking-[1.2px] text-cyan/50">Nouvel·le auteur·ice</span>
                   <TextInput
                     variant="table"
                     className={INPUT}
-                    placeholder="Nom *"
+                    placeholder="Saisir un nom…"
                     value={inputLastName}
                     onChange={(e) => setInputLastName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddAuthor()}
                   />
                 </td>
-                <td className="px-2 py-1.5">
+                <td className="bg-cyan/6 px-2 py-1.5 align-bottom">
                   <TextInput
                     variant="table"
                     ref={firstNameRef}
@@ -231,13 +232,13 @@ export function AuthorsTab({
                     onKeyDown={(e) => e.key === 'Enter' && handleAddAuthor()}
                   />
                 </td>
-                <td />
-                <td className="px-2 py-1.5">
+                <td className="bg-cyan/6" />
+                <td className="bg-cyan/6 px-2 py-1.5 align-bottom">
                   <Button
                     type="button"
                     onClick={handleAddAuthor}
                     disabled={!inputLastName.trim()}
-                    className="shrink-0 cursor-pointer rounded-md border border-cyan/35 bg-cyan/10 px-2 py-1 text-[0.75rem] font-semibold text-cyan/85 transition-all hover:bg-cyan/18 disabled:cursor-not-allowed disabled:opacity-25"
+                    className="shrink-0 cursor-pointer rounded-md border border-cyan/35 bg-cyan/12 px-2 py-1 text-[0.75rem] font-semibold text-cyan/85 transition-all hover:bg-cyan/20 disabled:cursor-not-allowed disabled:opacity-25"
                   >
                     + Ajouter
                   </Button>

@@ -8,6 +8,7 @@ export type Book = {
   id: BookId
   type: 'book'
   title: string
+  originalTitle?: string | null
   year?: number | null
   description?: string
   axes?: AxisId[]

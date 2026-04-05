@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Check, ExternalLink, Eye, Link2 } from 'lucide-react'
+import { Check, Eye, Link2 } from 'lucide-react'
 import { mapBookUrlSearch } from '@/common/utils/bookSlug'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'

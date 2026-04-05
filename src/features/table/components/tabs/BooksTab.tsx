@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Merge, Sparkles } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { TableMergeModal } from '../TableMergeModal'
+import { TableSameWorkModal } from '../TableSameWorkModal'
 import type { Author, AuthorId, Book, BookId, Link } from '@/types/domain'
 import { type Axis } from '@/common/utils/categories'
 import { BooksTabBooksTable } from './BooksTabBooksTable'
@@ -64,6 +65,11 @@ export function BooksTab({
   const [mergeModal, setMergeModal] = useState(false)
   const [mergeKeepId, setMergeKeepId] = useState<BookId | null>(null)
   const [mergeConfirm, setMergeConfirm] = useState(false)
+
+  const [sameWorkModal, setSameWorkModal] = useState(false)
+  const [sameWorkTitle, setSameWorkTitle] = useState<string | null>(null)
+  const [sameWorkConfirm, setSameWorkConfirm] = useState(false)
+  const [sameWorkBooks, setSameWorkBooks] = useState<Book[]>([])
 
   const [inputTitle, setInputTitle] = useState('')
   const [inputAuthorIds, setInputAuthorIds] = useState<AuthorId[]>(initialAuthorIds)
@@ -145,6 +151,7 @@ export function BooksTab({
       year: parseInt(inputYear, 10) || null,
       axes: inputAxes,
       description: '',
+      originalTitle: null,
     })
     onBookAdded?.(title)
     setInputTitle('')
@@ -167,6 +174,19 @@ export function BooksTab({
     setMergeModal(false)
     setMergeKeepId(null)
     setMergeConfirm(false)
+    clearSelection()
+  }
+
+  const handleConfirmSameWork = () => {
+    if (!sameWorkTitle || sameWorkBooks.length < 2) return
+    if (!sameWorkConfirm) { setSameWorkConfirm(true); return }
+    sameWorkBooks.forEach((b) => {
+      onUpdateBook?.({ ...b, originalTitle: sameWorkTitle })
+    })
+    setSameWorkModal(false)
+    setSameWorkTitle(null)
+    setSameWorkConfirm(false)
+    setSameWorkBooks([])
     clearSelection()
   }
 
@@ -214,6 +234,14 @@ export function BooksTab({
         onBulkDeleteBlur={() => setBulkDeleteConfirm(false)}
         onCancelSelection={() => { clearSelection(); setBulkDeleteConfirm(false) }}
         showMerge={selectedIds.size === 2}
+        showSameWork={selectedIds.size >= 2}
+        onOpenSameWorkModal={() => {
+          const captured = [...selectedIds].map((id) => nodes.find((n) => n.id === id)).filter(Boolean) as Book[]
+          setSameWorkBooks(captured)
+          setSameWorkTitle(captured[0]?.title || null)
+          setSameWorkConfirm(false)
+          setSameWorkModal(true)
+        }}
         onOpenMergeModal={() => {
           setMergeKeepId(mergeNodes[0]?.id || null)
           setMergeConfirm(false)
@@ -285,6 +313,18 @@ export function BooksTab({
         mergeConfirm={mergeConfirm}
         handleConfirmMerge={handleConfirmMerge}
         setMergeModal={setMergeModal}
+      />
+
+      <TableSameWorkModal
+        open={sameWorkModal}
+        books={sameWorkBooks}
+        authorsMap={authorsMap}
+        selectedTitle={sameWorkTitle}
+        setSelectedTitle={setSameWorkTitle}
+        confirm={sameWorkConfirm}
+        setConfirm={setSameWorkConfirm}
+        onConfirm={handleConfirmSameWork}
+        onClose={() => { setSameWorkModal(false); setSameWorkTitle(null); setSameWorkBooks([]) }}
       />
     </div>
   )

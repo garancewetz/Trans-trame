@@ -24,7 +24,6 @@ function citationAnchorRole(
 type Args = {
   hasSelection: boolean
   activeFilter: string | null
-  viewMode: string
   anchorIds: Set<string> | null
   connectedLinks: Set<string>
   linkWeights: Map<string, number>
@@ -35,7 +34,6 @@ type Args = {
 export function useGraphLinkCallbacks({
   hasSelection,
   activeFilter,
-  viewMode,
   anchorIds,
   connectedLinks,
   linkWeights,
@@ -79,15 +77,6 @@ export function useGraphLinkCallbacks({
         if (isLinkActive(link)) return linkCitesRgba(0.45)
         return linkCitesRgba(0.1)
       }
-      if (viewMode === 'genealogy') {
-        if (!hasSelection) return linkCitesRgba(0.45)
-        if (isLinkActive(link)) {
-          const role = citationAnchorRole(link, anchorIds)
-          if (role === 'citedBy') return linkCitedByRgba(0.95)
-          return linkCitesRgba(0.95)
-        }
-        return linkCitesRgba(0.28)
-      }
       if (!hasSelection && !activeFilter) return linkCitesRgba(0.15)
       if (isLinkActive(link)) {
         const role = citationAnchorRole(link, anchorIds)
@@ -96,7 +85,7 @@ export function useGraphLinkCallbacks({
       }
       return linkCitesRgba(0.1)
     },
-    [hasSelection, activeFilter, isLinkActive, isLinkHovered, viewMode, anchorIds],
+    [hasSelection, activeFilter, isLinkActive, isLinkHovered, anchorIds],
   )
 
   const linkWidth = useCallback(
@@ -106,16 +95,12 @@ export function useGraphLinkCallbacks({
       }
       const weight = getLinkWeight(link)
       const isStrong = weight > 1
-      if (viewMode === 'genealogy') {
-        if (!hasSelection) return isStrong ? 1.8 : 1.4
-        return isLinkActive(link) ? (isStrong ? 3.0 : 2.6) : 1
-      }
       if (!hasSelection && !hoveredNodeRef.current) return isStrong ? 1.0 : 0.5
       if (isLinkActive(link)) return isStrong ? 2.8 : 2.2
       if (hoveredNodeRef.current && isLinkHovered(link)) return isStrong ? 1.5 : 1.0
       return 0.5
     },
-    [hasSelection, isLinkActive, isLinkHovered, getLinkWeight, viewMode],
+    [hasSelection, isLinkActive, isLinkHovered, getLinkWeight],
   )
 
   const linkCanvasObject = useCallback(
@@ -179,40 +164,23 @@ export function useGraphLinkCallbacks({
   const linkDirectionalParticles = useCallback(
     (link) => {
       if (hoveredNodeRef.current && !hasSelection) return isLinkHovered(link) ? 3 : 0
-      if (viewMode === 'genealogy') {
-        if (!hasSelection) return 2
-        return isLinkActive(link) ? 6 : 2
-      }
       return !hasSelection ? 2 : isLinkActive(link) ? 5 : 0
     },
-    [hasSelection, isLinkActive, isLinkHovered, viewMode],
+    [hasSelection, isLinkActive, isLinkHovered],
   )
 
   const linkDirectionalParticleWidth = useCallback(
     (link) => {
       if (hoveredNodeRef.current && !hasSelection) return isLinkHovered(link) ? 2 : 0
-      if (viewMode === 'genealogy') {
-        if (!hasSelection) return 1
-        return isLinkActive(link) ? 2 : 1
-      }
       return !hasSelection ? 1 : isLinkActive(link) ? 2 : 0
     },
-    [hasSelection, isLinkActive, isLinkHovered, viewMode],
+    [hasSelection, isLinkActive, isLinkHovered],
   )
 
   const linkDirectionalParticleColor = useCallback(
     (link) => {
       if (hoveredNodeRef.current && !hasSelection && isLinkHovered(link)) {
         return linkCitesRgba(0.9)
-      }
-      if (viewMode === 'genealogy') {
-        if (!hasSelection) return linkCitesRgba(0.6)
-        if (isLinkActive(link)) {
-          const role = citationAnchorRole(link, anchorIds)
-          if (role === 'citedBy') return LINK_CITED_BY_COLOR_STRONG
-          return LINK_CITES_COLOR_STRONG
-        }
-        return linkCitesRgba(0.22)
       }
       if (!hasSelection) return linkCitesRgba(0.6)
       if (isLinkActive(link)) {
@@ -222,7 +190,7 @@ export function useGraphLinkCallbacks({
       }
       return 'rgba(255,255,255,0.05)'
     },
-    [hasSelection, isLinkActive, isLinkHovered, viewMode, anchorIds],
+    [hasSelection, isLinkActive, isLinkHovered, anchorIds],
   )
 
   return {

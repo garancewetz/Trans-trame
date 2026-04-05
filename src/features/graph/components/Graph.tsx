@@ -3,7 +3,6 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRe
 import ForceGraph2D from 'react-force-graph-2d'
 import type { ForceGraphMethods } from 'react-force-graph-2d'
 import { forceCollide } from 'd3-force-3d'
-import { drawStarField } from '../scene'
 import {
   setupKeyboardHandlers,
   setupMouseDragHandlers,
@@ -13,7 +12,6 @@ import {
   animateCameraToNode,
 } from '../cameraControls'
 import { drawNode, getNodePointerHitRadius, getNodeRadius, clearHoverAnim } from '../nodeObject'
-import { drawGenealogyOverlay } from '../axisLabels'
 import {
   FORCE_CHARGE_DIST_MAX,
   FORCE_LINK_DIST_AUTHOR_BOOK,
@@ -41,8 +39,6 @@ function isBookOrAuthor(node: object | null | undefined): node is Book | Author 
   return t === 'book' || t === 'author'
 }
 
-const SHOW_STARFIELD = false
-
 type GraphNode = Book & { citedBy?: number }
 type GraphLink = Link
 
@@ -56,7 +52,6 @@ type GraphProps = {
   hoveredFilter: string | null
   onNodeClick: (node: Book | Author) => void
   onLinkClick: (link: GraphLink) => void
-  layoutPositions: Map<string, { fx: number; fy: number }> | null | undefined
   viewMode: string
   flashNodeIds: Set<string> | null
 }
@@ -76,7 +71,6 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     hoveredFilter,
     onNodeClick,
     onLinkClick,
-    layoutPositions,
     viewMode,
     flashNodeIds,
   }: GraphProps,
@@ -127,7 +121,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     selectedNode,
   })
 
-  useGraphLayout({ fgRef, camRef, graphData, layoutPositions, viewMode, degreeByNodeId })
+  useGraphLayout({ fgRef, camRef, graphData, viewMode, degreeByNodeId })
 
   useEffect(() => {
     const fg = fgRef.current
@@ -272,7 +266,6 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   } = useGraphLinkCallbacks({
     hasSelection,
     activeFilter,
-    viewMode,
     anchorIds,
     connectedLinks,
     linkWeights,
@@ -297,13 +290,6 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
       syncedZoomToFit(fg, camRef, duration, 80)
     },
     [hasSelection, activeFilter],
-  )
-
-  const onRenderFramePre = useCallback(
-    (ctx, globalScale) => {
-      if (SHOW_STARFIELD) drawStarField(ctx, globalScale)
-    },
-    []
   )
 
   const onRenderFramePost = useCallback(
@@ -371,7 +357,6 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
           // Le recadrage est plus fiable une fois la simulation stabilisée.
           maybeZoomToFitOverview(900)
         }}
-        onRenderFramePre={onRenderFramePre}
         onRenderFramePost={onRenderFramePost}
       />
     </div>

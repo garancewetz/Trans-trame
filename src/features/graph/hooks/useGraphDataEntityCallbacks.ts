@@ -139,7 +139,6 @@ export function useGraphDataEntityCallbacks({
 
   const deleteAuthorMutation = useMutation({
     mutationFn: async (authorId: string) => {
-      // CASCADE on book_authors handles junction cleanup automatically
       const { error } = await deleteAuthorRowById(authorId)
       if (error) throw new Error(error.message)
     },
@@ -199,7 +198,7 @@ export function useGraphDataEntityCallbacks({
     onError: (err) => { devWarn('Erreur mise à jour lien', err); invalidate() },
   })
 
-  // ── Public API (same interface as before) ────────────────────────────────────
+  // ── Public API ──────────────────────────────────────────────────────────────
 
   const handleAddBook = useCallback(
     (book: Book | (Partial<Book> & Pick<Book, 'id' | 'title'>)) =>
@@ -245,7 +244,6 @@ export function useGraphDataEntityCallbacks({
       const srcId = normalizeId((link as Link).source) as string
       const tgtId = normalizeId((link as Link).target) as string
       const citationText = link.citation_text || ''
-      // Deduplicate: skip if an identical link already exists in local state
       const isDuplicate = linksRef.current!.some((l) => {
         const s = normalizeId(l.source)
         const t = normalizeId(l.target)

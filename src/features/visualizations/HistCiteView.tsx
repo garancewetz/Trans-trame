@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { Book, Author, GraphData } from '@/types/domain'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { useVizSize } from './useVizSize'
 import { usePanZoom } from './usePanZoom'
-import { getCitationEdges, shortTitle, linearScale } from './utils'
+import { linearScale } from './utils'
 import { HoverLabel } from './HoverLabel'
 import { SvgDefs, nodeFill, CitationLink, getNodeVisual } from './SvgDefs'
 import { nodeHoverStyle } from '@/common/utils/nodeHoverScale'
+import { useVizInteraction } from './useVizInteraction'
 
 const PAD = { left: 70, right: 70, top: 80, bottom: 96 }
 const NODE_R = 5
@@ -25,24 +26,16 @@ export function HistCiteView({ graphData, authors, selectedNode, onNodeClick, ac
   const { ref, w, h } = useVizSize()
   const { svgRef, transformStr, hasMoved, reset, svgHandlers } = usePanZoom()
   const selectedId = selectedNode?.id ?? null
-  const [hoveredId, setHoveredId] = useState<string | null>(null)
+
+  const {
+    hoveredId, setHoveredId, books: allBooks, edges, bookMap, nodeAxesSet,
+    relatedIds, hoveredNeighborIds, filterOpacity, linkFilterOpacity,
+  } = useVizInteraction({ graphData, selectedId, activeFilter, hoveredFilter })
 
   const books = useMemo(
-    () =>
-      graphData.nodes.filter(
-        (n) => n.type === 'book' && typeof n.year === 'number',
-      ) as (typeof graphData.nodes[0] & { year: number })[],
-    [graphData.nodes],
+    () => allBooks.filter((b) => typeof b.year === 'number') as (Book & { year: number })[],
+    [allBooks],
   )
-
-  const edges = useMemo(() => getCitationEdges(graphData.links), [graphData.links])
-  const bookMap = useMemo(() => new Map(graphData.nodes.map((n) => [n.id, n])), [graphData.nodes])
-
-  const nodeAxesSet = useMemo(() => {
-    const m = new Map<string, string[]>()
-    for (const b of books) m.set(b.id, b.axes ?? [])
-    return m
-  }, [books])
 
   const { minYear, maxYear } = useMemo(() => {
     const years = books.map((b) => b.year)
@@ -89,49 +82,7 @@ export function HistCiteView({ graphData, authors, selectedNode, onNodeClick, ac
     return result
   }, [w, h, minYear, maxYear])
 
-  const relatedIds = useMemo(() => {
-    if (!selectedId) return null
-    const ids = new Set<string>()
-    for (const { sourceId, targetId } of edges) {
-      if (sourceId === selectedId) ids.add(targetId)
-      if (targetId === selectedId) ids.add(sourceId)
-    }
-    return ids
-  }, [selectedId, edges])
-
-  const hoveredNeighborIds = useMemo(() => {
-    if (!hoveredId) return null
-    const ids = new Set<string>()
-    for (const { sourceId, targetId } of edges) {
-      if (sourceId === hoveredId) ids.add(targetId)
-      if (targetId === hoveredId) ids.add(sourceId)
-    }
-    return ids
-  }, [hoveredId, edges])
-
-  const currentFilter = hoveredFilter ?? activeFilter ?? null
-
-  const nodeMatchesFilter = useMemo(() => {
-    if (!currentFilter) return null
-    const m = new Map<string, boolean>()
-    for (const b of books) m.set(b.id, (b.axes ?? []).includes(currentFilter))
-    return m
-  }, [books, currentFilter])
-
   const baselineY = h - PAD.bottom
-
-  function filterOpacity(nodeId: string): number {
-    if (!nodeMatchesFilter) return 1
-    return nodeMatchesFilter.get(nodeId) ? 1 : 0.15
-  }
-
-  function linkFilterOpacity(sourceId: string, targetId: string): number {
-    if (!nodeMatchesFilter) return 1
-    const srcMatch = nodeMatchesFilter.get(sourceId) ?? false
-    const tgtMatch = nodeMatchesFilter.get(targetId) ?? false
-    if (srcMatch || tgtMatch) return 1
-    return 0.12
-  }
 
   function handleNodeClick(book: Book & { year: number }) {
     if (hasMoved()) return

@@ -157,7 +157,6 @@ export function GraphApp() {
             hoveredFilter={ui.hoveredFilter}
             onNodeClick={ui.handleNodeClick}
             onLinkClick={ui.handleLinkClick}
-            layoutPositions={timeline.layoutPositions}
             viewMode={timeline.viewMode}
             flashNodeIds={ui.flashNodeIds}
           />

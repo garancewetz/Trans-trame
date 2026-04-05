@@ -37,22 +37,23 @@ export function BooksTabAddRow({
   onAddAuthor,
 }: Props) {
   return (
-    <tr className="border-b border-cyan/15 bg-cyan/4">
-      <td className="px-3 py-1.5 text-center">
-        <Plus size={11} className="text-cyan/50" />
+    <tr className="border-b border-cyan/20 bg-bg-overlay shadow-[0_-1px_0_var(--color-bg-overlay)]">
+      <td className="bg-cyan/6 px-3 py-1.5 align-bottom text-center">
+        <Plus size={11} className="mb-1.5 text-cyan/60" />
       </td>
-      <td className="min-w-0 max-w-36 px-2 py-1.5">
+      <td className="bg-cyan/6 min-w-0 max-w-36 px-2 py-1.5 align-bottom">
+        <span className="mb-0.5 block text-[0.65rem] font-semibold uppercase tracking-[1.2px] text-cyan/50">Nouvel ouvrage</span>
         <TextInput
           variant="table"
           ref={titleInputRef}
           className={INPUT}
-          placeholder="Titre *"
+          placeholder="Saisir un titre…"
           value={inputTitle}
           onChange={(e) => setInputTitle(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && onAddBookRow()}
         />
       </td>
-      <td className="px-2 py-1.5">
+      <td className="bg-cyan/6 px-2 py-1.5 align-bottom">
         <AuthorPicker
           authors={authors}
           selectedAuthorIds={inputAuthorIds}
@@ -60,25 +61,25 @@ export function BooksTabAddRow({
           onAddAuthor={onAddAuthor}
         />
       </td>
-      <td className="px-2 py-1.5">
+      <td className="bg-cyan/6 px-2 py-1.5 align-bottom">
         <TextInput
           variant="table"
           className={INPUT}
           type="number"
-          placeholder="1984"
+          placeholder="Année"
           value={inputYear}
           onChange={(e) => setInputYear(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && onAddBookRow()}
         />
       </td>
-      <td className="px-3 py-1.5">
+      <td className="bg-cyan/6 px-3 py-1.5 align-bottom">
         <div className="flex items-center gap-2.5">
           <AxisDots axes={inputAxes} onChange={setInputAxes} />
           <Button
             type="button"
             onClick={onAddBookRow}
             disabled={!inputTitle.trim()}
-            className="shrink-0 cursor-pointer rounded-md border border-cyan/35 bg-cyan/10 px-2 py-1 text-[0.75rem] font-semibold text-cyan/85 transition-all hover:bg-cyan/18 disabled:cursor-not-allowed disabled:opacity-25"
+            className="shrink-0 cursor-pointer rounded-md border border-cyan/35 bg-cyan/12 px-2 py-1 text-[0.75rem] font-semibold text-cyan/85 transition-all hover:bg-cyan/20 disabled:cursor-not-allowed disabled:opacity-25"
           >
             + Ajouter
           </Button>
