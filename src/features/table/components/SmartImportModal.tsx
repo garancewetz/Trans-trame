@@ -28,7 +28,7 @@ export function SmartImportModal(props: SmartImportModalProps) {
       as="form"
       onSubmit={c.handleSubmit}
       containerClassName="transition-all duration-200"
-      maxWidth={c.phase === 'preview' ? 'max-w-5xl' : 'max-w-4xl'}
+      maxWidth={c.phase === 'preview' ? 'max-w-7xl' : 'max-w-7xl'}
     >
       {c.phase === 'input' && (
         <SmartImportInputPhase
@@ -63,6 +63,9 @@ export function SmartImportModal(props: SmartImportModalProps) {
           onAddCoAuthor={c.handleAddCoAuthor}
           onUpdateAxes={c.handleUpdateAxes}
           onSwapFields={c.handleSwapFields}
+          authorMergeSuggestions={c.authorMergeSuggestions}
+          onAuthorMerge={c.handleAuthorMerge}
+          onDismissAuthorMerge={c.dismissAuthorMerge}
           masterNode={c.masterNode}
           linkDirection={c.linkDirection}
           selectedCount={c.checked.size}

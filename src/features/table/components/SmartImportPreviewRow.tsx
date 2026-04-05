@@ -34,7 +34,7 @@ export function SmartImportPreviewRow({
     <div>
       <div
         className={[
-          'grid grid-cols-[28px_minmax(80px,1fr)_20px_220px_20px_80px_140px_56px] items-start gap-x-1 border-b border-white/4 px-3 py-1.5 transition-colors',
+          'grid grid-cols-[28px_minmax(80px,0.6fr)_20px_220px_20px_minmax(80px,0.15fr)_minmax(130px,0.25fr)_56px] items-start gap-x-1 border-b border-white/4 px-3 py-1.5 transition-colors',
           isMerged ? 'opacity-40' : '',
           isExact && !isMerged ? 'bg-red/3' : '',
           isFuzzy && !isMerged ? 'bg-amber/3' : '',
@@ -199,22 +199,22 @@ export function SmartImportPreviewRow({
         {/* Edition */}
         <div className="min-w-0">
           {isEditEdition ? (
-            <TextInput
-              variant="table"
+            <textarea
               autoFocus
-              className="w-full rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.8rem] focus:border-cyan/35 focus:bg-white/8"
+              rows={1}
+              className="field-sizing-content w-full resize-none rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 font-mono text-[0.8rem] leading-snug text-white outline-none focus:border-cyan/35 focus:bg-white/8"
               value={editingValue}
               onChange={(e) => setEditingValue(e.target.value)}
               onBlur={commitCellEdit}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') commitCellEdit()
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitCellEdit() }
                 if (e.key === 'Escape') setEditingCell(null)
               }}
             />
           ) : (
             <span
               className={[
-                'group/ed relative flex cursor-text items-center gap-1 truncate font-mono text-[0.8rem]',
+                'group/ed relative flex cursor-text items-center gap-1 wrap-break-word font-mono text-[0.8rem] leading-snug',
                 item.edition ? (isDup ? 'text-white/30' : 'text-white/42 hover:text-white/75') : 'text-white/15',
               ].join(' ')}
               onClick={() => {

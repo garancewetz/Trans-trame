@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import type { Book } from '@/types/domain'
 import { parseSmartInput, type ParsedBook } from '../parseSmartInput'
 import { runSmartImportBatchInsert } from '../smartImportModal.batchInsert'
 import type { SmartImportModalProps } from '../smartImportModal.types'
+import { detectAuthorInitialMatches, normStr, type AuthorMergeSuggestion } from '../smartImportModal.utils'
 import { useKnownAuthors, useKnownEditions } from './useKnownData'
 
 export function useSmartImportModalLogic({
@@ -33,6 +34,13 @@ export function useSmartImportModalLogic({
   const [mergedIds, setMergedIds] = useState<Set<string>>(new Set())
   const { data: knownAuthors = [] } = useKnownAuthors()
   const { data: knownEditions = [] } = useKnownEditions()
+  const [dismissedAuthorMerges, setDismissedAuthorMerges] = useState<Set<string>>(new Set())
+
+  const authorMergeSuggestions = useMemo(
+    () => detectAuthorInitialMatches(parsed, existingAuthors || [])
+      .filter((s) => !dismissedAuthorMerges.has(s.id)),
+    [parsed, existingAuthors, dismissedAuthorMerges]
+  )
 
   const resetAll = () => {
     setPhase('input')
@@ -42,6 +50,7 @@ export function useSmartImportModalLogic({
     setEditingCell(null)
     setEditingAuthor(null)
     setMergedIds(new Set())
+    setDismissedAuthorMerges(new Set())
     setInjected(false)
     setInserting(false)
     setLinkDirection('master-cites-imported')
@@ -95,6 +104,31 @@ export function useSmartImportModalLogic({
       next.delete(item.id)
       return next
     })
+  }
+
+  const handleAuthorMerge = (suggestion: AuthorMergeSuggestion) => {
+    const { initialAuthor, fullAuthor, affectedItemIds } = suggestion
+    setParsed((prev) =>
+      prev.map((item) => {
+        if (!affectedItemIds.includes(item.id)) return item
+        const authors = item.authors?.length > 0
+          ? item.authors
+          : [{ firstName: item.firstName || '', lastName: item.lastName || '' }]
+        const updatedAuthors = authors.map((a) => {
+          if (normStr(a.firstName) === normStr(initialAuthor.firstName) && normStr(a.lastName) === normStr(initialAuthor.lastName)) {
+            return { firstName: fullAuthor.firstName, lastName: fullAuthor.lastName }
+          }
+          return a
+        })
+        const first = updatedAuthors[0] || {}
+        return { ...item, authors: updatedAuthors, firstName: first.firstName || '', lastName: first.lastName || '' }
+      })
+    )
+    setDismissedAuthorMerges((prev) => new Set([...prev, suggestion.id]))
+  }
+
+  const dismissAuthorMerge = (suggestionId: string) => {
+    setDismissedAuthorMerges((prev) => new Set([...prev, suggestionId]))
   }
 
   const toggleItem = (id: string) =>
@@ -267,6 +301,9 @@ export function useSmartImportModalLogic({
     editingAuthor,
     setEditingAuthor,
     mergedIds,
+    authorMergeSuggestions,
+    handleAuthorMerge,
+    dismissAuthorMerge,
     handleClose,
     goBack,
     handleSubmit,

@@ -1,5 +1,6 @@
-import { AlertTriangle, Check, Info, Link2, Loader2, Zap } from 'lucide-react'
+import { AlertTriangle, Check, GitMerge, Info, Link2, Loader2, X, Zap } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
+import type { AuthorMergeSuggestion } from '../smartImportModal.utils'
 import { SmartImportPreviewRow } from './SmartImportPreviewRow'
 
 export function SmartImportPreviewPhase({
@@ -19,6 +20,9 @@ export function SmartImportPreviewPhase({
   onAddCoAuthor,
   onUpdateAxes,
   onSwapFields,
+  authorMergeSuggestions,
+  onAuthorMerge,
+  onDismissAuthorMerge,
   masterNode,
   linkDirection,
   selectedCount,
@@ -58,9 +62,67 @@ export function SmartImportPreviewPhase({
         <span className="ml-auto text-[0.75rem] text-white/22">Cliquer pour modifier</span>
       </div>
 
+      {/* Author initial-match suggestions */}
+      {authorMergeSuggestions.length > 0 && (
+        <div className="mb-3 overflow-hidden rounded-xl border border-violet/20 bg-violet/3">
+          <div className="flex items-center gap-1.5 border-b border-violet/10 px-3 py-1.5 text-[0.72rem] font-semibold uppercase tracking-[1.3px] text-violet/45">
+            <GitMerge size={10} />
+            Auteur·ices à fusionner ?
+          </div>
+          {authorMergeSuggestions.map((s: AuthorMergeSuggestion) => (
+            <div
+              key={s.id}
+              className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-x-3 border-b border-violet/8 px-3 py-1.5 last:border-0"
+            >
+              {/* Initial author (left) */}
+              <div className="min-w-0 font-mono text-[0.82rem]">
+                <span className="text-white/45">{s.initialAuthor.firstName}</span>
+                {' '}
+                <span className="font-semibold text-white/65">{s.initialAuthor.lastName.toUpperCase()}</span>
+                <span className="ml-1.5 text-[0.7rem] text-white/20">
+                  ({s.affectedItemIds.length} ouvrage{s.affectedItemIds.length > 1 ? 's' : ''})
+                </span>
+              </div>
+
+              {/* Arrow */}
+              <span className="text-[0.8rem] text-violet/40">→</span>
+
+              {/* Full author (right) */}
+              <div className="min-w-0 font-mono text-[0.82rem]">
+                <span className="text-white/60">{s.fullAuthor.firstName}</span>
+                {' '}
+                <span className="font-semibold text-white/80">{s.fullAuthor.lastName.toUpperCase()}</span>
+                {s.existingAuthorId && (
+                  <span className="ml-1.5 text-[0.7rem] text-violet/35">existant</span>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  type="button"
+                  onClick={() => onAuthorMerge(s)}
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-violet/25 bg-violet/8 px-2 py-0.5 text-[0.72rem] font-semibold text-violet/70 transition-all hover:bg-violet/18 hover:text-violet/95"
+                >
+                  <GitMerge size={9} /> Fusionner
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => onDismissAuthorMerge(s.id)}
+                  className="cursor-pointer rounded p-0.5 text-white/20 transition-colors hover:text-white/50"
+                  title="Ignorer"
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Table */}
       <div className="mb-4 overflow-hidden rounded-xl border border-white/8">
-        <div className="grid grid-cols-[28px_minmax(80px,1fr)_20px_220px_20px_80px_140px_56px] border-b border-white/6 bg-white/2.5 px-3 py-1.5 text-[0.72rem] font-semibold uppercase tracking-[1.3px] text-white/28">
+        <div className="grid grid-cols-[28px_minmax(80px,0.6fr)_20px_220px_20px_minmax(80px,0.15fr)_minmax(130px,0.25fr)_56px] border-b border-white/6 bg-white/2.5 px-3 py-1.5 text-[0.72rem] font-semibold uppercase tracking-[1.3px] text-white/28">
           <span />
           <span>Titre</span>
           <span />
