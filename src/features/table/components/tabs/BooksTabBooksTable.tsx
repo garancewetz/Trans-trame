@@ -117,11 +117,11 @@ export function BooksTabBooksTable({
             <th className="w-40 px-3 py-2.5 text-left text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-white/32">
               Axes
             </th>
+            <TH col="linkCount" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="w-20">
+              Liens
+            </TH>
             <th className="w-[5.5rem] px-2 py-2.5 text-left text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-white/32">
               Graphe
-            </th>
-            <th className="w-20 px-3 py-2.5 text-left text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-white/32">
-              Liens
             </th>
           </tr>
 

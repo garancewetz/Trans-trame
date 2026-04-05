@@ -71,7 +71,6 @@ export function useGraphDataEntityCallbacks({
       setBooks((prev) => (prev.some((n) => n.id === sanitized.id) ? prev : [...prev, sanitized]))
     },
     onError: (err) => { devWarn('Erreur ajout livre', err); invalidate() },
-    onSuccess: invalidate,
   })
 
   const updateBookMutation = useMutation({
@@ -93,7 +92,6 @@ export function useGraphDataEntityCallbacks({
       )
     },
     onError: (err) => { devWarn('Erreur mise à jour livre', err); invalidate() },
-    onSuccess: invalidate,
   })
 
   const deleteBookMutation = useMutation({
@@ -108,7 +106,6 @@ export function useGraphDataEntityCallbacks({
       )
     },
     onError: (err) => { devWarn('Erreur suppression livre', err); invalidate() },
-    onSuccess: invalidate,
   })
 
   // ── Authors ──────────────────────────────────────────────────────────────────
@@ -124,7 +121,6 @@ export function useGraphDataEntityCallbacks({
       setAuthors((prev) => (prev.some((a) => a.id === sanitized.id) ? prev : [...prev, sanitized]))
     },
     onError: (err) => { devWarn('Erreur ajout auteur', err); invalidate() },
-    onSuccess: invalidate,
   })
 
   const updateAuthorMutation = useMutation({
@@ -139,7 +135,6 @@ export function useGraphDataEntityCallbacks({
       setAuthors((prev) => prev.map((a) => (a.id === sanitized.id ? sanitized : a)))
     },
     onError: (err) => { devWarn('Erreur mise à jour auteur', err); invalidate() },
-    onSuccess: invalidate,
   })
 
   const deleteAuthorMutation = useMutation({
@@ -159,7 +154,6 @@ export function useGraphDataEntityCallbacks({
       )
     },
     onError: (err) => { devWarn('Erreur suppression auteur', err); invalidate() },
-    onSuccess: invalidate,
   })
 
   // ── Links ────────────────────────────────────────────────────────────────────
@@ -181,7 +175,6 @@ export function useGraphDataEntityCallbacks({
       setLinks((prev) => [...prev, newLink])
     },
     onError: (err) => { devWarn('Erreur ajout lien', err); invalidate() },
-    onSuccess: invalidate,
   })
 
   const deleteLinkMutation = useMutation({
@@ -193,7 +186,6 @@ export function useGraphDataEntityCallbacks({
       setLinks((prev) => prev.filter((l) => l.id !== linkId))
     },
     onError: (err) => { devWarn('Erreur suppression lien', err); invalidate() },
-    onSuccess: invalidate,
   })
 
   const updateLinkMutation = useMutation({
@@ -205,7 +197,6 @@ export function useGraphDataEntityCallbacks({
       setLinks((prev) => prev.map((l) => (l.id === linkId ? { ...l, ...updatedFields } : l)))
     },
     onError: (err) => { devWarn('Erreur mise à jour lien', err); invalidate() },
-    onSuccess: invalidate,
   })
 
   // ── Public API (same interface as before) ────────────────────────────────────

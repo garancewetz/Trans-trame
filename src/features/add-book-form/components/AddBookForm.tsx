@@ -7,6 +7,7 @@ import { BookForm, type BookFormValues, type BookRecentDraft } from './BookForm'
 import { bookDefaultValues } from '../addBookFormDefaults'
 import { useAddBookFormActions } from '../hooks/useAddBookFormActions'
 import { LinkForm } from './LinkForm'
+import { useKnownEditions } from '@/features/table/hooks/useKnownData'
 
 /** Référence stable pour éviter un nouveau `[]` à chaque rendu (exhaustive-deps / useMemo). */
 const EMPTY_AUTHOR_IDS: string[] = []
@@ -50,6 +51,7 @@ export function AddBookForm({
   onRequestBack,
   authorsMap,
 }: AddBookFormProps) {
+  const { data: knownEditions = [] } = useKnownEditions()
   const bookPrefill = mode === 'book' && prefilledAuthor ? prefilledAuthor : null
 
   const bookForm = useForm<BookFormValues>({
@@ -192,6 +194,11 @@ export function AddBookForm({
           onRequestAddBook={onRequestAddBook}
           inputClass={inputClass}
           authorsMap={authorsMap}
+          nodes={nodes}
+          authors={authors}
+          onAddAuthor={onAddAuthor}
+          onInlineAddBook={onAddBook}
+          knownEditions={knownEditions}
         />
       )}
     </div>

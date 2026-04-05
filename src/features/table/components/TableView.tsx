@@ -57,15 +57,6 @@ export function TableView(props: TableViewProps) {
         setSearch={c.setSearch}
         setLinkSearch={c.setLinkSearch}
         setAuthorSearch={c.setAuthorSearch}
-        orphans={c.orphans}
-        setOrphanModal={c.setOrphanModal}
-        setOrphanConfirm={c.setOrphanConfirm}
-        duplicateGroups={c.duplicateGroups}
-        authorDuplicateGroups={c.authorDuplicateGroups}
-        setDedupeModal={c.setDedupeModal}
-        setDedupeConfirm={c.setDedupeConfirm}
-        setAuthorDedupeModal={c.setAuthorDedupeModal}
-        setAuthorDedupeConfirm={c.setAuthorDedupeConfirm}
         onSmartImport={() => c.setSmartImportModal(true)}
       />
 
@@ -98,6 +89,10 @@ export function TableView(props: TableViewProps) {
           onOpenWorkDetail={onOpenWorkDetail}
           initialAuthorIds={c.booksPrefill?.authorId ? [c.booksPrefill.authorId] : []}
           autoFocusTitle={Boolean(c.booksPrefill?.authorId)}
+          duplicateGroups={c.duplicateGroups}
+          onOpenDedupeModal={() => { c.setDedupeModal(true); c.setDedupeConfirm(false) }}
+          orphans={c.orphans}
+          onOpenOrphanModal={() => { c.setOrphanModal(true); c.setOrphanConfirm(false) }}
         />
       )}
 
@@ -118,6 +113,8 @@ export function TableView(props: TableViewProps) {
             c.setTab('books')
           }}
           focusAuthorId={c.focusAuthorId}
+          authorDuplicateGroups={c.authorDuplicateGroups}
+          onOpenAuthorDedupeModal={() => { c.setAuthorDedupeModal(true); c.setAuthorDedupeConfirm(false) }}
         />
       )}
 
@@ -148,6 +145,9 @@ export function TableView(props: TableViewProps) {
           onDeleteLink={(id) => onDeleteLink?.(id)}
           onFocusBookOnMap={onFocusBookOnMap}
           onOpenWorkDetail={onOpenWorkDetail}
+          authors={authors}
+          onAddAuthor={(a) => onAddAuthor?.(a)}
+          onAddBook={onAddBook}
         />
       )}
 

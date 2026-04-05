@@ -1,4 +1,4 @@
-import { ArrowLeft, Merge, Sparkles, Zap } from 'lucide-react'
+import { ArrowLeft, Zap } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 
 export function TableTopbar({
@@ -11,15 +11,6 @@ export function TableTopbar({
   setSearch,
   setLinkSearch,
   setAuthorSearch,
-  orphans,
-  setOrphanModal,
-  setOrphanConfirm,
-  duplicateGroups,
-  authorDuplicateGroups,
-  setDedupeModal,
-  setDedupeConfirm,
-  setAuthorDedupeModal,
-  setAuthorDedupeConfirm,
   onSmartImport,
 }) {
   return (
@@ -70,55 +61,6 @@ export function TableTopbar({
           onClick={onSmartImport}
         >
           Import Magique
-        </Button>
-
-        {tab === 'books' && (
-          <Button
-            variant="outline"
-            outlineWeight="faint"
-            tone="warning"
-            emphasis={duplicateGroups.length > 0}
-            icon={<Merge size={11} />}
-            onClick={() => { setDedupeModal(true); setDedupeConfirm(false) }}
-            disabled={duplicateGroups.length === 0}
-            type="button"
-            title={duplicateGroups.length > 0 ? `${duplicateGroups.length} groupe${duplicateGroups.length > 1 ? 's' : ''} de doublons` : 'Aucun doublon'}
-          >
-            Doublons
-            {duplicateGroups.length > 0 && <span className="tabular-nums">({duplicateGroups.length})</span>}
-          </Button>
-        )}
-
-        {tab === 'authors' && (
-          <Button
-            variant="outline"
-            outlineWeight="faint"
-            tone="warning"
-            emphasis={(authorDuplicateGroups || []).length > 0}
-            icon={<Merge size={11} />}
-            onClick={() => { setAuthorDedupeModal?.(true); setAuthorDedupeConfirm?.(false) }}
-            disabled={(authorDuplicateGroups || []).length === 0}
-            type="button"
-            title={(authorDuplicateGroups || []).length > 0 ? `${authorDuplicateGroups.length} groupe${authorDuplicateGroups.length > 1 ? 's' : ''} de doublons` : 'Aucun doublon'}
-          >
-            Doublons
-            {(authorDuplicateGroups || []).length > 0 && <span className="tabular-nums">({authorDuplicateGroups.length})</span>}
-          </Button>
-        )}
-
-        <Button
-          variant="outline"
-          outlineWeight="faint"
-          tone="orphan"
-          emphasis={orphans.length > 0}
-          icon={<Sparkles size={11} />}
-          onClick={() => { setOrphanModal(true); setOrphanConfirm(false) }}
-          disabled={orphans.length === 0}
-          type="button"
-          title={orphans.length > 0 ? `${orphans.length} ouvrage${orphans.length > 1 ? 's' : ''} sans lien` : 'Aucun orphelin'}
-        >
-          Orphelins
-          {orphans.length > 0 && <span className="tabular-nums">({orphans.length})</span>}
         </Button>
       </div>
     </div>

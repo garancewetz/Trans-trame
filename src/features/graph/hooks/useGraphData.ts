@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useIsMutating, useQueryClient } from '@tanstack/react-query'
 import type { Author, Book, BookId, Link } from '@/types/domain'
 import { devWarn } from '@/common/utils/logger'
 import {
@@ -26,7 +26,10 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
   const [authors, setAuthors] = useState<Author[]>([])
   const [links, setLinks] = useState<Link[]>([])
   const queryClient = useQueryClient()
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: DATASET_QUERY_KEY })
+  const invalidate = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: DATASET_QUERY_KEY }),
+    [queryClient]
+  )
 
   const axesColorsRef = useRef(axesColors)
   axesColorsRef.current = axesColors
@@ -39,15 +42,33 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
 
   // ── TanStack Query: initial load ─────────────────────────────────────────────
   const { data: datasetData, isLoading, isError } = useGraphDataset(axesColors)
+  const isMutating = useIsMutating()
 
-  // useLayoutEffect : appliquer le jeu de données avant le paint pour éviter un flash « not found »
-  // (ex. `/?book=…` alors que `nodes` est encore vide un frame après isLoading === false).
+  // Buffer dataset from server while mutations are in-flight to avoid overwriting
+  // optimistic state (e.g. authorIds set by addBookMutation) with stale DB data.
+  const pendingDataset = useRef<typeof datasetData>(undefined)
+
   useLayoutEffect(() => {
     if (!datasetData) return
+    if (isMutating > 0) {
+      pendingDataset.current = datasetData
+      return
+    }
+    pendingDataset.current = undefined
     setBooks(datasetData.books)
     setAuthors(datasetData.authors)
     setLinks(datasetData.links)
-  }, [datasetData])
+  }, [datasetData, isMutating])
+
+  // When all mutations settle, discard any stale buffered data and refetch fresh
+  const prevMutating = useRef(0)
+  useEffect(() => {
+    if (prevMutating.current > 0 && isMutating === 0) {
+      pendingDataset.current = undefined
+      invalidate()
+    }
+    prevMutating.current = isMutating
+  }, [isMutating, invalidate])
 
   // graphData : livres uniquement + liens citation (les auteurs sont des entités de données, pas des nœuds graphe)
   const graphData = useMemo(() => ({

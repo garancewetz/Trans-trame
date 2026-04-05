@@ -1,4 +1,4 @@
-import { Check, Merge, Sparkles, Trash2 } from 'lucide-react'
+import { Check, Merge, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { INPUT } from '../../tableConstants'
@@ -7,7 +7,6 @@ import { TableMergeAuthorsModal } from '../TableMergeAuthorsModal'
 import { AuthorTableRow } from '../AuthorTableRow'
 import { useAuthorsTabState } from '../../hooks/useAuthorsTabState'
 import type { Author, AuthorId, Book } from '@/types/domain'
-import { Plus } from 'lucide-react'
 
 type AuthorsTabProps = {
   authors: Author[]
@@ -20,6 +19,8 @@ type AuthorsTabProps = {
   onAddBookForAuthor?: (author: Author) => unknown
   focusAuthorId?: AuthorId | null
   onMergeAuthors?: (fromAuthorId: AuthorId, keepAuthorId: AuthorId) => unknown
+  authorDuplicateGroups?: Author[][]
+  onOpenAuthorDedupeModal?: () => void
 }
 
 export function AuthorsTab({
@@ -33,6 +34,8 @@ export function AuthorsTab({
   onAddBookForAuthor,
   focusAuthorId,
   onMergeAuthors,
+  authorDuplicateGroups = [],
+  onOpenAuthorDedupeModal,
 }: AuthorsTabProps) {
   const {
     editingCell, setEditingCell,
@@ -101,6 +104,24 @@ export function AuthorsTab({
             Migration terminée — {migrateResult.newAuthors} auteur{migrateResult.newAuthors > 1 ? 's' : ''} créé{migrateResult.newAuthors > 1 ? 's' : ''},
             {' '}{migrateResult.updatedBooks} ouvrage{migrateResult.updatedBooks > 1 ? 's' : ''} mis à jour.
           </p>
+        </div>
+      )}
+
+      {authorDuplicateGroups.length > 0 && (
+        <div className="flex shrink-0 items-center gap-2 border-b border-white/6 px-5 py-2">
+          <Button
+            variant="outline"
+            outlineWeight="faint"
+            tone="warning"
+            emphasis
+            icon={<Merge size={11} />}
+            onClick={onOpenAuthorDedupeModal}
+            type="button"
+            title={`${authorDuplicateGroups.length} groupe${authorDuplicateGroups.length > 1 ? 's' : ''} de doublons`}
+          >
+            Doublons
+            <span className="tabular-nums">({authorDuplicateGroups.length})</span>
+          </Button>
         </div>
       )}
 

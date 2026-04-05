@@ -59,6 +59,7 @@ export function useBooksTabTableDerived({
         case 'title': va = String(a.title || '').toLowerCase(); vb = String(b.title || '').toLowerCase(); break
         case 'lastName': va = bookAuthorDisplay(a, authorsMap).toLowerCase(); vb = bookAuthorDisplay(b, authorsMap).toLowerCase(); break
         case 'year': va = a.year || 0; vb = b.year || 0; break
+        case 'linkCount': va = linkCountByNode.get(a.id) || 0; vb = linkCountByNode.get(b.id) || 0; break
         default: va = ''; vb = ''
       }
       if (va < vb) return sortDir === 'asc' ? -1 : 1
@@ -66,7 +67,7 @@ export function useBooksTabTableDerived({
       return 0
     })
     return list
-  }, [filteredNodes, sortCol, sortDir, authorsMap])
+  }, [filteredNodes, sortCol, sortDir, authorsMap, linkCountByNode])
 
   const mergeNodes = useMemo(() => {
     if (selectedIds.size !== 2) return []

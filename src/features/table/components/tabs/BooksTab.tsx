@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { Merge, Sparkles } from 'lucide-react'
+import { Button } from '@/common/components/ui/Button'
 import { TableMergeModal } from '../TableMergeModal'
 import type { Author, AuthorId, Book, BookId, Link } from '@/types/domain'
 import { type Axis } from '@/common/utils/categories'
@@ -23,6 +25,10 @@ type BooksTabProps = {
   onOpenWorkDetail?: (bookId: BookId) => unknown
   initialAuthorIds?: AuthorId[]
   autoFocusTitle?: boolean
+  duplicateGroups?: Book[][]
+  onOpenDedupeModal?: () => void
+  orphans?: Book[]
+  onOpenOrphanModal?: () => void
 }
 
 export function BooksTab({
@@ -42,6 +48,10 @@ export function BooksTab({
   onOpenWorkDetail,
   initialAuthorIds = [],
   autoFocusTitle = false,
+  duplicateGroups = [],
+  onOpenDedupeModal,
+  orphans = [],
+  onOpenOrphanModal,
 }: BooksTabProps) {
   const [editingAuthorsNodeId, setEditingAuthorsNodeId] = useState<BookId | null>(null)
   const [sortCol, setSortCol] = useState('lastName')
@@ -162,6 +172,41 @@ export function BooksTab({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
+      {(duplicateGroups.length > 0 || orphans.length > 0) && (
+        <div className="flex shrink-0 items-center gap-2 border-b border-white/6 px-5 py-2">
+          {duplicateGroups.length > 0 && (
+            <Button
+              variant="outline"
+              outlineWeight="faint"
+              tone="warning"
+              emphasis
+              icon={<Merge size={11} />}
+              onClick={onOpenDedupeModal}
+              type="button"
+              title={`${duplicateGroups.length} groupe${duplicateGroups.length > 1 ? 's' : ''} de doublons`}
+            >
+              Doublons
+              <span className="tabular-nums">({duplicateGroups.length})</span>
+            </Button>
+          )}
+          {orphans.length > 0 && (
+            <Button
+              variant="outline"
+              outlineWeight="faint"
+              tone="orphan"
+              emphasis
+              icon={<Sparkles size={11} />}
+              onClick={onOpenOrphanModal}
+              type="button"
+              title={`${orphans.length} ouvrage${orphans.length > 1 ? 's' : ''} sans lien`}
+            >
+              Orphelins
+              <span className="tabular-nums">({orphans.length})</span>
+            </Button>
+          )}
+        </div>
+      )}
+
       <BooksTabSelectionBar
         selectedCount={selectedIds.size}
         bulkDeleteConfirm={bulkDeleteConfirm}

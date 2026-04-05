@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowLeft } from 'lucide-react'
+import { Controller } from 'react-hook-form'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
@@ -6,6 +7,7 @@ import { Textarea } from '@/common/components/ui/Textarea'
 import { FormField } from '@/common/components/ui/FormField'
 import { SelectedItemsPills } from '@/common/components/ui/SelectedItemsPills'
 import { NodePicker } from './NodePicker'
+import { EditionPicker } from './EditionPicker'
 
 export function LinkForm({
   onSubmit,
@@ -26,8 +28,13 @@ export function LinkForm({
   onRequestAddBook,
   inputClass,
   authorsMap,
+  nodes,
+  authors,
+  onAddAuthor,
+  onInlineAddBook,
+  knownEditions = [] as string[],
 }) {
-  const { register } = linkForm
+  const { register, control } = linkForm
   const removeTarget = (id) => setTargetIds((prev) => prev.filter((t) => t !== id))
 
   const linkCount = targetIds.length
@@ -68,6 +75,14 @@ export function LinkForm({
         addButtonVisible
         onRequestAddBook={onRequestAddBook}
         authorsMap={authorsMap}
+        nodes={nodes}
+        authors={authors}
+        onAddAuthor={onAddAuthor}
+        onInlineAddBook={(book) => {
+          onInlineAddBook?.(book)
+          setSourceId(book.id)
+          setSourceSearch('')
+        }}
       />
 
       <div className="-my-2 flex justify-center text-cyan/50">
@@ -102,6 +117,14 @@ export function LinkForm({
           addButtonVisible
           onRequestAddBook={onRequestAddBook}
           authorsMap={authorsMap}
+          nodes={nodes}
+          authors={authors}
+          onAddAuthor={onAddAuthor}
+          onInlineAddBook={(book) => {
+            onInlineAddBook?.(book)
+            setTargetIds((prev) => (prev.includes(book.id) ? prev : [...prev, book.id]))
+            setTargetSearch('')
+          }}
         />
       </div>
 
@@ -122,11 +145,18 @@ export function LinkForm({
       </FormField>
 
       <FormField label="Édition citée">
-        <TextInput
-          variant="default"
-          className={inputClass}
-          placeholder="Ex : Gallimard, coll. Folio, 1976"
-          {...register('edition')}
+        <Controller
+          name="edition"
+          control={control}
+          render={({ field }) => (
+            <EditionPicker
+              value={field.value}
+              onChange={field.onChange}
+              knownEditions={knownEditions}
+              className={inputClass}
+              placeholder="Ex : Gallimard, coll. Folio, 1976"
+            />
+          )}
         />
       </FormField>
 

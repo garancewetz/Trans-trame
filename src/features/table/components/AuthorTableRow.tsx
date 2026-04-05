@@ -1,4 +1,4 @@
-import { BookPlus, Check } from 'lucide-react'
+import { AlertTriangle, BookPlus, Check } from 'lucide-react'
 import { authorName } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
@@ -124,8 +124,15 @@ export function AuthorTableRow({
 
       {/* Compte ouvrages */}
       <td className="px-3 py-2">
-        <span className="font-mono text-[0.85rem] tabular-nums text-white/35">
-          {bookCount || <span className="text-white/18">—</span>}
+        <span className="inline-flex items-center gap-1.5 font-mono text-[0.85rem] tabular-nums text-white/35">
+          {bookCount > 0 ? (
+            bookCount
+          ) : (
+            <>
+              <AlertTriangle size={12} className="text-amber/70" />
+              <span className="text-amber/60">0</span>
+            </>
+          )}
         </span>
       </td>
 

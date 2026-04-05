@@ -96,6 +96,15 @@ option {
   animation: flash-row 2.5s ease-out forwards;
 }
 
+/* Pulse highlight for newly added items in checklists */
+@keyframes pulse-highlight {
+  0%, 100% { background: rgba(140, 220, 255, 0.08); }
+  50%      { background: rgba(140, 220, 255, 0.2); }
+}
+.animate-pulse-highlight {
+  animation: pulse-highlight 0.75s ease-in-out 2;
+}
+
 /* Override: remove decorative background layers */
 html, body, #root {
   background: var(--color-bg-base);
