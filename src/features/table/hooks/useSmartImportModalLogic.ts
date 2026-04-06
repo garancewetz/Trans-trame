@@ -94,7 +94,7 @@ export function useSmartImportModalLogic({
         target,
         citation_text: masterContext.trim(),
         edition: item.edition || '',
-        page: '',
+        page: item.page || '',
         context: '',
       })
     }
@@ -314,5 +314,6 @@ export function useSmartImportModalLogic({
     handleAddCoAuthor,
     handleUpdateAxes,
     handleSwapFields,
+    knownEditions,
   }
 }

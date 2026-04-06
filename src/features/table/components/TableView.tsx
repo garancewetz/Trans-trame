@@ -83,7 +83,7 @@ export function TableView(props: TableViewProps) {
           onDeleteBook={onDeleteBook}
           onLastEdited={onLastEdited}
           onMergeBooks={onMergeBooks}
-          onBookAdded={(title) => c.setAddedQueue((prev) => [title, ...prev].slice(0, 5))}
+          onBookAdded={() => {}}
           onOpenLinksForBook={c.openLinksForBook}
           onFocusAuthorInAuthorsTab={c.focusAuthorInAuthorsTab}
           onOpenWorkDetail={onOpenWorkDetail}
@@ -151,7 +151,7 @@ export function TableView(props: TableViewProps) {
         />
       )}
 
-      <TableFooter tab={c.tab} addedQueue={c.addedQueue} />
+      <TableFooter />
 
       <TableOrphanModal
         orphanModal={c.orphanModal}
@@ -191,7 +191,7 @@ export function TableView(props: TableViewProps) {
         onAddAuthor={onAddAuthor}
         onAddLink={onAddLink}
         onUpdateBook={onUpdateBook}
-        onQueued={(titles) => c.setAddedQueue((prev) => [...titles, ...prev].slice(0, 5))}
+        onQueued={() => {}}
         onImportComplete={onImportComplete}
       />
     </div>

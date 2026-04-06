@@ -72,6 +72,7 @@ export function SmartImportModal(props: SmartImportModalProps) {
           injected={c.injected}
           inserting={c.inserting}
           handleClose={c.handleClose}
+          knownEditions={c.knownEditions}
         />
       )}
     </Modal>

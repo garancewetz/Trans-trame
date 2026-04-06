@@ -1,6 +1,7 @@
 import { AlertTriangle, ArrowRightLeft, Check, GitMerge, Info, Plus } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
+import { EditionPicker } from '@/features/add-book-form/components/EditionPicker'
 import { AxisDots } from './TableSubcomponents'
 
 export function SmartImportPreviewRow({
@@ -20,9 +21,11 @@ export function SmartImportPreviewRow({
   onAddCoAuthor,
   onUpdateAxes,
   onSwapFields,
+  knownEditions,
 }) {
   const isEditTitle = editingCell?.id === item.id && editingCell?.field === 'title'
   const isEditEdition = editingCell?.id === item.id && editingCell?.field === 'edition'
+  const isEditPage = editingCell?.id === item.id && editingCell?.field === 'page'
   const isEditYear = editingCell?.id === item.id && editingCell?.field === 'year'
   const editingAuthorIndex = editingAuthor?.id === item.id ? editingAuthor.authorIndex : null
   const isMerged = mergedIds.has(item.id)
@@ -34,7 +37,7 @@ export function SmartImportPreviewRow({
     <div>
       <div
         className={[
-          'grid grid-cols-[28px_minmax(80px,0.6fr)_20px_220px_20px_minmax(80px,0.15fr)_minmax(130px,0.25fr)_56px] items-start gap-x-1 border-b border-white/4 px-3 py-1.5 transition-colors',
+          'group/row grid grid-cols-[28px_2fr_1.2fr_0.5fr_1fr_48px_54px] items-start gap-x-1 border-b border-white/4 px-3 py-1.5 transition-colors',
           isMerged ? 'opacity-40' : '',
           isExact && !isMerged ? 'bg-red/3' : '',
           isFuzzy && !isMerged ? 'bg-amber/3' : '',
@@ -64,7 +67,7 @@ export function SmartImportPreviewRow({
         )}
 
         {/* Title */}
-        <div className="min-w-0 pr-2">
+        <div className="relative min-w-0 pr-2">
           {isEditTitle ? (
             <TextInput
               variant="table"
@@ -93,15 +96,12 @@ export function SmartImportPreviewRow({
               {item.title || <em className="text-white/30">Sans titre</em>}
             </span>
           )}
-        </div>
-
-        {/* Swap title ↔ author */}
-        <div className="flex items-center justify-center">
-          {!isMerged && (
+          {/* Swap title ↔ author */}
+          {!isMerged && !isEditTitle && (
             <button
               type="button"
               onClick={() => onSwapFields?.(item.id, 'title')}
-              className="cursor-pointer rounded p-0.5 text-white/15 transition-colors hover:bg-white/8 hover:text-cyan/70"
+              className="absolute -right-0.5 top-0 cursor-pointer rounded p-0.5 text-white/0 transition-colors group-hover/row:text-white/15 group-hover/row:hover:bg-white/8 group-hover/row:hover:text-cyan/70"
               title="Inverser titre ↔ auteur"
             >
               <ArrowRightLeft size={10} />
@@ -110,7 +110,7 @@ export function SmartImportPreviewRow({
         </div>
 
         {/* Author */}
-        <div className="min-w-0 pr-1">
+        <div className="relative min-w-0 pr-1">
           <div className="flex flex-col gap-0.5 font-mono text-[0.8rem]">
             {(item.authors?.length > 0 ? item.authors : [{ firstName: item.firstName, lastName: item.lastName }]).map((a, i) => (
               editingAuthorIndex === i ? (
@@ -165,22 +165,19 @@ export function SmartImportPreviewRow({
               <Button
                 type="button"
                 onClick={() => onAddCoAuthor?.(item.id)}
-                className="mt-0.5 inline-flex w-fit cursor-pointer items-center gap-0.5 rounded border border-white/10 bg-white/4 px-1.5 py-0.5 text-[0.72rem] text-white/35 transition-colors hover:border-cyan/30 hover:bg-cyan/[0.07] hover:text-cyan/70"
+                className="mt-0.5 invisible inline-flex w-fit cursor-pointer items-center gap-0.5 rounded border border-white/10 bg-white/4 px-1.5 py-0.5 text-[0.72rem] text-white/35 transition-colors hover:border-cyan/30 hover:bg-cyan/[0.07] hover:text-cyan/70 group-hover/row:visible"
                 title="Ajouter un·e co-auteur·ice"
               >
                 <Plus size={9} /> co-auteur·ice
               </Button>
             )}
           </div>
-        </div>
-
-        {/* Swap author ↔ edition */}
-        <div className="flex items-center justify-center">
-          {!isMerged && (
+          {/* Swap author ↔ edition */}
+          {!isMerged && editingAuthorIndex == null && (
             <button
               type="button"
               onClick={() => onSwapFields?.(item.id, 'edition')}
-              className="cursor-pointer rounded p-0.5 text-white/15 transition-colors hover:bg-white/8 hover:text-cyan/70"
+              className="absolute -right-0.5 top-0 cursor-pointer rounded p-0.5 text-white/0 transition-colors group-hover/row:text-white/15 group-hover/row:hover:bg-white/8 group-hover/row:hover:text-cyan/70"
               title="Inverser auteur ↔ édition"
             >
               <ArrowRightLeft size={10} />
@@ -199,17 +196,18 @@ export function SmartImportPreviewRow({
         {/* Edition */}
         <div className="min-w-0">
           {isEditEdition ? (
-            <textarea
-              autoFocus
-              rows={1}
-              className="field-sizing-content w-full resize-none rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 font-mono text-[0.8rem] leading-snug text-white outline-none focus:border-cyan/35 focus:bg-white/8"
+            <EditionPicker
               value={editingValue}
-              onChange={(e) => setEditingValue(e.target.value)}
+              onChange={(v) => setEditingValue(v)}
+              knownEditions={knownEditions || []}
+              className="w-full rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 font-mono text-[0.8rem] leading-snug text-white outline-none focus:border-cyan/35 focus:bg-white/8"
+              placeholder="Édition"
+              autoFocus
               onBlur={commitCellEdit}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitCellEdit() }
                 if (e.key === 'Escape') setEditingCell(null)
               }}
+              onCommit={commitCellEdit}
             />
           ) : (
             <span
@@ -236,6 +234,38 @@ export function SmartImportPreviewRow({
           )}
         </div>
 
+        {/* Page */}
+        <div className="min-w-0">
+          {isEditPage ? (
+            <TextInput
+              variant="table"
+              autoFocus
+              className="w-full rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.8rem] focus:border-cyan/35 focus:bg-white/8"
+              value={editingValue}
+              onChange={(e) => setEditingValue(e.target.value)}
+              onBlur={commitCellEdit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitCellEdit()
+                if (e.key === 'Escape') setEditingCell(null)
+              }}
+            />
+          ) : (
+            <span
+              className={[
+                'cursor-text font-mono text-[0.8rem]',
+                item.page ? (isDup ? 'text-white/30' : 'text-white/42 hover:text-white/75') : 'text-white/15',
+              ].join(' ')}
+              onClick={() => {
+                if (isMerged) return
+                setEditingCell({ id: item.id, field: 'page' })
+                setEditingValue(item.page || '')
+              }}
+            >
+              {item.page || '—'}
+            </span>
+          )}
+        </div>
+
         {/* Year */}
         <div>
           {isEditYear ? (
@@ -258,17 +288,19 @@ export function SmartImportPreviewRow({
                 'flex cursor-text items-center gap-0.5 font-mono text-[0.8rem] tabular-nums',
                 item.yearMissing
                   ? 'text-amber/85'
-                  : isDup ? 'text-white/30' : 'text-white/42 hover:text-white/75',
+                  : item.year
+                    ? (isDup ? 'text-white/30' : 'text-white/42 hover:text-white/75')
+                    : 'text-white/15',
               ].join(' ')}
               title={item.yearMissing ? 'Année estimée — cliquer pour corriger' : undefined}
               onClick={() => {
                 if (isMerged) return
                 setEditingCell({ id: item.id, field: 'year' })
-                setEditingValue(String(item.year))
+                setEditingValue(item.year ? String(item.year) : '')
               }}
             >
               {item.yearMissing && <AlertTriangle size={9} className="shrink-0" />}
-              {item.year}
+              {item.year || '—'}
             </span>
           )}
         </div>
@@ -306,6 +338,7 @@ export function SmartImportPreviewRow({
           </Button>
         </div>
       )}
+
     </div>
   )
 }

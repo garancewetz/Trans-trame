@@ -9,7 +9,7 @@ export function isAuthorInitial(s: string): boolean {
   return /^[A-ZÀ-Ü]\.?$/.test(s.trim())
 }
 
-const NAME_PARTICLES = new Set([
+export const NAME_PARTICLES = new Set([
   'de', 'du', 'des', 'von', 'van', 'di', 'da', 'le', 'la', 'el', 'al',
   'ben', 'ibn', 'del', 'della', 'der', 'den', 'het', 'los', 'las',
 ])

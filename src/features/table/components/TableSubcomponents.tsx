@@ -263,12 +263,13 @@ export function NodeSearch({
   const results = useMemo(() => {
     const q = query.toLowerCase().trim()
     if (!q) return []
+    const qWords = q.split(/\s+/).filter(Boolean)
     return nodes
       .filter((n) => !exclude.includes(n.id))
-      .filter(
-        (n) =>
-          n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap || new Map()).toLowerCase().includes(q)
-      )
+      .filter((n) => {
+        const haystack = (n.title + ' ' + bookAuthorDisplay(n, authorsMap || new Map())).toLowerCase()
+        return qWords.every((w) => haystack.includes(w))
+      })
       .slice(0, 8)
   }, [query, nodes, exclude, authorsMap])
 

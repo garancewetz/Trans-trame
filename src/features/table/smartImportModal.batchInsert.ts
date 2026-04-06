@@ -78,7 +78,7 @@ export async function runSmartImportBatchInsert(params: {
         target,
         citation_text: masterContext.trim(),
         edition: r.edition || '',
-        page: '',
+        page: r.page || '',
         context: '',
       })
     })

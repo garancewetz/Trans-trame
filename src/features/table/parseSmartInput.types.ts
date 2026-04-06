@@ -15,6 +15,7 @@ export type ParsedBook = {
   lastName: string
   title: string
   edition: string
+  page: string
   year: number
   yearMissing: boolean
   axes: Axis[]

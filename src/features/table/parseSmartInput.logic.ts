@@ -3,6 +3,7 @@ import {
   capitalizeWord,
   isAuthorInitial,
   looksLikeName,
+  NAME_PARTICLES,
   parseAuthorString,
 } from './parseSmartInput.authorString'
 import { detectAxes } from './parseSmartInput.detectAxes'
@@ -71,39 +72,120 @@ function parseLine(rawLine: string, known: KnownDataLower) {
   let edition = ''
   let authors: ParsedAuthor[] = []
 
-  // ── 4. Multi-auteurs : "Pardo et Delor" / "Smith & Jones" / "A, B et C" ──
-  // Détecte une liste d'auteurs avant le titre (séparés par et|&|,)
-  const etMatch = cleaned.match(
-    /^([\w\s\-À-ÖØ-öø-ÿ]+?(?:,\s*[\w\s\-À-ÖØ-öø-ÿ]+?)*)\s+(?:et|&|and)\s+([\w\s\-À-ÖØ-öø-ÿ]+?)(?:,|$)/i
-  )
+  // ── 4. Colon separator (highest priority): "Auteur : Titre" ──────────────
+  // Also handles multi-authors before colon: "Ehrenreich et English : Titre"
+  // Priority: if " : " exists with valid author(s) before it, use this format.
+  const colonIdx = cleaned.indexOf(' : ')
+  if (colonIdx > 0) {
+    const beforeColon = cleaned.slice(0, colonIdx).trim()
+    const afterColon = cleaned.slice(colonIdx + 3).trim()
 
-  if (etMatch) {
-    // Tout ce qui est avant "et" peut contenir plusieurs auteurs séparés par ","
-    const beforeEt = etMatch[1]
-    const lastAuthor = etMatch[2].trim()
-    const fullMatch = etMatch[0]
+    // Check if beforeColon contains "et"/"&"/"and" → multi-author colon format
+    const etRe = /\s+(?:et|&|and)\s+/i
+    const etInAuthor = beforeColon.search(etRe)
 
-    // Segmenter les auteurs intermédiaires
-    const allRawAuthors = [
-      ...beforeEt.split(',').map((s) => s.trim()).filter(Boolean),
-      lastAuthor,
-    ]
+    if (etInAuthor > -1) {
+      const etWord = beforeColon.match(etRe)![0]
+      const allRawAuthors = [
+        ...beforeColon.slice(0, etInAuthor).split(',').map((s) => s.trim()).filter(Boolean),
+        beforeColon.slice(etInAuthor + etWord.length).trim(),
+      ]
+      const looksLikeAuthors = allRawAuthors.every(
+        (a) => a.split(/\s+/).length <= 5 && looksLikeName(a) && !isKnownEdition(a, known.editionsLower),
+      )
+      if (looksLikeAuthors) {
+        authors = allRawAuthors.map(parseAuthorString)
+        firstName = authors[0]?.firstName || ''
+        lastName = authors[0]?.lastName || ''
+      }
+    }
 
-    // Vérifier que chaque partie ressemble à un auteur (court, pas de sous-titre)
-    const looksLikeAuthors = allRawAuthors.every(
-      (a) => a.split(/\s+/).length <= 5 && looksLikeName(a) && !isKnownEdition(a, known.editionsLower),
-    )
+    // Single author before colon
+    if (!authors.length) {
+      const beforeWords = beforeColon.split(/\s+/).filter(Boolean)
+      if (
+        beforeWords.length >= 1 &&
+        beforeWords.length <= 5 &&
+        looksLikeName(beforeColon) &&
+        !isKnownEdition(beforeColon, known.editionsLower)
+      ) {
+        const parsed = parseAuthorString(beforeColon)
+        firstName = parsed.firstName
+        lastName = parsed.lastName
+        authors = [{ firstName, lastName }]
+      }
+    }
 
-    if (looksLikeAuthors) {
-      authors = allRawAuthors.map(parseAuthorString)
-      firstName = authors[0]?.firstName || ''
-      lastName = authors[0]?.lastName || ''
+    // Extract title from after colon (strip parenthetical publication info)
+    if (authors.length) {
+      const withoutParens = afterColon.replace(/\s*\([^)]*\)\s*\.?\s*$/, '').trim()
+      const titleParts = withoutParens.split(',').map((p) => p.trim())
+      title = (titleParts[0] || '').replace(/\.$/, '').trim()
+      if (titleParts.length > 1) {
+        const rest = titleParts.slice(1).join(', ').replace(/\.$/, '').trim()
+        if (rest) edition = rest
+      }
+    }
+  }
 
-      // Titre = tout ce qui suit le match auteurs
-      const afterAuthors = cleaned.slice(fullMatch.length).replace(/^[,.\s]+/, '').trim()
-      const afterParts = afterAuthors.split(',').map((p) => p.trim())
-      title = (afterParts[0] || '').replace(/\.$/, '').trim()
-      edition = afterParts.length > 1 ? afterParts.slice(1).join(', ').replace(/\.$/, '').trim() : ''
+  // ── 4b. Multi-auteurs sans colon : "Pardo et Delor, Titre" ─────────────
+  if (!authors.length) {
+    const etRe = /\s+(?:et|&|and)\s+/i
+    const etIdx = cleaned.search(etRe)
+
+    if (etIdx > -1) {
+      const etWord = cleaned.match(etRe)![0]
+      const beforeEt = cleaned.slice(0, etIdx).trim()
+      const afterEt = cleaned.slice(etIdx + etWord.length)
+
+      // Après "et", trouver où finit le dernier auteur (séparateur , . ;)
+      const sepMatch = afterEt.match(/[,.;]/)
+      let lastAuthorStr: string
+      let titleAndRest: string
+
+      if (sepMatch && sepMatch.index != null) {
+        lastAuthorStr = afterEt.slice(0, sepMatch.index).trim()
+        titleAndRest = afterEt.slice(sepMatch.index + 1).trim()
+      } else {
+        // Heuristique par mots (max 4 mots-nom)
+        const TITLE_STARTERS = new Set([
+          'le','la','les','un','une','des','du','au','aux',
+          'the','a','an','of','in','on','for','to',
+          'histoire','introduction','essai','traité','manuel',
+          'sociologie','philosophie','politique','critique','analyse',
+        ])
+        const words = afterEt.trim().split(/\s+/)
+        let cut = 0
+        for (let i = 0; i < Math.min(words.length, 4); i++) {
+          const w = words[i]
+          if (TITLE_STARTERS.has(w.toLowerCase())) break
+          if (/^[A-ZÀ-ÖØ-Ý]/.test(w) || NAME_PARTICLES.has(w.toLowerCase())) {
+            cut = i + 1
+          } else break
+        }
+        if (cut === 0) cut = 1
+        lastAuthorStr = words.slice(0, cut).join(' ')
+        titleAndRest = words.slice(cut).join(' ')
+      }
+
+      const allRawAuthors = [
+        ...beforeEt.split(',').map((s) => s.trim()).filter(Boolean),
+        lastAuthorStr,
+      ]
+
+      const looksLikeAuthors = allRawAuthors.every(
+        (a) => a.split(/\s+/).length <= 5 && looksLikeName(a) && !isKnownEdition(a, known.editionsLower),
+      )
+
+      if (looksLikeAuthors) {
+        authors = allRawAuthors.map(parseAuthorString)
+        firstName = authors[0]?.firstName || ''
+        lastName = authors[0]?.lastName || ''
+
+        const afterParts = titleAndRest.split(',').map((p) => p.trim())
+        title = (afterParts[0] || '').replace(/\.$/, '').trim()
+        edition = afterParts.length > 1 ? afterParts.slice(1).join(', ').replace(/\.$/, '').trim() : ''
+      }
     }
   }
 
@@ -240,6 +322,7 @@ function parseLine(rawLine: string, known: KnownDataLower) {
     authors: authors.filter((a) => a.firstName || a.lastName),
     title: title.trim(),
     edition: edition.trim(),
+    page: '',
     year: year || CURRENT_YEAR,
     yearMissing: !year,
     axes: narrowAxes(detectAxes(rawLine)),

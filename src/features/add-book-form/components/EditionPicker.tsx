@@ -6,12 +6,20 @@ export function EditionPicker({
   knownEditions,
   className,
   placeholder,
+  autoFocus,
+  onBlur,
+  onKeyDown,
+  onCommit,
 }: {
   value: string
   onChange: (value: string) => void
   knownEditions: string[]
   className?: string
   placeholder?: string
+  autoFocus?: boolean
+  onBlur?: () => void
+  onKeyDown?: (e: React.KeyboardEvent) => void
+  onCommit?: () => void
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement | null>(null)
@@ -39,19 +47,28 @@ export function EditionPicker({
       <input
         className={className}
         placeholder={placeholder}
+        autoFocus={autoFocus}
         value={value}
         onChange={(e) => {
           onChange(e.target.value)
           setOpen(true)
         }}
         onFocus={() => setOpen(true)}
+        onBlur={() => {
+          // Small delay so click on suggestion fires before blur commits
+          setTimeout(() => { if (!ref.current?.contains(document.activeElement)) onBlur?.() }, 150)
+        }}
         onKeyDown={(e) => {
-          if (e.key === 'Escape') setOpen(false)
-          if (e.key === 'Enter' && suggestions.length > 0 && open) {
-            e.preventDefault()
-            onChange(suggestions[0])
-            setOpen(false)
+          if (e.key === 'Escape') { setOpen(false); onKeyDown?.(e) }
+          if (e.key === 'Enter') {
+            if (suggestions.length > 0 && open) {
+              e.preventDefault()
+              onChange(suggestions[0])
+              setOpen(false)
+            }
+            onCommit?.()
           }
+          onKeyDown?.(e)
         }}
       />
       {open && suggestions.length > 0 && (

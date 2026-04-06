@@ -31,8 +31,6 @@ export function useTableViewController({
   }, [tab])
 
   const [search, setSearch] = useState('')
-  const [addedQueue, setAddedQueue] = useState<string[]>([])
-
   const [authorSearch, setAuthorSearch] = useState('')
   const [linkSearch, setLinkSearch] = useState('')
   const [linkSourceNode, setLinkSourceNode] = useState<Book | null>(
@@ -202,8 +200,6 @@ export function useTableViewController({
     setBooksPrefill,
     search,
     setSearch,
-    addedQueue,
-    setAddedQueue,
     authorSearch,
     setAuthorSearch,
     linkSearch,
