@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
+import { matchAllWords } from '@/common/utils/searchUtils'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { SearchResultsDropdown } from '@/common/components/ui/SearchResultsDropdown'
@@ -15,18 +16,16 @@ export function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
   const selectedTarget = useMemo(() => bookNodes.find((n) => n.id === target) || null, [bookNodes, target])
 
   const sourceResults = useMemo(() => {
-    const q = sourceSearch.toLowerCase().trim()
-    if (!q) return []
+    if (!sourceSearch.trim()) return []
     return bookNodes
-      .filter((n) => n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q))
+      .filter((n) => matchAllWords(sourceSearch, n.title + ' ' + bookAuthorDisplay(n, authorsMap)))
       .map((n) => ({ ...n, meta: bookAuthorDisplay(n, authorsMap) }))
   }, [bookNodes, sourceSearch, authorsMap])
 
   const targetResults = useMemo(() => {
-    const q = targetSearch.toLowerCase().trim()
-    if (!q) return []
+    if (!targetSearch.trim()) return []
     return bookNodes
-      .filter((n) => n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q))
+      .filter((n) => matchAllWords(targetSearch, n.title + ' ' + bookAuthorDisplay(n, authorsMap)))
       .map((n) => ({ ...n, meta: bookAuthorDisplay(n, authorsMap) }))
   }, [bookNodes, targetSearch, authorsMap])
 

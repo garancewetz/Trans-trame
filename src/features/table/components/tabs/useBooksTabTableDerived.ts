@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
+import { matchAllWords } from '@/common/utils/searchUtils'
 import { maybeNodeId } from '../../maybeNodeId'
 import type { Author, Book, BookId, Link } from '@/types/domain'
 
@@ -40,13 +41,10 @@ export function useBooksTabTableDerived({
   }, [links])
 
   const filteredNodes = useMemo(() => {
-    const q = String(search || '').toLowerCase().trim()
+    const q = String(search || '').trim()
     if (!q) return nodes
-    return (nodes || []).filter(
-      (n) =>
-        String(n.title || '').toLowerCase().includes(q) ||
-        bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q) ||
-        String(n.year || '').includes(q)
+    return (nodes || []).filter((n) =>
+      matchAllWords(q, [n.title || '', bookAuthorDisplay(n, authorsMap), String(n.year || '')].join(' '))
     )
   }, [nodes, search, authorsMap])
 

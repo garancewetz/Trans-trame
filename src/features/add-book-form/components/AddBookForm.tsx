@@ -3,6 +3,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import type { Author, AuthorId, Book, BookId, Link } from '@/types/domain'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
+import { matchAllWords } from '@/common/utils/searchUtils'
 import { BookForm, type BookFormValues, type BookRecentDraft } from './BookForm'
 import { bookDefaultValues } from '../addBookFormDefaults'
 import { useAddBookFormActions } from '../hooks/useAddBookFormActions'
@@ -104,18 +105,16 @@ export function AddBookForm({
   }, [nodes, targetIds])
 
   const sourceResults = useMemo(() => {
-    const q = sourceSearch.toLowerCase().trim()
-    if (!q) return []
-    return nodes.filter((n) => n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q))
+    if (!sourceSearch.trim()) return []
+    return nodes.filter((n) => matchAllWords(sourceSearch, n.title + ' ' + bookAuthorDisplay(n, authorsMap)))
   }, [sourceSearch, nodes, authorsMap])
 
   const targetResults = useMemo(() => {
-    const q = targetSearch.toLowerCase().trim()
-    if (!q) return []
+    if (!targetSearch.trim()) return []
     return nodes.filter(
       (n) =>
         !targetIds.includes(n.id) &&
-        (n.title.toLowerCase().includes(q) || bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q))
+        matchAllWords(targetSearch, n.title + ' ' + bookAuthorDisplay(n, authorsMap))
     )
   }, [targetSearch, nodes, targetIds, authorsMap])
 

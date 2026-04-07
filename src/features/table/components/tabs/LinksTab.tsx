@@ -24,6 +24,8 @@ type LinksTabProps = {
   authorsMap: Map<string, AuthorNode>
   linkSourceNode: Book | null
   setLinkSourceNode: (node: Book | null) => void
+  linkDirection: 'source' | 'cited'
+  setLinkDirection: (dir: 'source' | 'cited') => void
   setLinkCheckedIds: (next: Set<BookId>) => void
   checklistSearch: string
   setChecklistSearch: (value: string) => void
@@ -57,6 +59,8 @@ export function LinksTab({
   authorsMap,
   linkSourceNode,
   setLinkSourceNode,
+  linkDirection,
+  setLinkDirection,
   setLinkCheckedIds,
   checklistSearch,
   setChecklistSearch,
@@ -196,11 +200,34 @@ export function LinksTab({
       {/* ── Create mode ── */}
       {mode === 'create' && (
         <div className="flex flex-1 flex-col overflow-hidden">
-          {/* Source picker */}
+          {/* Direction toggle + picker */}
           <div className="shrink-0 border-b border-white/8 px-5 py-4">
-            <p className="mb-2 text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-white/30">
-              Livre source
-            </p>
+            <div className="mb-2 flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => { setLinkDirection('source'); setLinkCheckedIds(new Set<BookId>()) }}
+                className={[
+                  'rounded-md px-2 py-1 text-[0.72rem] font-semibold transition-all',
+                  linkDirection === 'source'
+                    ? 'bg-cyan/12 text-cyan/80'
+                    : 'text-white/30 hover:text-white/55',
+                ].join(' ')}
+              >
+                Livre source
+              </button>
+              <button
+                type="button"
+                onClick={() => { setLinkDirection('cited'); setLinkCheckedIds(new Set<BookId>()) }}
+                className={[
+                  'rounded-md px-2 py-1 text-[0.72rem] font-semibold transition-all',
+                  linkDirection === 'cited'
+                    ? 'bg-cyan/12 text-cyan/80'
+                    : 'text-white/30 hover:text-white/55',
+                ].join(' ')}
+              >
+                Livre cité
+              </button>
+            </div>
             <NodeSearch
               nodes={nodes}
               authorsMap={authorsMap}
@@ -210,7 +237,7 @@ export function LinksTab({
                 setLinkCheckedIds(new Set<BookId>())
                 setChecklistSearch('')
               }}
-              placeholder="Quel livre cite les autres ?…"
+              placeholder={linkDirection === 'source' ? 'Quel livre cite les autres ?…' : 'Quel livre est cité ?…'}
             />
             {linkSourceNode && (
               <button
@@ -232,7 +259,7 @@ export function LinksTab({
                   <TextInput
                     variant="table"
                     className="rounded-md border border-white/8 bg-white/4 py-1 pl-6 pr-2 text-[0.82rem] focus:border-cyan/[0.28]"
-                    placeholder="Filtrer les livres cités…"
+                    placeholder={linkDirection === 'source' ? 'Filtrer les livres cités…' : 'Filtrer les livres sources…'}
                     value={checklistSearch}
                     onChange={(e) => setChecklistSearch(e.target.value)}
                   />
@@ -240,7 +267,7 @@ export function LinksTab({
                 <p className="mt-1 text-[0.72rem] text-white/25">
                   {newLinksCount > 0
                     ? `${newLinksCount} nouveau${newLinksCount > 1 ? 'x' : ''} lien${newLinksCount > 1 ? 's' : ''} sélectionné${newLinksCount > 1 ? 's' : ''}`
-                    : 'Cochez les livres cités'}
+                    : linkDirection === 'source' ? 'Cochez les livres cités' : 'Cochez les livres qui le citent'}
                 </p>
               </div>
 
@@ -345,7 +372,9 @@ export function LinksTab({
           ) : (
             <div className="flex flex-1 items-center justify-center p-4">
               <p className="text-center font-mono text-[0.88rem] text-white/22">
-                Sélectionnez un livre source<br />pour voir les cibles disponibles
+                {linkDirection === 'source'
+                  ? <>Sélectionnez un livre source<br />pour voir les cibles disponibles</>
+                  : <>Sélectionnez un livre cité<br />pour voir les sources disponibles</>}
               </p>
             </div>
           )}

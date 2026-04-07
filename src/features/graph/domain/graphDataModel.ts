@@ -114,7 +114,7 @@ export function bookToDbRow(node: BookRowInput) {
     title: node.title ?? '',
     first_name: node.firstName || '',
     last_name: node.lastName || '',
-    year: node.year ?? null,
+    year: node.year !== '' && node.year != null ? node.year : null,
     description: node.description || '',
     axes: node.axes || [],
     original_title: node.originalTitle ?? null,

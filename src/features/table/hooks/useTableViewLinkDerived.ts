@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
+import { matchAllWords } from '@/common/utils/searchUtils'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 import type { Book, BookId, Link } from '@/types/domain'
 import { maybeNodeId } from '../maybeNodeId'
@@ -12,6 +13,7 @@ type Args = {
   links: Link[]
   authorsMap: Map<string, AuthorNode>
   linkSourceNode: Book | null
+  linkDirection: 'source' | 'cited'
   checklistSearch: string
   linkSearch: string
   linkCheckedIds: Set<BookId>
@@ -22,6 +24,7 @@ export function useTableViewLinkDerived({
   links,
   authorsMap,
   linkSourceNode,
+  linkDirection,
   checklistSearch,
   linkSearch,
   linkCheckedIds,
@@ -30,26 +33,29 @@ export function useTableViewLinkDerived({
 
   const existingTargetIds = useMemo(() => {
     if (!linkSourceNode) return new Set<BookId>()
-    const srcId = linkSourceNode.id
+    const selectedId = linkSourceNode.id
     const set = new Set<BookId>()
     links.forEach((l) => {
       const s = maybeNodeId(l.source)
       const t = maybeNodeId(l.target)
-      if (s === srcId && t) set.add(t)
+      if (linkDirection === 'source') {
+        if (s === selectedId && t) set.add(t)
+      } else {
+        if (t === selectedId && s) set.add(s)
+      }
     })
     return set
-  }, [links, linkSourceNode])
+  }, [links, linkSourceNode, linkDirection])
 
   const checklistNodes = useMemo(() => {
     if (!linkSourceNode) return []
-    const q = checklistSearch.toLowerCase().trim()
+    const q = checklistSearch.trim()
     return nodes
       .filter((n) => n.id !== linkSourceNode.id)
       .filter(
         (n) =>
           !q ||
-          n.title.toLowerCase().includes(q) ||
-          bookAuthorDisplay(n, authorsMap).toLowerCase().includes(q)
+          matchAllWords(checklistSearch, n.title + ' ' + bookAuthorDisplay(n, authorsMap))
       )
       .sort((a, b) => a.title.localeCompare(b.title))
   }, [nodes, linkSourceNode, checklistSearch, authorsMap])
@@ -60,16 +66,17 @@ export function useTableViewLinkDerived({
   )
 
   const filteredLinks = useMemo(() => {
-    const q = linkSearch.toLowerCase().trim()
-    if (!q) return resolvedLinks
-    return resolvedLinks.filter(
-      (l) =>
-        (l.sourceNode?.title || '').toLowerCase().includes(q) ||
-        (l.targetNode?.title || '').toLowerCase().includes(q) ||
-        bookAuthorDisplay(l.sourceNode || {}, authorsMap).toLowerCase().includes(q) ||
-        bookAuthorDisplay(l.targetNode || {}, authorsMap).toLowerCase().includes(q) ||
-        ((l.citation_text || l.context || '')).toLowerCase().includes(q)
-    )
+    if (!linkSearch.trim()) return resolvedLinks
+    return resolvedLinks.filter((l) => {
+      const haystack = [
+        l.sourceNode?.title || '',
+        l.targetNode?.title || '',
+        bookAuthorDisplay(l.sourceNode || {}, authorsMap),
+        bookAuthorDisplay(l.targetNode || {}, authorsMap),
+        l.citation_text || l.context || '',
+      ].join(' ')
+      return matchAllWords(linkSearch, haystack)
+    })
   }, [resolvedLinks, linkSearch, authorsMap])
 
   const groupedLinks = useMemo(() => {

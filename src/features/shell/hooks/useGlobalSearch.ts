@@ -34,9 +34,13 @@ export function useGlobalSearch({
   const searchResults = useMemo(() => {
     const q = normalize(globalSearch)
     if (!q) return []
+    const qWords = q.split(/\s+/).filter(Boolean)
 
     const matchedNodes = nodes
-      .filter((n) => normalize(n.title).includes(q) || normalize(bookAuthorDisplay(n, authors)).includes(q))
+      .filter((n) => {
+        const haystack = normalize(n.title) + ' ' + normalize(bookAuthorDisplay(n, authors))
+        return qWords.every((w) => haystack.includes(w))
+      })
       .map((node) => ({ kind: 'node' as const, node }))
 
     const bookCountByAuthor = new Map<string, number>()
@@ -47,7 +51,10 @@ export function useGlobalSearch({
     })
 
     const matchedAuthors = authors
-      .filter((a) => normalize(authorName(a)).includes(q))
+      .filter((a) => {
+        const haystack = normalize(authorName(a))
+        return qWords.every((w) => haystack.includes(w))
+      })
       .map((a) => ({
         kind: 'author' as const,
         authorId: a.id,

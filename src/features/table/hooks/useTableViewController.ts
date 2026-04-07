@@ -57,6 +57,7 @@ export function useTableViewController({
     setTab('authors')
   }
 
+  const [linkDirection, setLinkDirection] = useState<'source' | 'cited'>('source')
   const [checklistSearch, setChecklistSearch] = useState('')
   const [linkCheckedIds, setLinkCheckedIds] = useState<Set<BookId>>(new Set())
   const [editingLink, setEditingLink] = useState<null | { id: string; field: string }>(null)
@@ -86,6 +87,7 @@ export function useTableViewController({
     links,
     authorsMap,
     linkSourceNode,
+    linkDirection,
     checklistSearch,
     linkSearch,
     linkCheckedIds,
@@ -132,9 +134,11 @@ export function useTableViewController({
     if (!linkSourceNode || newLinksCount === 0) return
     linkCheckedIds.forEach((id) => {
       if (existingTargetIds.has(id) || id === linkSourceNode.id) return
+      const src = linkDirection === 'source' ? linkSourceNode.id : id
+      const tgt = linkDirection === 'source' ? id : linkSourceNode.id
       onAddLink?.({
-        source: linkSourceNode.id,
-        target: id,
+        source: src,
+        target: tgt,
         citation_text: '',
         edition: '',
         page: '',
@@ -206,6 +210,8 @@ export function useTableViewController({
     setLinkSearch,
     linkSourceNode,
     setLinkSourceNode,
+    linkDirection,
+    setLinkDirection,
     focusAuthorInAuthorsTab,
     checklistSearch,
     setChecklistSearch,

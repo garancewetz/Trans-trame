@@ -124,6 +124,8 @@ export function TableView(props: TableViewProps) {
           authorsMap={c.authorsMap}
           linkSourceNode={c.linkSourceNode}
           setLinkSourceNode={c.setLinkSourceNode}
+          linkDirection={c.linkDirection}
+          setLinkDirection={c.setLinkDirection}
           setLinkCheckedIds={c.setLinkCheckedIds}
           checklistSearch={c.checklistSearch}
           setChecklistSearch={c.setChecklistSearch}
