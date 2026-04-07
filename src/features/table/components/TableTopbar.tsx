@@ -91,7 +91,7 @@ function ExportButton() {
       onClick={handleExport}
       disabled={busy}
     >
-      {busy ? 'Export...' : 'Exporter JSON'}
+      {busy ? 'Export...' : 'Exporter tout'}
     </Button>
   )
 }

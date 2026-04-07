@@ -1,44 +1,18 @@
-// Les 9 catégories — TRANS TRAME
 import { CATEGORY_THEME as CATEGORY_THEME_CONSTANTS, type Axis } from './categories.constants'
 
 export const CATEGORY_THEME = CATEGORY_THEME_CONSTANTS
 export type { Axis }
 
-export const AXES_COLORS: Record<Axis, string> = {
-  ECOLOGY: CATEGORY_THEME.ECOLOGY.color,
-  QUEER: CATEGORY_THEME.QUEER.color,
-  AFROFEMINIST: CATEGORY_THEME.AFROFEMINIST.color,
-  ANTIRACISM: CATEGORY_THEME.ANTIRACISM.color,
-  CHILDHOOD: CATEGORY_THEME.CHILDHOOD.color,
-  HEALTH: CATEGORY_THEME.HEALTH.color,
-  CRIP: CATEGORY_THEME.CRIP.color,
-  HISTORY: CATEGORY_THEME.HISTORY.color,
-  INSTITUTIONAL: CATEGORY_THEME.INSTITUTIONAL.color,
-}
+// Dérivés automatiquement de CATEGORY_THEME — rien à maintenir à la main.
+export const AXES = Object.keys(CATEGORY_THEME) as Axis[]
 
-export const AXES_LABELS: Record<Axis, string> = {
-  ECOLOGY: CATEGORY_THEME.ECOLOGY.label,
-  QUEER: CATEGORY_THEME.QUEER.label,
-  AFROFEMINIST: CATEGORY_THEME.AFROFEMINIST.label,
-  ANTIRACISM: CATEGORY_THEME.ANTIRACISM.label,
-  CHILDHOOD: CATEGORY_THEME.CHILDHOOD.label,
-  HEALTH: CATEGORY_THEME.HEALTH.label,
-  CRIP: CATEGORY_THEME.CRIP.label,
-  HISTORY: CATEGORY_THEME.HISTORY.label,
-  INSTITUTIONAL: CATEGORY_THEME.INSTITUTIONAL.label,
-}
+export const AXES_COLORS = Object.fromEntries(
+  AXES.map((k) => [k, CATEGORY_THEME[k].color]),
+) as Record<Axis, string>
 
-export const AXES: Axis[] = [
-  'ECOLOGY',
-  'QUEER',
-  'AFROFEMINIST',
-  'ANTIRACISM',
-  'CHILDHOOD',
-  'HEALTH',
-  'CRIP',
-  'HISTORY',
-  'INSTITUTIONAL',
-]
+export const AXES_LABELS = Object.fromEntries(
+  AXES.map((k) => [k, CATEGORY_THEME[k].label]),
+) as Record<Axis, string>
 
 const AXIS_KEY_SET = new Set<string>(AXES)
 

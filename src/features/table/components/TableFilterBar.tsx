@@ -1,6 +1,18 @@
-import { Search, X } from 'lucide-react'
+import { useState } from 'react'
+import { Download, Search, X } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
+import {
+  exportBooks,
+  exportAuthors,
+  exportLinks,
+} from '@/features/graph/api/graphDataApi'
+
+const TAB_EXPORT: Record<string, { label: string; fn: () => Promise<void> }> = {
+  books: { label: 'Ouvrages', fn: exportBooks },
+  authors: { label: 'Auteur·ices', fn: exportAuthors },
+  links: { label: 'Liens', fn: exportLinks },
+}
 
 type TableFilterBarProps = {
   tab?: string
@@ -49,6 +61,36 @@ export function TableFilterBar({
           </Button>
         )}
       </div>
+
+      {tab && <ExportTabButton tab={tab} />}
     </div>
+  )
+}
+
+function ExportTabButton({ tab }: { tab: string }) {
+  const [busy, setBusy] = useState(false)
+  const cfg = TAB_EXPORT[tab]
+  if (!cfg) return null
+
+  const handleExport = async () => {
+    setBusy(true)
+    try {
+      await cfg.fn()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      outlineWeight="muted"
+      icon={<Download size={11} />}
+      onClick={handleExport}
+      disabled={busy}
+    >
+      {busy ? 'Export...' : `Exporter ${cfg.label}`}
+    </Button>
   )
 }

@@ -75,27 +75,71 @@ export function deleteBookAuthorsByBookId(bookId: string) {
   return supabase.from('book_authors').delete().eq('book_id', bookId)
 }
 
-// ── Full database export ──────────────────────────────────────────────────
+// ── JSON export helpers ──────────────────────────────────────────────────
 
-export async function exportFullDatabase() {
-  const { booksRes, authorsRes, linksRes, bookAuthorsRes } =
-    await loadGraphDataFromSupabase()
-
-  const payload = {
-    exportedAt: new Date().toISOString(),
-    books: booksRes.data ?? [],
-    authors: authorsRes.data ?? [],
-    links: linksRes.data ?? [],
-    bookAuthors: bookAuthorsRes.data ?? [],
-  }
-
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+function downloadJson(data: unknown, filename: string) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: 'application/json',
   })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `trans-trame-backup-${new Date().toISOString().slice(0, 10)}.json`
+  a.download = filename
   a.click()
   URL.revokeObjectURL(url)
+}
+
+function exportFilename(suffix: string) {
+  return `trans-trame-${suffix}-${new Date().toISOString().slice(0, 10)}.json`
+}
+
+export async function exportFullDatabase() {
+  const { booksRes, authorsRes, linksRes, bookAuthorsRes } =
+    await loadGraphDataFromSupabase()
+
+  downloadJson(
+    {
+      exportedAt: new Date().toISOString(),
+      books: booksRes.data ?? [],
+      authors: authorsRes.data ?? [],
+      links: linksRes.data ?? [],
+      bookAuthors: bookAuthorsRes.data ?? [],
+    },
+    exportFilename('backup'),
+  )
+}
+
+export async function exportBooks() {
+  const { booksRes, bookAuthorsRes } = await loadGraphDataFromSupabase()
+  downloadJson(
+    {
+      exportedAt: new Date().toISOString(),
+      books: booksRes.data ?? [],
+      bookAuthors: bookAuthorsRes.data ?? [],
+    },
+    exportFilename('ouvrages'),
+  )
+}
+
+export async function exportAuthors() {
+  const { authorsRes, bookAuthorsRes } = await loadGraphDataFromSupabase()
+  downloadJson(
+    {
+      exportedAt: new Date().toISOString(),
+      authors: authorsRes.data ?? [],
+      bookAuthors: bookAuthorsRes.data ?? [],
+    },
+    exportFilename('auteurs'),
+  )
+}
+
+export async function exportLinks() {
+  const { linksRes } = await loadGraphDataFromSupabase()
+  downloadJson(
+    {
+      exportedAt: new Date().toISOString(),
+      links: linksRes.data ?? [],
+    },
+    exportFilename('liens'),
+  )
 }

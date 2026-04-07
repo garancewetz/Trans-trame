@@ -5,7 +5,6 @@ import { TableFilterBar } from './TableFilterBar'
 import { BooksTab as TableBooksTab } from './tabs/BooksTab'
 import { AuthorsTab as TableAuthorsTab } from './tabs/AuthorsTab'
 import { LinksTab as TableLinksTab } from './tabs/LinksTab'
-import { TableFooter } from './TableFooter'
 import { TableOrphanModal } from './TableOrphanModal'
 import { TableDedupeModal } from './TableDedupeModal'
 import { TableAuthorDedupeModal } from './TableAuthorDedupeModal'
@@ -153,8 +152,6 @@ export function TableView(props: TableViewProps) {
           onSmartImportFrom={c.openSmartImportForBook}
         />
       )}
-
-      <TableFooter />
 
       <TableOrphanModal
         orphanModal={c.orphanModal}

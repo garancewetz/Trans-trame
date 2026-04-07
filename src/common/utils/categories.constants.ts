@@ -1,15 +1,20 @@
-// Les 9 catégories — TRANS TRAME
+
 export const CATEGORY_THEME = {
-  ECOLOGY: { color: '#00FF87', label: 'Ecology' },
-  QUEER: { color: '#FF2E97', label: 'Queer' },
-  AFROFEMINIST: { color: '#FFD700', label: 'Afrofeminist' },
-  ANTIRACISM: { color: '#FF5F1F', label: 'Antiracism' },
-  CHILDHOOD: { color: '#FF7F50', label: 'Childhood/Family' }, // Nouvelle catégorie
-  HEALTH: { color: '#9D50BB', label: 'Health/Trauma' },
-  CRIP: { color: '#8B4513', label: 'Crip Theory' },
-  HISTORY: { color: '#00D1FF', label: 'History' },
-  INSTITUTIONAL: { color: '#B0B0CC', label: 'Institutional' }, // Gris sombre "Béton"
+  // --- Tes catégories originales conservées ---
+  ANTIRACISM: { color: '#FF5F1F', label: 'Antiracism & Decolonial' }, // Dominante : Lao, Mazouz, Brahim
+  AFROFEMINIST: { color: '#FFD700', label: 'Afrofeminism' }, // Davis, hooks, Gumbs
+  QUEER: { color: '#FF2E97', label: 'Queer Studies' }, // Ahmed, Spina, Noyé
+  HEALTH: { color: '#9D50BB', label: 'Health & Trauma' }, // Williams, Boon, Smith
+  HISTORY: { color: '#00D1FF', label: 'History & Archives' }, // Aptheker, Lerner, Wells
+  INSTITUTIONAL: { color: '#B0B0CC', label: 'Institutional & Labor' }, // Engels, Oakley, Foner
+  CHILDHOOD: { color: '#FF7F50', label: 'Childhood & Family' }, // Balzac, hooks, Collectif
+  CRIP: { color: '#8B4513', label: 'Crip Theory' }, // Kafer, Bell, Landis
+  ECOLOGY: { color: '#00FF87', label: 'Ecology' }, // T.S. Eliot
+
+  // --- La catégorie suggérée pour compléter les 240 titres ---
+  BODY: { color: '#FF4D6D', label: 'Body & Sexology' }, // Pour la recherche scientifique (Brotto, Chivers, Laqueur)
 } as const
+
 
 export type Axis = keyof typeof CATEGORY_THEME
 
