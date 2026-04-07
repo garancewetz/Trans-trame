@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { toggleSetItem } from '@/common/utils/setUtils'
 import { buildAuthorsMap } from '@/common/utils/authorUtils'
 import type { Author, AuthorId, Book, BookId } from '@/types/domain'
 import type { TableViewProps } from '../tableViewTypes'
@@ -18,6 +19,7 @@ export function useTableViewController({
   onDeleteAuthor,
   initialTab = 'books',
   initialLinkSourceId = null,
+  initialFocusBookId = null,
 }: TableViewProps) {
   const visible = useTableViewVisibility()
 
@@ -74,6 +76,17 @@ export function useTableViewController({
   const [authorDedupeConfirm, setAuthorDedupeConfirm] = useState(false)
 
   const [smartImportModal, setSmartImportModal] = useState(false)
+  const [smartImportPrefilledBook, setSmartImportPrefilledBook] = useState<Book | null>(null)
+
+  const openSmartImportForBook = (node: Book) => {
+    setSmartImportPrefilledBook(node)
+    setSmartImportModal(true)
+  }
+
+  const closeSmartImport = () => {
+    setSmartImportModal(false)
+    setSmartImportPrefilledBook(null)
+  }
 
   const authorsMap = useMemo(() => buildAuthorsMap(authors), [authors])
 
@@ -122,12 +135,7 @@ export function useTableViewController({
 
   const toggleChecklist = (id: BookId) => {
     if (existingTargetIds.has(id)) return
-    setLinkCheckedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+    setLinkCheckedIds((prev) => toggleSetItem(prev, id))
   }
 
   const handleTisser = () => {
@@ -237,6 +245,9 @@ export function useTableViewController({
     setAuthorDedupeConfirm,
     smartImportModal,
     setSmartImportModal,
+    smartImportPrefilledBook,
+    openSmartImportForBook,
+    closeSmartImport,
     authorsMap,
     orphans,
     duplicateGroups,
@@ -253,5 +264,6 @@ export function useTableViewController({
     handleCleanOrphans,
     handleCleanDupes,
     handleMergeAuthorDupes,
+    initialFocusBookId,
   }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { BookCopy, Check, ChevronRight, Eye, Link2, Plus, Quote, Search, Trash2, X } from 'lucide-react'
+import { BookCopy, Check, ChevronRight, Eye, Link2, Plus, Quote, Search, Trash2, X, Zap } from 'lucide-react'
 import { bookAuthorDisplay, type AuthorNode } from '@/common/utils/authorUtils'
 import { AxesDot } from '@/common/components/ui/AxesDot'
 import { Button } from '@/common/components/ui/Button'
@@ -50,6 +50,7 @@ type LinksTabProps = {
   authors?: Author[]
   onAddAuthor?: (author: Author) => void
   onAddBook?: (book: Partial<Book> & Pick<Book, 'id' | 'title'>) => void | PromiseLike<unknown>
+  onSmartImportFrom?: (book: Book) => void
 }
 
 type Mode = 'list' | 'create'
@@ -85,6 +86,7 @@ export function LinksTab({
   authors,
   onAddAuthor,
   onAddBook,
+  onSmartImportFrom,
 }: LinksTabProps) {
   const [mode, setMode] = useState<Mode>('list')
   const [inlineOpen, setInlineOpen] = useState(false)
@@ -191,6 +193,7 @@ export function LinksTab({
                   setChecklistSearch('')
                   switchToCreate()
                 } : undefined}
+                onSmartImportFrom={group.sourceNode && onSmartImportFrom ? () => onSmartImportFrom(group.sourceNode!) : undefined}
               />
             ))
           )}
@@ -399,6 +402,7 @@ function SourceGroup({
   onDeleteLink,
   onOpenWorkDetail,
   onTisserFrom,
+  onSmartImportFrom,
 }: {
   group: LinkGroup
   authorsMap: Map<string, AuthorNode>
@@ -412,6 +416,7 @@ function SourceGroup({
   onDeleteLink: (linkId: string) => void
   onOpenWorkDetail?: (bookId: BookId) => void
   onTisserFrom?: () => void
+  onSmartImportFrom?: () => void
 }) {
   return (
     <div className="mb-4">
@@ -436,6 +441,16 @@ function SourceGroup({
           >
             <Plus size={10} />
             Tisser
+          </button>
+        )}
+        {onSmartImportFrom && (
+          <button
+            type="button"
+            onClick={onSmartImportFrom}
+            className="shrink-0 inline-flex items-center gap-1 rounded-md border border-amber/20 bg-amber/6 px-2 py-0.5 font-mono text-[0.72rem] text-amber/60 transition-all hover:border-amber/40 hover:bg-amber/12 hover:text-amber/90"
+          >
+            <Zap size={10} />
+            Import
           </button>
         )}
       </div>
@@ -535,7 +550,7 @@ function LinkRow({
         {/* Inline meta preview (collapsed) */}
         {!isExpanded && hasMeta && (
           <span className="hidden shrink-0 items-center gap-2 font-mono text-[0.72rem] text-white/25 sm:flex">
-            {link.page && <span className="tabular-nums">p.{link.page}</span>}
+            {link.page && <span className="tabular-nums">{link.page}</span>}
             {link.edition && (
               <span className="flex items-center gap-0.5"><BookCopy size={8} />{link.edition}</span>
             )}
@@ -653,7 +668,7 @@ function LinkRow({
                     setEditingLinkValue(link.page || '')
                   }}
                 >
-                  {link.page || 'p.—'}
+                  {link.page || '—'}
                 </span>
               )}
             </div>

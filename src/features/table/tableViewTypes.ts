@@ -19,6 +19,7 @@ export type TableViewProps = {
   onLastEdited?: (bookId: BookId) => void
   initialTab?: 'books' | 'authors' | 'links'
   initialLinkSourceId?: BookId | null
+  initialFocusBookId?: BookId | null
   onImportComplete?: (nodeIds: BookId[]) => void
   /** Ferme le tableau, sélectionne l'ouvrage sur la carte et ouvre le panneau détail. */
   onFocusBookOnMap?: (bookId: BookId) => void

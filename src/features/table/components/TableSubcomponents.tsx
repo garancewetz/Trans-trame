@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useFloating, flip, shift, offset, autoUpdate, useClick, useDismiss, useInteractions } from '@floating-ui/react'
 import { ChevronDown, ChevronUp, Plus } from 'lucide-react'
 import type { Author, AuthorId, Book, BookId } from '@/types/domain'
 import type { AuthorNode } from '@/common/utils/authorUtils'
@@ -16,23 +17,24 @@ export function AxisDots({
   onChange: (axes: Axis[]) => void
 }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement | null>(null)
 
-  useEffect(() => {
-    function onDown(e: PointerEvent) {
-      const el = ref.current
-      const t = e.target
-      if (!el || !(t instanceof Node) || !el.contains(t)) setOpen(false)
-    }
-    document.addEventListener('pointerdown', onDown)
-    return () => document.removeEventListener('pointerdown', onDown)
-  }, [])
+  const { refs, floatingStyles, context } = useFloating({
+    open,
+    onOpenChange: setOpen,
+    placement: 'bottom-start',
+    middleware: [offset(4), flip(), shift({ padding: 8 })],
+    whileElementsMounted: autoUpdate,
+  })
+
+  const click = useClick(context)
+  const dismiss = useDismiss(context)
+  const { getReferenceProps, getFloatingProps } = useInteractions([click, dismiss])
 
   const toggle = (axis: Axis) =>
     onChange(axes.includes(axis) ? axes.filter((a) => a !== axis) : [...axes, axis])
 
   return (
-    <div className="relative flex flex-wrap items-center gap-1" ref={ref}>
+    <div className="flex flex-wrap items-center gap-1">
       {axes.map((axis) => (
         <Button
           key={axis}
@@ -45,15 +47,21 @@ export function AxisDots({
           {AXES_LABELS[axis] ?? axis}
         </Button>
       ))}
-      <Button
+      <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        ref={refs.setReference}
+        {...getReferenceProps()}
         className="inline-flex h-4 w-4 cursor-pointer items-center justify-center rounded-full border border-white/15 text-white/30 transition-colors hover:border-white/35 hover:text-white/60"
       >
         <Plus size={8} />
-      </Button>
+      </button>
       {open && (
-        <div className="absolute left-0 top-[calc(100%+4px)] z-50 flex flex-wrap gap-1 rounded-lg border border-white/10 bg-bg-overlay/98 p-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
+        <div
+          ref={refs.setFloating}
+          style={floatingStyles}
+          {...getFloatingProps()}
+          className="z-50 flex flex-wrap gap-1 rounded-lg border border-white/10 bg-bg-overlay/98 p-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
+        >
           {AXES.map((axis) => {
             const active = axes.includes(axis)
             return (
@@ -246,21 +254,33 @@ export function NodeSearch({
   placeholder: string
   exclude?: BookId[]
 }) {
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(value?.title ?? '')
+  const [isSearching, setIsSearching] = useState(false)
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement | null>(null)
+
+  // Sync display when value changes externally (selection or clear)
+  useEffect(() => {
+    if (!isSearching) setQuery(value?.title ?? '')
+  }, [value, isSearching])
 
   useEffect(() => {
     function onDown(e: PointerEvent) {
       const el = ref.current
       const t = e.target
-      if (!el || !(t instanceof Node) || !el.contains(t)) setOpen(false)
+      if (!el || !(t instanceof Node) || !el.contains(t)) {
+        setOpen(false)
+        setIsSearching(false)
+        // Restore display value if user clicked away without selecting
+        setQuery(value?.title ?? '')
+      }
     }
     document.addEventListener('pointerdown', onDown)
     return () => document.removeEventListener('pointerdown', onDown)
-  }, [])
+  }, [value])
 
   const results = useMemo(() => {
+    if (!isSearching) return []
     const q = query.toLowerCase().trim()
     if (!q) return []
     const qWords = q.split(/\s+/).filter(Boolean)
@@ -271,25 +291,18 @@ export function NodeSearch({
         return qWords.every((w) => haystack.includes(w))
       })
       .slice(0, 8)
-  }, [query, nodes, exclude, authorsMap])
+  }, [query, isSearching, nodes, exclude, authorsMap])
 
   return (
     <div className="relative" ref={ref}>
       <TextInput
         variant="table"
         className={INPUT}
-        placeholder={value ? '' : placeholder}
+        placeholder={placeholder}
         value={query}
-        onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
-        onFocus={() => setOpen(true)}
+        onChange={(e) => { setQuery(e.target.value); setIsSearching(true); setOpen(true) }}
+        onFocus={() => { setIsSearching(true); setOpen(true) }}
       />
-      {value && !query && (
-        <div className="pointer-events-none absolute inset-0 flex items-center px-2">
-          <span className="truncate font-mono text-[0.88rem] italic text-white/65">
-            {value.title}
-          </span>
-        </div>
-      )}
       {open && results.length > 0 && (
         <div className="absolute left-0 right-0 top-[calc(100%+3px)] z-50 max-h-[180px] overflow-y-auto rounded-lg border border-white/10 bg-bg-overlay/98 p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl">
           {results.map((n) => (
@@ -297,7 +310,7 @@ export function NodeSearch({
               key={n.id}
               type="button"
               className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-white/8"
-              onClick={() => { onSelect(n); setQuery(''); setOpen(false) }}
+              onClick={() => { onSelect(n); setQuery(n.title); setIsSearching(false); setOpen(false) }}
             >
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: axesGradient(n.axes) }} />
               <span>

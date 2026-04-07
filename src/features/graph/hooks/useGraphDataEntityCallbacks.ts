@@ -1,5 +1,6 @@
 import { useCallback, type RefObject, type Dispatch, type SetStateAction } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import type { Author, Book, Link } from '@/types/domain'
 import { devWarn } from '@/common/utils/logger'
 import {
@@ -70,7 +71,7 @@ export function useGraphDataEntityCallbacks({
       const sanitized = sanitizeBook({ ...book, type: 'book' as const }, axesColorsRef.current!)
       setBooks((prev) => (prev.some((n) => n.id === sanitized.id) ? prev : [...prev, sanitized]))
     },
-    onError: (err) => { devWarn('Erreur ajout livre', err); invalidate() },
+    onError: (err) => { devWarn('Erreur ajout livre', err); toast.error("Impossible d'ajouter le livre"); invalidate() },
   })
 
   const updateBookMutation = useMutation({
@@ -91,7 +92,7 @@ export function useGraphDataEntityCallbacks({
         })
       )
     },
-    onError: (err) => { devWarn('Erreur mise à jour livre', err); invalidate() },
+    onError: (err) => { devWarn('Erreur mise à jour livre', err); toast.error('Impossible de modifier le livre'); invalidate() },
   })
 
   const deleteBookMutation = useMutation({
@@ -105,7 +106,7 @@ export function useGraphDataEntityCallbacks({
         prev.filter((l) => normalizeId(l.source) !== nodeId && normalizeId(l.target) !== nodeId)
       )
     },
-    onError: (err) => { devWarn('Erreur suppression livre', err); invalidate() },
+    onError: (err) => { devWarn('Erreur suppression livre', err); toast.error('Impossible de supprimer le livre'); invalidate() },
   })
 
   // ── Authors ──────────────────────────────────────────────────────────────────
@@ -120,7 +121,7 @@ export function useGraphDataEntityCallbacks({
       const sanitized = sanitizeAuthor({ ...author, type: 'author' as const }, axesColorsRef.current!)
       setAuthors((prev) => (prev.some((a) => a.id === sanitized.id) ? prev : [...prev, sanitized]))
     },
-    onError: (err) => { devWarn('Erreur ajout auteur', err); invalidate() },
+    onError: (err) => { devWarn('Erreur ajout auteur', err); toast.error("Impossible d'ajouter l'auteur"); invalidate() },
   })
 
   const updateAuthorMutation = useMutation({
@@ -134,7 +135,7 @@ export function useGraphDataEntityCallbacks({
       const sanitized = sanitizeAuthor({ ...updatedAuthor, type: 'author' as const }, axesColorsRef.current!)
       setAuthors((prev) => prev.map((a) => (a.id === sanitized.id ? sanitized : a)))
     },
-    onError: (err) => { devWarn('Erreur mise à jour auteur', err); invalidate() },
+    onError: (err) => { devWarn('Erreur mise à jour auteur', err); toast.error("Impossible de modifier l'auteur"); invalidate() },
   })
 
   const deleteAuthorMutation = useMutation({
@@ -152,7 +153,7 @@ export function useGraphDataEntityCallbacks({
         )
       )
     },
-    onError: (err) => { devWarn('Erreur suppression auteur', err); invalidate() },
+    onError: (err) => { devWarn('Erreur suppression auteur', err); toast.error("Impossible de supprimer l'auteur"); invalidate() },
   })
 
   // ── Links ────────────────────────────────────────────────────────────────────
@@ -173,7 +174,7 @@ export function useGraphDataEntityCallbacks({
     onMutate: (newLink) => {
       setLinks((prev) => [...prev, newLink])
     },
-    onError: (err) => { devWarn('Erreur ajout lien', err); invalidate() },
+    onError: (err) => { devWarn('Erreur ajout lien', err); toast.error("Impossible d'ajouter le lien"); invalidate() },
   })
 
   const deleteLinkMutation = useMutation({
@@ -184,7 +185,7 @@ export function useGraphDataEntityCallbacks({
     onMutate: (linkId) => {
       setLinks((prev) => prev.filter((l) => l.id !== linkId))
     },
-    onError: (err) => { devWarn('Erreur suppression lien', err); invalidate() },
+    onError: (err) => { devWarn('Erreur suppression lien', err); toast.error('Impossible de supprimer le lien'); invalidate() },
   })
 
   const updateLinkMutation = useMutation({
@@ -195,7 +196,7 @@ export function useGraphDataEntityCallbacks({
     onMutate: ({ linkId, updatedFields }) => {
       setLinks((prev) => prev.map((l) => (l.id === linkId ? { ...l, ...updatedFields } : l)))
     },
-    onError: (err) => { devWarn('Erreur mise à jour lien', err); invalidate() },
+    onError: (err) => { devWarn('Erreur mise à jour lien', err); toast.error('Impossible de modifier le lien'); invalidate() },
   })
 
   // ── Public API ──────────────────────────────────────────────────────────────

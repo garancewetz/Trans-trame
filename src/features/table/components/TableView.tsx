@@ -83,7 +83,6 @@ export function TableView(props: TableViewProps) {
           onDeleteBook={onDeleteBook}
           onLastEdited={onLastEdited}
           onMergeBooks={onMergeBooks}
-          onBookAdded={() => {}}
           onOpenLinksForBook={c.openLinksForBook}
           onFocusAuthorInAuthorsTab={c.focusAuthorInAuthorsTab}
           onOpenWorkDetail={onOpenWorkDetail}
@@ -93,6 +92,7 @@ export function TableView(props: TableViewProps) {
           onOpenDedupeModal={() => { c.setDedupeModal(true); c.setDedupeConfirm(false) }}
           orphans={c.orphans}
           onOpenOrphanModal={() => { c.setOrphanModal(true); c.setOrphanConfirm(false) }}
+          focusBookId={c.initialFocusBookId}
         />
       )}
 
@@ -150,6 +150,7 @@ export function TableView(props: TableViewProps) {
           authors={authors}
           onAddAuthor={(a) => onAddAuthor?.(a)}
           onAddBook={onAddBook}
+          onSmartImportFrom={c.openSmartImportForBook}
         />
       )}
 
@@ -185,7 +186,7 @@ export function TableView(props: TableViewProps) {
 
       <SmartImportModal
         open={c.smartImportModal}
-        onClose={() => c.setSmartImportModal(false)}
+        onClose={c.closeSmartImport}
         existingNodes={nodes}
         existingAuthors={authors}
         authorsMap={c.authorsMap}
@@ -193,8 +194,8 @@ export function TableView(props: TableViewProps) {
         onAddAuthor={onAddAuthor}
         onAddLink={onAddLink}
         onUpdateBook={onUpdateBook}
-        onQueued={() => {}}
         onImportComplete={onImportComplete}
+        initialMasterNode={c.smartImportPrefilledBook}
       />
     </div>
   )

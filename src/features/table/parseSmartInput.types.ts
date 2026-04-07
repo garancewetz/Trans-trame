@@ -16,11 +16,12 @@ export type ParsedBook = {
   title: string
   edition: string
   page: string
-  year: number
+  year: number | null
   yearMissing: boolean
   axes: Axis[]
   isDuplicate: boolean
   isFuzzyDuplicate: boolean
+  citation: string
   existingNode: ExistingNode | null
   raw: string
 }

@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRightLeft, Check, GitMerge, Info, Plus } from 'lucide-react'
+import { AlertTriangle, ArrowRightLeft, Check, GitMerge, Info, Link2, MessageSquare, Plus, X } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { EditionPicker } from '@/features/add-book-form/components/EditionPicker'
@@ -18,15 +18,20 @@ export function SmartImportPreviewRow({
   setEditingCell,
   commitAuthorEdit,
   handleMerge,
+  handleUnmerge,
+  onDismissDuplicate,
   onAddCoAuthor,
   onUpdateAxes,
   onSwapFields,
+  onUpdateField,
+  masterNode,
   knownEditions,
 }) {
   const isEditTitle = editingCell?.id === item.id && editingCell?.field === 'title'
   const isEditEdition = editingCell?.id === item.id && editingCell?.field === 'edition'
   const isEditPage = editingCell?.id === item.id && editingCell?.field === 'page'
   const isEditYear = editingCell?.id === item.id && editingCell?.field === 'year'
+  const isEditCitation = editingCell?.id === item.id && editingCell?.field === 'citation'
   const editingAuthorIndex = editingAuthor?.id === item.id ? editingAuthor.authorIndex : null
   const isMerged = mergedIds.has(item.id)
   const isExact = item.isDuplicate
@@ -37,8 +42,8 @@ export function SmartImportPreviewRow({
     <div>
       <div
         className={[
-          'group/row grid grid-cols-[28px_2fr_1.2fr_0.5fr_1fr_48px_54px] items-start gap-x-1 border-b border-white/4 px-3 py-1.5 transition-colors',
-          isMerged ? 'opacity-40' : '',
+          'group/row grid grid-cols-[28px_2fr_1.2fr_0.5fr_1fr_48px_28px_54px] items-start gap-x-1 border-b border-white/4 px-3 py-1.5 transition-colors',
+          '',
           isExact && !isMerged ? 'bg-red/3' : '',
           isFuzzy && !isMerged ? 'bg-amber/3' : '',
           !isDup && checked.has(item.id) ? 'bg-white/2' : '',
@@ -75,7 +80,7 @@ export function SmartImportPreviewRow({
               className="w-full rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.85rem] focus:border-cyan/35 focus:bg-white/8"
               value={editingValue}
               onChange={(e) => setEditingValue(e.target.value)}
-              onBlur={commitCellEdit}
+              onBlur={() => commitCellEdit()}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') commitCellEdit()
                 if (e.key === 'Escape') setEditingCell(null)
@@ -243,7 +248,7 @@ export function SmartImportPreviewRow({
               className="w-full rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.8rem] focus:border-cyan/35 focus:bg-white/8"
               value={editingValue}
               onChange={(e) => setEditingValue(e.target.value)}
-              onBlur={commitCellEdit}
+              onBlur={() => commitCellEdit()}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') commitCellEdit()
                 if (e.key === 'Escape') setEditingCell(null)
@@ -266,6 +271,36 @@ export function SmartImportPreviewRow({
           )}
         </div>
 
+        {/* Citation bubble */}
+        <div className="flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => {
+              if (isMerged) return
+              if (isEditCitation) {
+                setEditingCell(null)
+              } else {
+                setEditingCell({ id: item.id, field: 'citation' })
+                setEditingValue(item.citation || '')
+              }
+            }}
+            className={[
+              'group/cit relative flex h-5 w-5 cursor-pointer items-center justify-center rounded transition-colors',
+              item.citation
+                ? 'text-cyan/60 hover:text-cyan/90'
+                : 'text-white/12 hover:text-white/35',
+            ].join(' ')}
+            title={item.citation || 'Ajouter une citation'}
+          >
+            <MessageSquare size={11} className={item.citation ? 'fill-cyan/20' : ''} />
+            {item.citation && (
+              <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 max-w-48 -translate-x-1/2 truncate whitespace-nowrap rounded-md border border-white/10 bg-bg-overlay/95 px-2 py-1 text-[0.72rem] font-normal text-white/55 opacity-0 shadow-lg transition-opacity group-hover/cit:opacity-100">
+                {item.citation}
+              </span>
+            )}
+          </button>
+        </div>
+
         {/* Year */}
         <div>
           {isEditYear ? (
@@ -276,7 +311,7 @@ export function SmartImportPreviewRow({
               className="w-full rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.8rem] focus:border-cyan/35 focus:bg-white/8"
               value={editingValue}
               onChange={(e) => setEditingValue(e.target.value)}
-              onBlur={commitCellEdit}
+              onBlur={() => commitCellEdit()}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') commitCellEdit()
                 if (e.key === 'Escape') setEditingCell(null)
@@ -306,11 +341,31 @@ export function SmartImportPreviewRow({
         </div>
       </div>
 
-      {/* Duplicate warning banner */}
+      {/* Citation input row */}
+      {isEditCitation && (
+        <div className="flex items-center gap-2 border-b border-white/4 bg-cyan/3 px-3 py-1.5">
+          <MessageSquare size={10} className="shrink-0 text-cyan/40" />
+          <TextInput
+            variant="table"
+            autoFocus
+            className="flex-1 rounded border border-cyan/25 bg-white/6 px-2 py-0.5 text-[0.8rem] text-white/70 placeholder:text-white/20 focus:border-cyan/40 focus:bg-white/8"
+            placeholder="Citation — ex: « Declaration of Sentiments » (cité dans Women Together)"
+            value={editingValue}
+            onChange={(e) => setEditingValue(e.target.value)}
+            onBlur={() => commitCellEdit()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitCellEdit()
+              if (e.key === 'Escape') setEditingCell(null)
+            }}
+          />
+        </div>
+      )}
+
+      {/* Merge banner — duplicate not yet merged */}
       {isDup && !isMerged && (
         <div
           className={[
-            'flex items-center justify-between gap-3 border-b border-white/4 px-3 py-1.5 last:border-0',
+            'flex items-center justify-between gap-3 border-b border-white/4 px-3 py-1.5',
             isExact ? 'bg-red/5' : 'bg-amber/4',
           ].join(' ')}
         >
@@ -319,23 +374,73 @@ export function SmartImportPreviewRow({
               size={10}
               className={isExact ? 'shrink-0 text-red/70' : 'shrink-0 text-amber/80'}
             />
-            <span className={[
-              'text-[0.75rem]',
-              isExact ? 'text-red/70' : 'text-amber/75',
-            ].join(' ')}>
+            <span className={['text-[0.75rem]', isExact ? 'text-red/70' : 'text-amber/75'].join(' ')}>
               {isExact ? 'Doublon exact' : 'Doublon possible'} —
             </span>
             <span className="truncate font-mono text-[0.75rem] italic text-white/38">
+              {[item.existingNode?.firstName, item.existingNode?.lastName].filter(Boolean).join(' ')}
+              {item.existingNode?.firstName || item.existingNode?.lastName ? ', ' : ''}
               {item.existingNode?.title}
             </span>
           </div>
-          <Button
-            type="button"
-            onClick={() => handleMerge(item)}
-            className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md border border-cyan/20 bg-cyan/5 px-2 py-0.5 text-[0.72rem] font-semibold text-cyan/60 transition-all hover:bg-cyan/12 hover:text-cyan/90"
-          >
-            <GitMerge size={9} /> Fusionner
-          </Button>
+
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              type="button"
+              onClick={() => handleMerge(item)}
+              className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md border border-cyan/20 bg-cyan/5 px-2 py-0.5 text-[0.72rem] font-semibold text-cyan/60 transition-all hover:bg-cyan/12 hover:text-cyan/90"
+            >
+              <GitMerge size={9} /> Fusionner
+            </Button>
+            <button
+              type="button"
+              onClick={() => onDismissDuplicate(item.id)}
+              className="cursor-pointer rounded p-0.5 text-white/20 transition-colors hover:text-white/50"
+              title="Ignorer"
+            >
+              <X size={11} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Merged banner — book merged, link info still editable */}
+      {isMerged && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-white/4 bg-green/3 px-3 py-1.5">
+          <div className="flex items-center gap-1.5">
+            <Check size={10} className="shrink-0 text-green/55" />
+            <span className="text-[0.75rem] text-green/50">Ouvrage fusionné</span>
+          </div>
+
+          <div className="ml-auto flex items-center gap-2">
+            {masterNode && (
+              <>
+                <Link2 size={9} className="shrink-0 text-cyan/40" />
+                <EditionPicker
+                  value={item.edition || ''}
+                  onChange={(v) => onUpdateField(item.id, 'edition', v)}
+                  knownEditions={knownEditions || []}
+                  className="w-28 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[0.75rem] leading-snug text-white/55 outline-none placeholder:text-white/20 transition-colors focus:border-cyan/30 focus:bg-white/8"
+                  placeholder="Édition"
+                  onCommit={() => {}}
+                />
+                <TextInput
+                  variant="table"
+                  value={item.page || ''}
+                  onChange={(e) => onUpdateField(item.id, 'page', e.target.value)}
+                  className="w-14 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[0.75rem] leading-snug text-white/55 outline-none placeholder:text-white/20 transition-colors focus:border-cyan/30 focus:bg-white/8"
+                  placeholder="page / vol."
+                />
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => handleUnmerge(item)}
+              className="cursor-pointer rounded px-1.5 py-0.5 text-[0.72rem] text-white/30 transition-colors hover:bg-white/5 hover:text-white/55"
+            >
+              Annuler
+            </button>
+          </div>
         </div>
       )}
 

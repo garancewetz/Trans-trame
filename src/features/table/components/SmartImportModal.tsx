@@ -60,9 +60,13 @@ export function SmartImportModal(props: SmartImportModalProps) {
           setEditingCell={c.setEditingCell}
           commitAuthorEdit={c.commitAuthorEdit}
           handleMerge={c.handleMerge}
+          handleUnmerge={c.handleUnmerge}
+          onDismissDuplicate={c.dismissDuplicate}
+          onInsertRow={c.handleInsertRow}
           onAddCoAuthor={c.handleAddCoAuthor}
           onUpdateAxes={c.handleUpdateAxes}
           onSwapFields={c.handleSwapFields}
+          onUpdateField={c.handleUpdateField}
           authorMergeSuggestions={c.authorMergeSuggestions}
           onAuthorMerge={c.handleAuthorMerge}
           onDismissAuthorMerge={c.dismissAuthorMerge}

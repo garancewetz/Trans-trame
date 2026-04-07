@@ -11,9 +11,8 @@ import type { ExistingNode, ParsedAuthor, ParsedBook } from './parseSmartInput.t
 import { titleSimilarity } from './parseSmartInput.titleSimilarity'
 import type { KnownAuthor } from './hooks/useKnownData'
 
-const CURRENT_YEAR = new Date().getFullYear()
-
 interface KnownDataLower {
+  editions: string[]
   editionsLower: string[]
   authorsLower: { firstName: string; lastName: string; full: string }[]
 }
@@ -22,8 +21,11 @@ function buildKnownLower(
   knownAuthors: KnownAuthor[],
   knownEditions: string[],
 ): KnownDataLower {
+  // Sort by length descending so longest (most specific) match wins
+  const sorted = [...knownEditions].sort((a, b) => b.length - a.length)
   return {
-    editionsLower: knownEditions.map((e) => e.toLowerCase()),
+    editions: sorted,
+    editionsLower: sorted.map((e) => e.toLowerCase()),
     authorsLower: knownAuthors.map((a) => ({
       firstName: a.firstName.toLowerCase(),
       lastName: a.lastName.toLowerCase(),
@@ -316,6 +318,17 @@ function parseLine(rawLine: string, known: KnownDataLower) {
 
   title = title.replace(/^["«»""'`]+|["«»""'`]+$/g, '').trim()
 
+  // ── Fallback: scan raw line for a known edition name if none was detected ──
+  if (!edition) {
+    const lineLower = rawLine.toLowerCase()
+    for (let i = 0; i < known.editionsLower.length; i++) {
+      if (known.editionsLower[i].length >= 2 && lineLower.includes(known.editionsLower[i])) {
+        edition = known.editions[i]
+        break
+      }
+    }
+  }
+
   return {
     firstName: firstName.trim(),
     lastName: lastName.trim(),
@@ -323,7 +336,7 @@ function parseLine(rawLine: string, known: KnownDataLower) {
     title: title.trim(),
     edition: edition.trim(),
     page: '',
-    year: year || CURRENT_YEAR,
+    year: year ?? null,
     yearMissing: !year,
     axes: narrowAxes(detectAxes(rawLine)),
   }
@@ -360,7 +373,18 @@ export function parseSmartInput(
         if (score > bestScore) { bestScore = score; bestNode = n }
       }
 
-      const isDuplicate = bestScore === 1
+      // If title matches well, check if authors also match.
+      // Same title + different author → downgrade from exact to fuzzy (or ignore).
+      let authorMatch = true
+      if (bestNode && bestScore >= 0.82) {
+        const parsedLast = (parsed.lastName || '').toLowerCase().trim()
+        const existLast = String(bestNode.lastName || '').toLowerCase().trim()
+        if (parsedLast && existLast && parsedLast !== existLast) {
+          authorMatch = false
+        }
+      }
+
+      const isDuplicate = bestScore === 1 && authorMatch
       const isFuzzyDuplicate = !isDuplicate && bestScore >= 0.82
 
       return {
@@ -368,6 +392,7 @@ export function parseSmartInput(
         ...parsed,
         isDuplicate,
         isFuzzyDuplicate,
+        citation: '',
         existingNode: (isDuplicate || isFuzzyDuplicate) ? bestNode : null,
         raw: line,
       }

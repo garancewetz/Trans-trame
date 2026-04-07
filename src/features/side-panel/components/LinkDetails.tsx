@@ -138,7 +138,7 @@ export function LinkDetails({
                 setDraftPage(selectedLink.page || '')
                 startEdit('page')
               }}
-              displayValue={selectedLink.page || 'p.—'}
+              displayValue={selectedLink.page || '—'}
               editTitle="Modifier le passage"
             />
           </p>
@@ -268,7 +268,7 @@ export function LinkDetails({
 
           <div className="mt-2 border-t border-white/10 pt-2 font-sans text-[0.75rem] not-italic text-white/40">
             {[
-              selectedLink.page ? `p. ${selectedLink.page}` : null,
+              selectedLink.page ? selectedLink.page : null,
               citationMetaYear ? String(citationMetaYear) : null,
               selectedLink.edition ? selectedLink.edition : null,
             ]

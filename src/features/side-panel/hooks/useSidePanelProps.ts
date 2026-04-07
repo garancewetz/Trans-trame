@@ -7,7 +7,39 @@ import type { Author, Book, BookId, GraphData, Link } from '@/types/domain'
 
 type PanelTab = 'details' | 'edit' | string
 
-export function useAppSidePanelProps({
+export type SidePanelProps = {
+  panelOpen: boolean
+  panelTab: PanelTab
+  selectedNode: Book | null
+  selectedLink: Link | null
+  linkContextNode: Book | null
+  sameAuthorBooks: Book[]
+  previousPanelTab: PanelTab
+  graphData: GraphData
+  authors: Author[]
+  authorsMap: Map<string, AuthorNode>
+  AXES_COLORS: Record<string, string>
+  getOutgoingRefs: (node: Book) => Array<{ link: Link; other: Book | undefined }>
+  getIncomingRefs: (node: Book) => Array<{ link: Link; other: Book | undefined }>
+  getLinkNodes: (link: Link) => { source: Book | undefined; target: Book | undefined }
+  handleClosePanel: () => void
+  onUpdateLink: (linkId: string, updatedFields: Partial<Link>) => void
+  onDeleteLink: (linkId: string) => void
+  handleAddBook: (book: Book) => void
+  handleAddAuthor: (author: Author) => void
+  handleAddLink: (link: Link) => void
+  handleUpdateBook: (n: Book) => void
+  handleDeleteBook: (nodeId: BookId) => void
+  handleMergeBooks: (fromNodeId: BookId, intoNodeId: BookId) => void
+  setPreviousPanelTab: (t: PanelTab) => void
+  setPanelTab: (t: PanelTab) => void
+  setSelectedNode: (n: Book | null) => void
+  setSelectedLink: (l: Link | null) => void
+  setLinkContextNode: (n: Book | null) => void
+  onOpenTable: (tab?: 'books' | 'authors' | 'links', linkSourceId?: string | null, focusBookId?: string | null) => void
+}
+
+export function useSidePanelProps({
   graphRef,
   graphData,
   authors,
@@ -52,7 +84,7 @@ export function useAppSidePanelProps({
   setSelectedLink: (l: Link | null) => void
   setLinkContextNode: (n: Book | null) => void
   handleClosePanel: () => void
-  handleOpenTable: (tab?: 'books' | 'authors' | 'links', linkSourceId?: string | null) => void
+  handleOpenTable: (tab?: 'books' | 'authors' | 'links', linkSourceId?: string | null, focusBookId?: string | null) => void
   handleAddBook: (book: Book) => void
   handleAddAuthor: (author: Author) => void
   handleAddLink: (link: Link) => void
@@ -61,7 +93,7 @@ export function useAppSidePanelProps({
   handleMergeBooks: (fromNodeId: BookId, intoNodeId: BookId) => boolean
   handleUpdateLink: (linkId: string, updatedFields: Partial<Link>) => void
   handleDeleteLink: (linkId: string) => void
-}) {
+}): SidePanelProps {
   return {
     panelOpen,
     panelTab,

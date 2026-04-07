@@ -19,7 +19,7 @@ export function EditionPicker({
   autoFocus?: boolean
   onBlur?: () => void
   onKeyDown?: (e: React.KeyboardEvent) => void
-  onCommit?: () => void
+  onCommit?: (value?: string) => void
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement | null>(null)
@@ -78,9 +78,11 @@ export function EditionPicker({
               <button
                 type="button"
                 className="flex w-full cursor-pointer items-center rounded-md px-2.5 py-1.5 text-left transition-colors hover:bg-white/8"
+                onPointerDown={(e) => e.preventDefault()}
                 onClick={() => {
                   onChange(edition)
                   setOpen(false)
+                  onCommit?.(edition)
                 }}
               >
                 <span className="font-mono text-[0.74rem] text-white">{edition}</span>

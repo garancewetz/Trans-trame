@@ -16,6 +16,6 @@ export function refMetaLine(
     if (a) parts.push(a)
     if (other.year != null) parts.push(String(other.year))
   }
-  if (link.page) parts.push(`p. ${link.page}`)
+  if (link.page) parts.push(link.page)
   return parts.join(' · ')
 }

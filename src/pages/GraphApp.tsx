@@ -13,9 +13,9 @@ import { KeyboardHints } from '@/common/components/ui/KeyboardHints'
 import { AXES_COLORS } from '@/common/utils/categories'
 import { useAppData } from '@/core/AppDataContext'
 import { useAppDerivedData } from '@/common/hooks/useAppDerivedData'
-import { useAppNavbarProps } from '@/common/hooks/useAppNavbarProps'
-import { useAppSidePanelProps } from '@/common/hooks/useAppSidePanelProps'
-import { useAppTableViewProps } from '@/common/hooks/useAppTableViewProps'
+import { useNavbarProps } from '@/features/shell/hooks/useNavbarProps'
+import { useSidePanelProps } from '@/features/side-panel/hooks/useSidePanelProps'
+import { useTableViewProps } from '@/features/table/hooks/useTableViewProps'
 import { useAppTimelineAndLayout } from '@/common/hooks/useAppTimelineAndLayout'
 import { useAppUiState } from '@/common/hooks/useAppUiState'
 import { useMapUrlSync } from '@/common/hooks/useMapUrlSync'
@@ -59,7 +59,7 @@ export function GraphApp() {
   const timeline = useAppTimelineAndLayout(graphData)
   const derived = useAppDerivedData(graphData, books, authors, ui.selectedNode)
 
-  const navbarProps = useAppNavbarProps({
+  const navbarProps = useNavbarProps({
     searchRef: ui.searchRef,
     globalSearch: ui.globalSearch,
     setGlobalSearch: ui.setGlobalSearch,
@@ -81,7 +81,7 @@ export function GraphApp() {
     authorCount: derived.authorCount,
   })
 
-  const sidePanelProps = useAppSidePanelProps({
+  const sidePanelProps = useSidePanelProps({
     graphRef,
     graphData,
     authors,
@@ -110,13 +110,14 @@ export function GraphApp() {
     handleDeleteLink,
   })
 
-  const tableViewProps = useAppTableViewProps({
+  const tableViewProps = useTableViewProps({
     books,
     links,
     authors,
     selectedNode: ui.selectedNode,
     tableInitialTab: ui.tableInitialTab,
     tableLinkSourceId: ui.tableLinkSourceId,
+    tableFocusBookId: ui.tableFocusBookId,
     lastEditedNodeId: ui.lastEditedNodeId,
     setLastEditedNodeId: ui.setLastEditedNodeId,
     setSelectedNode: ui.setSelectedNode,

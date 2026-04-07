@@ -5,8 +5,7 @@ import type { GraphData } from '@/types/domain'
 import type { AnalysisPanelImperativeHandle } from '@/features/analysis-panel/components/AnalysisPanel'
 import type { GlobalSearchResultItem } from '@/features/shell/hooks/useGlobalSearch'
 
-/** Props agrégées pour `<Navbar />` — évite un bloc énorme dans `App`. */
-export function useAppNavbarProps({
+export function useNavbarProps({
   searchRef,
   globalSearch,
   setGlobalSearch,
@@ -35,7 +34,7 @@ export function useAppNavbarProps({
   searchResults: GlobalSearchResultItem[]
   handleSearchSelect: (item: GlobalSearchResultItem | null | undefined) => void
   authorsMap: Map<string, AuthorNode>
-  handleOpenTable: (tab?: 'books' | 'authors' | 'links', linkSourceId?: string | null) => void
+  handleOpenTable: (tab?: 'books' | 'authors' | 'links', linkSourceId?: string | null, focusBookId?: string | null) => void
   selectedAuthor: string | null
   viewMode: string
   handleViewChange: (mode: string) => void

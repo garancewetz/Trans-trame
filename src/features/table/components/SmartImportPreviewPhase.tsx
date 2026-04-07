@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, GitMerge, Info, Link2, Loader2, X, Zap } from 'lucide-react'
+import { AlertTriangle, Check, GitMerge, Info, Link2, Loader2, Plus, X, Zap } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import type { AuthorMergeSuggestion } from '../smartImportModal.utils'
 import { SmartImportPreviewRow } from './SmartImportPreviewRow'
@@ -17,9 +17,13 @@ export function SmartImportPreviewPhase({
   setEditingCell,
   commitAuthorEdit,
   handleMerge,
+  handleUnmerge,
+  onDismissDuplicate,
+  onInsertRow,
   onAddCoAuthor,
   onUpdateAxes,
   onSwapFields,
+  onUpdateField,
   authorMergeSuggestions,
   onAuthorMerge,
   onDismissAuthorMerge,
@@ -123,7 +127,7 @@ export function SmartImportPreviewPhase({
 
       {/* Table */}
       <div className="mb-4 overflow-hidden rounded-xl border border-white/8">
-        <div className="grid grid-cols-[28px_2fr_1.2fr_0.5fr_1fr_48px_54px] border-b border-white/6 bg-white/2.5 px-3 py-1.5 text-[0.72rem] font-semibold uppercase tracking-[1.3px] text-white/28">
+        <div className="grid grid-cols-[28px_2fr_1.2fr_0.5fr_1fr_48px_28px_54px] border-b border-white/6 bg-white/2.5 px-3 py-1.5 text-[0.72rem] font-semibold uppercase tracking-[1.3px] text-white/28">
           <span />
           <span>Titre</span>
           <span>Auteur·ice</span>
@@ -136,33 +140,52 @@ export function SmartImportPreviewPhase({
             </span>
           </span>
           <span>Page</span>
+          <span />
           <span>Année</span>
         </div>
         <div className="max-h-[min(55vh,480px)] overflow-y-auto">
           {parsed.length === 0 && (
             <p className="p-4 text-center text-[0.82rem] text-white/50">Aucun ouvrage reconnu.</p>
           )}
-          {parsed.map((item) => (
-            <SmartImportPreviewRow
-              key={item.id}
-              item={item}
-              checked={checked}
-              mergedIds={mergedIds}
-              editingCell={editingCell}
-              editingValue={editingValue}
-              setEditingValue={setEditingValue}
-              editingAuthor={editingAuthor}
-              setEditingAuthor={setEditingAuthor}
-              toggleItem={toggleItem}
-              commitCellEdit={commitCellEdit}
-              setEditingCell={setEditingCell}
-              commitAuthorEdit={commitAuthorEdit}
-              handleMerge={handleMerge}
-              onAddCoAuthor={onAddCoAuthor}
-              onUpdateAxes={onUpdateAxes}
-              onSwapFields={onSwapFields}
-              knownEditions={knownEditions}
-            />
+          {parsed.map((item, idx) => (
+            <div key={item.id}>
+              <SmartImportPreviewRow
+                item={item}
+                checked={checked}
+                mergedIds={mergedIds}
+                editingCell={editingCell}
+                editingValue={editingValue}
+                setEditingValue={setEditingValue}
+                editingAuthor={editingAuthor}
+                setEditingAuthor={setEditingAuthor}
+                toggleItem={toggleItem}
+                commitCellEdit={commitCellEdit}
+                setEditingCell={setEditingCell}
+                commitAuthorEdit={commitAuthorEdit}
+                handleMerge={handleMerge}
+                handleUnmerge={handleUnmerge}
+                onDismissDuplicate={onDismissDuplicate}
+                onAddCoAuthor={onAddCoAuthor}
+                onUpdateAxes={onUpdateAxes}
+                onSwapFields={onSwapFields}
+                onUpdateField={onUpdateField}
+                masterNode={masterNode}
+                knownEditions={knownEditions}
+              />
+              <div
+                className="group/insert relative flex h-2 items-center justify-center transition-[height] hover:h-5"
+              >
+                <button
+                  type="button"
+                  onClick={() => onInsertRow(idx)}
+                  className="z-10 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/0 opacity-0 transition-all hover:border-cyan/40 hover:bg-cyan/15 hover:text-cyan group-hover/insert:text-white/40 group-hover/insert:opacity-100"
+                  title="Insérer une ligne"
+                >
+                  <Plus size={10} />
+                </button>
+                <div className="absolute inset-x-3 h-px bg-white/0 transition-colors group-hover/insert:bg-white/8" />
+              </div>
+            </div>
           ))}
         </div>
       </div>

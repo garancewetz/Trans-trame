@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { toggleSetItem } from '@/common/utils/setUtils'
+import { useColumnSort } from './useColumnSort'
 import type { Author, AuthorId, Book } from '@/types/domain'
 
 type Args = {
@@ -33,8 +35,7 @@ export function useAuthorsTabState({
   const [mergeModal, setMergeModal] = useState(false)
   const [mergeKeepId, setMergeKeepId] = useState<AuthorId | null>(null)
   const [mergeConfirm, setMergeConfirm] = useState(false)
-  const [sortCol, setSortCol] = useState('lastName')
-  const [sortDir, setSortDir] = useState('asc')
+  const { sortCol, sortDir, handleSort } = useColumnSort()
   const [inputFirstName, setInputFirstName] = useState('')
   const [inputLastName, setInputLastName] = useState('')
   const firstNameRef = useRef<HTMLInputElement | null>(null)
@@ -109,11 +110,6 @@ export function useAuthorsTabState({
     return list
   }, [authors, search, sortCol, sortDir, bookCountByAuthor])
 
-  const handleSort = (col: string) => {
-    if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    else { setSortCol(col); setSortDir('asc') }
-  }
-
   const allSelected = filteredAuthors.length > 0 && filteredAuthors.every((a) => selectedIds.has(a.id))
   const someSelected = selectedIds.size > 0 && !allSelected
 
@@ -122,13 +118,7 @@ export function useAuthorsTabState({
     else setSelectedIds(new Set(filteredAuthors.map((a) => a.id)))
   }
 
-  const toggleRow = (id: AuthorId) =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+  const toggleRow = (id: AuthorId) => setSelectedIds((prev) => toggleSetItem(prev, id))
 
   const handleBulkDelete = () => {
     if (!bulkConfirm) { setBulkConfirm(true); return }

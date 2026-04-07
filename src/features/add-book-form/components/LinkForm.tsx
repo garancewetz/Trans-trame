@@ -161,8 +161,8 @@ export function LinkForm({
       </FormField>
 
       <div className="grid grid-cols-2 gap-3">
-        <FormField label="Page">
-          <TextInput variant="default" className={inputClass} placeholder="p. 42" {...register('page')} />
+        <FormField label="Page / Volume">
+          <TextInput variant="default" className={inputClass} placeholder="p. 42, vol. 3…" {...register('page')} />
         </FormField>
         <FormField label="Contexte">
           <TextInput

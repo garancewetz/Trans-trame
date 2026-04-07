@@ -3,7 +3,6 @@ import {
   Pencil,
   ArrowRight,
   ArrowLeft,
-  Plus,
   Link2,
 } from 'lucide-react'
 import {
@@ -25,6 +24,20 @@ import { Button } from '@/common/components/ui/Button'
 import { linkExcerpt, refMetaLine } from '@/features/books/workPageCopy'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 import type { Book, Link as GraphLink } from '@/types/domain'
+
+type NodeDetailsProps = {
+  selectedNode: Book | null
+  sameAuthorBooks: Book[]
+  authorsMap: Map<string, AuthorNode>
+  AXES_COLORS: Record<string, string>
+  setPanelTab: (tab: string) => void
+  setSelectedNode: (n: Book | null) => void
+  setSelectedLink: (l: GraphLink | null) => void
+  setLinkContextNode: (n: Book | null) => void
+  onOpenTable?: (tab?: 'books' | 'authors' | 'links', linkSourceId?: string | null, focusBookId?: string | null) => void
+  getOutgoingRefs: (node: Book) => Array<{ link: GraphLink; other: Book | undefined }>
+  getIncomingRefs: (node: Book) => Array<{ link: GraphLink; other: Book | undefined }>
+}
 
 type RefVariant = 'cites' | 'citedBy'
 
@@ -103,7 +116,8 @@ export function NodeDetails({
   onOpenTable,
   getOutgoingRefs,
   getIncomingRefs,
-}) {
+}: NodeDetailsProps) {
+  if (!selectedNode) return null
   const map = authorsMap || new Map<string, AuthorNode>()
   const axes = (selectedNode.axes || []).filter(Boolean)
 
@@ -133,11 +147,12 @@ export function NodeDetails({
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           <Button
             type="button"
-            className="cursor-pointer rounded-lg border border-white/10 bg-transparent px-3 py-1.5 text-[0.85rem] font-medium text-white/40 transition-colors hover:border-white/18 hover:bg-white/4 hover:text-white/70"
-            onClick={() => setPanelTab('edit')}
+            className="cursor-pointer rounded-lg border border-white/10 bg-transparent px-2.5 py-1 text-[0.8rem] font-medium text-white/30 transition-colors hover:border-white/18 hover:bg-white/4 hover:text-white/60"
+            onClick={() => onOpenTable?.('books', null, selectedNode.id)}
+            title="Ouvrir dans le catalogue contributeurs"
           >
             <span className="inline-flex items-center gap-1.5">
-              <Pencil size={12} /> Modifier
+              <Pencil size={11} /> Éditer
             </span>
           </Button>
         </div>
@@ -176,19 +191,7 @@ export function NodeDetails({
         </section>
       )}
 
-      <div className="mb-10">
-        <button
-          type="button"
-          className="text-[0.9rem] font-medium text-white/38 underline-offset-4 transition-colors hover:text-cyan/85 hover:underline"
-          onClick={() => onOpenTable?.('links', selectedNode.id)}
-        >
-          <span className="inline-flex items-center gap-1.5">
-            <Plus size={12} className="opacity-70" /> Tisser un lien…
-          </span>
-        </button>
-      </div>
-
-      <div className="space-y-10">
+<div className="space-y-10">
         {getOutgoingRefs(selectedNode).length > 0 && (
           <section>
             <h3

@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { toggleSetItem } from '@/common/utils/setUtils'
+import { useColumnSort } from '../../hooks/useColumnSort'
 import { Merge, Sparkles } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { TableMergeModal } from '../TableMergeModal'
@@ -20,7 +22,6 @@ type BooksTabProps = {
   onMergeBooks?: (fromNodeId: BookId, intoNodeId: BookId) => unknown
   onAddAuthor?: (author: Author) => unknown
   onLastEdited?: (bookId: BookId) => unknown
-  onBookAdded?: (title: string) => unknown
   onOpenLinksForBook?: (node: Book) => unknown
   onFocusAuthorInAuthorsTab?: (authorId: AuthorId) => unknown
   onOpenWorkDetail?: (bookId: BookId) => unknown
@@ -30,6 +31,7 @@ type BooksTabProps = {
   onOpenDedupeModal?: () => void
   orphans?: Book[]
   onOpenOrphanModal?: () => void
+  focusBookId?: BookId | null
 }
 
 export function BooksTab({
@@ -43,7 +45,6 @@ export function BooksTab({
   onMergeBooks,
   onAddAuthor,
   onLastEdited,
-  onBookAdded,
   onOpenLinksForBook,
   onFocusAuthorInAuthorsTab,
   onOpenWorkDetail,
@@ -53,10 +54,10 @@ export function BooksTab({
   onOpenDedupeModal,
   orphans = [],
   onOpenOrphanModal,
+  focusBookId = null,
 }: BooksTabProps) {
   const [editingAuthorsNodeId, setEditingAuthorsNodeId] = useState<BookId | null>(null)
-  const [sortCol, setSortCol] = useState('lastName')
-  const [sortDir, setSortDir] = useState('asc')
+  const { sortCol, sortDir, handleSort: handleNodeSort } = useColumnSort()
   const [selectedIds, setSelectedIds] = useState<Set<BookId>>(new Set())
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
   const [editingCell, setEditingCell] = useState<null | { nodeId: BookId; field: 'title' | 'year' }>(null)
@@ -96,18 +97,17 @@ export function BooksTab({
     setTimeout(() => titleInputRef.current?.focus(), 0)
   }, [autoFocusTitle])
 
-  const handleNodeSort = (col: string) => {
-    if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    else { setSortCol(col); setSortDir('asc') }
-  }
-
-  const toggleRow = (id: BookId) =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
+  useEffect(() => {
+    if (!focusBookId) return
+    requestAnimationFrame(() => {
+      const row = document.querySelector(`[data-book-row-id="${focusBookId}"]`)
+      row?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      row?.classList.add('animate-flash-row')
+      setTimeout(() => row?.classList.remove('animate-flash-row'), 1500)
     })
+  }, [focusBookId])
+
+  const toggleRow = (id: BookId) => setSelectedIds((prev) => toggleSetItem(prev, id))
 
   const toggleAll = () => {
     if (allSelected || someSelected) setSelectedIds(new Set())
@@ -153,7 +153,6 @@ export function BooksTab({
       description: '',
       originalTitle: null,
     })
-    onBookAdded?.(title)
     setInputTitle('')
     setInputYear('')
     setInputAxes([])

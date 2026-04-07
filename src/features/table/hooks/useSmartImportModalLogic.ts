@@ -1,4 +1,5 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { toggleSetItem } from '@/common/utils/setUtils'
 import type { Book } from '@/types/domain'
 import { parseSmartInput, type ParsedBook } from '../parseSmartInput'
 import { runSmartImportBatchInsert } from '../smartImportModal.batchInsert'
@@ -16,6 +17,7 @@ export function useSmartImportModalLogic({
   onUpdateBook,
   onQueued,
   onImportComplete,
+  initialMasterNode,
 }: SmartImportModalProps) {
   const [phase, setPhase] = useState<'input' | 'preview'>('input')
   const [rawText, setRawText] = useState('')
@@ -32,9 +34,26 @@ export function useSmartImportModalLogic({
     null | { id: string; authorIndex: number | null; firstName: string; lastName: string }
   >(null)
   const [mergedIds, setMergedIds] = useState<Set<string>>(new Set())
+  const [preMergeBooks, setPreMergeBooks] = useState<Map<string, Book>>(new Map())
   const { data: knownAuthors = [] } = useKnownAuthors()
   const { data: knownEditions = [] } = useKnownEditions()
   const [dismissedAuthorMerges, setDismissedAuthorMerges] = useState<Set<string>>(new Set())
+  const [dismissedDuplicates, setDismissedDuplicates] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (initialMasterNode) {
+      setMasterNode(initialMasterNode)
+    }
+  }, [initialMasterNode])
+
+  const effectiveParsed = useMemo(
+    () => parsed.map((item) =>
+      dismissedDuplicates.has(item.id)
+        ? { ...item, isDuplicate: false, isFuzzyDuplicate: false, existingNode: null }
+        : item
+    ),
+    [parsed, dismissedDuplicates]
+  )
 
   const authorMergeSuggestions = useMemo(
     () => detectAuthorInitialMatches(parsed, existingAuthors || [])
@@ -50,7 +69,9 @@ export function useSmartImportModalLogic({
     setEditingCell(null)
     setEditingAuthor(null)
     setMergedIds(new Set())
+    setPreMergeBooks(new Map())
     setDismissedAuthorMerges(new Set())
+    setDismissedDuplicates(new Set())
     setInjected(false)
     setInserting(false)
     setLinkDirection('master-cites-imported')
@@ -73,6 +94,11 @@ export function useSmartImportModalLogic({
     if (!existing.id) return
     const baseBook = existingNodes.find((n) => n.id === existing.id)
     if (!baseBook) return
+
+    // Save original state for undo
+    setPreMergeBooks((prev) => new Map([...prev, [item.id, { ...baseBook }]]))
+
+    // Merge book data only (no link creation — that happens during inject)
     const merged: Book = { ...baseBook }
     if (!existing.firstName && item.firstName) merged.firstName = item.firstName
     if (!existing.lastName && item.lastName) merged.lastName = item.lastName
@@ -85,20 +111,30 @@ export function useSmartImportModalLogic({
       merged.year = item.year
     }
     onUpdateBook(merged)
-    if (masterNode) {
-      const exId = existing.id
-      const source = linkDirection === 'imported-cites-master' ? exId : masterNode.id
-      const target = linkDirection === 'imported-cites-master' ? masterNode.id : exId
-      onAddLink?.({
-        source,
-        target,
-        citation_text: masterContext.trim(),
-        edition: item.edition || '',
-        page: item.page || '',
-        context: '',
-      })
-    }
     setMergedIds((prev) => new Set([...prev, item.id]))
+
+    // Auto-check so the link gets created during inject (if masterNode exists)
+    if (masterNode) {
+      setChecked((prev) => new Set([...prev, item.id]))
+    }
+  }
+
+  const handleUnmerge = (item: ParsedBook) => {
+    const original = preMergeBooks.get(item.id)
+    if (original && onUpdateBook) {
+      onUpdateBook(original)
+    }
+    setMergedIds((prev) => {
+      const next = new Set(prev)
+      next.delete(item.id)
+      return next
+    })
+    setPreMergeBooks((prev) => {
+      const next = new Map(prev)
+      next.delete(item.id)
+      return next
+    })
+    // Uncheck — it's back to being a duplicate
     setChecked((prev) => {
       const next = new Set(prev)
       next.delete(item.id)
@@ -131,18 +167,18 @@ export function useSmartImportModalLogic({
     setDismissedAuthorMerges((prev) => new Set([...prev, suggestionId]))
   }
 
-  const toggleItem = (id: string) =>
-    setChecked((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+  const dismissDuplicate = (itemId: string) => {
+    setDismissedDuplicates((prev) => new Set([...prev, itemId]))
+    // Auto-check the item since the user treats it as a new entry
+    setChecked((prev) => new Set([...prev, itemId]))
+  }
 
-  const commitCellEdit = () => {
+  const toggleItem = (id: string) => setChecked((prev) => toggleSetItem(prev, id))
+
+  const commitCellEdit = (override?: string) => {
     if (!editingCell) return
     const { id, field } = editingCell
-    let val = editingValue.trim()
+    let val = (override ?? editingValue).trim()
     if (field === 'year') {
       const p = parseInt(val, 10)
       val = Number.isNaN(p) ? val : String(p)
@@ -191,6 +227,12 @@ export function useSmartImportModalLogic({
     )
   }
 
+  const handleUpdateField = (itemId: string, field: string, value: string) => {
+    setParsed((prev) =>
+      prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item))
+    )
+  }
+
   const handleSwapFields = (itemId: string, swapWith: 'title' | 'edition') => {
     setParsed((prev) =>
       prev.map((item) => {
@@ -225,6 +267,36 @@ export function useSmartImportModalLogic({
     )
   }
 
+  const handleInsertRow = (afterIndex: number) => {
+    const id = `manual-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    const empty: ParsedBook = {
+      id,
+      authors: [{ firstName: '', lastName: '' }],
+      firstName: '',
+      lastName: '',
+      title: '',
+      edition: '',
+      page: '',
+      year: 0,
+      yearMissing: false,
+      axes: [],
+      citation: '',
+      isDuplicate: false,
+      isFuzzyDuplicate: false,
+      existingNode: null,
+      raw: '',
+    }
+    setParsed((prev) => {
+      const next = [...prev]
+      next.splice(afterIndex + 1, 0, empty)
+      return next
+    })
+    setChecked((prev) => new Set([...prev, id]))
+    // Auto-open title editing on the new row
+    setEditingCell({ id, field: 'title' })
+    setEditingValue('')
+  }
+
   const handleAddCoAuthor = (itemId: string) => {
     const item = parsed.find((row) => row.id === itemId)
     if (!item) return
@@ -246,6 +318,7 @@ export function useSmartImportModalLogic({
     await runSmartImportBatchInsert({
       parsed,
       checked,
+      mergedIds,
       existingAuthors,
       onAddAuthor,
       onAddBook,
@@ -284,7 +357,7 @@ export function useSmartImportModalLogic({
     phase,
     rawText,
     setRawText,
-    parsed,
+    parsed: effectiveParsed,
     checked,
     injected,
     inserting,
@@ -311,8 +384,12 @@ export function useSmartImportModalLogic({
     commitCellEdit,
     commitAuthorEdit,
     handleMerge,
+    handleUnmerge,
+    dismissDuplicate,
+    handleInsertRow,
     handleAddCoAuthor,
     handleUpdateAxes,
+    handleUpdateField,
     handleSwapFields,
     knownEditions,
   }

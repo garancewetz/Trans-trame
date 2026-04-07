@@ -13,4 +13,5 @@ export type SmartImportModalProps = {
   onUpdateBook?: (book: Book) => void
   onQueued?: (titles: string[]) => void
   onImportComplete?: (ids: string[]) => void
+  initialMasterNode?: Book | null
 }

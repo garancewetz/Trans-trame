@@ -6,14 +6,14 @@ function tableInitialTabFromState(tab: string): NonNullable<TableViewProps['init
   return 'books'
 }
 
-/** Props pour `<TableView />` (mode tableau plein écran). */
-export function useAppTableViewProps({
+export function useTableViewProps({
   books,
   links,
   authors,
   selectedNode,
   tableInitialTab,
   tableLinkSourceId,
+  tableFocusBookId,
   lastEditedNodeId,
   setLastEditedNodeId,
   setSelectedNode,
@@ -42,6 +42,7 @@ export function useAppTableViewProps({
   selectedNode: Book | null
   tableInitialTab: string
   tableLinkSourceId: string | null
+  tableFocusBookId: string | null
   lastEditedNodeId: string | null
   setLastEditedNodeId: (id: string | null) => void
   setSelectedNode: (n: Book | null) => void
@@ -125,6 +126,7 @@ export function useAppTableViewProps({
     },
     initialTab: tableInitialTabFromState(tableInitialTab),
     initialLinkSourceId: tableLinkSourceId,
+    initialFocusBookId: tableFocusBookId,
     onFocusBookOnMap: openBookInSidePanel,
     onOpenWorkDetail: openBookInSidePanel,
   }

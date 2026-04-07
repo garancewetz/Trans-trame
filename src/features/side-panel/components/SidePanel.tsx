@@ -3,12 +3,14 @@ import { X, PanelRightClose, ChevronRight, ChevronLeft, ArrowLeft } from 'lucide
 import { useState } from 'react'
 import { Button } from '@/common/components/ui/Button'
 import { PANEL_WIDTH } from '@/common/constants/panels'
+import type { Book } from '@/types/domain'
+import type { SidePanelProps } from '../hooks/useSidePanelProps'
 import { AdminPanel } from './AdminPanel'
 import { EmptyState } from './EmptyState'
 import { LinkDetails } from './LinkDetails'
 import { NodeDetails } from './NodeDetails'
 
-export function SidePanel(props) {
+export function SidePanel(props: SidePanelProps) {
   const {
     panelOpen,
     panelTab,
@@ -48,7 +50,7 @@ export function SidePanel(props) {
         : `${PANEL_WIDTH.default} border-white/10 bg-bg-overlay/92 backdrop-blur-2xl`,
   )
 
-  const closeToContextNode = (node) => {
+  const closeToContextNode = (node: Book | null) => {
     if (!node) return
     setSelectedLink(null)
     setSelectedNode(node)
@@ -56,7 +58,7 @@ export function SidePanel(props) {
     setPanelTab('details')
   }
 
-  const openNodeFromLink = (node) => {
+  const openNodeFromLink = (node: Book | null) => {
     if (!node) return
     setSelectedLink(null)
     setSelectedNode(node)

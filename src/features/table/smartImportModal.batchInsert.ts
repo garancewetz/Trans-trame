@@ -8,6 +8,7 @@ type OnAddLink = (link: Partial<Link> & Pick<Link, 'source' | 'target'>) => void
 export async function runSmartImportBatchInsert(params: {
   parsed: ParsedBook[]
   checked: Set<string>
+  mergedIds: Set<string>
   existingAuthors: Author[]
   onAddAuthor?: (author: Author) => unknown
   onAddBook?: OnAddBook
@@ -21,6 +22,7 @@ export async function runSmartImportBatchInsert(params: {
   const {
     parsed,
     checked,
+    mergedIds,
     existingAuthors,
     onAddAuthor,
     onAddBook,
@@ -33,13 +35,15 @@ export async function runSmartImportBatchInsert(params: {
   } = params
 
   const toAdd = parsed.filter((r) => checked.has(r.id))
+  const newItems = toAdd.filter((r) => !mergedIds.has(r.id))
+  const mergedItems = toAdd.filter((r) => mergedIds.has(r.id))
   const newIds: string[] = []
   const localAuthors: Author[] = [...existingAuthors]
 
-  // Phase 1: create all author entities and wait for DB inserts to complete
+  // Phase 1: create all author entities for NEW items only
   const authorIdsByBook: string[][] = []
   const authorPromises: PromiseLike<unknown>[] = []
-  toAdd.forEach((r) => {
+  newItems.forEach((r) => {
     if (onAddAuthor) {
       const { ids, promises } = resolveOrCreateAuthors(r.authors || [], localAuthors, onAddAuthor)
       authorIdsByBook.push(ids)
@@ -50,9 +54,9 @@ export async function runSmartImportBatchInsert(params: {
   })
   if (authorPromises.length > 0) await Promise.all(authorPromises)
 
-  // Phase 2: insert books (authors now exist in DB, so book_authors FK won't fail)
+  // Phase 2: insert NEW books only (merged books already exist)
   const insertPromises: Promise<unknown>[] = []
-  toAdd.forEach((r, i) => {
+  newItems.forEach((r, i) => {
     const pending = onAddBook?.({
       id: r.id,
       title: r.title,
@@ -69,14 +73,17 @@ export async function runSmartImportBatchInsert(params: {
 
   if (insertPromises.length > 0) await Promise.all(insertPromises)
 
+  // Phase 3: create links for ALL checked items (new + merged)
   if (masterNode) {
     toAdd.forEach((r) => {
-      const source = linkDirection === 'imported-cites-master' ? r.id : masterNode.id
-      const target = linkDirection === 'imported-cites-master' ? masterNode.id : r.id
+      const isMerged = mergedIds.has(r.id)
+      const bookId = isMerged ? r.existingNode?.id || r.id : r.id
+      const source = linkDirection === 'imported-cites-master' ? bookId : masterNode.id
+      const target = linkDirection === 'imported-cites-master' ? masterNode.id : bookId
       onAddLink?.({
         source,
         target,
-        citation_text: masterContext.trim(),
+        citation_text: r.citation?.trim() || masterContext.trim(),
         edition: r.edition || '',
         page: r.page || '',
         context: '',
