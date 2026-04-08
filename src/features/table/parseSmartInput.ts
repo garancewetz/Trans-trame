@@ -1,2 +1,2 @@
 export type { ExistingNode, ParsedAuthor, ParsedBook } from './parseSmartInput.types'
-export { parseSmartInput } from './parseSmartInput.logic'
+export { parseSmartInput, parseSmartInputHybrid } from './parseSmartInput.logic'

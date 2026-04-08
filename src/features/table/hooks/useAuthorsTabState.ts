@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { toggleSetItem } from '@/common/utils/setUtils'
 import { useColumnSort } from './useColumnSort'
 import type { Author, AuthorId, Book } from '@/types/domain'
+import type { MigrationFailure, MigrationResult } from '@/features/graph/hooks/graphDataMigration'
 
 type Args = {
   authors: Author[]
@@ -10,7 +11,7 @@ type Args = {
   onAddAuthor: (author: Author) => unknown
   onUpdateAuthor: (author: Author) => unknown
   onDeleteAuthor: (authorId: AuthorId) => unknown
-  onMigrateData?: () => Promise<{ newAuthors: number; updatedBooks: number } | null> | { newAuthors: number; updatedBooks: number } | null
+  onMigrateData?: () => Promise<MigrationResult | null> | MigrationResult | null
   onMergeAuthors?: (fromAuthorId: AuthorId, keepAuthorId: AuthorId) => unknown
   focusAuthorId?: AuthorId | null
 }
@@ -31,7 +32,7 @@ export function useAuthorsTabState({
   const [selectedIds, setSelectedIds] = useState<Set<AuthorId>>(new Set())
   const [bulkConfirm, setBulkConfirm] = useState(false)
   const [migrating, setMigrating] = useState(false)
-  const [migrateResult, setMigrateResult] = useState<{ newAuthors: number; updatedBooks: number } | null>(null)
+  const [migrateResult, setMigrateResult] = useState<MigrationResult | null>(null)
   const [mergeModal, setMergeModal] = useState(false)
   const [mergeKeepId, setMergeKeepId] = useState<AuthorId | null>(null)
   const [mergeConfirm, setMergeConfirm] = useState(false)
@@ -47,7 +48,8 @@ export function useAuthorsTabState({
     if (el instanceof HTMLElement) el.scrollIntoView({ block: 'center' })
   }, [focusAuthorId])
 
-  const legacyCount = books.filter((b) => !b.authorIds?.length && (b.firstName || b.lastName)).length
+  const legacyBooks = books.filter((b) => !b.authorIds?.length && (b.firstName || b.lastName))
+  const legacyCount = legacyBooks.length
 
   const handleMigrate = async () => {
     if (!onMigrateData) return
@@ -99,6 +101,10 @@ export function useAuthorsTabState({
         case 'bookCount':
           va = bookCountByAuthor.get(a.id) || 0
           vb = bookCountByAuthor.get(b.id) || 0
+          break
+        case 'createdAt':
+          va = (a.created_at as string) || ''
+          vb = (b.created_at as string) || ''
           break
         default:
           va = ''; vb = ''
@@ -189,6 +195,7 @@ export function useAuthorsTabState({
     firstNameRef,
     // derived
     legacyCount,
+    legacyBooks,
     bookCountByAuthor,
     mergeAuthorsList,
     filteredAuthors,

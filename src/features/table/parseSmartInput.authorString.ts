@@ -48,8 +48,12 @@ export function parseAuthorString(raw: string): ParsedAuthor {
     return { firstName: words[0], lastName: words.slice(1).join(' ') }
   }
 
+  // Multiple consecutive initials: "G. W. Corner" → firstName = "G. W.", lastName = "Corner"
   if (isAuthorInitial(words[0])) {
-    return { firstName: words[0].replace('.', ''), lastName: words.slice(1).join(' ') }
+    let i = 0
+    while (i < words.length - 1 && isAuthorInitial(words[i])) i++
+    const initials = words.slice(0, i).map((w) => w.replace(/\.?$/, '.')).join(' ')
+    return { firstName: initials, lastName: words.slice(i).join(' ') }
   }
 
   return { firstName: words[0], lastName: words.slice(1).join(' ') }

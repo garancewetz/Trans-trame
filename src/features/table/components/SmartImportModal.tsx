@@ -42,6 +42,8 @@ export function SmartImportModal(props: SmartImportModalProps) {
           setLinkDirection={c.setLinkDirection}
           existingNodes={existingNodes}
           authorsMap={authorsMap}
+          analyzing={c.analyzing}
+          analyzeProgress={c.analyzeProgress}
         />
       )}
 

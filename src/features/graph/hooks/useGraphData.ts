@@ -5,7 +5,9 @@ import { devWarn } from '@/common/utils/logger'
 import {
   deleteAllBooks,
   deleteBookRowById,
+  deleteBookAuthorsByBookId,
   deleteLinkRowById,
+  insertBookAuthors,
   updateLinkRowById,
 } from '../api/graphDataApi'
 import { type AxesColorMap, normalizeEndpointId } from '../domain/graphDataModel'
@@ -170,9 +172,9 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
   const handleMergeBooks = useCallback((fromNodeId: string, intoNodeId: string) => {
     if (!fromNodeId || !intoNodeId || fromNodeId === intoNodeId) return false
 
-    const fromExists = books.some((n) => n.id === fromNodeId)
-    const intoExists = books.some((n) => n.id === intoNodeId)
-    if (!fromExists || !intoExists) return false
+    const fromBook = books.find((n) => n.id === fromNodeId)
+    const intoBook = books.find((n) => n.id === intoNodeId)
+    if (!fromBook || !intoBook) return false
 
     const { remappedLinks, linksToUpdate, linkIdsToDelete } = planLinksAfterBookMerge(
       links,
@@ -180,19 +182,42 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
       intoNodeId
     )
 
-    setBooks((prev) => prev.filter((n) => n.id !== fromNodeId))
+    // Transfer author associations from the deleted book to the kept book
+    const fromAuthorIds = fromBook.authorIds ?? []
+    const intoAuthorIds = new Set(intoBook.authorIds ?? [])
+    const newAuthorIds = fromAuthorIds.filter((id) => !intoAuthorIds.has(id))
+
+    setBooks((prev) => {
+      const updated = prev.map((b) =>
+        b.id === intoNodeId && newAuthorIds.length > 0
+          ? { ...b, authorIds: [...(b.authorIds ?? []), ...newAuthorIds] }
+          : b
+      )
+      return updated.filter((n) => n.id !== fromNodeId)
+    })
     setLinks(remappedLinks)
 
+    // Sequence: update/delete links first, THEN delete the book
+    // (avoids ON DELETE CASCADE wiping links before they are remapped)
     Promise.all([
       ...linksToUpdate.map(({ id, source_id, target_id }) =>
         updateLinkRowById(id, { source_id, target_id })
       ),
       ...linkIdsToDelete.map((id) => deleteLinkRowById(id)),
-      deleteBookRowById(fromNodeId),
-    ]).then((results) => {
-      const errors = results.filter((r) => r.error)
-      if (errors.length > 0) devWarn('Erreurs lors de la fusion', errors)
-      invalidate()
+      ...(newAuthorIds.length > 0 ? [insertBookAuthors(intoNodeId, newAuthorIds)] : []),
+    ]).then((linkResults) => {
+      const linkErrors = linkResults.filter((r) => r.error)
+      if (linkErrors.length > 0) devWarn('Erreurs lors de la fusion (liens)', linkErrors)
+
+      // Only delete book after links are safely remapped
+      Promise.all([
+        deleteBookAuthorsByBookId(fromNodeId),
+        deleteBookRowById(fromNodeId),
+      ]).then((delResults) => {
+        const delErrors = delResults.filter((r) => r.error)
+        if (delErrors.length > 0) devWarn('Erreurs lors de la fusion (suppression)', delErrors)
+        invalidate()
+      })
     })
 
     return true

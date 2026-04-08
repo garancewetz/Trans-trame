@@ -44,6 +44,7 @@ export type Link = {
   page?: string
   context?: string
   type?: string
+  provenance?: 'manual'
 } & Record<string, unknown>
 
 export type GraphData = {

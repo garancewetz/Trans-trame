@@ -58,6 +58,7 @@ export function useBooksTabTableDerived({
         case 'lastName': va = bookAuthorDisplay(a, authorsMap).toLowerCase(); vb = bookAuthorDisplay(b, authorsMap).toLowerCase(); break
         case 'year': va = a.year || 0; vb = b.year || 0; break
         case 'linkCount': va = linkCountByNode.get(a.id) || 0; vb = linkCountByNode.get(b.id) || 0; break
+        case 'createdAt': va = (a.created_at as string) || ''; vb = (b.created_at as string) || ''; break
         default: va = ''; vb = ''
       }
       if (va < vb) return sortDir === 'asc' ? -1 : 1

@@ -79,7 +79,7 @@ export function TableSameWorkModal({
         </strong>
       </p>
       <p className="mt-1 text-[0.75rem] text-white/20">
-        Tous les ouvrages ci-dessus recevront ce titre original et seront fusionnés en un seul nœud dans le graphe.
+        Tous les ouvrages ci-dessus recevront ce titre original et seront regroupés en un seul nœud dans le graphe. Chaque ouvrage reste une entrée séparée en base.
       </p>
     </Modal>
   )

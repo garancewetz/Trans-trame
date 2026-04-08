@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { toggleSetItem } from '@/common/utils/setUtils'
 import type { Book } from '@/types/domain'
-import { parseSmartInput, type ParsedBook } from '../parseSmartInput'
+import { parseSmartInput, parseSmartInputHybrid, type ParsedBook } from '../parseSmartInput'
 import { runSmartImportBatchInsert } from '../smartImportModal.batchInsert'
 import type { SmartImportModalProps } from '../smartImportModal.types'
 import { detectAuthorInitialMatches, normStr, type AuthorMergeSuggestion } from '../smartImportModal.utils'
@@ -25,6 +25,9 @@ export function useSmartImportModalLogic({
   const [checked, setChecked] = useState<Set<string>>(new Set())
   const [injected, setInjected] = useState(false)
   const [inserting, setInserting] = useState(false)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analyzeProgress, setAnalyzeProgress] = useState(0)
+  const fakeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [masterNode, setMasterNode] = useState<Book | null>(null)
   const [masterContext, setMasterContext] = useState('')
   const [linkDirection, setLinkDirection] = useState('master-cites-imported')
@@ -74,18 +77,54 @@ export function useSmartImportModalLogic({
     setDismissedDuplicates(new Set())
     setInjected(false)
     setInserting(false)
+    setAnalyzing(false)
+    setAnalyzeProgress(0)
+    if (fakeTimerRef.current) { clearInterval(fakeTimerRef.current); fakeTimerRef.current = null }
     setLinkDirection('master-cites-imported')
   }
 
-  const handleAnalyze = () => {
-    const results = parseSmartInput(rawText, existingNodes, knownAuthors, knownEditions)
-    setParsed(results)
-    setChecked(new Set(results.filter((r) => !r.isDuplicate).map((r) => r.id)))
+  const handleAnalyze = async () => {
+    const localResults = parseSmartInput(rawText, existingNodes, knownAuthors, knownEditions)
     setEditingCell(null)
     setEditingAuthor(null)
     setMergedIds(new Set())
-    setPhase('preview')
     setInjected(false)
+    setAnalyzing(true)
+    setAnalyzeProgress(0)
+
+    // Simulated progress that creeps up to ~85% while waiting for the API
+    if (fakeTimerRef.current) clearInterval(fakeTimerRef.current)
+    fakeTimerRef.current = setInterval(() => {
+      setAnalyzeProgress((p) => {
+        if (p >= 85) { clearInterval(fakeTimerRef.current!); fakeTimerRef.current = null; return p }
+        return p + (85 - p) * 0.08
+      })
+    }, 400)
+
+    try {
+      const enriched = await parseSmartInputHybrid(localResults, existingNodes, (done, total) => {
+        // Real chunk progress overrides fake progress
+        const real = Math.round((done / total) * 100)
+        setAnalyzeProgress((p) => Math.max(p, real))
+      })
+      if (fakeTimerRef.current) { clearInterval(fakeTimerRef.current); fakeTimerRef.current = null }
+      setAnalyzeProgress(100)
+      if (enriched.some((r) => r.parsedByLLM)) {
+        setParsed(enriched)
+        setChecked(new Set(enriched.filter((r) => !r.isDuplicate).map((r) => r.id)))
+      } else {
+        setParsed(localResults)
+        setChecked(new Set(localResults.filter((r) => !r.isDuplicate).map((r) => r.id)))
+      }
+    } catch {
+      if (fakeTimerRef.current) { clearInterval(fakeTimerRef.current); fakeTimerRef.current = null }
+      setAnalyzeProgress(100)
+      setParsed(localResults)
+      setChecked(new Set(localResults.filter((r) => !r.isDuplicate).map((r) => r.id)))
+    }
+
+    setAnalyzing(false)
+    setPhase('preview')
   }
 
   const handleMerge = (item: ParsedBook) => {
@@ -341,6 +380,23 @@ export function useSmartImportModalLogic({
     onClose()
   }
 
+  const handleReparseChecked = async () => {
+    const selected = parsed.filter((r) => checked.has(r.id))
+    if (selected.length === 0) return
+    setAnalyzing(true)
+    try {
+      const enriched = await parseSmartInputHybrid(selected, existingNodes)
+      // Merge enriched items back into the full list
+      const enrichedMap = new Map(enriched.map((r) => [r.id, r]))
+      setParsed((prev) =>
+        prev.map((item) => enrichedMap.get(item.id) ?? item),
+      )
+    } catch {
+      // LLM failed — keep current results
+    }
+    setAnalyzing(false)
+  }
+
   const goBack = () => {
     setPhase('input')
     setEditingCell(null)
@@ -349,7 +405,7 @@ export function useSmartImportModalLogic({
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
-    if (phase === 'input' && rawText.trim()) handleAnalyze()
+    if (phase === 'input' && rawText.trim() && !analyzing) void handleAnalyze()
     else if (phase === 'preview' && checked.size > 0 && !injected && !inserting) void handleInject()
   }
 
@@ -361,6 +417,8 @@ export function useSmartImportModalLogic({
     checked,
     injected,
     inserting,
+    analyzing,
+    analyzeProgress,
     masterNode,
     setMasterNode,
     masterContext,
@@ -391,6 +449,7 @@ export function useSmartImportModalLogic({
     handleUpdateAxes,
     handleUpdateField,
     handleSwapFields,
+    handleReparseChecked,
     knownEditions,
   }
 }

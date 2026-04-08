@@ -129,5 +129,6 @@ export function useTableViewProps({
     initialFocusBookId: tableFocusBookId,
     onFocusBookOnMap: openBookInSidePanel,
     onOpenWorkDetail: openBookInSidePanel,
+
   }
 }

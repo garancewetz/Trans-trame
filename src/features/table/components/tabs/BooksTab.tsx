@@ -5,6 +5,7 @@ import { Merge, Sparkles } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { TableMergeModal } from '../TableMergeModal'
 import { TableSameWorkModal } from '../TableSameWorkModal'
+import { AIEnrichModal } from '../AIEnrichModal'
 import type { Author, AuthorId, Book, BookId, Link } from '@/types/domain'
 import { type Axis } from '@/common/utils/categories'
 import { BooksTabBooksTable } from './BooksTabBooksTable'
@@ -189,6 +190,16 @@ export function BooksTab({
     clearSelection()
   }
 
+  const [aiEnrichModal, setAiEnrichModal] = useState(false)
+  const [aiEnrichBooks, setAiEnrichBooks] = useState<Book[]>([])
+
+  const openAIEnrich = () => {
+    const selected = nodes.filter((n) => selectedIds.has(n.id))
+    if (selected.length === 0) return
+    setAiEnrichBooks(selected)
+    setAiEnrichModal(true)
+  }
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {(duplicateGroups.length > 0 || orphans.length > 0) && (
@@ -246,6 +257,7 @@ export function BooksTab({
           setMergeConfirm(false)
           setMergeModal(true)
         }}
+        onAIEnrich={openAIEnrich}
         onExport={() => {
           const selected = (nodes || []).filter((n) => selectedIds.has(n.id))
           return selected
@@ -299,6 +311,7 @@ export function BooksTab({
         onFocusAuthorInAuthorsTab={onFocusAuthorInAuthorsTab}
         onOpenLinksForBook={onOpenLinksForBook}
         onOpenWorkDetail={onOpenWorkDetail}
+
       />
 
       <TableMergeModal
@@ -324,6 +337,14 @@ export function BooksTab({
         setConfirm={setSameWorkConfirm}
         onConfirm={handleConfirmSameWork}
         onClose={() => { setSameWorkModal(false); setSameWorkTitle(null); setSameWorkBooks([]) }}
+      />
+
+      <AIEnrichModal
+        open={aiEnrichModal}
+        books={aiEnrichBooks}
+        authorsMap={authorsMap}
+        onUpdateBook={onUpdateBook}
+        onClose={() => { setAiEnrichModal(false); setAiEnrichBooks([]) }}
       />
     </div>
   )

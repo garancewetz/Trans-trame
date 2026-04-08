@@ -77,7 +77,7 @@ export function deleteBookAuthorsByBookId(bookId: string) {
 
 // ── JSON export helpers ──────────────────────────────────────────────────
 
-function downloadJson(data: unknown, filename: string) {
+export function downloadJson(data: unknown, filename: string) {
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: 'application/json',
   })
@@ -89,7 +89,7 @@ function downloadJson(data: unknown, filename: string) {
   URL.revokeObjectURL(url)
 }
 
-function exportFilename(suffix: string) {
+export function exportFilename(suffix: string) {
   return `trans-trame-${suffix}-${new Date().toISOString().slice(0, 10)}.json`
 }
 

@@ -9,6 +9,7 @@ import { TableOrphanModal } from './TableOrphanModal'
 import { TableDedupeModal } from './TableDedupeModal'
 import { TableAuthorDedupeModal } from './TableAuthorDedupeModal'
 import { SmartImportModal } from './SmartImportModal'
+
 import type { TableViewProps } from '../tableViewTypes'
 import { useTableViewController } from '../hooks/useTableViewController'
 
@@ -67,6 +68,10 @@ export function TableView(props: TableViewProps) {
         setAuthorSearch={c.setAuthorSearch}
         linkSearch={c.linkSearch}
         setLinkSearch={c.setLinkSearch}
+        nodes={nodes}
+        authors={authors}
+        links={links}
+        authorsMap={c.authorsMap}
       />
 
       {c.tab === 'books' && (
@@ -156,11 +161,13 @@ export function TableView(props: TableViewProps) {
       <TableOrphanModal
         orphanModal={c.orphanModal}
         orphans={c.orphans}
+        allNodes={nodes}
         authorsMap={c.authorsMap}
         handleCleanOrphans={c.handleCleanOrphans}
         orphanConfirm={c.orphanConfirm}
         setOrphanModal={c.setOrphanModal}
         setOrphanConfirm={c.setOrphanConfirm}
+        onAddLink={onAddLink}
       />
 
       <TableDedupeModal
@@ -176,6 +183,7 @@ export function TableView(props: TableViewProps) {
         open={c.authorDedupeModal}
         duplicateGroups={c.authorDuplicateGroups}
         handleMergeDupes={c.handleMergeAuthorDupes}
+        nodes={nodes}
         confirm={c.authorDedupeConfirm}
         setOpen={c.setAuthorDedupeModal}
         setConfirm={c.setAuthorDedupeConfirm}
@@ -194,6 +202,7 @@ export function TableView(props: TableViewProps) {
         onImportComplete={onImportComplete}
         initialMasterNode={c.smartImportPrefilledBook}
       />
+
     </div>
   )
 }

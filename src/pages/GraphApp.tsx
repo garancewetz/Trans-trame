@@ -10,6 +10,7 @@ import { Timeline } from '@/features/timeline/components/Timeline'
 import { TextsPanel } from '@/features/texts-panel/components/TextsPanel'
 import { AuthorsPanel } from '@/features/authors-panel/components/AuthorsPanel'
 import { KeyboardHints } from '@/common/components/ui/KeyboardHints'
+
 import { AXES_COLORS } from '@/common/utils/categories'
 import { useAppData } from '@/core/AppDataContext'
 import { useAppDerivedData } from '@/common/hooks/useAppDerivedData'
@@ -42,7 +43,6 @@ export function GraphApp() {
 
   const graphRef = useRef<GraphImperativeHandle | null>(null)
   const analysisPanelRef = useRef<AnalysisPanelImperativeHandle | null>(null)
-
   const ui = useAppUiState(graphData, authors)
   useMapUrlSync({
     books,
@@ -76,6 +76,7 @@ export function GraphApp() {
     setTableMode: ui.setTableMode,
     openTextsPanel: ui.openTextsPanel,
     openAuthorsPanel: ui.openAuthorsPanel,
+
     analysisPanelRef,
     graphData,
     authorCount: derived.authorCount,
@@ -139,6 +140,7 @@ export function GraphApp() {
     handleUpdateLink,
     handleDeleteLink,
     handleMergeBooks,
+
   })
 
   const isGraphView = timeline.viewMode === 'constellation'

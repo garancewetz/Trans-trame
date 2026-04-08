@@ -25,4 +25,5 @@ export type TableViewProps = {
   onFocusBookOnMap?: (bookId: BookId) => void
   /** Ouvre la grande fiche ouvrage (panneau). */
   onOpenWorkDetail?: (bookId: BookId) => void
+
 }

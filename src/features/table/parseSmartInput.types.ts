@@ -24,4 +24,10 @@ export type ParsedBook = {
   citation: string
   existingNode: ExistingNode | null
   raw: string
+  /** Confidence score from the local parser (0–1). Low score triggers LLM fallback. */
+  confidence?: number
+  /** True if the local parser flagged this line for LLM re-parsing. */
+  needsLLM?: boolean
+  /** True if this result was enriched/replaced by the LLM. */
+  parsedByLLM?: boolean
 }

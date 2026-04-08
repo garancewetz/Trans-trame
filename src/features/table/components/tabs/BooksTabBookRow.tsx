@@ -63,11 +63,15 @@ export function BooksTabBookRow({
     <tr
       data-book-row-id={node.id}
       className={[
-        'group border-b border-white/4 transition-colors',
+        'group cursor-pointer border-b border-white/4 transition-colors',
         justAdded ? 'animate-flash-row' : '',
         isSelected ? 'bg-green/[0.025]' : rowIndex % 2 === 0 ? 'bg-white/[0.003]' : '',
         'hover:bg-white/2.5',
       ].join(' ')}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest('button, input, a, [data-editable]')) return
+        toggleRow(node.id)
+      }}
     >
       <td className="px-3 py-2">
         <Button
@@ -97,7 +101,7 @@ export function BooksTabBookRow({
         ) : (
           <span
             className="block cursor-text px-0.5 leading-snug hover:text-white"
-            onClick={() => { setEditingCell({ nodeId: node.id, field: 'title' }); setEditingValue(node.title) }}
+            onClick={(e) => { e.stopPropagation(); setEditingCell({ nodeId: node.id, field: 'title' }); setEditingValue(node.title) }}
           >
             {node.title}
           </span>
@@ -121,7 +125,7 @@ export function BooksTabBookRow({
         ) : (node.authorIds?.length ?? 0) > 0 ? (
           <div
             className="flex min-h-[1.5em] cursor-pointer flex-wrap items-center gap-1 rounded px-0.5 py-0.5 hover:bg-white/4"
-            onClick={() => setEditingAuthorsNodeId(node.id)}
+            onClick={(e) => { e.stopPropagation(); setEditingAuthorsNodeId(node.id) }}
           >
             {(node.authorIds ?? []).map((aid) => {
               const a = authorsMap.get(aid)
@@ -143,7 +147,7 @@ export function BooksTabBookRow({
         ) : (
           <span
             className="block min-h-[1.2em] w-full cursor-text px-0.5 text-white/42 hover:text-white"
-            onClick={() => setEditingAuthorsNodeId(node.id)}
+            onClick={(e) => { e.stopPropagation(); setEditingAuthorsNodeId(node.id) }}
           >
             {bookAuthorDisplay(node, authorsMap) || <span className="text-white/18">—</span>}
           </span>
@@ -163,7 +167,7 @@ export function BooksTabBookRow({
           />
         ) : (
           <span className="cursor-text tabular-nums px-0.5 hover:text-white"
-            onClick={() => { setEditingCell({ nodeId: node.id, field: 'year' }); setEditingValue(String(node.year || '')) }}>
+            onClick={(e) => { e.stopPropagation(); setEditingCell({ nodeId: node.id, field: 'year' }); setEditingValue(String(node.year || '')) }}>
             {node.year || <span className="text-white/18">—</span>}
           </span>
         )}
@@ -186,6 +190,13 @@ export function BooksTabBookRow({
           {linkCount}
           <Link2 size={10} className="shrink-0" />
         </Button>
+      </td>
+      <td className="px-3 py-2">
+        <span className="font-mono text-[0.78rem] tabular-nums text-white/30">
+          {node.created_at
+            ? new Date(node.created_at as string).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+            : '—'}
+        </span>
       </td>
       <td className="px-2 py-2">
         {onOpenWorkDetail ? (

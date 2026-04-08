@@ -13,6 +13,9 @@ export const CATEGORY_THEME = {
 
   // --- La catégorie suggérée pour compléter les 240 titres ---
   BODY: { color: '#FF4D6D', label: 'Body & Sexology' }, // Pour la recherche scientifique (Brotto, Chivers, Laqueur)
+
+  // --- Fallback pour les textes hors-thème ---
+  UNCATEGORIZED: { color: '#999999', label: 'Sans catégorie' },
 } as const
 
 

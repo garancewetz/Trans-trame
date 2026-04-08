@@ -99,6 +99,9 @@ export function SmartImportPreviewRow({
               }}
             >
               {item.title || <em className="text-white/30">Sans titre</em>}
+              {item.parsedByLLM && (
+                <span className="ml-1.5 inline-block rounded bg-cyan/15 px-1 py-px align-middle font-sans text-[0.6rem] font-medium tracking-wide text-cyan/80" title="Enrichi par Gemini">AI</span>
+              )}
             </span>
           )}
           {/* Swap title ↔ author */}

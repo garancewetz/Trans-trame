@@ -16,6 +16,7 @@ export type DbBookRow = {
   description?: string
   axes?: string[]
   original_title?: string | null
+  created_at?: string | null
 }
 
 export type DbAuthorRow = {
@@ -23,6 +24,7 @@ export type DbAuthorRow = {
   first_name?: string
   last_name?: string
   axes?: string[]
+  created_at?: string | null
 }
 
 export type DbLinkRow = {
@@ -83,6 +85,7 @@ export function dbBookToNode(row: DbBookRow, authorIds?: string[]): Book {
     description: row.description || '',
     axes: row.axes || [],
     originalTitle: row.original_title ?? null,
+    created_at: row.created_at ?? null,
   }
 }
 
@@ -93,6 +96,7 @@ export function dbAuthorToNode(row: DbAuthorRow): Author {
     firstName: row.first_name,
     lastName: row.last_name,
     axes: row.axes || [],
+    created_at: row.created_at ?? null,
   }
 }
 

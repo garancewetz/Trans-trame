@@ -43,12 +43,16 @@ export function AuthorTableRow({
     <tr
       data-author-row-id={author.id}
       className={[
-        'group border-b border-white/4 transition-colors',
+        'group cursor-pointer border-b border-white/4 transition-colors',
         justAdded ? 'animate-flash-row' : '',
         focusAuthorId === author.id ? 'bg-cyan/8 ring-1 ring-cyan/45' : '',
         isSelected ? 'bg-green/[0.025]' : index % 2 === 0 ? 'bg-white/[0.003]' : '',
         'hover:bg-white/2.5',
       ].join(' ')}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest('button, input, a')) return
+        toggleRow(author.id)
+      }}
     >
       {/* Checkbox */}
       <td className="px-3 py-2">
@@ -84,7 +88,8 @@ export function AuthorTableRow({
         ) : (
           <span
             className="block min-h-[1.2em] cursor-text px-0.5 hover:text-white"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation()
               setEditingCell({ authorId: author.id, field: 'lastName' })
               setEditingValue(author.lastName || '')
             }}
@@ -112,7 +117,8 @@ export function AuthorTableRow({
         ) : (
           <span
             className="block min-h-[1.2em] cursor-text px-0.5 text-white/55 hover:text-white"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation()
               setEditingCell({ authorId: author.id, field: 'firstName' })
               setEditingValue(author.firstName || '')
             }}
@@ -133,6 +139,15 @@ export function AuthorTableRow({
               <span className="text-amber/60">0</span>
             </>
           )}
+        </span>
+      </td>
+
+      {/* Date d'ajout */}
+      <td className="px-3 py-2">
+        <span className="font-mono text-[0.78rem] tabular-nums text-white/30">
+          {author.created_at
+            ? new Date(author.created_at as string).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+            : '—'}
         </span>
       </td>
 

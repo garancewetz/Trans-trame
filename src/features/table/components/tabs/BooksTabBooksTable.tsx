@@ -120,7 +120,10 @@ export function BooksTabBooksTable({
             <TH col="linkCount" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="w-20">
               Liens
             </TH>
-            <th className="w-[5.5rem] px-2 py-2.5 text-left text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-white/32">
+            <TH col="createdAt" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="w-28">
+              Ajouté
+            </TH>
+            <th className="w-22 px-2 py-2.5 text-left text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-white/32">
               Graphe
             </th>
           </tr>
@@ -167,6 +170,7 @@ export function BooksTabBooksTable({
               onFocusAuthorInAuthorsTab={onFocusAuthorInAuthorsTab}
               onOpenLinksForBook={onOpenLinksForBook}
               onOpenWorkDetail={onOpenWorkDetail}
+
             />
           ))}
         </tbody>

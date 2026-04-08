@@ -1,4 +1,4 @@
-import { Link2, X, Zap } from 'lucide-react'
+import { Link2, Loader2, X, Zap } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { TextareaImport } from '@/common/components/ui/TextareaImport'
@@ -16,6 +16,8 @@ export function SmartImportInputPhase({
   setLinkDirection,
   existingNodes,
   authorsMap,
+  analyzing,
+  analyzeProgress,
 }) {
   return (
     <>
@@ -84,15 +86,30 @@ export function SmartImportInputPhase({
         )}
       </div>
 
-      <div className="flex justify-end">
-        <Button
-          type="submit"
-          disabled={!rawText.trim()}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-cyan/35 bg-cyan/10 px-4 py-2 text-[0.85rem] font-semibold text-cyan/85 transition-all hover:bg-cyan/18 disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          <Zap size={13} /> Analyser
-        </Button>
-      </div>
+      {analyzing ? (
+        <div className="flex flex-col items-center gap-3 py-2">
+          <div className="flex items-center gap-2 text-[0.85rem] text-cyan/70">
+            <Loader2 size={14} className="animate-spin" />
+            <span>Analyse en cours… {Math.round(analyzeProgress)}%</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/8">
+            <div
+              className="h-full rounded-full bg-cyan/60 transition-all duration-500 ease-out"
+              style={{ width: `${Math.max(analyzeProgress, 3)}%` }}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="flex justify-end">
+          <Button
+            type="submit"
+            disabled={!rawText.trim()}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-cyan/35 bg-cyan/10 px-4 py-2 text-[0.85rem] font-semibold text-cyan/85 transition-all hover:bg-cyan/18 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <Zap size={13} /> Analyser
+          </Button>
+        </div>
+      )}
     </>
   )
 }

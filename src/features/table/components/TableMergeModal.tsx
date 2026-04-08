@@ -37,8 +37,8 @@ export function TableMergeModal({
   return (
     <Modal
       open={mergeModal}
-      title="Fusionner deux identités"
-      subtitle="L'identité non conservée sera supprimée. Ses ouvrages et liens seront transférés vers l'identité conservée."
+      title="Dédoublonner"
+      subtitle="L'ouvrage non conservé sera définitivement supprimé. Ses citations et liens seront transférés vers l'ouvrage conservé."
       footer={
         <>
           <Button

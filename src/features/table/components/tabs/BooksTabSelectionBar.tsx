@@ -1,6 +1,7 @@
-import { BookOpen, ClipboardCopy, Merge, Trash2 } from 'lucide-react'
+import { BookOpen, ClipboardCopy, Merge, Sparkles, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/common/components/ui/Button'
+import { Tooltip } from '@/common/components/ui/Tooltip'
 
 type Props = {
   selectedCount: number
@@ -13,6 +14,7 @@ type Props = {
   onOpenMergeModal: () => void
   onOpenSameWorkModal: () => void
   onExport: () => string
+  onAIEnrich?: () => void
 }
 
 export function BooksTabSelectionBar({
@@ -26,6 +28,7 @@ export function BooksTabSelectionBar({
   onOpenMergeModal,
   onOpenSameWorkModal,
   onExport,
+  onAIEnrich,
 }: Props) {
   const [copied, setCopied] = useState(false)
 
@@ -44,22 +47,26 @@ export function BooksTabSelectionBar({
         {selectedCount} sélectionné{selectedCount > 1 ? 's' : ''}
       </span>
       {showSameWork && (
-        <Button
-          type="button"
-          onClick={onOpenSameWorkModal}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-violet/30 bg-violet/[0.07] px-3 py-1.5 text-[0.8rem] font-semibold text-violet/75 transition-all hover:bg-violet/[0.14]"
-        >
-          <BookOpen size={12} /> Même œuvre
-        </Button>
+        <Tooltip content="Regrouper des traductions ou éditions d'une même œuvre (les ouvrages restent séparés en base)">
+          <Button
+            type="button"
+            onClick={onOpenSameWorkModal}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-violet/30 bg-violet/[0.07] px-3 py-1.5 text-[0.8rem] font-semibold text-violet/75 transition-all hover:bg-violet/[0.14]"
+          >
+            <BookOpen size={12} /> Même œuvre
+          </Button>
+        </Tooltip>
       )}
       {showMerge && (
-        <Button
-          type="button"
-          onClick={onOpenMergeModal}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-amber/30 bg-amber/[0.07] px-3 py-1.5 text-[0.8rem] font-semibold text-amber/75 transition-all hover:bg-amber/[0.14]"
-        >
-          <Merge size={12} /> Fusionner
-        </Button>
+        <Tooltip content="Supprimer un doublon en transférant ses liens vers l'ouvrage conservé (irréversible)">
+          <Button
+            type="button"
+            onClick={onOpenMergeModal}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-amber/30 bg-amber/[0.07] px-3 py-1.5 text-[0.8rem] font-semibold text-amber/75 transition-all hover:bg-amber/[0.14]"
+          >
+            <Merge size={12} /> Dédoublonner
+          </Button>
+        </Tooltip>
       )}
       <Button
         type="button"
@@ -69,6 +76,17 @@ export function BooksTabSelectionBar({
         <ClipboardCopy size={11} />
         {copied ? 'Copié !' : `Exporter (${selectedCount})`}
       </Button>
+      {onAIEnrich && (
+        <Tooltip content="Enrichir les ouvrages sélectionnés via Gemini (catégories, édition, année…)">
+          <Button
+            type="button"
+            onClick={() => onAIEnrich()}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-cyan/25 bg-cyan/5 px-3 py-1.5 text-[0.8rem] font-semibold text-cyan/65 transition-all hover:bg-cyan/12"
+          >
+            <Sparkles size={11} /> AI ({selectedCount})
+          </Button>
+        </Tooltip>
+      )}
       <Button
         type="button"
         onClick={onBulkDelete}

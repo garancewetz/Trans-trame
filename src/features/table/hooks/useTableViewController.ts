@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toggleSetItem } from '@/common/utils/setUtils'
 import { buildAuthorsMap } from '@/common/utils/authorUtils'
-import type { Author, AuthorId, Book, BookId } from '@/types/domain'
+import type { AuthorId, Book, BookId } from '@/types/domain'
 import type { TableViewProps } from '../tableViewTypes'
 import { useTableViewDuplicateDerived } from './useTableViewDuplicateDerived'
 import { useTableViewLinkDerived } from './useTableViewLinkDerived'
@@ -77,6 +77,8 @@ export function useTableViewController({
 
   const [smartImportModal, setSmartImportModal] = useState(false)
   const [smartImportPrefilledBook, setSmartImportPrefilledBook] = useState<Book | null>(null)
+
+
 
   const openSmartImportForBook = (node: Book) => {
     setSmartImportPrefilledBook(node)
@@ -184,20 +186,14 @@ export function useTableViewController({
     setDedupeConfirm(false)
   }
 
-  const handleMergeAuthorDupes = () => {
+  const handleMergeAuthorDupes = (choices: Map<number, AuthorId>) => {
     if (!authorDedupeConfirm) { setAuthorDedupeConfirm(true); return }
-    const score = (a: Author) => {
-      const filled = [a.firstName, a.lastName].filter(Boolean).length
-      let booksCount = 0
-      ;(nodes || []).forEach((b) => {
-        if ((b.authorIds || []).includes(a.id)) booksCount += 1
+    authorDuplicateGroups.forEach((group, i) => {
+      const keepId = choices.get(i) || group[0]?.id
+      if (!keepId) return
+      group.forEach((a) => {
+        if (a.id !== keepId) mergeAuthors(a.id, keepId)
       })
-      return filled * 10 + booksCount
-    }
-    authorDuplicateGroups.forEach((group) => {
-      const sorted = [...group].sort((a, b) => score(b) - score(a))
-      const keep = sorted[0]
-      sorted.slice(1).forEach((from) => mergeAuthors(from.id, keep.id))
     })
     setAuthorDedupeModal(false)
     setAuthorDedupeConfirm(false)
@@ -248,6 +244,7 @@ export function useTableViewController({
     smartImportPrefilledBook,
     openSmartImportForBook,
     closeSmartImport,
+
     authorsMap,
     orphans,
     duplicateGroups,

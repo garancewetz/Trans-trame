@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { BookCopy, Check, ChevronRight, Eye, Link2, Plus, Quote, Search, Trash2, X, Zap } from 'lucide-react'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { BookCopy, Check, ChevronDown, ChevronRight, Eye, Link2, Plus, Quote, Search, Trash2, X, Zap } from 'lucide-react'
 import { bookAuthorDisplay, type AuthorNode } from '@/common/utils/authorUtils'
 import { AxesDot } from '@/common/components/ui/AxesDot'
 import { Button } from '@/common/components/ui/Button'
@@ -92,6 +92,16 @@ export function LinksTab({
   const [inlineOpen, setInlineOpen] = useState(false)
   const [justAddedId, setJustAddedId] = useState<BookId | null>(null)
   const justAddedRef = useRef<HTMLLabelElement>(null)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+
+  const toggleGroup = useCallback((groupId: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(groupId)) next.delete(groupId)
+      else next.add(groupId)
+      return next
+    })
+  }, [])
 
   useEffect(() => {
     if (justAddedId && justAddedRef.current) {
@@ -173,29 +183,34 @@ export function LinksTab({
               )}
             </div>
           ) : (
-            groupedLinks.map((group) => (
-              <SourceGroup
-                key={group.srcId || group.sourceNode?.id}
-                group={group}
-                authorsMap={authorsMap}
-                editingLink={editingLink}
-                editingLinkValue={editingLinkValue}
-                setEditingLinkValue={setEditingLinkValue}
-                setEditingLink={setEditingLink}
-                commitLinkEdit={commitLinkEdit}
-                deletingLinkId={deletingLinkId}
-                setDeletingLinkId={setDeletingLinkId}
-                onDeleteLink={onDeleteLink}
-                onOpenWorkDetail={onOpenWorkDetail}
-                onTisserFrom={group.sourceNode ? () => {
-                  setLinkSourceNode(group.sourceNode!)
-                  setLinkCheckedIds(new Set<BookId>())
-                  setChecklistSearch('')
-                  switchToCreate()
-                } : undefined}
-                onSmartImportFrom={group.sourceNode && onSmartImportFrom ? () => onSmartImportFrom(group.sourceNode!) : undefined}
-              />
-            ))
+            groupedLinks.map((group) => {
+              const groupId = group.srcId || group.sourceNode?.id || ''
+              return (
+                <SourceGroup
+                  key={groupId}
+                  group={group}
+                  authorsMap={authorsMap}
+                  isOpen={expandedGroups.has(groupId)}
+                  onToggle={() => toggleGroup(groupId)}
+                  editingLink={editingLink}
+                  editingLinkValue={editingLinkValue}
+                  setEditingLinkValue={setEditingLinkValue}
+                  setEditingLink={setEditingLink}
+                  commitLinkEdit={commitLinkEdit}
+                  deletingLinkId={deletingLinkId}
+                  setDeletingLinkId={setDeletingLinkId}
+                  onDeleteLink={onDeleteLink}
+                  onOpenWorkDetail={onOpenWorkDetail}
+                  onTisserFrom={group.sourceNode ? () => {
+                    setLinkSourceNode(group.sourceNode!)
+                    setLinkCheckedIds(new Set<BookId>())
+                    setChecklistSearch('')
+                    switchToCreate()
+                  } : undefined}
+                  onSmartImportFrom={group.sourceNode && onSmartImportFrom ? () => onSmartImportFrom(group.sourceNode!) : undefined}
+                />
+              )
+            })
           )}
         </div>
       )}
@@ -392,6 +407,8 @@ export function LinksTab({
 function SourceGroup({
   group,
   authorsMap,
+  isOpen,
+  onToggle,
   editingLink,
   editingLinkValue,
   setEditingLinkValue,
@@ -406,6 +423,8 @@ function SourceGroup({
 }: {
   group: LinkGroup
   authorsMap: Map<string, AuthorNode>
+  isOpen: boolean
+  onToggle: () => void
   editingLink: null | { id: string; field: string }
   editingLinkValue: string
   setEditingLinkValue: (v: string) => void
@@ -419,24 +438,37 @@ function SourceGroup({
   onSmartImportFrom?: () => void
 }) {
   return (
-    <div className="mb-4">
-      {/* Source header */}
-      <div className="mb-1 flex items-center gap-2">
+    <div className="mb-1">
+      {/* Source header — clickable accordion toggle */}
+      <div
+        className={[
+          'flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 transition-colors',
+          isOpen ? 'bg-white/4' : 'hover:bg-white/3',
+        ].join(' ')}
+        onClick={onToggle}
+      >
+        <ChevronDown
+          size={12}
+          className={[
+            'shrink-0 text-white/30 transition-transform duration-150',
+            isOpen ? '' : '-rotate-90',
+          ].join(' ')}
+        />
         <AxesDot axes={group.sourceNode?.axes || []} />
-        <span className="font-mono text-[0.88rem] font-semibold text-white/85">
+        <span className="min-w-0 flex-1 truncate font-mono text-[0.88rem] font-semibold text-white/85">
           {group.sourceNode?.title || '[ouvrage supprimé]'}
+          <span className="ml-1.5 font-normal text-[0.75rem] text-white/30">
+            {group.sourceNode ? bookAuthorDisplay(group.sourceNode, authorsMap) : ''}
+            {group.sourceNode?.year ? `, ${group.sourceNode.year}` : ''}
+          </span>
         </span>
-        <span className="font-mono text-[0.75rem] text-white/30">
-          {group.sourceNode ? bookAuthorDisplay(group.sourceNode, authorsMap) : ''}
-          {group.sourceNode?.year ? `, ${group.sourceNode.year}` : ''}
-        </span>
-        <span className="ml-auto shrink-0 rounded-full bg-white/6 px-2 py-px font-mono text-[0.72rem] text-white/30">
+        <span className="shrink-0 rounded-full bg-white/6 px-2 py-px font-mono text-[0.72rem] text-white/30">
           {group.links.length}
         </span>
         {onTisserFrom && (
           <button
             type="button"
-            onClick={onTisserFrom}
+            onClick={(e) => { e.stopPropagation(); onTisserFrom() }}
             className="shrink-0 inline-flex items-center gap-1 rounded-md border border-cyan/20 bg-cyan/6 px-2 py-0.5 font-mono text-[0.72rem] text-cyan/60 transition-all hover:border-cyan/40 hover:bg-cyan/12 hover:text-cyan/90"
           >
             <Plus size={10} />
@@ -446,7 +478,7 @@ function SourceGroup({
         {onSmartImportFrom && (
           <button
             type="button"
-            onClick={onSmartImportFrom}
+            onClick={(e) => { e.stopPropagation(); onSmartImportFrom() }}
             className="shrink-0 inline-flex items-center gap-1 rounded-md border border-amber/20 bg-amber/6 px-2 py-0.5 font-mono text-[0.72rem] text-amber/60 transition-all hover:border-amber/40 hover:bg-amber/12 hover:text-amber/90"
           >
             <Zap size={10} />
@@ -455,25 +487,27 @@ function SourceGroup({
         )}
       </div>
 
-      {/* Target links */}
-      <div className="ml-2 flex flex-col border-l border-white/8 pl-3">
-        {group.links.map((link) => (
-          <LinkRow
-            key={link.id}
-            link={link}
-            authorsMap={authorsMap}
-            editingLink={editingLink}
-            editingLinkValue={editingLinkValue}
-            setEditingLinkValue={setEditingLinkValue}
-            setEditingLink={setEditingLink}
-            commitLinkEdit={commitLinkEdit}
-            isDeleting={deletingLinkId === link.id}
-            setDeletingLinkId={setDeletingLinkId}
-            onDeleteLink={onDeleteLink}
-            onOpenWorkDetail={onOpenWorkDetail}
-          />
-        ))}
-      </div>
+      {/* Target links — visible only when open */}
+      {isOpen && (
+        <div className="ml-4 flex flex-col border-l border-white/8 pl-3 pb-2">
+          {group.links.map((link) => (
+            <LinkRow
+              key={link.id}
+              link={link}
+              authorsMap={authorsMap}
+              editingLink={editingLink}
+              editingLinkValue={editingLinkValue}
+              setEditingLinkValue={setEditingLinkValue}
+              setEditingLink={setEditingLink}
+              commitLinkEdit={commitLinkEdit}
+              isDeleting={deletingLinkId === link.id}
+              setDeletingLinkId={setDeletingLinkId}
+              onDeleteLink={onDeleteLink}
+              onOpenWorkDetail={onOpenWorkDetail}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

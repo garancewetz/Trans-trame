@@ -1,4 +1,4 @@
-import { Check, Merge, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { AlertTriangle, Check, Merge, Plus, RotateCcw, Sparkles, Trash2 } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { INPUT } from '../../tableConstants'
@@ -7,6 +7,7 @@ import { TableMergeAuthorsModal } from '../TableMergeAuthorsModal'
 import { AuthorTableRow } from '../AuthorTableRow'
 import { useAuthorsTabState } from '../../hooks/useAuthorsTabState'
 import type { Author, AuthorId, Book } from '@/types/domain'
+import type { MigrationResult } from '@/features/graph/hooks/graphDataMigration'
 
 type AuthorsTabProps = {
   authors: Author[]
@@ -15,7 +16,7 @@ type AuthorsTabProps = {
   onAddAuthor: (author: Author) => unknown
   onUpdateAuthor: (author: Author) => unknown
   onDeleteAuthor: (authorId: AuthorId) => unknown
-  onMigrateData?: () => Promise<{ newAuthors: number; updatedBooks: number } | null> | { newAuthors: number; updatedBooks: number } | null
+  onMigrateData?: () => Promise<MigrationResult | null> | MigrationResult | null
   onAddBookForAuthor?: (author: Author) => unknown
   focusAuthorId?: AuthorId | null
   onMergeAuthors?: (fromAuthorId: AuthorId, keepAuthorId: AuthorId) => unknown
@@ -52,6 +53,7 @@ export function AuthorsTab({
     inputLastName, setInputLastName,
     firstNameRef,
     legacyCount,
+    legacyBooks,
     bookCountByAuthor,
     mergeAuthorsList,
     filteredAuthors,
@@ -95,15 +97,68 @@ export function AuthorsTab({
           </Button>
         </div>
       )}
+      {legacyCount > 0 && (
+        <div className="shrink-0 border-b border-cyan/8 bg-cyan/2 px-5 py-2.5">
+          <p className="mb-1.5 font-mono text-[0.7rem] font-semibold uppercase tracking-wider text-white/30">
+            Ouvrages concernés
+          </p>
+          <ul className="flex flex-col gap-1">
+            {legacyBooks.map((b) => (
+              <li key={b.id} className="flex items-baseline gap-2 font-mono text-[0.75rem]">
+                <span className="text-white/55">{b.title || '(sans titre)'}</span>
+                <span className="text-white/25">—</span>
+                <span className="text-amber/50">
+                  {[b.firstName, b.lastName].filter(Boolean).join(' ') || '—'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Résultat de la migration */}
       {migrateResult && (
-        <div className="flex shrink-0 items-center gap-2 border-b border-green/12 bg-green/4 px-5 py-2.5">
-          <Check size={12} className="shrink-0 text-green" />
-          <p className="text-[0.82rem] text-green/80">
-            Migration terminée — {migrateResult.newAuthors} auteur{migrateResult.newAuthors > 1 ? 's' : ''} créé{migrateResult.newAuthors > 1 ? 's' : ''},
-            {' '}{migrateResult.updatedBooks} ouvrage{migrateResult.updatedBooks > 1 ? 's' : ''} mis à jour.
-          </p>
+        <div className="shrink-0 border-b border-green/12 bg-green/4 px-5 py-2.5">
+          <div className="flex items-center gap-2">
+            <Check size={12} className="shrink-0 text-green" />
+            <p className="text-[0.82rem] text-green/80">
+              Migration terminée — {migrateResult.newAuthors} auteur{migrateResult.newAuthors > 1 ? 's' : ''} créé{migrateResult.newAuthors > 1 ? 's' : ''},
+              {' '}{migrateResult.updatedBooks} ouvrage{migrateResult.updatedBooks > 1 ? 's' : ''} mis à jour.
+            </p>
+          </div>
+          {migrateResult.failures.length > 0 && (
+            <div className="mt-2.5 rounded-lg border border-red/15 bg-red/4 px-4 py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle size={12} className="shrink-0 text-red/70" />
+                  <p className="text-[0.82rem] font-semibold text-red/70">
+                    {migrateResult.failures.length} ouvrage{migrateResult.failures.length > 1 ? 's' : ''} en échec
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleMigrate}
+                  disabled={migrating}
+                  className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-red/25 bg-red/8 px-3 py-1.5 text-[0.8rem] font-semibold text-red/70 transition-all hover:bg-red/15 disabled:cursor-wait disabled:opacity-40"
+                >
+                  <RotateCcw size={11} />
+                  {migrating ? 'Retry…' : 'Réessayer'}
+                </Button>
+              </div>
+              <ul className="mt-2 flex flex-col gap-1.5">
+                {migrateResult.failures.map((f) => (
+                  <li key={f.bookId} className="flex flex-col gap-0.5 font-mono text-[0.75rem]">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-white/55">{f.title}</span>
+                      <span className="text-white/25">—</span>
+                      <span className="text-amber/50">{f.author || '—'}</span>
+                    </div>
+                    <span className="text-[0.7rem] text-red/40">{f.error}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 
@@ -202,6 +257,7 @@ export function AuthorsTab({
                 <TH col="lastName" activeCol={sortCol} dir={sortDir} onSort={handleSort} className="min-w-[140px]">Nom</TH>
                 <TH col="firstName" activeCol={sortCol} dir={sortDir} onSort={handleSort} className="min-w-[140px]">Prénom</TH>
                 <TH col="bookCount" activeCol={sortCol} dir={sortDir} onSort={handleSort} className="w-20">Ouvrages</TH>
+                <TH col="createdAt" activeCol={sortCol} dir={sortDir} onSort={handleSort} className="w-28">Ajouté</TH>
                 <th className="w-24 px-3 py-2.5" />
               </tr>
 
@@ -232,6 +288,7 @@ export function AuthorsTab({
                     onKeyDown={(e) => e.key === 'Enter' && handleAddAuthor()}
                   />
                 </td>
+                <td className="bg-cyan/6" />
                 <td className="bg-cyan/6" />
                 <td className="bg-cyan/6 px-2 py-1.5 align-bottom">
                   <Button
