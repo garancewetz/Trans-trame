@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { LayoutGrid, BookOpen, PenLine, Users, FlaskConical } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
@@ -6,41 +6,85 @@ import { Tooltip } from '@/common/components/ui/Tooltip'
 import { Logo } from '@/common/components/Logo'
 import { ViewSelector } from './ViewSelector'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
+import { axesGradient } from '@/common/utils/categories'
 import { CountBadge } from '@/common/components/ui/CountBadge'
+import { useAppData } from '@/core/AppDataContext'
+import { useFilter } from '@/core/FilterContext'
+import { useTableUi } from '@/core/TableUiContext'
+import { usePanelVisibility } from '@/core/PanelVisibilityContext'
+import { useSelection } from '@/core/SelectionContext'
+import { useGlobalSearch } from '@/features/shell/hooks/useGlobalSearch'
+import type { AnalysisPanelImperativeHandle } from '@/features/analysis-panel/components/AnalysisPanel'
 
-export function Navbar({ search, filters, view, catalogue }) {
+type NavbarProps = {
+  analysisPanelRef: RefObject<AnalysisPanelImperativeHandle | null>
+  viewMode: string
+  onViewChange: (mode: string) => void
+}
+
+export function Navbar({ analysisPanelRef, viewMode, onViewChange }: NavbarProps) {
+  const appData = useAppData()
+  const { graphData, authorsMap, authorCount } = appData
+  const filter = useFilter()
+  const selectedAuthorId = filter.selectedAuthor
+  const tableUi = useTableUi()
+  const { tableMode, openTable } = tableUi
+  const { openTextsPanel, openAuthorsPanel } = usePanelVisibility()
+  const selection = useSelection()
+
+  const onSelectNode = useCallback(
+    (node: Parameters<typeof selection.selectNode>[0]) => {
+      selection.selectNode(node)
+      filter.setSelectedAuthor(null)
+    },
+    [selection, filter],
+  )
+
+  const onSelectAuthor = useCallback(
+    (authorId: string) => {
+      selection.closePanel()
+      filter.toggleSelectedAuthor(authorId)
+    },
+    [selection, filter],
+  )
+
   const {
-    ref: searchRef,
-    query: globalSearch,
-    setQuery: setGlobalSearch,
-    focused: searchFocused,
-    setFocused: setSearchFocused,
-    results: searchResults,
-    onSelect: handleSearchSelect,
-    axesGradient,
-    authorsMap,
-    onOpenTable,
-  } = search
-
-  const { selectedAuthorId } = filters
-
-  const {
-    mode: viewMode,
-    onChange: onViewChange,
-    tableMode,
-    onToggleTable: onToggleTableMode,
-  } = view
-
-  const {
-    onOpenTexts: onOpenTextsPanel,
-    onOpenAuthors: onOpenAuthorsPanel,
-    onOpenAnalysis: onOpenAnalysisPanel,
-    graphData,
-    authorCount,
-  } = catalogue
+    searchRef,
+    globalSearch,
+    setGlobalSearch,
+    searchFocused,
+    setSearchFocused,
+    searchResults,
+    handleSearchSelect,
+  } = useGlobalSearch({
+    nodes: graphData.nodes,
+    authors: appData.authors,
+    onSelectNode,
+    onSelectAuthor,
+  })
 
   const groupsRef = useRef<HTMLDivElement | null>(null)
   const [openGroup, setOpenGroup] = useState<'catalogue' | null>(null)
+
+  const onToggleTableMode = useCallback(
+    () => tableUi.setTableMode(!tableUi.tableMode),
+    [tableUi],
+  )
+
+  const onOpenAnalysisPanel = useCallback(
+    () => analysisPanelRef.current?.openPanel(),
+    [analysisPanelRef],
+  )
+
+  const onOpenTextsPanel = useCallback(
+    () => { openTextsPanel(); setOpenGroup(null) },
+    [openTextsPanel],
+  )
+
+  const onOpenAuthorsPanel = useCallback(
+    () => { openAuthorsPanel(); setOpenGroup(null) },
+    [openAuthorsPanel],
+  )
 
   useEffect(() => {
     function onPointerDown(e: PointerEvent) {
@@ -116,7 +160,7 @@ export function Navbar({ search, filters, view, catalogue }) {
                       variant="ghost"
                       layout="banner"
                       onClick={() => {
-                        onOpenTable?.('books')
+                        openTable?.('books')
                         setGlobalSearch('')
                         setSearchFocused(false)
                       }}
@@ -198,7 +242,7 @@ export function Navbar({ search, filters, view, catalogue }) {
                 frosted
                 tone="cyan"
                 className="w-full justify-start"
-                onClick={() => { onOpenTextsPanel(); setOpenGroup(null) }}
+                onClick={onOpenTextsPanel}
                 type="button"
               >
                 <span className="inline-flex items-center gap-2">
@@ -216,7 +260,7 @@ export function Navbar({ search, filters, view, catalogue }) {
                 tone="amber"
                 active={Boolean(selectedAuthorId)}
                 className="w-full justify-start"
-                onClick={() => { onOpenAuthorsPanel(); setOpenGroup(null) }}
+                onClick={onOpenAuthorsPanel}
                 type="button"
               >
                 <span className="inline-flex items-center gap-2">
@@ -234,7 +278,7 @@ export function Navbar({ search, filters, view, catalogue }) {
             <Button
               variant="outline"
               frosted
-              onClick={() => onOpenAnalysisPanel?.()}
+              onClick={onOpenAnalysisPanel}
               type="button"
               aria-label="Analyse"
               className="h-[34px] w-[34px] justify-center px-0!"

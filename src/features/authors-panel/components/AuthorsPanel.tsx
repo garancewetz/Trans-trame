@@ -1,39 +1,55 @@
 import { Plus, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Virtuoso } from 'react-virtuoso'
-import type { Author, Book } from '@/types/domain'
 import { authorName, authorSortKey } from '@/common/utils/authorUtils'
 import { axesGradient } from '@/common/utils/categories'
 import { Button } from '@/common/components/ui/Button'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
 import { PANEL_WIDTH } from '@/common/constants/panels'
+import { useAppData } from '@/core/AppDataContext'
+import { useSelection } from '@/core/SelectionContext'
+import { useFilter } from '@/core/FilterContext'
+import { useTableUi } from '@/core/TableUiContext'
+import { usePanelVisibility } from '@/core/PanelVisibilityContext'
 
 type Props = {
   open: boolean
   onClose: () => void
-  authors?: Author[]
-  books?: Book[]
-  selectedAuthorId: string | null
-  onSelectAuthor?: (authorId: string | null) => void
-  onAddWorkForAuthor?: (authorName?: string) => void
-  onOpenAddBookFromSearch?: (searchQuery?: string) => void
 }
 
 export function AuthorsPanel({
   open,
   onClose,
-  authors = [],
-  books = [],
-  selectedAuthorId,
-  onSelectAuthor,
-  onAddWorkForAuthor,
-  onOpenAddBookFromSearch,
 }: Props) {
+  const { authors = [], books = [] } = useAppData()
+  const selection = useSelection()
+  const filter = useFilter()
+  const tableUi = useTableUi()
+  const panels = usePanelVisibility()
+
+  const selectedAuthorId = filter.selectedAuthor
+
   const [q, setQ] = useState('')
 
   useEffect(() => {
     if (!open) queueMicrotask(() => setQ(''))
   }, [open])
+
+  const handleSelectAuthor = useCallback((authorId: string | null) => {
+    selection.closePanel()
+    if (authorId === null) { filter.setSelectedAuthor(null); return }
+    filter.toggleSelectedAuthor(authorId)
+  }, [selection, filter])
+
+  const handleAddWorkForAuthor = useCallback((_authorName?: string) => {
+    tableUi.openTable('books')
+    panels.setAuthorsPanelOpen(false)
+  }, [tableUi, panels])
+
+  const handleOpenAddBookFromSearch = useCallback((_searchQuery?: string) => {
+    tableUi.openTable('books')
+    panels.setAuthorsPanelOpen(false)
+  }, [tableUi, panels])
 
   // Build sorted list of authors with their books (via authorIds)
   const authorEntries = useMemo(() => {
@@ -81,7 +97,7 @@ export function AuthorsPanel({
               <Button
                 type="button"
                 className="cursor-pointer rounded-lg border border-peach/30 bg-peach/10 px-2.5 py-1.5 text-[0.82rem] font-semibold text-peach/90 transition-colors hover:bg-peach/20"
-                onClick={() => onSelectAuthor?.(null)}
+                onClick={() => handleSelectAuthor(null)}
               >
                 Retirer le filtre
               </Button>
@@ -132,7 +148,7 @@ export function AuthorsPanel({
                         'flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-3 rounded-md px-1.5 py-1 text-left transition-colors',
                         isSelected ? 'hover:bg-peach/8' : 'hover:bg-white/5',
                       ].join(' ')}
-                      onClick={() => onSelectAuthor?.(isSelected ? null : a.id)}
+                      onClick={() => handleSelectAuthor(isSelected ? null : a.id)}
                     >
                       <span className={['truncate text-[0.95rem] font-semibold', isSelected ? 'text-peach/95' : 'text-white/85'].join(' ')}>
                         {a.name}
@@ -141,20 +157,18 @@ export function AuthorsPanel({
                         {a.books.length}
                       </span>
                     </Button>
-                    {typeof onAddWorkForAuthor === 'function' && (
-                      <Button
-                        type="button"
-                        className="shrink-0 cursor-pointer rounded-md border border-white/10 bg-white/5 p-2 text-peach/80 transition-colors hover:border-peach/40 hover:bg-peach/12 hover:text-white"
-                        aria-label={`Ajouter un ouvrage pour ${a.name}`}
-                        title="Ajouter un ouvrage pour cet auteur"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onAddWorkForAuthor(a.name)
-                        }}
-                      >
-                        <Plus size={18} strokeWidth={2.25} />
-                      </Button>
-                    )}
+                    <Button
+                      type="button"
+                      className="shrink-0 cursor-pointer rounded-md border border-white/10 bg-white/5 p-2 text-peach/80 transition-colors hover:border-peach/40 hover:bg-peach/12 hover:text-white"
+                      aria-label={`Ajouter un ouvrage pour ${a.name}`}
+                      title="Ajouter un ouvrage pour cet auteur"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleAddWorkForAuthor(a.name)
+                      }}
+                    >
+                      <Plus size={18} strokeWidth={2.25} />
+                    </Button>
                   </div>
 
                   {/* Show books when author is selected */}
@@ -184,18 +198,17 @@ export function AuthorsPanel({
               )
             }}
             components={{
-              Footer: () =>
-                typeof onOpenAddBookFromSearch === 'function' ? (
-                  <div className="mt-4 pb-6">
-                    <Button
-                      type="button"
-                      className="w-full cursor-pointer rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-left text-[0.92rem] font-semibold text-white/70 transition-colors hover:border-violet/45 hover:bg-violet/15 hover:text-white"
-                      onClick={() => onOpenAddBookFromSearch(q)}
-                    >
-                      Ajouter un·e auteur·ice (nouvel ouvrage)
-                    </Button>
-                  </div>
-                ) : null,
+              Footer: () => (
+                <div className="mt-4 pb-6">
+                  <Button
+                    type="button"
+                    className="w-full cursor-pointer rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-left text-[0.92rem] font-semibold text-white/70 transition-colors hover:border-violet/45 hover:bg-violet/15 hover:text-white"
+                    onClick={() => handleOpenAddBookFromSearch(q)}
+                  >
+                    Ajouter un·e auteur·ice (nouvel ouvrage)
+                  </Button>
+                </div>
+              ),
             }}
           />
         )}

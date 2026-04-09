@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Pencil,
@@ -19,25 +20,16 @@ import {
 } from '@/common/constants/linkRelationColors'
 import { mapBookUrlSearch } from '@/common/utils/bookSlug'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
+import { AXES_COLORS } from '@/common/utils/categories'
 import { AxisBadge } from '@/common/components/ui/AxisBadge'
 import { Button } from '@/common/components/ui/Button'
 import { linkExcerpt, refMetaLine } from '@/features/books/workPageCopy'
+import { getOutgoingRefs, getIncomingRefs, computeSameAuthorBooks } from '@/features/graph/graphRelations'
+import { useSelection } from '@/core/SelectionContext'
+import { useAppData } from '@/core/AppDataContext'
+import { useTableUi } from '@/core/TableUiContext'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 import type { Book, Link as GraphLink } from '@/types/domain'
-
-type NodeDetailsProps = {
-  selectedNode: Book | null
-  sameAuthorBooks: Book[]
-  authorsMap: Map<string, AuthorNode>
-  AXES_COLORS: Record<string, string>
-  setPanelTab: (tab: string) => void
-  setSelectedNode: (n: Book | null) => void
-  setSelectedLink: (l: GraphLink | null) => void
-  setLinkContextNode: (n: Book | null) => void
-  onOpenTable?: (tab?: 'books' | 'authors' | 'links', linkSourceId?: string | null, focusBookId?: string | null) => void
-  getOutgoingRefs: (node: Book) => Array<{ link: GraphLink; other: Book | undefined }>
-  getIncomingRefs: (node: Book) => Array<{ link: GraphLink; other: Book | undefined }>
-}
 
 type RefVariant = 'cites' | 'citedBy'
 
@@ -104,19 +96,18 @@ function PanelRefRow({
   )
 }
 
-export function NodeDetails({
-  selectedNode,
-  sameAuthorBooks,
-  authorsMap,
-  AXES_COLORS,
-  setPanelTab,
-  setSelectedNode,
-  setSelectedLink,
-  setLinkContextNode,
-  onOpenTable,
-  getOutgoingRefs,
-  getIncomingRefs,
-}: NodeDetailsProps) {
+export function NodeDetails() {
+  const {
+    selectedNode,
+    setSelectedLink,
+    setLinkContextNode,
+    selectNode,
+  } = useSelection()
+  const { graphData, authorsMap } = useAppData()
+  const { openTable } = useTableUi()
+
+  const sameAuthorBooks = useMemo(() => computeSameAuthorBooks(graphData, selectedNode), [graphData, selectedNode])
+
   if (!selectedNode) return null
   const map = authorsMap || new Map<string, AuthorNode>()
   const axes = (selectedNode.axes || []).filter(Boolean)
@@ -148,7 +139,7 @@ export function NodeDetails({
           <Button
             type="button"
             className="cursor-pointer rounded-lg border border-white/10 bg-transparent px-2.5 py-1 text-[0.8rem] font-medium text-white/30 transition-colors hover:border-white/18 hover:bg-white/4 hover:text-white/60"
-            onClick={() => onOpenTable?.('books', null, selectedNode.id)}
+            onClick={() => openTable('books', null, selectedNode.id)}
             title="Ouvrir dans le catalogue contributeurs"
           >
             <span className="inline-flex items-center gap-1.5">
@@ -173,12 +164,7 @@ export function NodeDetails({
                 <button
                   type="button"
                   className="block w-full cursor-pointer text-left text-[0.92rem] text-white/75 transition-colors hover:text-white"
-                  onClick={() => {
-                    setLinkContextNode(null)
-                    setSelectedLink(null)
-                    setSelectedNode(n)
-                    setPanelTab('details')
-                  }}
+                  onClick={() => selectNode(n)}
                 >
                   <span className="font-medium">{n.title}</span>
                   {n.year != null && (
@@ -192,7 +178,7 @@ export function NodeDetails({
       )}
 
 <div className="space-y-10">
-        {getOutgoingRefs(selectedNode).length > 0 && (
+        {getOutgoingRefs(graphData, selectedNode).length > 0 && (
           <section>
             <h3
               className="mb-3 flex items-center gap-2 text-[0.75rem] font-semibold uppercase tracking-[0.2em]"
@@ -202,7 +188,7 @@ export function NodeDetails({
               Références citées
             </h3>
             <ul>
-              {getOutgoingRefs(selectedNode).map(({ link, other }: { link: GraphLink; other: Book | null }, i: number) => (
+              {getOutgoingRefs(graphData, selectedNode).map(({ link, other }: { link: GraphLink; other: Book | null }, i: number) => (
                 <PanelRefRow
                   key={link.id ?? `o-${i}`}
                   variant="cites"
@@ -219,7 +205,7 @@ export function NodeDetails({
           </section>
         )}
 
-        {getIncomingRefs(selectedNode).length > 0 && (
+        {getIncomingRefs(graphData, selectedNode).length > 0 && (
           <section>
             <h3
               className="mb-3 flex items-center gap-2 text-[0.75rem] font-semibold uppercase tracking-[0.2em]"
@@ -229,7 +215,7 @@ export function NodeDetails({
               Cité par
             </h3>
             <ul>
-              {getIncomingRefs(selectedNode).map(({ link, other }: { link: GraphLink; other: Book | null }, i: number) => (
+              {getIncomingRefs(graphData, selectedNode).map(({ link, other }: { link: GraphLink; other: Book | null }, i: number) => (
                 <PanelRefRow
                   key={link.id ?? `i-${i}`}
                   variant="citedBy"

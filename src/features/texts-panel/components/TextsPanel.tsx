@@ -1,34 +1,34 @@
 import { Eye, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Virtuoso } from 'react-virtuoso'
-import type { Author, Book } from '@/types/domain'
+import type { Book } from '@/types/domain'
 import { bookAuthorDisplay, bookAuthorSortKey, buildAuthorsMap } from '@/common/utils/authorUtils'
 import { axesGradient } from '@/common/utils/categories'
 import { Button } from '@/common/components/ui/Button'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
 import { PANEL_WIDTH } from '@/common/constants/panels'
+import { useAppData } from '@/core/AppDataContext'
+import { useSelection } from '@/core/SelectionContext'
+import { useFilter } from '@/core/FilterContext'
+import { usePanelVisibility } from '@/core/PanelVisibilityContext'
 
 type TextsPanelProps = {
   open: boolean
   onClose?: () => void
-  nodes: Book[]
-  authors?: Author[]
-  onSelectNode?: (node: Book) => void
-  onPeekNode?: (node: Book) => void
-  peekNodeId?: string | null
-  onOpenWorkDetail?: (bookId: string) => void
 }
 
 export function TextsPanel({
   open,
   onClose,
-  nodes,
-  authors = [],
-  onSelectNode,
-  onPeekNode,
-  peekNodeId,
-  onOpenWorkDetail,
 }: TextsPanelProps) {
+  const { graphData, authors } = useAppData()
+  const selection = useSelection()
+  const filter = useFilter()
+  const panels = usePanelVisibility()
+
+  const nodes = graphData.nodes
+  const peekNodeId = selection.peekNodeId
+
   const [q, setQ] = useState('')
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export function TextsPanel({
     queueMicrotask(() => setQ(''))
   }, [open])
 
-  const authorsMap = useMemo(() => buildAuthorsMap(authors), [authors])
+  const authorsMap = useMemo(() => buildAuthorsMap(authors ?? []), [authors])
 
   const filtered = useMemo(() => {
     const query = q.toLowerCase().trim()
@@ -52,6 +52,29 @@ export function TextsPanel({
       bookAuthorSortKey(a, authorsMap).localeCompare(bookAuthorSortKey(b, authorsMap), 'fr', { sensitivity: 'base' })
     )
   }, [q, nodes, authorsMap])
+
+  const onSelectNode = useCallback((node: Book) => {
+    selection.selectNode(node)
+    filter.setSelectedAuthor(null)
+    panels.setTextsPanelOpen(false)
+  }, [selection, filter, panels])
+
+  const onPeekNode = useCallback((node: Book) => {
+    selection.setPeekNodeId(node.id)
+    filter.setSelectedAuthor(null)
+    selection.setSelectedNode(null)
+    selection.setSelectedLink(null)
+    selection.setLinkContextNode(null)
+    selection.setPanelTab('details')
+  }, [selection, filter])
+
+  const onOpenWorkDetail = useCallback((bookId: string) => {
+    const node = nodes.find((n) => n.id === bookId)
+    if (node) {
+      selection.selectNode(node)
+      panels.setTextsPanelOpen(false)
+    }
+  }, [nodes, selection, panels])
 
   useEffect(() => {
     if (!open) return
@@ -116,7 +139,7 @@ export function TextsPanel({
                   <Button
                     type="button"
                     className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 px-3 py-2.5 text-left"
-                    onClick={() => onSelectNode?.(n)}
+                    onClick={() => onSelectNode(n)}
                   >
                     <span
                       className="h-2.5 w-2.5 shrink-0 rounded-full backdrop-blur-md"
@@ -131,33 +154,25 @@ export function TextsPanel({
                     </div>
                   </Button>
                   <div className="flex shrink-0 flex-col border-l border-white/10 sm:flex-row">
-                    {typeof onPeekNode === 'function' && (
-                      <Button
-                        type="button"
-                        className="cursor-pointer px-2.5 py-2 text-white/35 transition-colors hover:bg-white/10 hover:text-violet/95 sm:py-0"
-                        aria-label={`Voir ce nœud sur la carte (${n.title})`}
-                        title="Voir le nœud sur la carte (aperçu)"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onPeekNode(n)
-                        }}
-                      >
-                        <Eye size={18} strokeWidth={2} />
-                      </Button>
-                    )}
                     <Button
                       type="button"
-                      disabled={!onOpenWorkDetail}
-                      title="Grande fiche ouvrage"
-                      className={[
-                        'inline-flex cursor-pointer items-center justify-center gap-1 border-t border-white/10 px-2 py-2 text-[0.75rem] font-semibold transition-colors sm:border-l sm:border-t-0 sm:px-2.5',
-                        onOpenWorkDetail
-                          ? 'text-white/40 hover:bg-white/10 hover:text-violet/95'
-                          : 'cursor-not-allowed text-white/15',
-                      ].join(' ')}
+                      className="cursor-pointer px-2.5 py-2 text-white/35 transition-colors hover:bg-white/10 hover:text-violet/95 sm:py-0"
+                      aria-label={`Voir ce nœud sur la carte (${n.title})`}
+                      title="Voir le nœud sur la carte (aperçu)"
                       onClick={(e) => {
                         e.stopPropagation()
-                        onOpenWorkDetail?.(n.id)
+                        onPeekNode(n)
+                      }}
+                    >
+                      <Eye size={18} strokeWidth={2} />
+                    </Button>
+                    <Button
+                      type="button"
+                      title="Grande fiche ouvrage"
+                      className="inline-flex cursor-pointer items-center justify-center gap-1 border-t border-white/10 px-2 py-2 text-[0.75rem] font-semibold text-white/40 transition-colors hover:bg-white/10 hover:text-violet/95 sm:border-l sm:border-t-0 sm:px-2.5"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onOpenWorkDetail(n.id)
                       }}
                     >
                       Détails
@@ -172,4 +187,3 @@ export function TextsPanel({
     </aside>
   )
 }
-

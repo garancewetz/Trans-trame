@@ -6,19 +6,29 @@ import { Button } from '@/common/components/ui/Button'
 import { TextareaInline } from '@/common/components/ui/TextareaInline'
 import { InlineBadge } from '@/common/components/ui/InlineBadge'
 import { InlineEditField } from '@/common/components/ui/InlineEditField'
+import { getLinkNodes } from '@/features/graph/graphRelations'
+import { useSelection } from '@/core/SelectionContext'
+import { useAppData } from '@/core/AppDataContext'
 
-export function LinkDetails({
-  selectedLink,
-  getLinkNodes,
-  linkContextNode,
-  authorsMap,
-  onUpdateLink,
-  onDeleteLink,
-  onClosePanel,
-  showBackButton = true,
-  onBackToContextNode,
-  onOpenNode,
-}) {
+type LinkDetailsProps = {
+  showBackButton?: boolean
+}
+
+export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
+  const {
+    selectedLink,
+    linkContextNode,
+    selectNode,
+    closePanel,
+  } = useSelection()
+
+  const {
+    graphData,
+    authorsMap,
+    handleUpdateLink,
+    handleDeleteLink,
+  } = useAppData()
+
   const suppressCommitRef = useRef(false)
   const [editingField, setEditingField] = useState(null)
   const [draftCitation, setDraftCitation] = useState('')
@@ -27,7 +37,7 @@ export function LinkDetails({
   const [isDeleting, setIsDeleting] = useState(false)
   const [isActionsOpen, setIsActionsOpen] = useState(false)
 
-  const { source, target } = getLinkNodes(selectedLink)
+  const { source, target } = getLinkNodes(graphData, selectedLink)
   const contextIsSource = linkContextNode?.id && source?.id && linkContextNode.id === source.id
   const contextIsTarget = linkContextNode?.id && target?.id && linkContextNode.id === target.id
   const isContextPanel = !showBackButton && Boolean(linkContextNode)
@@ -44,23 +54,25 @@ export function LinkDetails({
   const citationAxisColor = blendAxesColors(axesForCitation)
   const citationMetaYear = linkContextNode?.year ?? relatedNode?.year ?? source?.year ?? target?.year
 
+  if (!selectedLink) return null
+
   const commitField = (field) => {
-    if (!onUpdateLink || !selectedLink?.id) return
+    if (!handleUpdateLink || !selectedLink?.id) return
     if (suppressCommitRef.current) {
       suppressCommitRef.current = false
       return
     }
 
     if (field === 'citation_text') {
-      onUpdateLink(selectedLink.id, { citation_text: draftCitation.trim() })
+      handleUpdateLink(selectedLink.id, { citation_text: draftCitation.trim() })
       return
     }
     if (field === 'page') {
-      onUpdateLink(selectedLink.id, { page: draftPage.trim() })
+      handleUpdateLink(selectedLink.id, { page: draftPage.trim() })
       return
     }
     if (field === 'edition') {
-      onUpdateLink(selectedLink.id, { edition: draftEdition.trim() })
+      handleUpdateLink(selectedLink.id, { edition: draftEdition.trim() })
     }
   }
 
@@ -79,10 +91,10 @@ export function LinkDetails({
   }
 
   const handleConfirmDelete = () => {
-    if (!onDeleteLink || !selectedLink?.id) return
+    if (!handleDeleteLink || !selectedLink?.id) return
     if (isDeleting) {
-      onDeleteLink(selectedLink.id)
-      onClosePanel?.()
+      handleDeleteLink(selectedLink.id)
+      closePanel()
       setIsDeleting(false)
       return
     }
@@ -125,7 +137,7 @@ export function LinkDetails({
             {relatedNode ? bookAuthorDisplay(relatedNode, authorsMap || []) : ''}
             {relatedNode?.year ? ` — ${relatedNode.year}` : ''}
           </p>
-      
+
           <p className="mb-3 flex items-center justify-between gap-2 text-[0.85rem] font-semibold uppercase tracking-[0.5px] text-white/45">
             <span>Passage:</span>
             <InlineEditField
@@ -162,7 +174,7 @@ export function LinkDetails({
         <Button
           type="button"
           className="mb-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.85rem] font-semibold text-white/70 transition-all hover:border-white/35 hover:bg-white/10 hover:text-white"
-          onClick={() => onBackToContextNode?.(linkContextNode)}
+          onClick={() => selectNode(linkContextNode)}
         >
           <ArrowLeft size={12} />
           Revenir a l'ouvrage de depart
@@ -173,7 +185,7 @@ export function LinkDetails({
           <Button
             type="button"
             className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.85rem] font-semibold text-white/75 transition-all hover:border-white/35 hover:bg-white/10 hover:text-white"
-            onClick={() => onOpenNode?.(relatedNode)}
+            onClick={() => selectNode(relatedNode)}
           >
             <Eye size={12} />
             Voir dans le Graphe
@@ -183,7 +195,7 @@ export function LinkDetails({
           <Button
             type="button"
             className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.85rem] font-semibold text-orange/75 transition-all hover:border-orange/45 hover:bg-orange/15 hover:text-white"
-            onClick={() => onOpenNode?.(source)}
+            onClick={() => selectNode(source)}
           >
             <ExternalLink size={12} />
             Ouvrir l'ouvrage qui cite
@@ -193,7 +205,7 @@ export function LinkDetails({
           <Button
             type="button"
             className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.85rem] font-semibold text-cyan/75 transition-all hover:border-cyan/50 hover:bg-cyan/15 hover:text-white"
-            onClick={() => onOpenNode?.(target)}
+            onClick={() => selectNode(target)}
           >
             <ExternalLink size={12} />
             Ouvrir l'ouvrage cite
@@ -298,4 +310,3 @@ export function LinkDetails({
     </div>
   )
 }
-

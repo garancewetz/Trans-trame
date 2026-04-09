@@ -1,32 +1,38 @@
 import clsx from 'clsx'
 import { X, PanelRightClose, ChevronRight, ChevronLeft, ArrowLeft } from 'lucide-react'
-import { useState } from 'react'
+import { type RefObject, useCallback, useMemo, useState } from 'react'
 import { Button } from '@/common/components/ui/Button'
 import { PANEL_WIDTH } from '@/common/constants/panels'
-import type { Book } from '@/types/domain'
-import type { SidePanelProps } from '../hooks/useSidePanelProps'
+import { useSelection } from '@/core/SelectionContext'
+import { useAppData } from '@/core/AppDataContext'
+import { useTableUi } from '@/core/TableUiContext'
+import type { GraphImperativeHandle } from '@/features/graph/components/Graph'
 import { AdminPanel } from './AdminPanel'
 import { EmptyState } from './EmptyState'
 import { LinkDetails } from './LinkDetails'
 import { NodeDetails } from './NodeDetails'
 
-export function SidePanel(props: SidePanelProps) {
+type SidePanelProps = {
+  graphRef: RefObject<GraphImperativeHandle | null>
+}
+
+export function SidePanel({ graphRef }: SidePanelProps) {
   const {
     panelOpen,
     panelTab,
     selectedNode,
     selectedLink,
     linkContextNode,
-    handleClosePanel,
-    getLinkNodes,
-    authorsMap,
-    onUpdateLink,
-    onDeleteLink,
     setPanelTab,
     setSelectedNode,
     setSelectedLink,
     setLinkContextNode,
-  } = props
+    closePanel,
+  } = useSelection()
+
+  const { graphData } = useAppData()
+  const { openTable } = useTableUi()
+
   const [panelCollapsed, setPanelCollapsed] = useState(false)
   const isAdminTab = panelTab === 'edit'
   const isDualPanelMode = panelTab === 'details' && Boolean(selectedNode && selectedLink && linkContextNode)
@@ -49,22 +55,6 @@ export function SidePanel(props: SidePanelProps) {
         ? `${PANEL_WIDTH.book} border-white/12 bg-bg-base/[0.98] backdrop-blur-xl shadow-[-20px_0_80px_rgba(0,0,0,0.45)]`
         : `${PANEL_WIDTH.default} border-white/10 bg-bg-overlay/92 backdrop-blur-2xl`,
   )
-
-  const closeToContextNode = (node: Book | null) => {
-    if (!node) return
-    setSelectedLink(null)
-    setSelectedNode(node)
-    setLinkContextNode(null)
-    setPanelTab('details')
-  }
-
-  const openNodeFromLink = (node: Book | null) => {
-    if (!node) return
-    setSelectedLink(null)
-    setSelectedNode(node)
-    setLinkContextNode(null)
-    setPanelTab('details')
-  }
 
   const handleCollapseDualPanel = () => {
     setSelectedLink(null)
@@ -91,11 +81,11 @@ export function SidePanel(props: SidePanelProps) {
             <Button
               type="button"
               className="absolute right-3 top-3 z-20 cursor-pointer bg-transparent text-white/40 transition-colors hover:text-white"
-              onClick={handleClosePanel}
+              onClick={closePanel}
             >
               <X size={20} />
             </Button>
-            {panelTab === 'details' && selectedNode && <NodeDetails {...props} onOpenTable={props.onOpenTable} />}
+            {panelTab === 'details' && selectedNode && <NodeDetails />}
           </div>
           <div className="relative min-w-0 overflow-y-auto">
             <Button
@@ -107,16 +97,7 @@ export function SidePanel(props: SidePanelProps) {
             </Button>
             <LinkDetails
               key={selectedLink?.id}
-              selectedLink={selectedLink}
-              getLinkNodes={getLinkNodes}
-              linkContextNode={linkContextNode}
-              authorsMap={authorsMap}
-              onUpdateLink={onUpdateLink}
-              onDeleteLink={onDeleteLink}
-              onClosePanel={handleClosePanel}
               showBackButton={false}
-              onBackToContextNode={closeToContextNode}
-              onOpenNode={openNodeFromLink}
             />
           </div>
         </div>
@@ -136,28 +117,19 @@ export function SidePanel(props: SidePanelProps) {
             <Button
               type="button"
               className="cursor-pointer bg-transparent text-white/40 transition-colors hover:text-white"
-              onClick={handleClosePanel}
+              onClick={closePanel}
             >
               <X size={20} />
             </Button>
           </div>
-          {panelTab === 'details' && selectedNode && <NodeDetails {...props} onOpenTable={props.onOpenTable} />}
+          {panelTab === 'details' && selectedNode && <NodeDetails />}
           {panelTab === 'details' && !selectedNode && selectedLink && (
             <LinkDetails
               key={selectedLink?.id}
-              selectedLink={selectedLink}
-              getLinkNodes={getLinkNodes}
-              linkContextNode={linkContextNode}
-              authorsMap={authorsMap}
-              onUpdateLink={onUpdateLink}
-              onDeleteLink={onDeleteLink}
-              onClosePanel={handleClosePanel}
               showBackButton={true}
-              onBackToContextNode={closeToContextNode}
-              onOpenNode={openNodeFromLink}
             />
           )}
-          {isAdminTab && <AdminPanel {...props} />}
+          {isAdminTab && <AdminPanel />}
           {hasEmptyDetails && <EmptyState />}
         </div>
       )}
