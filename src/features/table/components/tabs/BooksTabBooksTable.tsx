@@ -1,9 +1,9 @@
 import type { RefObject } from 'react'
 import { Check } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
-import { TH } from '../TableSubcomponents'
+import { AxisFilterTH, TH } from '../TableSubcomponents'
 import type { Author, AuthorId, Book, BookId } from '@/types/domain'
-import type { Axis } from '@/common/utils/categories'
+import { type Axis } from '@/common/utils/categories'
 import { BooksTabAddRow } from './BooksTabAddRow'
 import { BooksTabBookRow } from './BooksTabBookRow'
 
@@ -45,6 +45,8 @@ export type BooksTabBooksTableProps = {
   onFocusAuthorInAuthorsTab?: (authorId: AuthorId) => unknown
   onOpenLinksForBook?: (node: Book) => unknown
   onOpenWorkDetail?: (bookId: BookId) => unknown
+  axisFilter?: Axis | null
+  onAxisFilter?: (axis: Axis | null) => void
 }
 
 export function BooksTabBooksTable({
@@ -85,6 +87,8 @@ export function BooksTabBooksTable({
   onFocusAuthorInAuthorsTab,
   onOpenLinksForBook,
   onOpenWorkDetail,
+  axisFilter,
+  onAxisFilter,
 }: BooksTabBooksTableProps) {
   return (
     <div className="flex-1 overflow-auto">
@@ -114,9 +118,7 @@ export function BooksTabBooksTable({
             <TH col="year" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="w-20">
               Année
             </TH>
-            <th className="w-40 px-3 py-2.5 text-left text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-white/32">
-              Axes
-            </th>
+            <AxisFilterTH activeAxis={axisFilter ?? null} onSelect={onAxisFilter ?? (() => {})} />
             <TH col="linkCount" activeCol={sortCol} dir={sortDir} onSort={onNodeSort} className="w-20">
               Liens
             </TH>

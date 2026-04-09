@@ -1,7 +1,8 @@
 import { Plus, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { Virtuoso } from 'react-virtuoso'
 import type { Author, Book } from '@/types/domain'
-import { authorName } from '@/common/utils/authorUtils'
+import { authorName, authorSortKey } from '@/common/utils/authorUtils'
 import { axesGradient } from '@/common/utils/categories'
 import { Button } from '@/common/components/ui/Button'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
@@ -42,7 +43,7 @@ export function AuthorsPanel({
         const authorBooks = books.filter((b) => b.authorIds?.includes(a.id))
         return { id: a.id, name, books: authorBooks, author: a }
       })
-      .sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }))
+      .sort((a, b) => authorSortKey(a.author).localeCompare(authorSortKey(b.author), 'fr', { sensitivity: 'base' }))
   }, [authors, books])
 
   const filtered = useMemo(() => {
@@ -68,8 +69,8 @@ export function AuthorsPanel({
         open ? 'translate-x-0' : '-translate-x-[420px]',
       ].join(' ')}
     >
-      <div className="h-full overflow-y-auto px-4 pb-6 pt-4">
-        <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="flex h-full flex-col px-4 pt-4">
+        <div className="mb-4 flex shrink-0 items-center justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-[1rem] font-semibold text-white/90">Auteur·ices</h2>
             <p className="text-[0.8rem] text-white/40">{authorEntries.length} au total</p>
@@ -101,19 +102,22 @@ export function AuthorsPanel({
           onChange={(e) => setQ(e.target.value)}
           placeholder="Rechercher un·e auteur·ice..."
           focusTone="amber"
-          className="mb-4"
+          className="mb-4 shrink-0"
         />
 
-        <div className="space-y-1">
-          {filtered.length === 0 && q.trim() ? (
-            <p className="px-3 py-3 text-[0.9rem] text-white/40">Aucun·e auteur·ice trouvé·e pour cette recherche.</p>
-          ) : filtered.length === 0 ? (
-            <p className="px-3 py-3 text-[0.9rem] text-white/40">Aucun·e auteur·ice dans le graphe.</p>
-          ) : (
-            filtered.map((a) => {
+        {filtered.length === 0 && q.trim() ? (
+          <p className="px-3 py-3 text-[0.9rem] text-white/40">Aucun·e auteur·ice trouvé·e pour cette recherche.</p>
+        ) : filtered.length === 0 ? (
+          <p className="px-3 py-3 text-[0.9rem] text-white/40">Aucun·e auteur·ice dans le graphe.</p>
+        ) : (
+          <Virtuoso
+            className="flex-1 pb-6"
+            totalCount={filtered.length}
+            itemContent={(index) => {
+              const a = filtered[index]
               const isSelected = selectedAuthorId === a.id
               return (
-                <div key={a.id}>
+                <div className="mb-1">
                   <div
                     className={[
                       'flex w-full items-center gap-1 rounded-lg border px-2 py-1.5 backdrop-blur-xl transition-all',
@@ -178,20 +182,23 @@ export function AuthorsPanel({
                   )}
                 </div>
               )
-            })
-          )}
-          {typeof onOpenAddBookFromSearch === 'function' && (
-            <div className="mt-4">
-              <Button
-                type="button"
-                className="w-full cursor-pointer rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-left text-[0.92rem] font-semibold text-white/70 transition-colors hover:border-violet/45 hover:bg-violet/15 hover:text-white"
-                onClick={() => onOpenAddBookFromSearch(q)}
-              >
-                Ajouter un·e auteur·ice (nouvel ouvrage)
-              </Button>
-            </div>
-          )}
-        </div>
+            }}
+            components={{
+              Footer: () =>
+                typeof onOpenAddBookFromSearch === 'function' ? (
+                  <div className="mt-4 pb-6">
+                    <Button
+                      type="button"
+                      className="w-full cursor-pointer rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-left text-[0.92rem] font-semibold text-white/70 transition-colors hover:border-violet/45 hover:bg-violet/15 hover:text-white"
+                      onClick={() => onOpenAddBookFromSearch(q)}
+                    >
+                      Ajouter un·e auteur·ice (nouvel ouvrage)
+                    </Button>
+                  </div>
+                ) : null,
+            }}
+          />
+        )}
       </div>
     </aside>
   )

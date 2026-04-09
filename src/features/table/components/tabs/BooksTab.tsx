@@ -73,6 +73,8 @@ export function BooksTab({
   const [sameWorkConfirm, setSameWorkConfirm] = useState(false)
   const [sameWorkBooks, setSameWorkBooks] = useState<Book[]>([])
 
+  const [axisFilter, setAxisFilter] = useState<Axis | null>(null)
+
   const [inputTitle, setInputTitle] = useState('')
   const [inputAuthorIds, setInputAuthorIds] = useState<AuthorId[]>(initialAuthorIds)
   const [inputYear, setInputYear] = useState('')
@@ -88,6 +90,7 @@ export function BooksTab({
     sortDir,
     selectedIds,
     authors,
+    axisFilter,
   })
 
   const allSelected = sortedNodes.length > 0 && sortedNodes.every((n) => selectedIds.has(n.id))
@@ -311,7 +314,8 @@ export function BooksTab({
         onFocusAuthorInAuthorsTab={onFocusAuthorInAuthorsTab}
         onOpenLinksForBook={onOpenLinksForBook}
         onOpenWorkDetail={onOpenWorkDetail}
-
+        axisFilter={axisFilter}
+        onAxisFilter={setAxisFilter}
       />
 
       <TableMergeModal

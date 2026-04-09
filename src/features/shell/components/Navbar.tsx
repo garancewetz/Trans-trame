@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { BarChart3, LayoutGrid, BookOpen, PenLine, Users } from 'lucide-react'
+import { LayoutGrid, BookOpen, PenLine, Users, FlaskConical } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
+import { Tooltip } from '@/common/components/ui/Tooltip'
 import { Logo } from '@/common/components/Logo'
 import { ViewSelector } from './ViewSelector'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
@@ -226,21 +227,21 @@ export function Navbar({ search, filters, view, catalogue }) {
                   </span>
                 </span>
               </Button>
-              <Button
-                variant="outline"
-                frosted
-                tone="sky"
-                className="w-full justify-start"
-                onClick={() => { onOpenAnalysisPanel?.(); setOpenGroup(null) }}
-                type="button"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <BarChart3 size={14} /> Analyse
-                </span>
-              </Button>
             </div>
           )}
 
+          <Tooltip content="Analyse">
+            <Button
+              variant="outline"
+              frosted
+              onClick={() => onOpenAnalysisPanel?.()}
+              type="button"
+              aria-label="Analyse"
+              className="h-[34px] w-[34px] justify-center px-0!"
+            >
+              <FlaskConical size={15} />
+            </Button>
+          </Tooltip>
         </div>
       </div>
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { Virtuoso } from 'react-virtuoso'
 import { BookCopy, Check, ChevronDown, ChevronRight, Eye, Link2, Plus, Quote, Search, Trash2, X, Zap } from 'lucide-react'
 import { bookAuthorDisplay, type AuthorNode } from '@/common/utils/authorUtils'
 import { AxesDot } from '@/common/components/ui/AxesDot'
@@ -165,7 +166,7 @@ export function LinksTab({
 
       {/* ── List mode ── */}
       {mode === 'list' && (
-        <div className="flex-1 overflow-y-auto px-5 py-3">
+        <div className="flex flex-1 flex-col overflow-hidden px-5 py-3">
           {groupedLinks.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16">
               <p className="font-mono text-[0.88rem] text-white/22">
@@ -183,34 +184,38 @@ export function LinksTab({
               )}
             </div>
           ) : (
-            groupedLinks.map((group) => {
-              const groupId = group.srcId || group.sourceNode?.id || ''
-              return (
-                <SourceGroup
-                  key={groupId}
-                  group={group}
-                  authorsMap={authorsMap}
-                  isOpen={expandedGroups.has(groupId)}
-                  onToggle={() => toggleGroup(groupId)}
-                  editingLink={editingLink}
-                  editingLinkValue={editingLinkValue}
-                  setEditingLinkValue={setEditingLinkValue}
-                  setEditingLink={setEditingLink}
-                  commitLinkEdit={commitLinkEdit}
-                  deletingLinkId={deletingLinkId}
-                  setDeletingLinkId={setDeletingLinkId}
-                  onDeleteLink={onDeleteLink}
-                  onOpenWorkDetail={onOpenWorkDetail}
-                  onTisserFrom={group.sourceNode ? () => {
-                    setLinkSourceNode(group.sourceNode!)
-                    setLinkCheckedIds(new Set<BookId>())
-                    setChecklistSearch('')
-                    switchToCreate()
-                  } : undefined}
-                  onSmartImportFrom={group.sourceNode && onSmartImportFrom ? () => onSmartImportFrom(group.sourceNode!) : undefined}
-                />
-              )
-            })
+            <Virtuoso
+              className="flex-1"
+              totalCount={groupedLinks.length}
+              itemContent={(index) => {
+                const group = groupedLinks[index]
+                const groupId = group.srcId || group.sourceNode?.id || ''
+                return (
+                  <SourceGroup
+                    group={group}
+                    authorsMap={authorsMap}
+                    isOpen={expandedGroups.has(groupId)}
+                    onToggle={() => toggleGroup(groupId)}
+                    editingLink={editingLink}
+                    editingLinkValue={editingLinkValue}
+                    setEditingLinkValue={setEditingLinkValue}
+                    setEditingLink={setEditingLink}
+                    commitLinkEdit={commitLinkEdit}
+                    deletingLinkId={deletingLinkId}
+                    setDeletingLinkId={setDeletingLinkId}
+                    onDeleteLink={onDeleteLink}
+                    onOpenWorkDetail={onOpenWorkDetail}
+                    onTisserFrom={group.sourceNode ? () => {
+                      setLinkSourceNode(group.sourceNode!)
+                      setLinkCheckedIds(new Set<BookId>())
+                      setChecklistSearch('')
+                      switchToCreate()
+                    } : undefined}
+                    onSmartImportFrom={group.sourceNode && onSmartImportFrom ? () => onSmartImportFrom(group.sourceNode!) : undefined}
+                  />
+                )
+              }}
+            />
           )}
         </div>
       )}
@@ -289,52 +294,57 @@ export function LinksTab({
                 </p>
               </div>
 
-              <div className="flex-1 overflow-y-auto">
-                {checklistNodes.map((n) => {
-                  const existing = existingTargetIds.has(n.id)
-                  const checked = existing || linkCheckedIds.has(n.id)
-                  const isJustAdded = justAddedId === n.id
-                  return (
-                    <label
-                      key={n.id}
-                      ref={isJustAdded ? justAddedRef : undefined}
-                      className={[
-                        'flex cursor-pointer items-center gap-3 px-5 py-2 transition-colors hover:bg-white/4',
-                        existing ? 'cursor-default opacity-40' : '',
-                        linkCheckedIds.has(n.id) ? 'bg-green/4' : '',
-                        isJustAdded ? 'animate-pulse-highlight ring-1 ring-cyan/40 rounded-md bg-cyan/8' : '',
-                      ].join(' ')}
-                    >
-                      <span
-                        className={[
-                          'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-all',
-                          checked
-                            ? existing
-                              ? 'border-white/25 bg-white/10 text-white/40'
-                              : 'border-green bg-green/18 text-green'
-                            : 'border-white/15 text-transparent',
-                        ].join(' ')}
-                      >
-                        <Check size={9} />
-                      </span>
-                      <input
-                        type="checkbox"
-                        className="sr-only"
-                        checked={checked}
-                        disabled={existing}
-                        onChange={() => toggleChecklist(n.id)}
-                      />
-                      <span className="min-w-0">
-                        <span className="block truncate font-mono text-[0.82rem] text-white/75">{n.title}</span>
-                        <span className="block font-mono text-[0.72rem] text-white/30">
-                          {bookAuthorDisplay(n, authorsMap)}{n.year ? `, ${n.year}` : ''}
-                          {existing && ' · déjà lié'}
-                        </span>
-                      </span>
-                    </label>
-                  )
-                })}
-                {checklistNodes.length === 0 && !inlineOpen && (
+              <div className="flex flex-1 flex-col overflow-hidden">
+                {checklistNodes.length > 0 ? (
+                  <Virtuoso
+                    className="flex-1"
+                    totalCount={checklistNodes.length}
+                    itemContent={(index) => {
+                      const n = checklistNodes[index]
+                      const existing = existingTargetIds.has(n.id)
+                      const checked = existing || linkCheckedIds.has(n.id)
+                      const isJustAdded = justAddedId === n.id
+                      return (
+                        <label
+                          ref={isJustAdded ? justAddedRef : undefined}
+                          className={[
+                            'flex cursor-pointer items-center gap-3 px-5 py-2 transition-colors hover:bg-white/4',
+                            existing ? 'cursor-default opacity-40' : '',
+                            linkCheckedIds.has(n.id) ? 'bg-green/4' : '',
+                            isJustAdded ? 'animate-pulse-highlight ring-1 ring-cyan/40 rounded-md bg-cyan/8' : '',
+                          ].join(' ')}
+                        >
+                          <span
+                            className={[
+                              'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-all',
+                              checked
+                                ? existing
+                                  ? 'border-white/25 bg-white/10 text-white/40'
+                                  : 'border-green bg-green/18 text-green'
+                                : 'border-white/15 text-transparent',
+                            ].join(' ')}
+                          >
+                            <Check size={9} />
+                          </span>
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={checked}
+                            disabled={existing}
+                            onChange={() => toggleChecklist(n.id)}
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate font-mono text-[0.82rem] text-white/75">{n.title}</span>
+                            <span className="block font-mono text-[0.72rem] text-white/30">
+                              {bookAuthorDisplay(n, authorsMap)}{n.year ? `, ${n.year}` : ''}
+                              {existing && ' · déjà lié'}
+                            </span>
+                          </span>
+                        </label>
+                      )
+                    }}
+                  />
+                ) : !inlineOpen ? (
                   <div className="px-5 py-4">
                     <p className="font-mono text-[0.82rem] text-white/22">
                       {checklistSearch ? 'Aucun résultat' : 'Aucun autre ouvrage'}
@@ -349,7 +359,7 @@ export function LinksTab({
                       </button>
                     )}
                   </div>
-                )}
+                ) : null}
                 {inlineOpen && canInline && (
                   <div className="px-5 py-3">
                     <InlineBookForm

@@ -1,7 +1,8 @@
 import { Eye, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { Virtuoso } from 'react-virtuoso'
 import type { Author, Book } from '@/types/domain'
-import { bookAuthorDisplay, buildAuthorsMap } from '@/common/utils/authorUtils'
+import { bookAuthorDisplay, bookAuthorSortKey, buildAuthorsMap } from '@/common/utils/authorUtils'
 import { axesGradient } from '@/common/utils/categories'
 import { Button } from '@/common/components/ui/Button'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
@@ -48,7 +49,7 @@ export function TextsPanel({
       return title.includes(query) || author.includes(query) || year.includes(query)
     })
     return [...list].sort((a, b) =>
-      bookAuthorDisplay(a, authorsMap).localeCompare(bookAuthorDisplay(b, authorsMap), 'fr', { sensitivity: 'base' })
+      bookAuthorSortKey(a, authorsMap).localeCompare(bookAuthorSortKey(b, authorsMap), 'fr', { sensitivity: 'base' })
     )
   }, [q, nodes, authorsMap])
 
@@ -69,8 +70,8 @@ export function TextsPanel({
         open ? 'translate-x-0' : '-translate-x-[420px]',
       ].join(' ')}
     >
-      <div className="h-full overflow-y-auto px-4 pb-6 pt-4">
-        <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="flex h-full flex-col px-4 pt-4">
+        <div className="mb-4 flex shrink-0 items-center justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-[1rem] font-semibold text-white/90">Textes</h2>
             <p className="text-[0.8rem] text-white/40">{nodes.length} au total</p>
@@ -91,20 +92,22 @@ export function TextsPanel({
           onChange={(e) => setQ(e.target.value)}
           placeholder="Rechercher un texte..."
           focusTone="violet"
-          className="mb-4"
+          className="mb-4 shrink-0"
         />
 
-        <div className="space-y-2">
-          {filtered.length === 0 ? (
-            <p className="px-3 py-3 text-[0.9rem] text-white/40">Aucun texte trouvé.</p>
-          ) : (
-            filtered.map((n) => {
+        {filtered.length === 0 ? (
+          <p className="px-3 py-3 text-[0.9rem] text-white/40">Aucun texte trouvé.</p>
+        ) : (
+          <Virtuoso
+            className="flex-1 pb-6"
+            totalCount={filtered.length}
+            itemContent={(index) => {
+              const n = filtered[index]
               const isPeeked = peekNodeId === n.id
               return (
                 <div
-                  key={n.id}
                   className={[
-                    'flex w-full items-stretch gap-1 rounded-lg border backdrop-blur-xl transition-all',
+                    'mb-2 flex w-full items-stretch gap-1 rounded-lg border backdrop-blur-xl transition-all',
                     isPeeked
                       ? 'border-violet/45 bg-violet/10'
                       : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/8',
@@ -162,9 +165,9 @@ export function TextsPanel({
                   </div>
                 </div>
               )
-            })
-          )}
-        </div>
+            }}
+          />
+        )}
       </div>
     </aside>
   )

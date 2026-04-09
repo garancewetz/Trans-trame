@@ -71,10 +71,23 @@ export function splitAuthorDisplayName(name: string): { firstName: string; lastN
 
 /** Sort key based on lastName (lowercased, for locale compare) */
 export function authorSortKey(node: Partial<Pick<AuthorNode, 'lastName' | 'author'>>): string {
-  if (node.lastName) return node.lastName
+  if (node.lastName) return node.lastName.toLowerCase()
   // Fallback for old data: take last word
   const parts = (node.author || '').trim().split(/\s+/)
-  return parts[parts.length - 1] || ''
+  return (parts[parts.length - 1] || '').toLowerCase()
+}
+
+/** Sort key for a book based on its first author's lastName */
+export function bookAuthorSortKey(book: Partial<BookNode>, authors: Map<string, AuthorNode>): string {
+  const ids = book.authorIds
+  if (ids && ids.length > 0) {
+    const a = authors.get(ids[0])
+    if (a) return authorSortKey(a)
+  }
+  // Fallback legacy
+  if (book.lastName) return book.lastName.toLowerCase()
+  // Last resort: last word of firstName field or empty
+  return ''
 }
 
 /**
