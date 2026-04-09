@@ -8,7 +8,7 @@ import { TextInput } from '@/common/components/ui/TextInput'
 import { INPUT, TD } from '../../tableConstants'
 import { AxisDots, AuthorPicker } from '../TableSubcomponents'
 import type { Author, AuthorId, Book, BookId } from '@/types/domain'
-import { narrowAxes } from '@/common/utils/categories'
+import { splitBookAxes } from '@/common/utils/categories'
 
 type Props = {
   node: Book
@@ -62,6 +62,7 @@ export function BooksTabBookRow({
   return (
     <tr
       data-book-row-id={node.id}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 44px' }}
       className={[
         'group cursor-pointer border-b border-white/4 transition-colors',
         justAdded ? 'animate-flash-row' : '',
@@ -173,10 +174,26 @@ export function BooksTabBookRow({
         )}
       </td>
       <td className="px-3 py-2">
-        <AxisDots
-          axes={narrowAxes(node.axes)}
-          onChange={(newAxes) => { onUpdateBook?.({ ...node, axes: newAxes }); onLastEdited?.(node.id) }}
-        />
+        {(() => {
+          const { axes: bookAxes, themes: bookThemes } = splitBookAxes(node.axes)
+          return (
+            <AxisDots
+              axes={bookAxes}
+              themes={bookThemes}
+              onChange={(newAxes) => {
+                const combined = [...newAxes, ...bookThemes.map((t) => `UNCATEGORIZED:${t}`)]
+                onUpdateBook?.({ ...node, axes: combined })
+                onLastEdited?.(node.id)
+              }}
+              onRemoveTheme={(theme) => {
+                const remaining = bookThemes.filter((t) => t !== theme)
+                const combined = [...bookAxes, ...remaining.map((t) => `UNCATEGORIZED:${t}`)]
+                onUpdateBook?.({ ...node, axes: combined })
+                onLastEdited?.(node.id)
+              }}
+            />
+          )
+        })()}
       </td>
       <td className="px-3 py-2">
         <Button

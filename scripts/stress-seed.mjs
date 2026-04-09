@@ -22,7 +22,6 @@ import { resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
 
 const AXES = [
-  'ECOLOGY',
   'QUEER',
   'AFROFEMINIST',
   'ANTIRACISM',
@@ -31,6 +30,9 @@ const AXES = [
   'CRIP',
   'HISTORY',
   'INSTITUTIONAL',
+  'BODY',
+  'FEMINIST',
+  'UNCATEGORIZED',
 ]
 
 /** Noyau réaliste : auteur·ices et axes typiques du domaine */
@@ -41,9 +43,9 @@ const CANONICAL_AUTHORS = [
   { first_name: 'Angela', last_name: 'Davis', axes: ['AFROFEMINIST', 'ANTIRACISM', 'HISTORY'] },
   { first_name: 'Gloria', last_name: 'Anzaldúa', axes: ['QUEER', 'HISTORY'] },
   { first_name: 'Chandra Talpade', last_name: 'Mohanty', axes: ['ANTIRACISM', 'INSTITUTIONAL'] },
-  { first_name: 'Donna', last_name: 'Haraway', axes: ['ECOLOGY', 'HISTORY'] },
+  { first_name: 'Donna', last_name: 'Haraway', axes: ['FEMINIST', 'HISTORY'] },
   { first_name: 'Sylvia', last_name: 'Wynter', axes: ['AFROFEMINIST', 'HISTORY'] },
-  { first_name: 'Françoise', last_name: 'd’Eaubonne', axes: ['ECOLOGY', 'HISTORY'] },
+  { first_name: 'Françoise', last_name: 'd’Eaubonne', axes: ['FEMINIST', 'HISTORY'] },
   { first_name: 'Monique', last_name: 'Wittig', axes: ['QUEER', 'HISTORY'] },
   { first_name: 'Kimberlé', last_name: 'Crenshaw', axes: ['AFROFEMINIST', 'ANTIRACISM', 'INSTITUTIONAL'] },
   { first_name: 'Patricia Hill', last_name: 'Collins', axes: ['AFROFEMINIST', 'HISTORY'] },
@@ -59,9 +61,9 @@ const CANONICAL_BOOKS = [
   { title: 'Women, Race and Class', year: 1981, axes: ['AFROFEMINIST', 'ANTIRACISM'], authorLast: 'Davis' },
   { title: 'Borderlands / La Frontera', year: 1987, axes: ['QUEER', 'HISTORY'], authorLast: 'Anzaldúa' },
   { title: 'Under Western Eyes', year: 1988, axes: ['ANTIRACISM', 'INSTITUTIONAL'], authorLast: 'Mohanty' },
-  { title: 'A Cyborg Manifesto', year: 1985, axes: ['ECOLOGY', 'HISTORY'], authorLast: 'Haraway' },
+  { title: 'A Cyborg Manifesto', year: 1985, axes: ['FEMINIST', 'HISTORY'], authorLast: 'Haraway' },
   { title: 'Unsettling the Coloniality of Being', year: 2003, axes: ['AFROFEMINIST', 'HISTORY'], authorLast: 'Wynter' },
-  { title: 'Le Féminisme ou la Mort', year: 1974, axes: ['ECOLOGY', 'HISTORY'], authorLast: 'd’Eaubonne' },
+  { title: 'Le Féminisme ou la Mort', year: 1974, axes: ['FEMINIST', 'HISTORY'], authorLast: 'd’Eaubonne' },
   { title: 'The Straight Mind', year: 1980, axes: ['QUEER', 'HISTORY'], authorLast: 'Wittig' },
   {
     title: 'Demarginalizing the Intersection of Race and Sex',

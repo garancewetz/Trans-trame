@@ -3,9 +3,29 @@ import { blendAxesColors, AXES_COLORS } from '@/common/utils/categories'
 import { authorName, bookAuthorDisplay } from '@/common/utils/authorUtils'
 import type { Book, Author } from '@/types/domain'
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type D3Node = (Book | Author) & { x?: number; y?: number; fx?: number; fy?: number }
+
+interface DrawNodeOpts {
+  selectedNode?: Book | null
+  selectedAuthorId?: string | null
+  peekNodeId?: string | null
+  hoveredNode?: D3Node | null
+  hoveredNeighborIds?: Set<string>
+  connectedNodes?: Set<string>
+  hoveredFilter?: string | null
+  isNodeVisible?: (node: D3Node) => boolean
+  citationCount?: number
+  degree?: number
+  skipLabel?: boolean
+  labelOnly?: boolean
+  authors?: Author[]
+}
+
 // ── Caches ────────────────────────────────────────────────────────────────────
 
-const hoverAnimById = new Map()
+const hoverAnimById = new Map<string, number>()
 export function clearHoverAnim(): void { hoverAnimById.clear() }
 
 const gradientCanvasCache = new Map<string, HTMLCanvasElement>()
@@ -47,7 +67,7 @@ function getGradientCanvas(axes: string[] | undefined | null): HTMLCanvasElement
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function withAlpha(hex, alpha) {
+function withAlpha(hex: string, alpha: number): string {
   if (hex.startsWith('rgba') || hex.startsWith('rgb')) {
     return hex.replace(/[\d.]+\)$/, `${alpha})`)
   }
@@ -57,7 +77,7 @@ function withAlpha(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`
 }
 
-function roundRect(ctx, x, y, w, h, r) {
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
   ctx.beginPath()
   ctx.moveTo(x + r, y)
   ctx.lineTo(x + w - r, y)
@@ -78,7 +98,7 @@ function computeHover(nodeId: string, isHovered: boolean): number {
   return hover
 }
 
-function drawGlow(ctx, x, y, innerR, outerR, color, alpha) {
+function drawGlow(ctx: CanvasRenderingContext2D, x: number, y: number, innerR: number, outerR: number, color: string, alpha: number): void {
   const grad = ctx.createRadialGradient(x, y, innerR, x, y, outerR)
   grad.addColorStop(0, withAlpha(color, alpha))
   grad.addColorStop(1, withAlpha(color, 0))
@@ -90,7 +110,7 @@ function drawGlow(ctx, x, y, innerR, outerR, color, alpha) {
 
 // ── Shared node state ─────────────────────────────────────────────────────────
 
-function computeNodeState(node, opts) {
+function computeNodeState(node: D3Node, opts: DrawNodeOpts) {
   const {
     selectedNode, selectedAuthorId, peekNodeId, hoveredNode, hoveredNeighborIds,
     connectedNodes, hoveredFilter, isNodeVisible,
@@ -130,7 +150,7 @@ function computeNodeState(node, opts) {
   return { hover, opacity, isActive, isHighlighted, matchesHover, blendedColor, hasHoverFocus, isHoverNeighbor }
 }
 
-function shouldShowLabel(node, globalScale, state, opts) {
+function shouldShowLabel(node: D3Node, globalScale: number, state: ReturnType<typeof computeNodeState>, opts: DrawNodeOpts) {
   const { hover, isHighlighted, hasHoverFocus, isHoverNeighbor } = state
   const { selectedNode, connectedNodes } = opts
   if (hasHoverFocus && hover <= 0.01 && !isHoverNeighbor) return false
@@ -148,7 +168,7 @@ export function getNodeRadius(node: { type?: string }, citationCount: number, de
   return 6 + Math.max(citationBoost, degreeBoost)
 }
 
-function hoveredRadius(baseR, hover, globalScale) {
+function hoveredRadius(baseR: number, hover: number, globalScale: number): number {
   const minR = hover > 0.01 ? 11 / Math.max(globalScale, 0.08) : 0
   return Math.max(baseR + hover * 12, minR)
 }
@@ -177,7 +197,7 @@ export function getNodePointerHitRadius(
 
 // ── Author node ───────────────────────────────────────────────────────────────
 
-function drawAuthorNode(node, ctx, globalScale, opts) {
+function drawAuthorNode(node: D3Node, ctx: CanvasRenderingContext2D, globalScale: number, opts: DrawNodeOpts): void {
   if (!Number.isFinite(node?.x) || !Number.isFinite(node?.y)) return
 
   const state = computeNodeState(node, opts)
@@ -222,7 +242,7 @@ function drawAuthorNode(node, ctx, globalScale, opts) {
   ctx.restore()
 }
 
-function drawAuthorLabel(node, ctx, globalScale, state, opts, nodeRadius) {
+function drawAuthorLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScale: number, state: ReturnType<typeof computeNodeState>, opts: DrawNodeOpts, nodeRadius: number): void {
   if (!shouldShowLabel(node, globalScale, state, opts)) return
 
   const { hover, isHighlighted } = state
@@ -252,7 +272,7 @@ function drawAuthorLabel(node, ctx, globalScale, state, opts, nodeRadius) {
 
 // ── Book node ─────────────────────────────────────────────────────────────────
 
-export function drawNode(node: Book | Author, ctx: CanvasRenderingContext2D, globalScale: number, opts: any): void {
+export function drawNode(node: Book | Author, ctx: CanvasRenderingContext2D, globalScale: number, opts: DrawNodeOpts): void {
   if (node.type === 'author') return drawAuthorNode(node, ctx, globalScale, opts)
   if (!Number.isFinite(node?.x) || !Number.isFinite(node?.y)) return
   if (!Number.isFinite(globalScale)) globalScale = 1
@@ -305,7 +325,7 @@ export function drawNode(node: Book | Author, ctx: CanvasRenderingContext2D, glo
   ctx.restore()
 }
 
-function drawBookLabel(node, ctx, globalScale, state, opts, nodeRadius) {
+function drawBookLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScale: number, state: ReturnType<typeof computeNodeState>, opts: DrawNodeOpts, nodeRadius: number): void {
   if (!shouldShowLabel(node, globalScale, state, opts)) return
 
   const { hover, isActive, isHighlighted, matchesHover } = state

@@ -138,7 +138,7 @@ export function TableFilterBar({
           icon={<Download size={11} />}
           onClick={handleExport}
         >
-          {`Exporter ${TAB_LABELS[tab]}`}
+          {`Exporter ${TAB_LABELS[tab]} (JSON)`}
         </Button>
       )}
     </div>

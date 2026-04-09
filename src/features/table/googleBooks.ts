@@ -102,7 +102,8 @@ export async function lookupGoogleBooks(
       publisher: best.publisher || '',
       isbn: extractIsbn(best.industryIdentifiers),
     }
-  } catch {
+  } catch (err) {
+    if (import.meta.env.DEV) console.warn('[GoogleBooks] lookup failed:', err)
     return null
   }
 }
@@ -122,7 +123,8 @@ export async function enrichWithGoogleBooks(
   async function worker() {
     while (queue.length > 0) {
       if (signal?.aborted) return
-      const item = queue.shift()!
+      const item = queue.shift()
+      if (!item) break
       const result = await lookupGoogleBooks({ title: item.title, author: item.author }, signal)
       if (result) results.set(item.index, result)
     }

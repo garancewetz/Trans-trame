@@ -9,10 +9,12 @@ export const CATEGORY_THEME = {
   INSTITUTIONAL: { color: '#B0B0CC', label: 'Institutional & Labor' }, // Engels, Oakley, Foner
   CHILDHOOD: { color: '#FF7F50', label: 'Childhood & Family' }, // Balzac, hooks, Collectif
   CRIP: { color: '#8B4513', label: 'Crip Theory' }, // Kafer, Bell, Landis
-  ECOLOGY: { color: '#00FF87', label: 'Ecology' }, // T.S. Eliot
 
   // --- La catégorie suggérée pour compléter les 240 titres ---
   BODY: { color: '#FF4D6D', label: 'Body & Sexology' }, // Pour la recherche scientifique (Brotto, Chivers, Laqueur)
+
+  // --- Théorie féministe (transversal) ---
+  FEMINIST: { color: '#E040FB', label: 'Feminist Theory' },
 
   // --- Fallback pour les textes hors-thème ---
   UNCATEGORIZED: { color: '#999999', label: 'Sans catégorie' },

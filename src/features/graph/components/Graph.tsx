@@ -364,4 +364,5 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
 })
 
 
-export { Graph }
+const MemoGraph = Graph
+export { MemoGraph as Graph }

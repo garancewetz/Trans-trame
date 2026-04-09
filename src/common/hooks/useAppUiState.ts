@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Author, Book, GraphData, Link } from '@/types/domain'
 import { useGlobalSearch } from '../../features/shell/hooks/useGlobalSearch'
 
@@ -177,15 +177,20 @@ export function useAppUiState(graphData: GraphData, authors: Author[]) {
   }, [])
 
   // Raccourci Escape : ferme le panneau ou efface le peek
+  // Uses refs to avoid re-attaching the listener on every panelOpen change
+  const panelOpenRef = useRef(panelOpen)
+  panelOpenRef.current = panelOpen
+  const handleClosePanelRef = useRef(handleClosePanel)
+  handleClosePanelRef.current = handleClosePanel
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== 'Escape') return
-      if (panelOpen) handleClosePanel()
+      if (panelOpenRef.current) handleClosePanelRef.current()
       else setPeekNodeId((prev) => (prev ? null : prev))
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [panelOpen, handleClosePanel, setPeekNodeId])
+  }, [setPeekNodeId])
 
   // Recherche globale
   const { searchRef, globalSearch, setGlobalSearch, searchFocused, setSearchFocused, searchResults, handleSearchSelect } =

@@ -5,6 +5,7 @@ import { Button } from '@/common/components/ui/Button'
 import { CATEGORY_THEME, narrowAxes, type Axis } from '@/common/utils/categories'
 import type { Author, AuthorId, Book } from '@/types/domain'
 import { parseWithLLMBatch, type LLMParsedResult } from '../parseSmartInput.llm'
+import { resolveOrCreateAuthors } from '../smartImportModal.utils'
 
 type FieldDiff = { field: string; label: string; current: string; proposed: string }
 
@@ -12,9 +13,11 @@ type Enrichment = {
   bookId: string
   book: Book
   llm: LLMParsedResult
-  checked: boolean
+  /** Set of accepted field keys: diff field names ('title','year') + 'axes' + 'themes' */
+  acceptedFields: Set<string>
   newAxes: Axis[]
   diffs: FieldDiff[]
+  suggestedThemes: string[]
 }
 
 type Props = {
@@ -23,10 +26,11 @@ type Props = {
   authorsMap: Map<AuthorId, Author>
   onClose: () => void
   onUpdateBook?: (book: Book) => unknown
+  onAddAuthor?: (author: Author) => unknown
 }
 
-export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook }: Props) {
-  const [phase, setPhase] = useState<'idle' | 'loading' | 'review' | 'done'>('idle')
+export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, onAddAuthor }: Props) {
+  const [phase, setPhase] = useState<'idle' | 'loading' | 'review' | 'applying' | 'done'>('idle')
   const [enrichments, setEnrichments] = useState<Enrichment[]>([])
   const [progress, setProgress] = useState(0)
   const fakeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -71,9 +75,11 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook }
         setProgress(Math.round((done / total) * 100))
       })
     } catch (err) {
-      const msg = err instanceof Error && err.name === 'TimeoutError'
+      const isTimeout = err instanceof Error && err.name === 'TimeoutError'
+      const msg = isTimeout
         ? 'Gemini a mis trop de temps à répondre. Réessaie avec moins d\'ouvrages.'
-        : 'Erreur lors de l\'appel à Gemini.'
+        : `Erreur lors de l'appel à Gemini.${err instanceof Error ? ` (${err.message})` : ''}`
+      if (import.meta.env.DEV) console.warn('[AIEnrich]', err)
       setError(msg)
       setPhase('idle')
       return
@@ -120,16 +126,25 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook }
       const newAxes = llm.axes.length > 0 ? narrowAxes(llm.axes) : []
       const hasNewAxes = newAxes.length > 0 && (!book.axes || book.axes.length === 0 || newAxes.some((a) => !book.axes!.includes(a)))
 
-      const hasChanges = diffs.length > 0 || hasNewAxes
+      const existingAxes = book.axes || []
+      const suggestedThemes = (llm.suggestedThemes || [])
+        .filter((t) => !existingAxes.includes(`UNCATEGORIZED:${t}`))
+      const hasChanges = diffs.length > 0 || hasNewAxes || suggestedThemes.length > 0
 
       if (hasChanges) {
+        const allKeys = new Set<string>([
+          ...diffs.map((d) => d.field),
+          ...(hasNewAxes ? ['axes'] : []),
+          ...(suggestedThemes.length > 0 ? ['themes'] : []),
+        ])
         items.push({
           bookId: book.id,
           book,
           llm,
-          checked: true,
+          acceptedFields: allKeys,
           newAxes: hasNewAxes ? newAxes : [],
           diffs,
+          suggestedThemes,
         })
       }
     }
@@ -138,29 +153,77 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook }
     setPhase(items.length > 0 ? 'review' : 'done')
   }
 
+  const getAllKeys = (e: Enrichment) => new Set<string>([
+    ...e.diffs.map((d) => d.field),
+    ...(e.newAxes.length > 0 ? ['axes'] : []),
+    ...(e.suggestedThemes.length > 0 ? ['themes'] : []),
+  ])
+
   const toggleItem = (bookId: string) => {
     setEnrichments((prev) =>
-      prev.map((e) => (e.bookId === bookId ? { ...e, checked: !e.checked } : e)),
+      prev.map((e) => {
+        if (e.bookId !== bookId) return e
+        const allOn = e.acceptedFields.size === getAllKeys(e).size
+        return { ...e, acceptedFields: allOn ? new Set<string>() : getAllKeys(e) }
+      }),
     )
   }
 
-  const applySelected = () => {
+  const toggleField = (bookId: string, field: string) => {
+    setEnrichments((prev) =>
+      prev.map((e) => {
+        if (e.bookId !== bookId) return e
+        const next = new Set(e.acceptedFields)
+        if (next.has(field)) next.delete(field)
+        else next.add(field)
+        return { ...e, acceptedFields: next }
+      }),
+    )
+  }
+
+  const applySelected = async () => {
+    setPhase('applying')
+    const existingAuthors = [...authorsMap.values()]
+    const authorPromises: PromiseLike<unknown>[] = []
+    const pendingUpdates: { book: Book; updates: Partial<Book> }[] = []
+
     for (const e of enrichments) {
-      if (!e.checked) continue
+      if (e.acceptedFields.size === 0) continue
       const updates: Partial<Book> = {}
-      if (e.newAxes.length > 0) {
+      const acceptAxes = e.acceptedFields.has('axes')
+      const acceptThemes = e.acceptedFields.has('themes')
+      if ((acceptAxes && e.newAxes.length > 0) || (acceptThemes && e.suggestedThemes.length > 0)) {
         const existing = e.book.axes || []
-        updates.axes = [...new Set([...existing, ...e.newAxes])]
+        const existingThemes = existing.filter((a) => a.startsWith('UNCATEGORIZED:'))
+        const existingPrimary = existing.filter((a) => !a.startsWith('UNCATEGORIZED:'))
+        const primaryToSet = acceptAxes ? e.newAxes : existingPrimary
+        const themesToSet = acceptThemes
+          ? e.suggestedThemes.map((t) => `UNCATEGORIZED:${t}`)
+          : existingThemes
+        updates.axes = [...new Set([...primaryToSet, ...themesToSet])]
       }
       for (const d of e.diffs) {
+        if (!e.acceptedFields.has(d.field)) continue
         if (d.field === 'title') updates.title = d.proposed
         if (d.field === 'year') updates.year = parseInt(d.proposed, 10) || null
-        // author diffs are shown for info but not auto-applied (needs authorIds mapping)
+        if (d.field === 'author' && onAddAuthor) {
+          const { ids, promises } = resolveOrCreateAuthors(e.llm.authors, existingAuthors, onAddAuthor)
+          if (ids.length > 0) updates.authorIds = ids
+          authorPromises.push(...promises)
+        }
       }
       if (Object.keys(updates).length > 0) {
-        onUpdateBook?.({ ...e.book, ...updates })
+        pendingUpdates.push({ book: e.book, updates })
       }
     }
+
+    // Wait for author creation before updating books (authorIds must exist in DB)
+    if (authorPromises.length > 0) await Promise.all(authorPromises)
+
+    for (const { book, updates } of pendingUpdates) {
+      onUpdateBook?.({ ...book, ...updates })
+    }
+
     setPhase('done')
   }
 
@@ -173,7 +236,13 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook }
 
   if (!open) return null
 
-  const checkedCount = enrichments.filter((e) => e.checked).length
+  const checkedCount = enrichments.filter((e) => e.acceptedFields.size > 0).length
+  const unchangedCount = books.length - enrichments.length
+
+  const toggleAll = () => {
+    const allChecked = enrichments.every((e) => e.acceptedFields.size === getAllKeys(e).size)
+    setEnrichments((prev) => prev.map((e) => ({ ...e, acceptedFields: allChecked ? new Set<string>() : getAllKeys(e) })))
+  }
 
   return (
     <Modal
@@ -181,7 +250,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook }
       title="Enrichissement AI"
       titleIcon={<Sparkles size={14} className="text-cyan/70" />}
       onClose={handleClose}
-      maxWidth="max-w-3xl"
+      maxWidth="max-w-6xl"
     >
       {phase === 'idle' && (
         <div className="flex flex-col items-center gap-4 py-6">
@@ -230,117 +299,230 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook }
         )
       })()}
 
-      {phase === 'review' && (
-        <div className="flex flex-col gap-3">
-          <p className="text-[0.82rem] text-white/45">
-            {enrichments.length} ouvrage{enrichments.length > 1 ? 's' : ''} avec des enrichissements possibles.
-            Coche ceux que tu veux appliquer.
-          </p>
-
-          <div className="max-h-[50vh] overflow-y-auto rounded-lg border border-white/6">
-            <table className="w-full text-[0.82rem]">
-              <thead>
-                <tr className="border-b border-white/8 text-left text-white/35">
-                  <th className="w-8 px-3 py-2" />
-                  <th className="px-2 py-2">Ouvrage</th>
-                  <th className="px-2 py-2">Propositions AI</th>
-                </tr>
-              </thead>
-              <tbody>
-                {enrichments.map((e) => {
-                  const authorNames = (e.book.authorIds || [])
-                    .map((id) => authorsMap.get(id))
-                    .filter(Boolean)
-                    .map((a) => [a!.firstName, a!.lastName].filter(Boolean).join(' '))
-                    .join(', ')
-                  const currentAxes = (e.book.axes || []).map((a) => CATEGORY_THEME[a]?.label).filter(Boolean)
-
-                  return (
-                    <tr
-                      key={e.bookId}
-                      className={[
-                        'border-b border-white/4 transition-colors',
-                        e.checked ? 'bg-cyan/3' : 'opacity-40',
-                      ].join(' ')}
-                    >
-                      <td className="px-3 py-2 align-top">
-                        <button
-                          type="button"
-                          onClick={() => toggleItem(e.bookId)}
-                          className={[
-                            'mt-0.5 flex h-4 w-4 cursor-pointer items-center justify-center rounded border transition-all',
-                            e.checked
-                              ? 'border-cyan/60 bg-cyan/15'
-                              : 'border-white/20 hover:border-white/40',
-                          ].join(' ')}
-                        >
-                          {e.checked && <Check size={10} className="text-cyan" />}
-                        </button>
-                      </td>
-                      <td className="px-2 py-2">
-                        <div className="font-medium text-white/80">{e.book.title}</div>
-                        {authorNames && <div className="text-[0.78rem] text-white/40">{authorNames}</div>}
-                        {currentAxes.length > 0 && (
-                          <div className="mt-0.5 text-[0.72rem] text-white/25">{currentAxes.join(', ')}</div>
-                        )}
-                      </td>
-                      <td className="px-2 py-2">
-                        <div className="flex flex-col gap-1.5">
-                          {/* Field diffs */}
-                          {e.diffs.map((d) => (
-                            <div key={d.field} className="text-[0.78rem]">
-                              <span className="text-white/35">{d.label} : </span>
-                              <span className="text-red/40 line-through">{d.current}</span>
-                              <span className="text-white/30"> → </span>
-                              <span className="text-cyan/80">{d.proposed}</span>
-                            </div>
-                          ))}
-                          {/* New axes */}
-                          {e.newAxes.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {e.newAxes.map((a) => (
-                                <span
-                                  key={a}
-                                  className="rounded-full px-2 py-0.5 text-[0.72rem] font-medium"
-                                  style={{
-                                    backgroundColor: CATEGORY_THEME[a]?.color + '18',
-                                    color: CATEGORY_THEME[a]?.color,
-                                    border: `1px solid ${CATEGORY_THEME[a]?.color}30`,
-                                  }}
-                                >
-                                  + {CATEGORY_THEME[a]?.label}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex gap-2 pt-1">
-            <Button type="button" variant="surface" onClick={handleClose}>
-              Annuler
-            </Button>
-            <Button
-              type="button"
-              disabled={checkedCount === 0}
-              onClick={applySelected}
-              className={[
-                'inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-[0.85rem] font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-30',
-                'border-green/30 bg-green/6 text-green/75 hover:bg-green/12',
-              ].join(' ')}
-            >
-              <Check size={13} />
-              Appliquer ({checkedCount})
-            </Button>
-          </div>
+      {phase === 'applying' && (
+        <div className="flex flex-col items-center gap-3 py-8">
+          <Loader2 size={20} className="animate-spin text-cyan/60" />
+          <p className="text-[0.85rem] text-white/50">Application des modifications…</p>
         </div>
       )}
+
+      {phase === 'review' && (() => {
+        // Compute emerging themes summary
+        const themeCounts = new Map<string, number>()
+        for (const e of enrichments) {
+          for (const t of e.suggestedThemes) {
+            themeCounts.set(t, (themeCounts.get(t) || 0) + 1)
+          }
+        }
+        const sortedThemes = [...themeCounts.entries()].sort((a, b) => b[1] - a[1])
+        const allChecked = enrichments.every((e) => e.acceptedFields.size === getAllKeys(e).size)
+
+        return (
+          <div className="flex max-h-[70vh] flex-col gap-3">
+            {/* Header: stats + select all */}
+            <div className="flex shrink-0 items-center justify-between">
+              <p className="text-[0.82rem] text-white/45">
+                {enrichments.length} enrichissement{enrichments.length > 1 ? 's' : ''}
+                {unchangedCount > 0 && (
+                  <span className="text-white/25"> · {unchangedCount} ouvrage{unchangedCount > 1 ? 's' : ''} déjà complet{unchangedCount > 1 ? 's' : ''}</span>
+                )}
+              </p>
+              <button
+                type="button"
+                onClick={toggleAll}
+                className="cursor-pointer text-[0.78rem] text-white/35 transition-colors hover:text-white/60"
+              >
+                {allChecked ? 'Tout décocher' : 'Tout cocher'}
+              </button>
+            </div>
+
+            {/* Emerging themes summary — above table */}
+            {sortedThemes.length > 0 && (
+              <div className="shrink-0 rounded-lg border border-dashed border-white/10 bg-white/2 px-4 py-2.5">
+                <p className="mb-1.5 text-[0.75rem] font-medium text-white/35">
+                  Thématiques émergentes
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {sortedThemes.map(([theme, count]) => (
+                    <span
+                      key={theme}
+                      className="rounded-full border border-dashed border-white/20 bg-white/5 px-2.5 py-0.5 text-[0.78rem] text-white/60"
+                    >
+                      {theme}
+                      {count > 1 && (
+                        <span className="ml-1 text-[0.7rem] text-white/30">{count}</span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Enrichments table */}
+            <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-white/6">
+              <table className="w-full text-[0.82rem]">
+                <thead className="sticky top-0 z-10 bg-[#1a1a2e]">
+                  <tr className="border-b border-white/8 text-left text-white/35">
+                    <th className="w-8 px-3 py-2" />
+                    <th className="px-2 py-2">Ouvrage</th>
+                    <th className="px-2 py-2">Propositions AI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {enrichments.map((e) => {
+                    const authorNames = (e.book.authorIds || [])
+                      .map((id) => authorsMap.get(id))
+                      .filter(Boolean)
+                      .map((a) => [a!.firstName, a!.lastName].filter(Boolean).join(' '))
+                      .join(', ')
+                    const currentAxes = (e.book.axes || []).map((a) => CATEGORY_THEME[a]?.label).filter(Boolean)
+
+                    const rowAllOn = e.acceptedFields.size === getAllKeys(e).size
+                    const rowPartial = e.acceptedFields.size > 0 && !rowAllOn
+
+                    return (
+                      <tr
+                        key={e.bookId}
+                        className={[
+                          'border-b border-white/4 transition-colors',
+                          e.acceptedFields.size > 0 ? 'bg-cyan/3' : 'opacity-40',
+                        ].join(' ')}
+                      >
+                        <td className="px-3 py-2 align-top">
+                          <button
+                            type="button"
+                            onClick={() => toggleItem(e.bookId)}
+                            className={[
+                              'mt-0.5 flex h-4 w-4 cursor-pointer items-center justify-center rounded border transition-all',
+                              rowAllOn
+                                ? 'border-cyan/60 bg-cyan/15'
+                                : rowPartial
+                                  ? 'border-cyan/40 bg-cyan/8'
+                                  : 'border-white/20 hover:border-white/40',
+                            ].join(' ')}
+                          >
+                            {rowAllOn && <Check size={10} className="text-cyan" />}
+                            {rowPartial && <span className="block h-1.5 w-1.5 rounded-sm bg-cyan/60" />}
+                          </button>
+                        </td>
+                        <td className="px-2 py-2">
+                          <div className="font-medium text-white/80">{e.book.title}</div>
+                          {authorNames && <div className="text-[0.78rem] text-white/40">{authorNames}</div>}
+                          {currentAxes.length > 0 && (
+                            <div className="mt-0.5 text-[0.72rem] text-white/25">{currentAxes.join(', ')}</div>
+                          )}
+                        </td>
+                        <td className="px-2 py-2">
+                          <div className="flex flex-col gap-1.5">
+                            {/* Field diffs */}
+                            {e.diffs.map((d) => {
+                              const accepted = e.acceptedFields.has(d.field)
+                              return (
+                                <div key={d.field} className="flex items-center gap-1.5 text-[0.78rem]">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleField(e.bookId, d.field)}
+                                    className={[
+                                      'flex h-3.5 w-3.5 shrink-0 cursor-pointer items-center justify-center rounded border transition-all',
+                                      accepted ? 'border-cyan/60 bg-cyan/15' : 'border-white/20 hover:border-white/40',
+                                    ].join(' ')}
+                                  >
+                                    {accepted && <Check size={8} className="text-cyan" />}
+                                  </button>
+                                  <span className={!accepted ? 'opacity-35' : ''}>
+                                    <span className="text-white/35">{d.label} : </span>
+                                    <span className="text-red/40 line-through">{d.current}</span>
+                                    <span className="text-white/30"> → </span>
+                                    <span className="text-cyan/80">{d.proposed}</span>
+                                  </span>
+                                </div>
+                              )
+                            })}
+                            {/* New axes */}
+                            {e.newAxes.length > 0 && (
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleField(e.bookId, 'axes')}
+                                  className={[
+                                    'flex h-3.5 w-3.5 shrink-0 cursor-pointer items-center justify-center rounded border transition-all',
+                                    e.acceptedFields.has('axes') ? 'border-cyan/60 bg-cyan/15' : 'border-white/20 hover:border-white/40',
+                                  ].join(' ')}
+                                >
+                                  {e.acceptedFields.has('axes') && <Check size={8} className="text-cyan" />}
+                                </button>
+                                <div className={['flex flex-wrap items-center gap-1', !e.acceptedFields.has('axes') ? 'opacity-35' : ''].join(' ')}>
+                                  <span className="text-[0.72rem] text-white/35">Catégories :</span>
+                                  {e.newAxes.map((a) => (
+                                    <span
+                                      key={a}
+                                      className="rounded-full px-2 py-0.5 text-[0.72rem] font-medium"
+                                      style={{
+                                        backgroundColor: CATEGORY_THEME[a]?.color + '18',
+                                        color: CATEGORY_THEME[a]?.color,
+                                        border: `1px solid ${CATEGORY_THEME[a]?.color}30`,
+                                      }}
+                                    >
+                                      {CATEGORY_THEME[a]?.label}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {/* Suggested emerging themes */}
+                            {e.suggestedThemes.length > 0 && (
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleField(e.bookId, 'themes')}
+                                  className={[
+                                    'flex h-3.5 w-3.5 shrink-0 cursor-pointer items-center justify-center rounded border transition-all',
+                                    e.acceptedFields.has('themes') ? 'border-cyan/60 bg-cyan/15' : 'border-white/20 hover:border-white/40',
+                                  ].join(' ')}
+                                >
+                                  {e.acceptedFields.has('themes') && <Check size={8} className="text-cyan" />}
+                                </button>
+                                <div className={['flex flex-wrap gap-1', !e.acceptedFields.has('themes') ? 'opacity-35' : ''].join(' ')}>
+                                  {e.suggestedThemes.map((theme) => (
+                                    <span
+                                      key={theme}
+                                      className="rounded-full border border-dashed border-white/20 bg-white/4 px-2 py-0.5 text-[0.72rem] text-white/50"
+                                    >
+                                      {theme}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex shrink-0 gap-2 pt-1">
+              <Button type="button" variant="surface" onClick={handleClose}>
+                Annuler
+              </Button>
+              <Button
+                type="button"
+                disabled={checkedCount === 0}
+                onClick={applySelected}
+                className={[
+                  'inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-[0.85rem] font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-30',
+                  'border-green/30 bg-green/6 text-green/75 hover:bg-green/12',
+                ].join(' ')}
+              >
+                <Check size={13} />
+                Appliquer ({checkedCount})
+              </Button>
+            </div>
+          </div>
+        )
+      })()}
 
       {phase === 'done' && (
         <div className="flex flex-col items-center gap-3 py-6">

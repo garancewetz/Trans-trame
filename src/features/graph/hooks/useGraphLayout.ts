@@ -69,5 +69,7 @@ export function useGraphLayout({ fgRef, camRef, graphData, viewMode, degreeByNod
     }, 100)
 
     return () => clearTimeout(timer)
-  }, [viewMode, graphData.nodes, degreeByNodeId, fgRef, camRef])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- graphData.nodes reference changes every render;
+  // we only need to re-run when the count changes (structural change) or viewMode/degreeByNodeId change.
+  }, [viewMode, graphData.nodes.length, degreeByNodeId, fgRef, camRef])
 }

@@ -348,6 +348,7 @@ export function BooksTab({
         books={aiEnrichBooks}
         authorsMap={authorsMap}
         onUpdateBook={onUpdateBook}
+        onAddAuthor={onAddAuthor}
         onClose={() => { setAiEnrichModal(false); setAiEnrichBooks([]) }}
       />
     </div>

@@ -151,7 +151,7 @@ export function HistCiteView({ graphData, authors, selectedNode, onNodeClick, ac
         <g transform={transformStr}>
           {/* Citation arcs */}
           {arcs.map((arc, i) => (
-            <g key={i} opacity={linkFilterOpacity(arc.sourceId, arc.targetId)}>
+            <g key={`${arc.sourceId}|${arc.targetId}|${i}`} opacity={linkFilterOpacity(arc.sourceId, arc.targetId)}>
               <CitationLink
                 d={arc.d}
                 sourceId={arc.sourceId}

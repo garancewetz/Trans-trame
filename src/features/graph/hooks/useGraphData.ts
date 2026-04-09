@@ -91,7 +91,7 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
       if (ot) {
         const key = normTitle(ot)
         if (!byOriginal.has(key)) byOriginal.set(key, [])
-        byOriginal.get(key)!.push(b)
+        byOriginal.get(key)?.push(b)
       } else {
         standaloneBooks.push(b)
       }
@@ -210,7 +210,7 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
       if (linkErrors.length > 0) devWarn('Erreurs lors de la fusion (liens)', linkErrors)
 
       // Only delete book after links are safely remapped
-      Promise.all([
+      return Promise.all([
         deleteBookAuthorsByBookId(fromNodeId),
         deleteBookRowById(fromNodeId),
       ]).then((delResults) => {
@@ -218,7 +218,7 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
         if (delErrors.length > 0) devWarn('Erreurs lors de la fusion (suppression)', delErrors)
         invalidate()
       })
-    })
+    }).catch((err) => devWarn('Erreur inattendue lors de la fusion de livres', err))
 
     return true
   }, [books, links, invalidate])
@@ -241,11 +241,12 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
     setBooks([])
     setAuthors([])
     setLinks([])
-    deleteAllBooks()
+    Promise.resolve(deleteAllBooks())
       .then(({ error }) => {
         if (error) devWarn('Erreur reset', error)
         invalidate()
       })
+      .catch((err) => devWarn('Erreur inattendue lors du reset', err))
   }, [invalidate])
 
   return {

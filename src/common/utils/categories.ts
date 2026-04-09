@@ -22,13 +22,29 @@ export function narrowAxes(axes: readonly string[] | undefined | null): Axis[] {
   return axes.filter((a): a is Axis => AXIS_KEY_SET.has(a))
 }
 
+/** Sépare les axes connus et les thèmes secondaires (« UNCATEGORIZED:label »). */
+export function splitBookAxes(raw: readonly string[] | undefined | null): { axes: Axis[]; themes: string[] } {
+  if (!raw?.length) return { axes: [], themes: [] }
+  const axes: Axis[] = []
+  const themes: string[] = []
+  for (const a of raw) {
+    if (a.startsWith('UNCATEGORIZED:')) {
+      themes.push(a.slice('UNCATEGORIZED:'.length))
+    } else if (AXIS_KEY_SET.has(a)) {
+      axes.push(a as Axis)
+    }
+  }
+  return { axes, themes }
+}
+
 // Backward-compat alias
 export const CATEGORY_COLORS = AXES_COLORS
 
 // Migration des anciennes clés vers les nouvelles
 export const AXES_MIGRATION: Record<string, Axis> = {
-  ECOFEMINIST: 'ECOLOGY',
-  ECOFEMINISM: 'ECOLOGY',
+  ECOFEMINIST: 'UNCATEGORIZED',
+  ECOFEMINISM: 'UNCATEGORIZED',
+  ECOLOGY: 'UNCATEGORIZED',
   'QUEER / TRANS': 'QUEER',
   AFROFEMINISM: 'AFROFEMINIST',
   ANTIRACISM: 'ANTIRACISM',

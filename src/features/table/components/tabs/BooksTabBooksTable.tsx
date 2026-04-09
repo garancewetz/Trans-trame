@@ -172,7 +172,6 @@ export function BooksTabBooksTable({
               onFocusAuthorInAuthorsTab={onFocusAuthorInAuthorsTab}
               onOpenLinksForBook={onOpenLinksForBook}
               onOpenWorkDetail={onOpenWorkDetail}
-
             />
           ))}
         </tbody>

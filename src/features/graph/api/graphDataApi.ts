@@ -97,6 +97,13 @@ export async function exportFullDatabase() {
   const { booksRes, authorsRes, linksRes, bookAuthorsRes } =
     await loadGraphDataFromSupabase()
 
+  const errors = [booksRes, authorsRes, linksRes, bookAuthorsRes]
+    .map((r) => r.error)
+    .filter(Boolean)
+  if (errors.length > 0) {
+    console.error('[export] Certaines données n\'ont pas pu être chargées :', errors)
+  }
+
   downloadJson(
     {
       exportedAt: new Date().toISOString(),

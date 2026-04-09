@@ -262,4 +262,5 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
   )
 })
 
-export { AnalysisPanel }
+const MemoAnalysisPanel = AnalysisPanel
+export { MemoAnalysisPanel as AnalysisPanel }

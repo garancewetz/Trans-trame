@@ -52,7 +52,13 @@ export async function runSmartImportBatchInsert(params: {
       authorIdsByBook.push([])
     }
   })
-  if (authorPromises.length > 0) await Promise.all(authorPromises)
+  if (authorPromises.length > 0) {
+    const authorResults = await Promise.allSettled(authorPromises)
+    const authorErrors = authorResults.filter((r) => r.status === 'rejected')
+    if (authorErrors.length > 0 && import.meta.env.DEV) {
+      console.warn('[BatchInsert] Some author creations failed:', authorErrors)
+    }
+  }
 
   // Phase 2: insert NEW books only (merged books already exist)
   const insertPromises: Promise<unknown>[] = []
@@ -71,7 +77,13 @@ export async function runSmartImportBatchInsert(params: {
     newIds.push(r.id)
   })
 
-  if (insertPromises.length > 0) await Promise.all(insertPromises)
+  if (insertPromises.length > 0) {
+    const insertResults = await Promise.allSettled(insertPromises)
+    const insertErrors = insertResults.filter((r) => r.status === 'rejected')
+    if (insertErrors.length > 0 && import.meta.env.DEV) {
+      console.warn('[BatchInsert] Some book insertions failed:', insertErrors)
+    }
+  }
 
   // Phase 3: create links for ALL checked items (new + merged)
   if (masterNode) {

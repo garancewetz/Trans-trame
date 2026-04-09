@@ -74,7 +74,7 @@ export function BooksTabSelectionBar({
         className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-cyan/25 bg-cyan/5 px-3 py-1.5 text-[0.8rem] font-semibold text-cyan/65 transition-all hover:bg-cyan/12"
       >
         <ClipboardCopy size={11} />
-        {copied ? 'Copié !' : `Exporter (${selectedCount})`}
+        {copied ? 'Copié !' : `Copier texte (${selectedCount})`}
       </Button>
       {onAIEnrich && (
         <Tooltip content="Enrichir les ouvrages sélectionnés via Gemini (catégories, édition, année…)">

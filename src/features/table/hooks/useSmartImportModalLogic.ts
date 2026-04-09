@@ -116,7 +116,8 @@ export function useSmartImportModalLogic({
         setParsed(localResults)
         setChecked(new Set(localResults.filter((r) => !r.isDuplicate).map((r) => r.id)))
       }
-    } catch {
+    } catch (err) {
+      if (import.meta.env.DEV) console.warn('[SmartImport] LLM enrichment failed, using local results:', err)
       if (fakeTimerRef.current) { clearInterval(fakeTimerRef.current); fakeTimerRef.current = null }
       setAnalyzeProgress(100)
       setParsed(localResults)
@@ -391,8 +392,8 @@ export function useSmartImportModalLogic({
       setParsed((prev) =>
         prev.map((item) => enrichedMap.get(item.id) ?? item),
       )
-    } catch {
-      // LLM failed — keep current results
+    } catch (err) {
+      if (import.meta.env.DEV) console.warn('[SmartImport] LLM re-parse failed:', err)
     }
     setAnalyzing(false)
   }

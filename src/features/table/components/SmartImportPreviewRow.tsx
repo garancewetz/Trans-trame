@@ -123,7 +123,7 @@ export function SmartImportPreviewRow({
             {(item.authors?.length > 0 ? item.authors : [{ firstName: item.firstName, lastName: item.lastName }]).map((a, i) => (
               editingAuthorIndex === i ? (
                 <div
-                  key={i}
+                  key={`${a.firstName}-${a.lastName}-${i}`}
                   className="flex gap-0.5"
                   onBlur={(e) => {
                     if (!e.currentTarget.contains(e.relatedTarget)) commitAuthorEdit()
@@ -155,7 +155,7 @@ export function SmartImportPreviewRow({
                 </div>
               ) : (
                 <span
-                  key={i}
+                  key={`${a.firstName}-${a.lastName}-${i}`}
                   className={[
                     'cursor-text truncate',
                     isDup ? 'text-white/35' : 'text-white/42 hover:text-white/75',

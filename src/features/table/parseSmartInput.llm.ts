@@ -11,6 +11,8 @@ export interface LLMParsedResult {
   year: number | null
   page: string
   axes: Axis[]
+  /** Thématiques émergentes détectées par le LLM (format « UNCATEGORIZED:label ») */
+  suggestedThemes: string[]
 }
 
 // ─── Configuration ─────────────────────────────────────────────────────────────
@@ -21,68 +23,72 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GE
 
 const VALID_AXES = [
   'ANTIRACISM', 'AFROFEMINIST', 'QUEER', 'HEALTH', 'HISTORY',
-  'INSTITUTIONAL', 'CHILDHOOD', 'CRIP', 'ECOLOGY', 'BODY', 'UNCATEGORIZED',
+  'INSTITUTIONAL', 'CHILDHOOD', 'CRIP', 'BODY', 'FEMINIST', 'UNCATEGORIZED',
 ] as const
 
-const SYSTEM_PROMPT = `Tu es un parser de références bibliographiques. On te donne une liste de lignes numérotées. Pour CHAQUE ligne, extrais les champs bibliographiques et classe l'ouvrage par catégories thématiques. Renvoie un tableau JSON.
+const SYSTEM_PROMPT = `You are a bibliographic reference parser. You receive a list of numbered lines. For EACH line, extract bibliographic fields and classify the work thematically. Return a JSON array.
 
-Format de réponse (tableau, un objet par ligne, dans l'ordre) :
+Context: this is an intersectional corpus mapping intellectual filiations across feminism, afrofeminism, queer studies, disability, race, body politics, and social justice.
+
+Response format (array, one object per line, in order):
 [{"authors":[{"firstName":"","lastName":""}],"title":"","edition":"","city":"","year":null,"page":"","axes":[]}]
 
-Champs bibliographiques :
-- "authors" : TOUS les auteurs/co-auteurs, y compris (dir.), (eds.), (coord.). Sépare prénom et nom.
-- "title" : titre complet de l'ouvrage ou article, SANS guillemets, y compris sous-titres après un point ou deux-points. NE PAS inclure "tome", "vol.", numéros de volume dans le titre.
-- "edition" : éditeur ou journal/revue. Si double éditeur (ex: "Gallimard/Le Seuil"), garder tel quel.
-- "city" : ville de publication si présente, sinon "".
-- "year" : première année de publication (nombre). Pour une plage "1976-1984", renvoyer 1976. Si absente, null.
-- "page" : pages citées ET/OU indication de volume/tome. Combiner si les deux sont présents. Exemples : "p. 27-29", "tome 2", "Vols. 1, 2, 3", "vol. 2, p. 10-15", "I, II, III et IV". Si absent, "".
+Bibliographic fields:
+- "authors": ALL authors/co-authors, including (dir.), (eds.), (coord.). Separate first name and last name.
+  * IMPORTANT: For collectives (e.g. "Combahee River Collective") or single-name authors (e.g. "bell hooks"), put the full name in "lastName" and leave "firstName" empty.
+- "title": full title including subtitles after a colon or period. WITHOUT quotation marks. Do NOT include "tome", "vol.", volume numbers.
+  * For articles, this is the article title; the journal/review name goes in "edition".
+- "edition": publisher, or journal/review name for articles. If dual publisher (e.g. "Gallimard/Le Seuil"), keep as-is.
+- "city": city of publication if present, otherwise "".
+- "year": first year of publication (number). For a range "1976-1984", return 1976. If absent, null.
+- "page": cited pages AND/OR volume/tome indication. Combine if both present. Examples: "p. 27-29", "tome 2", "Vols. 1, 2, 3", "vol. 2, p. 10-15". If absent, "".
 
-Classification thématique ("axes") — choisis 1 à 3 catégories parmi :
-- QUEER : études queer, trans, genre, sexualités LGBT, drag, homonormativité
-- HEALTH : santé, trauma, soin, maladie, violence, corps médical, deuil
-- BODY : corps, sexologie, désir, érotisme, anatomie, reproduction
-- HISTORY : histoire, mémoire, archives, siècle, guerre, époque
-- ANTIRACISM : race, racisme, blanchité, ségrégation, colonialisme, discrimination
-- AFROFEMINIST : afroféminisme, négritude, womanisme, diaspora, postcolonial
-- INSTITUTIONAL : politique, droit, sociologie, économie, université, État
-- CHILDHOOD : enfance, famille, parentalité, inceste
-- CRIP : handicap, validisme, accessibilité, neurodivergence, mad studies
-- ECOLOGY : écologie, environnement, climat, anthropocène
-- UNCATEGORIZED : si le texte ne correspond à aucune des catégories ci-dessus
+CRITICAL RULE: Ensure that "title" and "authors" are never swapped. For classic authors (e.g., Balzac, Flaubert), extract the person's name even if the source text is ambiguous. If a name like "Le Père Goriot" appears as an author, it is an error; identify "Honoré de Balzac" as the author.
 
-Règles :
-- Champ absent → "" (strings) ou null (year).
-- axes : tableau de strings parmi les 11 catégories ci-dessus. Si aucune catégorie thématique ne correspond, utilise ["UNCATEGORIZED"] (jamais un tableau vide).
-- Le tableau DOIT avoir exactement le même nombre d'éléments que de lignes en entrée.
+Thematic classification ("axes") — pick 1 to 3 categories from:
+- QUEER: queer studies, trans, gender, LGBT sexualities, drag, homonormativity
+- HEALTH: health, trauma, care, illness, violence, medical body, grief
+- BODY: body, sexology, desire, eroticism, anatomy, reproduction
+- HISTORY: history, memory, archives, century, war, era
+- ANTIRACISM: race, racism, whiteness, segregation, colonialism, discrimination
+- AFROFEMINIST: afrofeminism, negritude, womanism, diaspora, postcolonial
+- INSTITUTIONAL: politics, law, sociology, economics, university, state, labor
+- CHILDHOOD: childhood, family, parenting, incest
+- CRIP: disability, ableism, accessibility, neurodivergence, mad studies
+- FEMINIST: feminist theory, patriarchy, sexism, misogyny, gender oppression, emancipation, sisterhood
 
-Exemples :
-Entrée : Didier Eribon (dir.), Les études gay et lesbiennes, Centre Georges-Pompidou, Paris, 1998.
+Priority rules for classification:
+1. INTERSECTIONALITY: Actively look for 2-3 axes when relevant (e.g. a Black lesbian author writing about health → AFROFEMINIST + QUEER + HEALTH).
+2. SPECIFICITY: Be specific with HISTORY and INSTITUTIONAL. Only use them if the work's primary focus is archives or legal/economic structures. Do not apply them by default to every old book.
+3. PREFERENCE: ALWAYS prefer existing categories above. A feminist philosophy book → FEMINIST, not UNCATEGORIZED.
+4. ECOLOGY: Do not use ECOLOGY as a main axis. If a work is about ecofeminism or environment, use "UNCATEGORIZED:ecology".
+5. UNCATEGORIZED: Only when the work truly does not fit the 10 main axes. You may add a broad family label: "UNCATEGORIZED:label", ONLY from: "philosophy", "psychoanalysis", "literature", "science", "art", "religion", "education", "media", "geography", "technology", "ecology". Lowercase, one word only.
+
+Examples:
+Input: Didier Eribon (dir.), Les études gay et lesbiennes, Centre Georges-Pompidou, Paris, 1998.
 → {"authors":[{"firstName":"Didier","lastName":"Eribon"}],"title":"Les études gay et lesbiennes","edition":"Centre Georges-Pompidou","city":"Paris","year":1998,"page":"","axes":["QUEER"]}
 
-Entrée : Richard Dyer, « Male Gay Porn : Coming to Terms », in Jump Cut, Mars, 1985, p. 27-29.
+Input: Richard Dyer, « Male Gay Porn : Coming to Terms », in Jump Cut, Mars, 1985, p. 27-29.
 → {"authors":[{"firstName":"Richard","lastName":"Dyer"}],"title":"Male Gay Porn : Coming to Terms","edition":"Jump Cut","city":"","year":1985,"page":"p. 27-29","axes":["QUEER","BODY"]}
 
-Entrée : Michel Foucault, Histoire de la sexualité. Vols. 1, 2, 3, Gallimard, Paris, 1976-1984.
-→ {"authors":[{"firstName":"Michel","lastName":"Foucault"}],"title":"Histoire de la sexualité","edition":"Gallimard","city":"Paris","year":1976,"page":"Vols. 1, 2, 3","axes":["QUEER","BODY","HISTORY"]}
+Input: Audre Lorde, Sister Outsider, Crossing Press, 1984.
+→ {"authors":[{"firstName":"Audre","lastName":"Lorde"}],"title":"Sister Outsider","edition":"Crossing Press","city":"","year":1984,"page":"","axes":["AFROFEMINIST","QUEER","FEMINIST"]}
 
-Entrée : Alain Corbin, Histoire du corps, tome 2, Seuil, 2005.
-→ {"authors":[{"firstName":"Alain","lastName":"Corbin"}],"title":"Histoire du corps","edition":"Seuil","city":"","year":2005,"page":"tome 2","axes":["BODY","HISTORY"]}`
+Input: Jacques Lacan, Écrits, Seuil, Paris, 1966.
+→ {"authors":[{"firstName":"Jacques","lastName":"Lacan"}],"title":"Écrits","edition":"Seuil","city":"Paris","year":1966,"page":"","axes":["UNCATEGORIZED:psychoanalysis"]}`
 
-// ─── Single-line API call (kept for potential future use) ──────────────────────
+// ─── Logic ───────────────────────────────────────────────────────────────────
 
 export async function parseWithLLM(rawLine: string): Promise<LLMParsedResult | null> {
   const results = await parseWithLLMBatch([{ index: 0, raw: rawLine }])
   return results.get(0) ?? null
 }
 
-// ─── Batch helper — single API call for all lines ─────────────────────────────
-
-/** Max lines per Gemini call (~50 lines ≈ 7 500 output tokens, under the 8 192 limit). */
 const CHUNK_SIZE = 40
 
 /**
- * Parse multiple lines via Gemini. Splits into chunks of CHUNK_SIZE
- * with a 4s pause between chunks to stay under rate limits.
+ * Traite les lignes par lots (batches) pour respecter les limites de tokens
+ * et éviter de saturer les quotas par minute (pause de 4s entre appels).
  */
 export async function parseWithLLMBatch(
   lines: { index: number; raw: string }[],
@@ -91,13 +97,12 @@ export async function parseWithLLMBatch(
   const results = new Map<number, LLMParsedResult>()
 
   if (!GEMINI_API_KEY) {
-    if (import.meta.env.DEV) console.warn('[LLM] pas de clé VITE_GEMINI_API_KEY — skip')
+    if (import.meta.env.DEV) console.warn('[LLM] pas de clé VITE_GEMINI_API_KEY')
     return results
   }
 
   if (lines.length === 0) return results
 
-  // Split into chunks to avoid output token limit
   const chunks: { index: number; raw: string }[][] = []
   for (let i = 0; i < lines.length; i += CHUNK_SIZE) {
     chunks.push(lines.slice(i, i + CHUNK_SIZE))
@@ -106,7 +111,7 @@ export async function parseWithLLMBatch(
   let processed = 0
   for (let c = 0; c < chunks.length; c++) {
     if (c > 0) {
-      if (import.meta.env.DEV) console.log(`[LLM] pause 4s avant chunk ${c + 1}/${chunks.length}…`)
+      if (import.meta.env.DEV) console.log(`[LLM] pause 4s avant lot ${c + 1}/${chunks.length}…`)
       await new Promise((r) => setTimeout(r, 4000))
     }
     const chunkResults = await _parseChunk(chunks[c])
@@ -118,23 +123,26 @@ export async function parseWithLLMBatch(
   return results
 }
 
+const ALLOWED_THEMES = new Set([
+  'philosophy', 'psychoanalysis', 'literature', 'science', 'art',
+  'religion', 'education', 'media', 'geography', 'technology', 'ecology',
+])
+
+/**
+ * Envoie un lot de lignes à l'API et gère les erreurs 429 avec une
+ * stratégie de retrait (backoff) basée sur les détails de l'erreur.
+ */
 async function _parseChunk(
   lines: { index: number; raw: string }[],
 ): Promise<Map<number, LLMParsedResult>> {
   const results = new Map<number, LLMParsedResult>()
-
-  // Build numbered lines for the prompt
   const numberedLines = lines.map((l, i) => `${i + 1}. ${l.raw}`).join('\n')
 
-  if (import.meta.env.DEV) console.log(`[LLM] appel Gemini pour ${lines.length} ligne(s)…`)
-
   const body = JSON.stringify({
-    contents: [
-      {
-        role: 'user',
-        parts: [{ text: `${SYSTEM_PROMPT}\n\nLignes à parser :\n${numberedLines}` }],
-      },
-    ],
+    contents: [{
+      role: 'user',
+      parts: [{ text: `${SYSTEM_PROMPT}\n\nLines to parse:\n${numberedLines}` }],
+    }],
     generationConfig: {
       responseMimeType: 'application/json',
       temperature: 0,
@@ -155,27 +163,24 @@ async function _parseChunk(
 
       if (response.status !== 429) break
 
-      // Parse the 429 body to get the actual retry delay and check if daily quota is exhausted
       const errorBody = await response.json().catch(() => null)
       const details = errorBody?.error?.details as { '@type': string; retryDelay?: string; violations?: { quotaId: string }[] }[] | undefined
 
-      // If daily quota is exhausted, don't retry — it won't help
       const isDailyExhausted = details?.some((d) =>
         d.violations?.some((v) => v.quotaId?.includes('PerDay')),
       )
       if (isDailyExhausted) {
-        if (import.meta.env.DEV) console.warn('[LLM] quota journalier Gemini épuisé — fallback local')
+        if (import.meta.env.DEV) console.warn('[LLM] Quota journalier épuisé.')
         return results
       }
 
       if (attempt === MAX_RETRIES) break
 
-      // Use the retry delay from the API, or default to 45s
       const retryInfo = details?.find((d) => d.retryDelay)
       const apiDelay = retryInfo?.retryDelay ? parseFloat(retryInfo.retryDelay) : NaN
       const wait = (!isNaN(apiDelay) ? Math.ceil(apiDelay) + 2 : 45) * 1000
 
-      if (import.meta.env.DEV) console.warn(`[LLM] 429 — retry dans ${wait / 1000}s (${attempt + 1}/${MAX_RETRIES})`)
+      if (import.meta.env.DEV) console.warn(`[LLM] 429 — retry ${attempt + 1}/${MAX_RETRIES} dans ${wait / 1000}s`)
       await new Promise((r) => setTimeout(r, wait))
     } catch (err) {
       if (attempt === MAX_RETRIES) throw err
@@ -183,53 +188,57 @@ async function _parseChunk(
   }
 
   try {
-    if (!response || !response.ok) {
-      if (import.meta.env.DEV) console.warn(`[LLM] erreur HTTP ${response?.status ?? 'no response'} — fallback local`)
-      return results
-    }
+    if (!response || !response.ok) return results
 
     const data = await response.json()
     const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
     if (!text) return results
 
-    const parsed: LLMParsedResult[] = JSON.parse(text)
-
-    if (!Array.isArray(parsed)) {
-      if (import.meta.env.DEV) console.warn('[LLM] réponse non-tableau:', parsed)
-      return results
-    }
-
-    if (import.meta.env.DEV) console.log(`[LLM] ${parsed.length} résultat(s) Gemini reçus`)
+    const parsed: unknown = JSON.parse(text)
+    if (!Array.isArray(parsed)) return results
 
     for (let i = 0; i < Math.min(parsed.length, lines.length); i++) {
-      const item = parsed[i]
-      if (!item || (!item.title && (!item.authors || item.authors.length === 0))) continue
+      const item = parsed[i] as Record<string, unknown> | null
+      if (!item) continue
 
+      // Sécurité : transformer axes en tableau s'il arrive sous forme de string
+      const rawAxes: string[] = (Array.isArray(item.axes) ? item.axes : typeof item.axes === 'string' ? [item.axes] : [])
+        .map((a: unknown) => String(a).trim())
+        .filter(Boolean)
+
+      const knownAxes = rawAxes.filter((a): a is Axis => VALID_AXES.includes(a as typeof VALID_AXES[number]) && a !== 'UNCATEGORIZED')
+
+      const suggestedThemes = rawAxes
+        .flatMap((a) => {
+          if (a.startsWith('UNCATEGORIZED:')) return [a.slice('UNCATEGORIZED:'.length).trim()]
+          if (!VALID_AXES.includes(a as typeof VALID_AXES[number])) return [a]
+          return []
+        })
+        .map((t) => t.toLowerCase().replace(/_/g, ' ').trim())
+        .filter((t) => ALLOWED_THEMES.has(t))
+        .filter((v, idx, arr) => arr.indexOf(v) === idx)
+
+      const rawAuthors = Array.isArray(item.authors) ? item.authors : []
       results.set(lines[i].index, {
-        authors: Array.isArray(item.authors)
-          ? item.authors.map((a) => ({
-              firstName: String(a.firstName ?? '').trim(),
-              lastName: String(a.lastName ?? '').trim(),
-            }))
-          : [],
+        authors: rawAuthors
+          .filter((a): a is Record<string, unknown> => a != null && typeof a === 'object')
+          .map((a) => ({
+            firstName: String(a.firstName ?? '').trim(),
+            lastName: String(a.lastName ?? '').trim(),
+          })),
         title: String(item.title ?? '').trim(),
         edition: String(item.edition ?? '').trim(),
         city: String(item.city ?? '').trim(),
         year: typeof item.year === 'number' ? item.year : null,
         page: String(item.page ?? '').trim(),
-        axes: Array.isArray(item.axes)
-          ? item.axes.filter((a): a is Axis => VALID_AXES.includes(a as typeof VALID_AXES[number]))
-          : [],
+        axes: knownAxes.length > 0 ? knownAxes : ['UNCATEGORIZED' as Axis],
+        suggestedThemes,
       })
-    }
-
-    if (import.meta.env.DEV && results.size > 0) {
-      console.log('[LLM] exemple premier résultat :', results.values().next().value)
     }
 
     return results
   } catch (err) {
-    if (import.meta.env.DEV) console.warn('[LLM] échec appel Gemini :', err)
+    if (import.meta.env.DEV) console.warn('[LLM] Erreur parsing JSON lot :', err)
     return results
   }
 }
