@@ -1,8 +1,39 @@
+import type { Dispatch, SetStateAction } from 'react'
 import { AlertTriangle, ArrowRightLeft, Check, GitMerge, Info, Link2, MessageSquare, Plus, X } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { EditionPicker } from '@/features/add-book-form/components/EditionPicker'
+import type { Book } from '@/types/domain'
+import type { Axis } from '@/common/utils/categories'
+import type { ParsedBook } from '../parseSmartInput.types'
 import { AxisDots } from './TableSubcomponents'
+
+type EditingCell = { id: string; field: string } | null
+type EditingAuthor = { id: string; authorIndex: number | null; firstName: string; lastName: string } | null
+
+type Props = {
+  item: ParsedBook
+  checked: Set<string>
+  mergedIds: Set<string>
+  editingCell: EditingCell
+  editingValue: string
+  setEditingValue: (value: string) => void
+  editingAuthor: EditingAuthor
+  setEditingAuthor: Dispatch<SetStateAction<EditingAuthor>>
+  toggleItem: (id: string) => void
+  commitCellEdit: () => void
+  setEditingCell: (cell: EditingCell) => void
+  commitAuthorEdit: () => void
+  handleMerge: (item: ParsedBook) => void
+  handleUnmerge: (item: ParsedBook) => void
+  onDismissDuplicate: (id: string) => void
+  onAddCoAuthor: (id: string) => void
+  onUpdateAxes: (id: string, axes: Axis[]) => void
+  onSwapFields: (id: string, field: 'title' | 'edition') => void
+  onUpdateField: (id: string, field: string, value: string) => void
+  masterNode: Book | null
+  knownEditions: string[]
+}
 
 export function SmartImportPreviewRow({
   item,
@@ -26,7 +57,7 @@ export function SmartImportPreviewRow({
   onUpdateField,
   masterNode,
   knownEditions,
-}) {
+}: Props) {
   const isEditTitle = editingCell?.id === item.id && editingCell?.field === 'title'
   const isEditEdition = editingCell?.id === item.id && editingCell?.field === 'edition'
   const isEditPage = editingCell?.id === item.id && editingCell?.field === 'page'
@@ -134,8 +165,8 @@ export function SmartImportPreviewRow({
                     autoFocus
                     className="w-[45%] rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.8rem] focus:border-cyan/35 focus:bg-white/8"
                     placeholder="Prénom"
-                    value={editingAuthor.firstName}
-                    onChange={(e) => setEditingAuthor((p) => ({ ...p, firstName: e.target.value }))}
+                    value={editingAuthor!.firstName}
+                    onChange={(e) => setEditingAuthor((p) => p ? { ...p, firstName: e.target.value } : p)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') commitAuthorEdit()
                       if (e.key === 'Escape') setEditingAuthor(null)
@@ -145,8 +176,8 @@ export function SmartImportPreviewRow({
                     variant="table"
                     className="w-[55%] rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.8rem] focus:border-cyan/35 focus:bg-white/8"
                     placeholder="Nom"
-                    value={editingAuthor.lastName}
-                    onChange={(e) => setEditingAuthor((p) => ({ ...p, lastName: e.target.value }))}
+                    value={editingAuthor!.lastName}
+                    onChange={(e) => setEditingAuthor((p) => p ? { ...p, lastName: e.target.value } : p)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') commitAuthorEdit()
                       if (e.key === 'Escape') setEditingAuthor(null)

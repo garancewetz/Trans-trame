@@ -1,5 +1,9 @@
+import type { Dispatch, FormEvent, SetStateAction } from 'react'
+import type { UseFormReturn } from 'react-hook-form'
 import { ArrowDown, ArrowLeft } from 'lucide-react'
 import { Controller } from 'react-hook-form'
+import type { Author, Book, BookId } from '@/types/domain'
+import type { AuthorNode } from '@/common/utils/authorUtils'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
@@ -8,6 +12,39 @@ import { FormField } from '@/common/components/ui/FormField'
 import { SelectedItemsPills } from '@/common/components/ui/SelectedItemsPills'
 import { NodePicker } from './NodePicker'
 import { EditionPicker } from './EditionPicker'
+
+type LinkFormValues = {
+  citationText: string
+  edition: string
+  page: string
+  context: string
+}
+
+type Props = {
+  onSubmit: (e: FormEvent<HTMLFormElement>) => void
+  onRequestBack?: (() => void) | null
+  linkForm: UseFormReturn<LinkFormValues>
+  sourceId: string
+  setSourceId: (id: string) => void
+  targetIds: BookId[]
+  setTargetIds: Dispatch<SetStateAction<BookId[]>>
+  selectedSource: Book | null
+  selectedTargets: Book[]
+  sourceSearch: string
+  setSourceSearch: (q: string) => void
+  targetSearch: string
+  setTargetSearch: (q: string) => void
+  sourceResults: Book[]
+  targetResults: Book[]
+  onRequestAddBook?: () => void
+  inputClass: string
+  authorsMap: Map<string, AuthorNode>
+  nodes: Book[]
+  authors: Author[]
+  onAddAuthor?: (author: Author) => void
+  onInlineAddBook?: (book: Partial<Book> & Pick<Book, 'id' | 'title' | 'type'>) => void
+  knownEditions?: string[]
+}
 
 export function LinkForm({
   onSubmit,
@@ -32,10 +69,10 @@ export function LinkForm({
   authors,
   onAddAuthor,
   onInlineAddBook,
-  knownEditions = [] as string[],
-}) {
+  knownEditions = [],
+}: Props) {
   const { register, control } = linkForm
-  const removeTarget = (id) => setTargetIds((prev) => prev.filter((t) => t !== id))
+  const removeTarget = (id: string) => setTargetIds((prev) => prev.filter((t) => t !== id))
 
   const linkCount = targetIds.length
 

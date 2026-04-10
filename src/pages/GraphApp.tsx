@@ -11,8 +11,10 @@ import { Timeline } from '@/features/timeline/components/Timeline'
 import { TextsPanel } from '@/features/texts-panel/components/TextsPanel'
 import { AuthorsPanel } from '@/features/authors-panel/components/AuthorsPanel'
 import { KeyboardHints } from '@/common/components/ui/KeyboardHints'
+import { LoginModal } from '@/pages/LoginPage'
 
 import { AXES_COLORS } from '@/common/utils/categories'
+import { ErrorBoundary } from '@/common/components/ErrorBoundary'
 import { useAppData } from '@/core/AppDataContext'
 import { useAppTimelineAndLayout } from '@/common/hooks/useAppTimelineAndLayout'
 import { useMapUrlSync } from '@/common/hooks/useMapUrlSync'
@@ -69,32 +71,34 @@ function GraphAppContent() {
   return (
     <div className="relative h-screen w-full overflow-hidden">
       <div className="absolute inset-0 z-0">
-        {isGraphView ? (
-          <Graph
-            ref={graphRef}
-            graphData={timeline.filteredGraphData}
-            authors={authors}
-            selectedNode={selection.selectedNode}
-            selectedAuthorId={filter.selectedAuthor}
-            peekNodeId={selection.peekNodeId}
-            activeFilter={filter.activeFilter}
-            hoveredFilter={filter.hoveredFilter}
-            onNodeClick={handleNodeClick}
-            onLinkClick={() => {}}
-            viewMode={timeline.viewMode}
-            flashNodeIds={tableUi.flashNodeIds}
-          />
-        ) : (
-          <VisualizationView
-            viewMode={timeline.viewMode}
-            graphData={timeline.filteredGraphData}
-            authors={authors}
-            selectedNode={selection.selectedNode}
-            onNodeClick={handleNodeClick}
-            activeFilter={filter.activeFilter}
-            hoveredFilter={filter.hoveredFilter}
-          />
-        )}
+        <ErrorBoundary>
+          {isGraphView ? (
+            <Graph
+              ref={graphRef}
+              graphData={timeline.filteredGraphData}
+              authors={authors}
+              selectedNode={selection.selectedNode}
+              selectedAuthorId={filter.selectedAuthor}
+              peekNodeId={selection.peekNodeId}
+              activeFilter={filter.activeFilter}
+              hoveredFilter={filter.hoveredFilter}
+              onNodeClick={handleNodeClick}
+              onLinkClick={() => {}}
+              viewMode={timeline.viewMode}
+              flashNodeIds={tableUi.flashNodeIds}
+            />
+          ) : (
+            <VisualizationView
+              viewMode={timeline.viewMode}
+              graphData={timeline.filteredGraphData}
+              authors={authors}
+              selectedNode={selection.selectedNode}
+              onNodeClick={handleNodeClick}
+              activeFilter={filter.activeFilter}
+              hoveredFilter={filter.hoveredFilter}
+            />
+          )}
+        </ErrorBoundary>
       </div>
 
       <KeyboardHints />
@@ -153,7 +157,13 @@ function GraphAppContent() {
         onClose={() => panels.setAuthorsPanelOpen(false)}
       />
 
-      {tableUi.tableMode && <TableView />}
+      {tableUi.tableMode && (
+        <ErrorBoundary>
+          <TableView />
+        </ErrorBoundary>
+      )}
+
+      <LoginModal />
     </div>
   )
 }

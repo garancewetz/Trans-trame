@@ -1,34 +1,42 @@
-export function getOutgoingRefs(graphData, node) {
+import type { GraphData, Book, Link } from '@/types/domain'
+
+function endpointId(v: unknown): string | undefined {
+  if (typeof v === 'string') return v
+  if (v != null && typeof v === 'object' && 'id' in v) return (v as { id: string }).id
+  return undefined
+}
+
+export function getOutgoingRefs(graphData: GraphData, node: Book) {
   return graphData.links
     .filter((l) => {
-      const srcId = typeof l.source === 'object' ? l.source.id : l.source
+      const srcId = endpointId(l.source)
       return srcId === node.id
     })
     .map((l) => {
-      const tgtId = typeof l.target === 'object' ? l.target.id : l.target
+      const tgtId = endpointId(l.target)
       return { link: l, other: graphData.nodes.find((n) => n.id === tgtId) }
     })
 }
 
-export function getIncomingRefs(graphData, node) {
+export function getIncomingRefs(graphData: GraphData, node: Book) {
   return graphData.links
     .filter((l) => {
-      const tgtId = typeof l.target === 'object' ? l.target.id : l.target
+      const tgtId = endpointId(l.target)
       return tgtId === node.id
     })
     .map((l) => {
-      const srcId = typeof l.source === 'object' ? l.source.id : l.source
+      const srcId = endpointId(l.source)
       return { link: l, other: graphData.nodes.find((n) => n.id === srcId) }
     })
 }
 
-export function getLinkNodes(graphData, link) {
-  const srcId = typeof link.source === 'object' ? link.source.id : link.source
-  const tgtId = typeof link.target === 'object' ? link.target.id : link.target
+export function getLinkNodes(graphData: GraphData, link: Link) {
+  const srcId = endpointId(link.source)
+  const tgtId = endpointId(link.target)
   return { source: graphData.nodes.find((n) => n.id === srcId), target: graphData.nodes.find((n) => n.id === tgtId) }
 }
 
-export function computeSameAuthorBooks(graphData, selectedNode) {
+export function computeSameAuthorBooks(graphData: GraphData, selectedNode: Book | null) {
   if (!selectedNode || !selectedNode.authorIds?.length) return []
 
   const authorIds = new Set(selectedNode.authorIds)

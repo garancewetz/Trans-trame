@@ -2,7 +2,7 @@ import { useId, useState } from 'react'
 import { Move, ChevronDown } from 'lucide-react'
 import { Button } from './Button'
 
-const KeyCap = ({ children }) => (
+const KeyCap = ({ children }: { children: React.ReactNode }) => (
   <span
     style={{
       display: 'inline-flex',
@@ -27,7 +27,7 @@ const KeyCap = ({ children }) => (
   </span>
 )
 
-const HintRow = ({ keys, label }) => (
+const HintRow = ({ keys, label }: { keys: string[]; label: string }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
     <span style={{ display: 'flex', gap: 3 }}>
       {keys.map((k, i) => (

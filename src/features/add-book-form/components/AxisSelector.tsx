@@ -1,7 +1,13 @@
+import type { AxisId } from '@/types/domain'
 import { AXES, AXES_COLORS, AXES_LABELS } from '@/common/utils/categories'
 import { Button } from '@/common/components/ui/Button'
 
-export function AxisSelector({ selectedAxes, toggleAxis }) {
+type Props = {
+  selectedAxes: AxisId[]
+  toggleAxis: (axis: AxisId) => void
+}
+
+export function AxisSelector({ selectedAxes, toggleAxis }: Props) {
   return (
     <fieldset className="flex flex-col gap-2">
       <legend className="mb-1 text-[0.75rem] font-semibold uppercase tracking-[1px] text-white/35">

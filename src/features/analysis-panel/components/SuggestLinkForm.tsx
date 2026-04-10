@@ -1,11 +1,20 @@
+import type { FormEvent } from 'react'
 import { useMemo, useState } from 'react'
+import type { Book, Link } from '@/types/domain'
+import type { AuthorNode } from '@/common/utils/authorUtils'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { matchAllWords } from '@/common/utils/searchUtils'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { SearchResultsDropdown } from '@/common/components/ui/SearchResultsDropdown'
 
-export function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
+type Props = {
+  bookNodes: Book[]
+  onAddLink: (link: Partial<Link> & Pick<Link, 'source' | 'target'>) => void
+  authorsMap: Map<string, AuthorNode>
+}
+
+export function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }: Props) {
   const [show, setShow] = useState(false)
   const [source, setSource] = useState('')
   const [target, setTarget] = useState('')
@@ -29,7 +38,7 @@ export function SuggestLinkForm({ bookNodes, onAddLink, authorsMap }) {
       .map((n) => ({ ...n, meta: bookAuthorDisplay(n, authorsMap) }))
   }, [bookNodes, targetSearch, authorsMap])
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!source || !target || source === target) return
     onAddLink({

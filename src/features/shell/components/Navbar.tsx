@@ -1,5 +1,5 @@
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
-import { LayoutGrid, BookOpen, PenLine, Users, FlaskConical } from 'lucide-react'
+import { LayoutGrid, BookOpen, PenLine, Users, FlaskConical, LogOut, LogIn } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
 import { Tooltip } from '@/common/components/ui/Tooltip'
@@ -13,6 +13,7 @@ import { useFilter } from '@/core/FilterContext'
 import { useTableUi } from '@/core/TableUiContext'
 import { usePanelVisibility } from '@/core/PanelVisibilityContext'
 import { useSelection } from '@/core/SelectionContext'
+import { useAuthActions, useAuthState } from '@/core/AuthContext'
 import { useGlobalSearch } from '@/features/shell/hooks/useGlobalSearch'
 import type { AnalysisPanelImperativeHandle } from '@/features/analysis-panel/components/AnalysisPanel'
 
@@ -23,6 +24,8 @@ type NavbarProps = {
 }
 
 export function Navbar({ analysisPanelRef, viewMode, onViewChange }: NavbarProps) {
+  const { user, profile } = useAuthState()
+  const { signOut, requireAuth } = useAuthActions()
   const appData = useAppData()
   const { graphData, authorsMap, authorCount } = appData
   const filter = useFilter()
@@ -67,8 +70,12 @@ export function Navbar({ analysisPanelRef, viewMode, onViewChange }: NavbarProps
   const [openGroup, setOpenGroup] = useState<'catalogue' | null>(null)
 
   const onToggleTableMode = useCallback(
-    () => tableUi.setTableMode(!tableUi.tableMode),
-    [tableUi],
+    () => {
+      if (tableUi.tableMode) { tableUi.setTableMode(false); return }
+      if (!requireAuth()) return
+      tableUi.setTableMode(true)
+    },
+    [tableUi, requireAuth],
   )
 
   const onOpenAnalysisPanel = useCallback(
@@ -286,6 +293,34 @@ export function Navbar({ analysisPanelRef, viewMode, onViewChange }: NavbarProps
               <FlaskConical size={15} />
             </Button>
           </Tooltip>
+
+          {user ? (
+            <Tooltip content={profile ? `${profile.firstName} ${profile.lastName}`.trim() || user.email || 'Déconnexion' : user.email ?? 'Déconnexion'}>
+              <Button
+                variant="outline"
+                frosted
+                onClick={signOut}
+                type="button"
+                aria-label="Déconnexion"
+                className="h-[34px] w-[34px] justify-center px-0!"
+              >
+                <LogOut size={14} />
+              </Button>
+            </Tooltip>
+          ) : (
+            <Tooltip content="Se connecter">
+              <Button
+                variant="outline"
+                frosted
+                onClick={requireAuth}
+                type="button"
+                aria-label="Se connecter"
+                className="h-[34px] w-[34px] justify-center px-0!"
+              >
+                <LogIn size={14} />
+              </Button>
+            </Tooltip>
+          )}
         </div>
       </div>
 

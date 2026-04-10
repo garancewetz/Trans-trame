@@ -119,7 +119,7 @@ export function NodeDetails() {
           {axes.length > 0 && (
             <div className="mb-4 flex flex-wrap gap-1.5">
               {axes.map((axis) => (
-                <AxisBadge key={axis} color={AXES_COLORS?.[axis] ?? '#94a3b8'}>
+                <AxisBadge key={axis} color={(AXES_COLORS as Record<string, string>)?.[axis] ?? '#94a3b8'}>
                   {axis}
                 </AxisBadge>
               ))}
@@ -188,7 +188,7 @@ export function NodeDetails() {
               Références citées
             </h3>
             <ul>
-              {getOutgoingRefs(graphData, selectedNode).map(({ link, other }: { link: GraphLink; other: Book | null }, i: number) => (
+              {getOutgoingRefs(graphData, selectedNode).map(({ link, other }: { link: GraphLink; other: Book | undefined }, i: number) => (
                 <PanelRefRow
                   key={link.id ?? `o-${i}`}
                   variant="cites"
@@ -215,7 +215,7 @@ export function NodeDetails() {
               Cité par
             </h3>
             <ul>
-              {getIncomingRefs(graphData, selectedNode).map(({ link, other }: { link: GraphLink; other: Book | null }, i: number) => (
+              {getIncomingRefs(graphData, selectedNode).map(({ link, other }: { link: GraphLink; other: Book | undefined }, i: number) => (
                 <PanelRefRow
                   key={link.id ?? `i-${i}`}
                   variant="citedBy"

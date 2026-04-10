@@ -1,7 +1,5 @@
 import { supabase } from '@/core/supabase'
-
-/** Payload générique pour insert/update Supabase (schéma non généré). */
-export type DbRow = Record<string, unknown>
+import type { TablesInsert, TablesUpdate } from '@/types/supabase'
 
 export async function loadGraphDataFromSupabase() {
   const [booksRes, authorsRes, linksRes, bookAuthorsRes] = await Promise.all([
@@ -14,11 +12,11 @@ export async function loadGraphDataFromSupabase() {
   return { booksRes, authorsRes, linksRes, bookAuthorsRes }
 }
 
-export function insertBookRow(row: DbRow) {
+export function insertBookRow(row: TablesInsert<'books'>) {
   return supabase.from('books').insert(row)
 }
 
-export function updateBookRowById(id: string, fields: DbRow) {
+export function updateBookRowById(id: string, fields: TablesUpdate<'books'>) {
   return supabase.from('books').update(fields).eq('id', id)
 }
 
@@ -26,11 +24,15 @@ export function deleteBookRowById(id: string) {
   return supabase.from('books').delete().eq('id', id)
 }
 
-export function insertAuthorRow(row: DbRow | DbRow[]) {
+export function insertAuthorRow(row: TablesInsert<'authors'>) {
   return supabase.from('authors').insert(row)
 }
 
-export function updateAuthorRowById(id: string, fields: DbRow) {
+export function insertAuthorRows(rows: TablesInsert<'authors'>[]) {
+  return supabase.from('authors').insert(rows)
+}
+
+export function updateAuthorRowById(id: string, fields: TablesUpdate<'authors'>) {
   return supabase.from('authors').update(fields).eq('id', id)
 }
 
@@ -38,11 +40,11 @@ export function deleteAuthorRowById(id: string) {
   return supabase.from('authors').delete().eq('id', id)
 }
 
-export function insertLinkRow(row: DbRow) {
+export function insertLinkRow(row: TablesInsert<'links'>) {
   return supabase.from('links').insert(row)
 }
 
-export function updateLinkRowById(id: string, fields: DbRow) {
+export function updateLinkRowById(id: string, fields: TablesUpdate<'links'>) {
   return supabase.from('links').update(fields).eq('id', id)
 }
 

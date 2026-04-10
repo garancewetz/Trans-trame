@@ -30,14 +30,14 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
   } = useAppData()
 
   const suppressCommitRef = useRef(false)
-  const [editingField, setEditingField] = useState(null)
+  const [editingField, setEditingField] = useState<string | null>(null)
   const [draftCitation, setDraftCitation] = useState('')
   const [draftPage, setDraftPage] = useState('')
   const [draftEdition, setDraftEdition] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
   const [isActionsOpen, setIsActionsOpen] = useState(false)
 
-  const { source, target } = getLinkNodes(graphData, selectedLink)
+  const { source, target } = selectedLink ? getLinkNodes(graphData, selectedLink) : { source: undefined, target: undefined }
   const contextIsSource = linkContextNode?.id && source?.id && linkContextNode.id === source.id
   const contextIsTarget = linkContextNode?.id && target?.id && linkContextNode.id === target.id
   const isContextPanel = !showBackButton && Boolean(linkContextNode)
@@ -56,7 +56,7 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
 
   if (!selectedLink) return null
 
-  const commitField = (field) => {
+  const commitField = (field: string) => {
     if (!handleUpdateLink || !selectedLink?.id) return
     if (suppressCommitRef.current) {
       suppressCommitRef.current = false
@@ -76,7 +76,7 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
     }
   }
 
-  const startEdit = (field) => {
+  const startEdit = (field: string) => {
     setIsDeleting(false)
     suppressCommitRef.current = false
     setEditingField(field)

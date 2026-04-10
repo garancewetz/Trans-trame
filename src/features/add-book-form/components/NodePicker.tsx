@@ -1,11 +1,29 @@
 import { useState } from 'react'
-import type { Book } from '@/types/domain'
+import type { Author, Book } from '@/types/domain'
+import type { AuthorNode } from '@/common/utils/authorUtils'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
 import { FormField } from '@/common/components/ui/FormField'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
 import { SearchResultsDropdown } from '@/common/components/ui/SearchResultsDropdown'
 import { InlineBookForm } from './InlineBookForm'
+
+type Props = {
+  label: string
+  value: string
+  onChange: (e: { target: { value: string } }) => void
+  placeholder: string
+  results: Book[]
+  onPick: (node: Book) => void
+  addButtonVisible?: boolean
+  onRequestAddBook?: () => void
+  query: string
+  authorsMap: Map<string, AuthorNode>
+  nodes?: Book[]
+  authors?: Author[]
+  onAddAuthor?: (author: Author) => void
+  onInlineAddBook?: (book: Partial<Book> & Pick<Book, 'id' | 'title' | 'type'>) => void
+}
 
 export function NodePicker({
   label,
@@ -22,7 +40,7 @@ export function NodePicker({
   authors,
   onAddAuthor,
   onInlineAddBook,
-}) {
+}: Props) {
   const [inlineOpen, setInlineOpen] = useState(false)
 
   const mapped = results.map((n) => ({

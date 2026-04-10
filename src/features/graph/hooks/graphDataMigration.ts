@@ -3,7 +3,7 @@ import type { Author, Book } from '@/types/domain'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 import { migrateData } from '@/common/utils/authorUtils'
 import { devWarn } from '@/common/utils/logger'
-import { insertAuthorRow, setBookAuthors } from '../api/graphDataApi'
+import { insertAuthorRows, setBookAuthors } from '../api/graphDataApi'
 import {
   authorToDbRow,
   type AxesColorMap,
@@ -50,7 +50,7 @@ export async function migrateLegacyAuthorsAndBooks(params: {
         axes: a.axes ?? [],
       })
     )
-    const { error } = await insertAuthorRow(rows)
+    const { error } = await insertAuthorRows(rows)
     if (error) {
       devWarn('Migration: erreur insert authors', error)
       return null

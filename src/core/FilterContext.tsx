@@ -1,10 +1,15 @@
-import { createContext, useCallback, useContext, useState } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 
-type FilterContextValue = {
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type FilterState = {
   activeFilter: string | null
   hoveredFilter: string | null
   selectedAuthor: string | null
+}
+
+type FilterActions = {
   setActiveFilter: (v: string | null) => void
   setHoveredFilter: (v: string | null) => void
   setSelectedAuthor: (v: string | null) => void
@@ -13,7 +18,12 @@ type FilterContextValue = {
   toggleSelectedAuthor: (authorId: string) => void
 }
 
-const FilterContext = createContext<FilterContextValue | null>(null)
+// ── Contexts ──────────────────────────────────────────────────────────────────
+
+const FilterStateContext = createContext<FilterState | null>(null)
+const FilterActionsContext = createContext<FilterActions | null>(null)
+
+// ── Provider ──────────────────────────────────────────────────────────────────
 
 export function FilterProvider({ children }: { children: ReactNode }) {
   const [activeFilter, setActiveFilter] = useState<string | null>(null)
@@ -30,21 +40,41 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     [],
   )
 
+  const state = useMemo<FilterState>(() => ({
+    activeFilter, hoveredFilter, selectedAuthor,
+  }), [activeFilter, hoveredFilter, selectedAuthor])
+
+  const actions = useMemo<FilterActions>(() => ({
+    setActiveFilter, setHoveredFilter, setSelectedAuthor,
+    toggleFilter, clearActiveFilter, toggleSelectedAuthor,
+  }), [toggleFilter, clearActiveFilter, toggleSelectedAuthor])
+
   return (
-    <FilterContext.Provider
-      value={{
-        activeFilter, hoveredFilter, selectedAuthor,
-        setActiveFilter, setHoveredFilter, setSelectedAuthor,
-        toggleFilter, clearActiveFilter, toggleSelectedAuthor,
-      }}
-    >
-      {children}
-    </FilterContext.Provider>
+    <FilterActionsContext.Provider value={actions}>
+      <FilterStateContext.Provider value={state}>
+        {children}
+      </FilterStateContext.Provider>
+    </FilterActionsContext.Provider>
   )
 }
 
-export function useFilter() {
-  const ctx = useContext(FilterContext)
-  if (!ctx) throw new Error('useFilter must be inside <FilterProvider>')
+// ── Hooks ─────────────────────────────────────────────────────────────────────
+
+/** Reactive filter state. */
+export function useFilterState() {
+  const ctx = useContext(FilterStateContext)
+  if (!ctx) throw new Error('useFilterState must be inside <FilterProvider>')
   return ctx
+}
+
+/** Stable filter callbacks — never triggers re-renders. */
+export function useFilterActions() {
+  const ctx = useContext(FilterActionsContext)
+  if (!ctx) throw new Error('useFilterActions must be inside <FilterProvider>')
+  return ctx
+}
+
+/** Combined hook (backward compatible). */
+export function useFilter() {
+  return { ...useFilterState(), ...useFilterActions() }
 }

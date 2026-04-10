@@ -80,7 +80,7 @@ export function useTableViewLinkDerived({
   }, [resolvedLinks, linkSearch, authorsMap])
 
   const groupedLinks = useMemo(() => {
-    const groups = new Map<string, { sourceNode: Book | undefined; links: Resolved[] }>()
+    const groups = new Map<string, { sourceNode: Book | null; links: Resolved[] }>()
     filteredLinks.forEach((link) => {
       if (!groups.has(link._srcId)) {
         groups.set(link._srcId, { sourceNode: link.sourceNode, links: [] })

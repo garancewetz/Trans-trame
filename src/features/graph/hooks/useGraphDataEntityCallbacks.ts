@@ -2,6 +2,7 @@ import { useCallback, type RefObject, type Dispatch, type SetStateAction } from 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Author, Book, Link } from '@/types/domain'
+import type { TablesUpdate } from '@/types/supabase'
 import { devWarn } from '@/common/utils/logger'
 import {
   deleteAuthorRowById,
@@ -189,7 +190,7 @@ export function useGraphDataEntityCallbacks({
   })
 
   const updateLinkMutation = useMutation({
-    mutationFn: async ({ linkId, updatedFields }: { linkId: string; updatedFields: Record<string, unknown> }) => {
+    mutationFn: async ({ linkId, updatedFields }: { linkId: string; updatedFields: TablesUpdate<'links'> }) => {
       const { error } = await updateLinkRowById(linkId, updatedFields)
       if (error) throw new Error(error.message)
     },
@@ -270,7 +271,7 @@ export function useGraphDataEntityCallbacks({
   )
 
   const handleUpdateLink = useCallback(
-    (linkId: string, updatedFields: Record<string, unknown>) =>
+    (linkId: string, updatedFields: TablesUpdate<'links'>) =>
       updateLinkMutation.mutate({ linkId, updatedFields }),
     [updateLinkMutation]
   )

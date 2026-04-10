@@ -1,8 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Book, Link } from '@/types/domain'
 
-type SelectionContextValue = {
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type SelectionState = {
   selectedNode: Book | null
   selectedLink: Link | null
   linkContextNode: Book | null
@@ -10,22 +12,27 @@ type SelectionContextValue = {
   previousPanelTab: string
   peekNodeId: string | null
   panelOpen: boolean
+}
+
+type SelectionActions = {
   setSelectedNode: (n: Book | null) => void
   setSelectedLink: (l: Link | null) => void
   setLinkContextNode: (n: Book | null) => void
   setPanelTab: (tab: string) => void
   setPreviousPanelTab: (tab: string) => void
   setPeekNodeId: (id: string | null) => void
-  /** Composite: select a book node, clear link/context/peek, reset tab to details */
   selectNode: (node: Book | null) => void
-  /** Toggle: deselect if same node, otherwise select */
   toggleNode: (node: Book) => void
-  /** Composite: select a link with optional context node */
   selectLink: (link: Link | null, context?: Book | null) => void
   closePanel: () => void
 }
 
-const SelectionContext = createContext<SelectionContextValue | null>(null)
+// ── Contexts ──────────────────────────────────────────────────────────────────
+
+const SelectionStateContext = createContext<SelectionState | null>(null)
+const SelectionActionsContext = createContext<SelectionActions | null>(null)
+
+// ── Provider ──────────────────────────────────────────────────────────────────
 
 export function SelectionProvider({ children }: { children: ReactNode }) {
   const [selectedNode, setSelectedNode] = useState<Book | null>(null)
@@ -82,23 +89,43 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [])
 
+  const state = useMemo<SelectionState>(() => ({
+    selectedNode, selectedLink, linkContextNode,
+    panelTab, previousPanelTab, peekNodeId, panelOpen,
+  }), [selectedNode, selectedLink, linkContextNode, panelTab, previousPanelTab, peekNodeId, panelOpen])
+
+  const actions = useMemo<SelectionActions>(() => ({
+    setSelectedNode, setSelectedLink, setLinkContextNode,
+    setPanelTab, setPreviousPanelTab, setPeekNodeId,
+    selectNode, toggleNode, selectLink, closePanel,
+  }), [selectNode, toggleNode, selectLink, closePanel])
+
   return (
-    <SelectionContext.Provider
-      value={{
-        selectedNode, selectedLink, linkContextNode,
-        panelTab, previousPanelTab, peekNodeId, panelOpen,
-        setSelectedNode, setSelectedLink, setLinkContextNode,
-        setPanelTab, setPreviousPanelTab, setPeekNodeId,
-        selectNode, toggleNode, selectLink, closePanel,
-      }}
-    >
-      {children}
-    </SelectionContext.Provider>
+    <SelectionActionsContext.Provider value={actions}>
+      <SelectionStateContext.Provider value={state}>
+        {children}
+      </SelectionStateContext.Provider>
+    </SelectionActionsContext.Provider>
   )
 }
 
-export function useSelection() {
-  const ctx = useContext(SelectionContext)
-  if (!ctx) throw new Error('useSelection must be inside <SelectionProvider>')
+// ── Hooks ─────────────────────────────────────────────────────────────────────
+
+/** Reactive selection state — re-renders when any selection value changes. */
+export function useSelectionState() {
+  const ctx = useContext(SelectionStateContext)
+  if (!ctx) throw new Error('useSelectionState must be inside <SelectionProvider>')
   return ctx
+}
+
+/** Stable action callbacks — never triggers re-renders. */
+export function useSelectionActions() {
+  const ctx = useContext(SelectionActionsContext)
+  if (!ctx) throw new Error('useSelectionActions must be inside <SelectionProvider>')
+  return ctx
+}
+
+/** Combined hook (backward compatible) — returns state + actions merged. */
+export function useSelection() {
+  return { ...useSelectionState(), ...useSelectionActions() }
 }

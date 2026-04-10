@@ -1,8 +1,15 @@
 import { TriangleAlert } from 'lucide-react'
+import type { Book } from '@/types/domain'
+import type { AuthorNode } from '@/common/utils/authorUtils'
 import { axesGradient } from '@/common/utils/categories'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 
-export function DuplicateWarning({ possibleDuplicates, authorsMap }) {
+type Props = {
+  possibleDuplicates: Book[]
+  authorsMap: Map<string, AuthorNode>
+}
+
+export function DuplicateWarning({ possibleDuplicates, authorsMap }: Props) {
   if (!possibleDuplicates || possibleDuplicates.length === 0) return null
 
   return (

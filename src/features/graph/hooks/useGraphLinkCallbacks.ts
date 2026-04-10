@@ -41,7 +41,7 @@ export function useGraphLinkCallbacks({
   hoveredLinksRef,
 }: Args) {
   const isLinkActive = useCallback(
-    (link) => {
+    (link: { source: unknown; target: unknown }) => {
       if (!anchorIds) return false
       const srcId = normalizeEndpointId(link.source)
       const tgtId = normalizeEndpointId(link.target)
@@ -51,7 +51,7 @@ export function useGraphLinkCallbacks({
     [anchorIds, connectedLinks],
   )
 
-  const isLinkHovered = useCallback((link) => {
+  const isLinkHovered = useCallback((link: { source: unknown; target: unknown }) => {
     const srcId = normalizeEndpointId(link.source)
     const tgtId = normalizeEndpointId(link.target)
     if (!srcId || !tgtId) return false
@@ -59,7 +59,7 @@ export function useGraphLinkCallbacks({
   }, [])
 
   const getLinkWeight = useCallback(
-    (link) => {
+    (link: { source: unknown; target: unknown }) => {
       const srcId = normalizeEndpointId(link.source)
       const tgtId = normalizeEndpointId(link.target)
       if (!srcId || !tgtId) return 1
@@ -70,7 +70,7 @@ export function useGraphLinkCallbacks({
   )
 
   const linkColor = useCallback(
-    (link) => {
+    (link: { source: unknown; target: unknown; type?: string }) => {
       if (hoveredNodeRef.current && isLinkHovered(link)) return 'rgba(0,0,0,0)'
       if (hoveredNodeRef.current && !hasSelection && !isLinkHovered(link)) return linkCitesRgba(0.03)
       if (link.type === 'author-book') {
@@ -89,7 +89,7 @@ export function useGraphLinkCallbacks({
   )
 
   const linkWidth = useCallback(
-    (link) => {
+    (link: { source: unknown; target: unknown; type?: string }) => {
       if (link.type === 'author-book') {
         return isLinkActive(link) ? 1.2 : 0.5
       }
@@ -104,27 +104,28 @@ export function useGraphLinkCallbacks({
   )
 
   const linkCanvasObject = useCallback(
-    (link, ctx, globalScale) => {
+    (link: { source: unknown; target: unknown; type?: string; __controlPoints?: number[] }, ctx: CanvasRenderingContext2D, globalScale: number) => {
       if (!hoveredNodeRef.current || hasSelection) return
       if (!isLinkHovered(link)) return
       if (link.type === 'author-book') return
-      const src = link.source
-      const tgt = link.target
+      const src = link.source as { x?: number; y?: number } | null
+      const tgt = link.target as { x?: number; y?: number } | null
       if (!src || !tgt || !Number.isFinite(src.x) || !Number.isFinite(tgt.x)) return
+      const sx = src.x!, sy = src.y!, tx = tgt.x!, ty = tgt.y!
       const weight = getLinkWeight(link)
       const isStrong = weight > 1
       const lineWidth = (isStrong ? 2.2 : 1.4) / globalScale
       ctx.beginPath()
-      ctx.moveTo(src.x, src.y)
+      ctx.moveTo(sx, sy)
       const cp = link.__controlPoints
       if (!cp) {
-        ctx.lineTo(tgt.x, tgt.y)
+        ctx.lineTo(tx, ty)
       } else if (cp.length === 2) {
-        ctx.quadraticCurveTo(cp[0], cp[1], tgt.x, tgt.y)
+        ctx.quadraticCurveTo(cp[0], cp[1], tx, ty)
       } else {
-        ctx.bezierCurveTo(cp[0], cp[1], cp[2], cp[3], tgt.x, tgt.y)
+        ctx.bezierCurveTo(cp[0], cp[1], cp[2], cp[3], tx, ty)
       }
-      const grad = ctx.createLinearGradient(src.x, src.y, tgt.x, tgt.y)
+      const grad = ctx.createLinearGradient(sx, sy, tx, ty)
       grad.addColorStop(0, linkCitesRgba(isStrong ? 1.0 : 0.9))
       grad.addColorStop(0.25, linkCitesRgba(0.7))
       grad.addColorStop(0.6, linkCitedByRgba(0.35))
@@ -137,7 +138,7 @@ export function useGraphLinkCallbacks({
   )
 
   const arrowColor = useCallback(
-    (link) => {
+    (link: { source: unknown; target: unknown; type?: string }) => {
       if (link.type === 'author-book') return 'rgba(0,0,0,0)'
       if (hoveredNodeRef.current && !hasSelection && isLinkHovered(link)) {
         return linkCitedByRgba(0.85)
@@ -154,7 +155,7 @@ export function useGraphLinkCallbacks({
   )
 
   const linkDirectionalArrowLength = useCallback(
-    (link) => {
+    (link: { source: unknown; target: unknown }) => {
       if (hoveredNodeRef.current && !hasSelection) return isLinkHovered(link) ? 6 : 0
       return !hasSelection ? 4 : isLinkActive(link) ? 7 : 3
     },
@@ -162,7 +163,7 @@ export function useGraphLinkCallbacks({
   )
 
   const linkDirectionalParticles = useCallback(
-    (link) => {
+    (link: { source: unknown; target: unknown }) => {
       if (hoveredNodeRef.current && !hasSelection) return isLinkHovered(link) ? 3 : 0
       return !hasSelection ? 2 : isLinkActive(link) ? 5 : 0
     },
@@ -170,7 +171,7 @@ export function useGraphLinkCallbacks({
   )
 
   const linkDirectionalParticleWidth = useCallback(
-    (link) => {
+    (link: { source: unknown; target: unknown }) => {
       if (hoveredNodeRef.current && !hasSelection) return isLinkHovered(link) ? 2 : 0
       return !hasSelection ? 1 : isLinkActive(link) ? 2 : 0
     },
@@ -178,7 +179,7 @@ export function useGraphLinkCallbacks({
   )
 
   const linkDirectionalParticleColor = useCallback(
-    (link) => {
+    (link: { source: unknown; target: unknown }) => {
       if (hoveredNodeRef.current && !hasSelection && isLinkHovered(link)) {
         return linkCitesRgba(0.9)
       }

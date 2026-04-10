@@ -77,7 +77,7 @@ export function Timeline({ graphData, timelineRange, onRangeChange }: TimelinePr
     return Object.keys(booksByYear).map((y) => ({
       year: Number(y),
       left: ((Number(y) - minYear) / range) * 100,
-      count: booksByYear[y].length,
+      count: booksByYear[Number(y)].length,
     }))
   }, [booksByYear, minYear, maxYear])
 

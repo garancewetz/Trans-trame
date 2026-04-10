@@ -54,14 +54,17 @@ export function animateCameraToNode(
   return () => cancelAnimationFrame(rafId)
 }
 
-export function setupKeyboardHandlers({ keysRef, onSpace }) {
+export function setupKeyboardHandlers({ keysRef, onSpace }: {
+  keysRef: RefObject<Set<string>>
+  onSpace?: () => void
+}) {
   const BLOCKED = [
     'arrowup', 'arrowdown', 'arrowleft', 'arrowright',
     ' ', 'keyz', 'keys', 'equal', 'minus', 'z', 's', '+', '-', '=',
   ]
 
-  const onDown = (e) => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+  const onDown = (e: KeyboardEvent) => {
+    if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return
     const codeKey = (e.code || '').toLowerCase()
     const charKey = (e.key || '').toLowerCase()
     if (codeKey) keysRef.current.add(codeKey)
@@ -73,7 +76,7 @@ export function setupKeyboardHandlers({ keysRef, onSpace }) {
     }
   }
 
-  const onUp = (e) => {
+  const onUp = (e: KeyboardEvent) => {
     const codeKey = (e.code || '').toLowerCase()
     const charKey = (e.key || '').toLowerCase()
     if (codeKey) keysRef.current.delete(codeKey)
@@ -88,7 +91,13 @@ export function setupKeyboardHandlers({ keysRef, onSpace }) {
   }
 }
 
-export function startPanZoomLoop({ fgRef, keysRef, velRef, animFrameRef, camRef }) {
+export function startPanZoomLoop({ fgRef, keysRef, velRef, animFrameRef, camRef }: {
+  fgRef: RefObject<ForceGraphMethods | null>
+  keysRef: RefObject<Set<string>>
+  velRef: RefObject<{ moveX: number; moveY: number; zoom: number }>
+  animFrameRef: RefObject<number>
+  camRef: RefObject<{ x: number; y: number; zoom: number }>
+}) {
   const PAN_ACCEL = 4.5
   const MAX_PAN = 55
   const ZOOM_ACCEL = 0.008
@@ -142,12 +151,16 @@ export function startPanZoomLoop({ fgRef, keysRef, velRef, animFrameRef, camRef 
   return () => cancelAnimationFrame(animFrameRef.current)
 }
 
-export function setupMouseDragHandlers({ containerRef, velRef, hoveredNodeRef }) {
+export function setupMouseDragHandlers({ containerRef, velRef, hoveredNodeRef }: {
+  containerRef: RefObject<HTMLElement | null>
+  velRef: RefObject<{ moveX: number; moveY: number; zoom: number }>
+  hoveredNodeRef: RefObject<unknown>
+}) {
   let dragging = false
   let lastX = 0
   let lastY = 0
 
-  const onPointerDown = (e) => {
+  const onPointerDown = (e: PointerEvent) => {
     if (e.button !== 0) return
     // If the cursor is over a node, let force-graph handle the drag — don't pan
     if (hoveredNodeRef?.current) return
@@ -156,7 +169,7 @@ export function setupMouseDragHandlers({ containerRef, velRef, hoveredNodeRef })
     lastY = e.clientY
   }
 
-  const onPointerMove = (e) => {
+  const onPointerMove = (e: PointerEvent) => {
     if (!dragging) return
     const dx = e.clientX - lastX
     const dy = e.clientY - lastY
@@ -187,13 +200,18 @@ export function setupMouseDragHandlers({ containerRef, velRef, hoveredNodeRef })
   }
 }
 
-export function setupWheelZoomHandlers({ containerRef, fgRef, velRef, camRef }) {
+export function setupWheelZoomHandlers({ containerRef, fgRef, velRef, camRef }: {
+  containerRef: RefObject<HTMLElement | null>
+  fgRef: RefObject<ForceGraphMethods | null>
+  velRef: RefObject<{ moveX: number; moveY: number; zoom: number }>
+  camRef: RefObject<{ x: number; y: number; zoom: number }>
+}) {
   const el = containerRef.current
   if (!el) return () => {}
 
   const ZOOM_FACTOR = 0.0012
 
-  const onWheel = (e) => {
+  const onWheel = (e: WheelEvent) => {
     e.preventDefault()
     const fg = fgRef.current
     if (!fg) return

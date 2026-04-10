@@ -8,7 +8,14 @@ const VIEWS = [
   { id: 'dendrogram', label: 'Dendrogramme', icon: Circle, hint: 'Arborescence circulaire' },
 ]
 
-export function ViewSelector({ currentView, onViewChange, inline = false, discreet = false }) {
+type ViewSelectorProps = {
+  currentView: string
+  onViewChange: (id: string) => void
+  inline?: boolean
+  discreet?: boolean
+}
+
+export function ViewSelector({ currentView, onViewChange, inline = false, discreet = false }: ViewSelectorProps) {
   return (
     <div className={inline ? '' : 'fixed left-5 top-[66px] z-30'}>
       <div

@@ -15,7 +15,7 @@ export type BooksTabBooksTableProps = {
   authorsMap: Map<string, Author>
   linkCountByNode: Map<string, number>
   sortCol: string
-  sortDir: string
+  sortDir: 'asc' | 'desc'
   selectedIds: Set<BookId>
   allSelected: boolean
   someSelected: boolean

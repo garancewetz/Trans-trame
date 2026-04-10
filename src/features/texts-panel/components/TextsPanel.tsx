@@ -78,7 +78,7 @@ export function TextsPanel({
 
   useEffect(() => {
     if (!open) return
-    function onKeyDown(e) {
+    function onKeyDown(e: KeyboardEvent) {
       if (e.key !== 'Escape') return
       onClose?.()
     }

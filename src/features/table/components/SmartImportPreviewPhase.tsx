@@ -1,7 +1,47 @@
+import type { Dispatch, SetStateAction } from 'react'
 import { AlertTriangle, Check, GitMerge, Info, Link2, Loader2, Plus, X, Zap } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
+import type { Book } from '@/types/domain'
+import type { Axis } from '@/common/utils/categories'
+import type { ParsedBook } from '../parseSmartInput.types'
 import type { AuthorMergeSuggestion } from '../smartImportModal.utils'
 import { SmartImportPreviewRow } from './SmartImportPreviewRow'
+
+type EditingCell = { id: string; field: string } | null
+type EditingAuthor = { id: string; authorIndex: number | null; firstName: string; lastName: string } | null
+
+type Props = {
+  parsed: ParsedBook[]
+  checked: Set<string>
+  mergedIds: Set<string>
+  editingCell: EditingCell
+  editingValue: string
+  setEditingValue: (value: string) => void
+  editingAuthor: EditingAuthor
+  setEditingAuthor: Dispatch<SetStateAction<EditingAuthor>>
+  toggleItem: (id: string) => void
+  commitCellEdit: () => void
+  setEditingCell: (cell: EditingCell) => void
+  commitAuthorEdit: () => void
+  handleMerge: (item: ParsedBook) => void
+  handleUnmerge: (item: ParsedBook) => void
+  onDismissDuplicate: (id: string) => void
+  onInsertRow: (index: number) => void
+  onAddCoAuthor: (id: string) => void
+  onUpdateAxes: (id: string, axes: Axis[]) => void
+  onSwapFields: (id: string, field: 'title' | 'edition') => void
+  onUpdateField: (id: string, field: string, value: string) => void
+  authorMergeSuggestions: AuthorMergeSuggestion[]
+  onAuthorMerge: (suggestion: AuthorMergeSuggestion) => void
+  onDismissAuthorMerge: (id: string) => void
+  masterNode: Book | null
+  linkDirection: string
+  selectedCount: number
+  injected: boolean
+  inserting: boolean
+  handleClose: () => void
+  knownEditions: string[]
+}
 
 export function SmartImportPreviewPhase({
   parsed,
@@ -34,7 +74,7 @@ export function SmartImportPreviewPhase({
   inserting,
   handleClose,
   knownEditions,
-}) {
+}: Props) {
   const exactCount = parsed.filter((r) => r.isDuplicate).length
   const fuzzyCount = parsed.filter((r) => r.isFuzzyDuplicate).length
 

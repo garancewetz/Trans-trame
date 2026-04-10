@@ -14,6 +14,18 @@ export type Database = {
   }
   public: {
     Tables: {
+      allowed_emails: {
+        Row: {
+          email: string
+        }
+        Insert: {
+          email: string
+        }
+        Update: {
+          email?: string
+        }
+        Relationships: []
+      }
       authors: {
         Row: {
           axes: string[]
@@ -40,30 +52,30 @@ export type Database = {
       }
       book_authors: {
         Row: {
-          book_id: string
           author_id: string
+          book_id: string
         }
         Insert: {
-          book_id: string
           author_id: string
+          book_id: string
         }
         Update: {
-          book_id?: string
           author_id?: string
+          book_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "book_authors_book_id_fkey"
-            columns: ["book_id"]
-            isOneToOne: false
-            referencedRelation: "books"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "book_authors_author_id_fkey"
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_authors_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
             referencedColumns: ["id"]
           },
         ]
@@ -76,9 +88,9 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          original_title: string | null
           title: string
           year: number | null
-          original_title: string | null
         }
         Insert: {
           axes?: string[]
@@ -87,9 +99,9 @@ export type Database = {
           first_name?: string
           id: string
           last_name?: string
+          original_title?: string | null
           title: string
           year?: number | null
-          original_title?: string | null
         }
         Update: {
           axes?: string[]
@@ -98,9 +110,9 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          original_title?: string | null
           title?: string
           year?: number | null
-          original_title?: string | null
         }
         Relationships: []
       }
@@ -152,12 +164,33 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string
+          first_name: string
+          id: string
+          last_name: string
+        }
+        Insert: {
+          created_at?: string
+          first_name?: string
+          id: string
+          last_name?: string
+        }
+        Update: {
+          created_at?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_whitelisted: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

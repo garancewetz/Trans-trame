@@ -375,7 +375,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
                       .filter(Boolean)
                       .map((a) => [a!.firstName, a!.lastName].filter(Boolean).join(' '))
                       .join(', ')
-                    const currentAxes = (e.book.axes || []).map((a) => CATEGORY_THEME[a]?.label).filter(Boolean)
+                    const currentAxes = (e.book.axes || []).map((a) => CATEGORY_THEME[a as Axis]?.label).filter(Boolean)
 
                     const rowAllOn = e.acceptedFields.size === getAllKeys(e).size
                     const rowPartial = e.acceptedFields.size > 0 && !rowAllOn

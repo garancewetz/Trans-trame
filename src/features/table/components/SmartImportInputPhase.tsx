@@ -2,8 +2,25 @@ import { Link2, Loader2, X, Zap } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { TextareaImport } from '@/common/components/ui/TextareaImport'
+import type { Book } from '@/types/domain'
+import type { AuthorNode } from '@/common/utils/authorUtils'
 import { NodeSearch } from './TableSubcomponents'
 import { INPUT } from '../tableConstants'
+
+type Props = {
+  rawText: string
+  setRawText: (value: string) => void
+  masterNode: Book | null
+  setMasterNode: (node: Book | null) => void
+  masterContext: string
+  setMasterContext: (value: string) => void
+  linkDirection: string
+  setLinkDirection: (value: string) => void
+  existingNodes: Book[]
+  authorsMap: Map<string, AuthorNode>
+  analyzing: boolean
+  analyzeProgress: number
+}
 
 export function SmartImportInputPhase({
   rawText,
@@ -18,7 +35,7 @@ export function SmartImportInputPhase({
   authorsMap,
   analyzing,
   analyzeProgress,
-}) {
+}: Props) {
   return (
     <>
       <p className="mb-3 text-[0.82rem] text-white/40">
