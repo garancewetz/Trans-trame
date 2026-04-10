@@ -30,23 +30,29 @@ export type Database = {
         Row: {
           axes: string[]
           created_at: string
+          created_by: string | null
           first_name: string
           id: string
           last_name: string
+          updated_by: string | null
         }
         Insert: {
           axes?: string[]
           created_at?: string
+          created_by?: string | null
           first_name?: string
           id: string
           last_name?: string
+          updated_by?: string | null
         }
         Update: {
           axes?: string[]
           created_at?: string
+          created_by?: string | null
           first_name?: string
           id?: string
           last_name?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -84,34 +90,40 @@ export type Database = {
         Row: {
           axes: string[]
           created_at: string
+          created_by: string | null
           description: string
           first_name: string
           id: string
           last_name: string
           original_title: string | null
           title: string
+          updated_by: string | null
           year: number | null
         }
         Insert: {
           axes?: string[]
           created_at?: string
+          created_by?: string | null
           description?: string
           first_name?: string
           id: string
           last_name?: string
           original_title?: string | null
           title: string
+          updated_by?: string | null
           year?: number | null
         }
         Update: {
           axes?: string[]
           created_at?: string
+          created_by?: string | null
           description?: string
           first_name?: string
           id?: string
           last_name?: string
           original_title?: string | null
           title?: string
+          updated_by?: string | null
           year?: number | null
         }
         Relationships: []
@@ -121,31 +133,37 @@ export type Database = {
           citation_text: string
           context: string
           created_at: string
+          created_by: string | null
           edition: string
           id: string
           page: string
           source_id: string
           target_id: string
+          updated_by: string | null
         }
         Insert: {
           citation_text?: string
           context?: string
           created_at?: string
+          created_by?: string | null
           edition?: string
           id?: string
           page?: string
           source_id: string
           target_id: string
+          updated_by?: string | null
         }
         Update: {
           citation_text?: string
           context?: string
           created_at?: string
+          created_by?: string | null
           edition?: string
           id?: string
           page?: string
           source_id?: string
           target_id?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
