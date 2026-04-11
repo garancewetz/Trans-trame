@@ -28,12 +28,18 @@ export function SmartImportModal(props: SmartImportModalProps) {
       as="form"
       onSubmit={c.handleSubmit}
       containerClassName="transition-all duration-200"
-      maxWidth={c.phase === 'preview' ? 'max-w-7xl' : 'max-w-7xl'}
+      maxWidth="max-w-7xl"
     >
       {c.phase === 'input' && (
         <SmartImportInputPhase
           rawText={c.rawText}
           setRawText={c.setRawText}
+          inputMode={c.inputMode}
+          setInputMode={c.setInputMode}
+          imageFiles={c.imageFiles}
+          imagePreviews={c.imagePreviews}
+          addImages={c.addImages}
+          removeImage={c.removeImage}
           masterNode={c.masterNode}
           setMasterNode={c.setMasterNode}
           masterContext={c.masterContext}
@@ -64,7 +70,6 @@ export function SmartImportModal(props: SmartImportModalProps) {
           handleMerge={c.handleMerge}
           handleUnmerge={c.handleUnmerge}
           onDismissDuplicate={c.dismissDuplicate}
-          onInsertRow={c.handleInsertRow}
           onAddCoAuthor={c.handleAddCoAuthor}
           onUpdateAxes={c.handleUpdateAxes}
           onSwapFields={c.handleSwapFields}

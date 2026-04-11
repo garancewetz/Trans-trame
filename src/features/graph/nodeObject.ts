@@ -17,7 +17,6 @@ interface DrawNodeOpts {
   hoveredFilter?: string | null
   isNodeVisible?: (node: D3Node) => boolean
   citationCount?: number
-  degree?: number
   skipLabel?: boolean
   labelOnly?: boolean
   authors?: Author[]
@@ -108,6 +107,26 @@ function drawGlow(ctx: CanvasRenderingContext2D, x: number, y: number, innerR: n
   ctx.fill()
 }
 
+// ── Label card design tokens ─────────────────────────────────────────────────
+
+const LABEL_BG = '#080416'
+const LABEL_BORDER = 'rgba(255, 255, 255, 0.1)'
+const LABEL_TEXT = '#ece9ff'
+const LABEL_TEXT_DIM = 'rgba(255, 255, 255, 0.55)'
+const LABEL_MAX_W_FACTOR = 14
+const LANDMARK_RADIUS = 20
+
+function truncateText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+  if (ctx.measureText(text).width <= maxWidth) return text
+  let lo = 0, hi = text.length
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >>> 1
+    if (ctx.measureText(text.slice(0, mid) + '…').width <= maxWidth) lo = mid
+    else hi = mid - 1
+  }
+  return lo > 0 ? text.slice(0, lo) + '…' : '…'
+}
+
 // ── Shared node state ─────────────────────────────────────────────────────────
 
 function computeNodeState(node: D3Node, opts: DrawNodeOpts) {
@@ -133,12 +152,12 @@ function computeNodeState(node: D3Node, opts: DrawNodeOpts) {
     : !!((selectedAuthorId && node.authorIds?.includes(selectedAuthorId)) || (peekNodeId && node.id === peekNodeId))
 
   const isActive = node.type === 'author'
-    ? !hasAnySelection || isConnected || isHighlighted
+    ? (!hasAnySelection || isConnected || isHighlighted) && (isNodeVisible?.(node) ?? true)
     : (!hasAnySelection || isConnected) && (isNodeVisible?.(node) ?? true)
 
   const opacity = hasHoverFocus && !isHovered && !isHoverNeighbor ? 0.05
     : hover > 0.01 ? 1
-    : dimmedByHover ? 0.06
+    : dimmedByHover ? 0.01
     : node.type === 'author'
       ? ((isHighlighted || isActive) ? 0.85 : 0.25)
       : ((isHighlighted || isActive) ? 1 : 0.22)
@@ -152,25 +171,36 @@ function computeNodeState(node: D3Node, opts: DrawNodeOpts) {
 
 function shouldShowLabel(node: D3Node, globalScale: number, state: ReturnType<typeof computeNodeState>, opts: DrawNodeOpts) {
   const { hover, isHighlighted, hasHoverFocus, isHoverNeighbor } = state
-  const { selectedNode, connectedNodes } = opts
+  const { selectedNode, connectedNodes, citationCount = 0 } = opts
   if (hasHoverFocus && hover <= 0.01 && !isHoverNeighbor) return false
-  return hover > 0.01 || globalScale > 0.35 || isHighlighted
+  if (hover > 0.01) return true
+  // Landmark: always show label for large / important nodes
+  if (getNodeRadius(node, citationCount) >= LANDMARK_RADIUS) return true
+  // Hover neighbors: only show label when zoomed in close
+  if (hasHoverFocus && isHoverNeighbor) return globalScale > 1.5
+  return globalScale > 1.5 || isHighlighted
     || !!(selectedNode && connectedNodes?.has(node.id))
-    || (hasHoverFocus && isHoverNeighbor)
 }
 
 // ── Node radius ───────────────────────────────────────────────────────────────
 
-export function getNodeRadius(node: { type?: string }, citationCount: number, degree = 0): number {
+export function getNodeRadius(node: { type?: string }, citationCount: number): number {
   if (node.type === 'author') return 11
-  const citationBoost = Math.min(Math.sqrt(Math.max(0, Number.isFinite(citationCount) ? citationCount : 0)) * 5.2, 34)
-  const degreeBoost = Math.min(Math.sqrt(Math.max(0, Number.isFinite(degree) ? degree : 0)) * 4, 28)
-  return 6 + Math.max(citationBoost, degreeBoost)
+  const n = Math.max(0, Number.isFinite(citationCount) ? citationCount : 0)
+  // Exponential: 0→6  1→11  2→21  3→41  4+→capped
+  const boost = Math.min((Math.pow(2, n) - 1) * 5, 40)
+  return 6 + boost
 }
 
 function hoveredRadius(baseR: number, hover: number, globalScale: number): number {
+  // At high zoom the node is already visually large — fade out the hover expansion
+  const FADE_START = 1.5
+  const FADE_END = 3
+  const hoverScale = globalScale < FADE_START ? 1
+    : globalScale > FADE_END ? 0
+    : 1 - (globalScale - FADE_START) / (FADE_END - FADE_START)
   const minR = hover > 0.01 ? 11 / Math.max(globalScale, 0.08) : 0
-  return Math.max(baseR + hover * 12, minR)
+  return Math.max(baseR + hover * 12 * hoverScale, minR)
 }
 
 const POINTER_PAD = 3
@@ -182,7 +212,6 @@ const POINTER_PAD = 3
 export function getNodePointerHitRadius(
   node: { type?: string },
   citationCount: number,
-  degree: number,
   globalScale: number,
 ): number {
   const scale = Number.isFinite(globalScale) && globalScale > 0 ? globalScale : 1
@@ -191,7 +220,7 @@ export function getNodePointerHitRadius(
     const maxOuterRing = BASE_R + 6 + 4 // aligné sur l'anneau hover max dans drawAuthorNode
     return maxOuterRing + POINTER_PAD
   }
-  const baseR = getNodeRadius(node, citationCount, degree)
+  const baseR = getNodeRadius(node, citationCount)
   return hoveredRadius(baseR, 1, scale) + POINTER_PAD
 }
 
@@ -246,27 +275,45 @@ function drawAuthorLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScal
   if (!shouldShowLabel(node, globalScale, state, opts)) return
 
   const { hover, isHighlighted } = state
-  const name = (authorName(node) || '').toUpperCase()
+  const rawName = (authorName(node) || '').toUpperCase()
   const minHovered = hover > 0.01 ? 20 / Math.max(globalScale, 0.08) : 0
   const fontSize = Math.max(5.5 * (1 + hover * 0.8), minHovered)
-  const labelY = node.y - nodeRadius - fontSize * 2.5
-  const prominent = hover > 0.01 || isHighlighted
+  const maxW = fontSize * LABEL_MAX_W_FACTOR
+  const showCard = hover > 0.01 || isHighlighted
 
   ctx.save()
   ctx.font = `700 ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'top'
 
-  if (prominent) {
-    const w = ctx.measureText(name).width
-    const pad = 3
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
-    roundRect(ctx, node.x - w / 2 - pad, labelY - pad, w + pad * 2, fontSize + pad * 2, 3)
+  const name = truncateText(ctx, rawName, maxW)
+
+  if (showCard) {
+    const nameW = ctx.measureText(name).width
+    const padX = fontSize * 0.8
+    const padY = fontSize * 0.5
+    const borderR = fontSize * 0.6
+    const boxW = nameW + padX * 2
+    const boxH = fontSize + padY * 2
+    const boxX = node.x - boxW / 2
+    const boxY = node.y - nodeRadius - boxH - fontSize * 0.4
+
+    ctx.fillStyle = LABEL_BG
+    roundRect(ctx, boxX, boxY, boxW, boxH, borderR)
     ctx.fill()
+    ctx.strokeStyle = LABEL_BORDER
+    ctx.lineWidth = 1 / Math.max(globalScale, 0.1)
+    roundRect(ctx, boxX, boxY, boxW, boxH, borderR)
+    ctx.stroke()
+
+    ctx.fillStyle = LABEL_TEXT
+    ctx.fillText(name, node.x, boxY + padY)
+  } else {
+    const labelY = node.y - nodeRadius - fontSize * 2.5
+    ctx.fillStyle = 'rgba(255,255,255,0.28)'
+    ctx.fillText(name, node.x, labelY)
   }
 
-  ctx.fillStyle = prominent ? '#ffffff' : 'rgba(255,255,255,0.28)'
-  ctx.fillText(name, node.x, labelY)
   ctx.restore()
 }
 
@@ -277,8 +324,8 @@ export function drawNode(node: Book | Author, ctx: CanvasRenderingContext2D, glo
   if (!Number.isFinite(node?.x) || !Number.isFinite(node?.y)) return
   if (!Number.isFinite(globalScale)) globalScale = 1
 
-  const { citationCount = 0, degree = 0, skipLabel = false, labelOnly = false } = opts
-  const baseR = getNodeRadius(node, citationCount, degree)
+  const { citationCount = 0, skipLabel = false, labelOnly = false } = opts
+  const baseR = getNodeRadius(node, citationCount)
 
   // labelOnly: re-draw label on top (post pass) — read cached hover, don't advance animation
   if (labelOnly) {
@@ -328,36 +375,66 @@ export function drawNode(node: Book | Author, ctx: CanvasRenderingContext2D, glo
 function drawBookLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScale: number, state: ReturnType<typeof computeNodeState>, opts: DrawNodeOpts, nodeRadius: number): void {
   if (!shouldShowLabel(node, globalScale, state, opts)) return
 
-  const { hover, isActive, isHighlighted, matchesHover } = state
+  const { hover, isHighlighted, matchesHover } = state
   const safeCitations = Number.isFinite(opts.citationCount) ? opts.citationCount : 0
   const baseSize = 4.8 + Math.min(Math.sqrt(safeCitations) * 1.05, 8.5)
   const minHovered = hover > 0.01 ? 18 / Math.max(globalScale, 0.08) : 0
   const fontSize = Math.max(baseSize * (1 + hover * 0.75), minHovered)
 
-  const name = (bookAuthorDisplay(node, opts.authors || []) || '').toUpperCase()
-  const title = node.title || ''
-  const labelY = node.y - nodeRadius - fontSize * 3.0
+  const rawName = (bookAuthorDisplay(node, opts.authors || []) || '').toUpperCase()
+  const rawTitle = node.title || ''
   const lineHeight = fontSize * 1.25
-  const prominent = hover > 0.01 || isActive || matchesHover || isHighlighted
+  const maxW = fontSize * LABEL_MAX_W_FACTOR
+  const showCard = hover > 0.01 || isHighlighted || matchesHover
 
   ctx.save()
-  ctx.font = `500 ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'top'
 
-  if (prominent) {
+  if (showCard) {
+    ctx.font = `600 ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
+    const name = truncateText(ctx, rawName, maxW)
     const nameW = ctx.measureText(name).width
+
+    ctx.font = `400 ${fontSize * 0.9}px 'Space Grotesk', system-ui, sans-serif`
+    const title = truncateText(ctx, rawTitle, maxW)
     const titleW = ctx.measureText(title).width
-    const maxW = Math.max(nameW, titleW)
-    const pad = 2
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.65)'
-    roundRect(ctx, node.x - maxW / 2 - pad, labelY - pad, maxW + pad * 2, lineHeight * 2 + pad * 2, 3)
+
+    const padX = fontSize * 0.8
+    const padY = fontSize * 0.5
+    const borderR = fontSize * 0.6
+    const contentW = Math.max(nameW, titleW)
+    const boxW = contentW + padX * 2
+    const boxH = lineHeight * 2 + padY * 2
+    const boxX = node.x - boxW / 2
+    const boxY = node.y - nodeRadius - boxH - fontSize * 0.4
+
+    ctx.fillStyle = LABEL_BG
+    roundRect(ctx, boxX, boxY, boxW, boxH, borderR)
     ctx.fill()
+    ctx.strokeStyle = LABEL_BORDER
+    ctx.lineWidth = 1 / Math.max(globalScale, 0.1)
+    roundRect(ctx, boxX, boxY, boxW, boxH, borderR)
+    ctx.stroke()
+
+    ctx.font = `600 ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
+    ctx.fillStyle = LABEL_TEXT
+    ctx.fillText(name, node.x, boxY + padY)
+
+    ctx.font = `400 ${fontSize * 0.9}px 'Space Grotesk', system-ui, sans-serif`
+    ctx.fillStyle = LABEL_TEXT_DIM
+    ctx.fillText(title, node.x, boxY + padY + lineHeight)
+  } else {
+    ctx.font = `500 ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
+    const name = truncateText(ctx, rawName, maxW)
+    const labelY = node.y - nodeRadius - fontSize * 3.0
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'
+    ctx.fillText(name, node.x, labelY)
+
+    ctx.font = `400 ${fontSize * 0.9}px 'Space Grotesk', system-ui, sans-serif`
+    const title = truncateText(ctx, rawTitle, maxW)
+    ctx.fillText(title, node.x, labelY + lineHeight)
   }
 
-  ctx.fillStyle = prominent ? '#ffffff' : 'rgba(255,255,255,0.18)'
-  ctx.fillText(name, node.x, labelY)
-  ctx.font = `400 ${fontSize * 0.9}px 'Space Grotesk', system-ui, sans-serif`
-  ctx.fillText(title, node.x, labelY + lineHeight)
   ctx.restore()
 }

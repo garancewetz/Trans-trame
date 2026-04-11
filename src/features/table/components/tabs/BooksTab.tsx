@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toggleSetItem } from '@/common/utils/setUtils'
 import { useColumnSort } from '../../hooks/useColumnSort'
 import { Merge, Sparkles } from 'lucide-react'
@@ -92,6 +92,27 @@ export function BooksTab({
     authors,
     axisFilter,
   })
+
+  /** Map bookId → sibling books sharing the same originalTitle (excluding self). */
+  const workSiblingsMap = useMemo(() => {
+    const norm = (s: string) =>
+      s.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/\s+/g, ' ').trim()
+    const byWork = new Map<string, Book[]>()
+    for (const b of nodes) {
+      if (!b.originalTitle) continue
+      const key = norm(b.originalTitle)
+      if (!key) continue
+      const arr = byWork.get(key)
+      if (arr) arr.push(b)
+      else byWork.set(key, [b])
+    }
+    const result = new Map<BookId, Book[]>()
+    for (const group of byWork.values()) {
+      if (group.length < 2) continue
+      for (const b of group) result.set(b.id, group.filter((s) => s.id !== b.id))
+    }
+    return result
+  }, [nodes])
 
   const allSelected = sortedNodes.length > 0 && sortedNodes.every((n) => selectedIds.has(n.id))
   const someSelected = selectedIds.size > 0 && !allSelected
@@ -283,6 +304,7 @@ export function BooksTab({
         authors={authors}
         authorsMap={authorsMap}
         linkCountByNode={linkCountByNode}
+        workSiblingsMap={workSiblingsMap}
         sortCol={sortCol}
         sortDir={sortDir}
         selectedIds={selectedIds}

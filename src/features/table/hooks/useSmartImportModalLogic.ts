@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { toggleSetItem } from '@/common/utils/setUtils'
 import type { Book } from '@/types/domain'
-import { parseSmartInput, parseSmartInputHybrid, type ParsedBook } from '../parseSmartInput'
+import { parseSmartInput, parseSmartInputHybrid, parseSmartInputFromImages, type ParsedBook } from '../parseSmartInput'
 import { runSmartImportBatchInsert } from '../smartImportModal.batchInsert'
 import type { SmartImportModalProps } from '../smartImportModal.types'
 import { detectAuthorInitialMatches, normStr, type AuthorMergeSuggestion } from '../smartImportModal.utils'
@@ -20,7 +20,10 @@ export function useSmartImportModalLogic({
   initialMasterNode,
 }: SmartImportModalProps) {
   const [phase, setPhase] = useState<'input' | 'preview'>('input')
+  const [inputMode, setInputMode] = useState<'text' | 'image'>('text')
   const [rawText, setRawText] = useState('')
+  const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [parsed, setParsed] = useState<ParsedBook[]>([])
   const [checked, setChecked] = useState<Set<string>>(new Set())
   const [injected, setInjected] = useState(false)
@@ -64,9 +67,34 @@ export function useSmartImportModalLogic({
     [parsed, existingAuthors, dismissedAuthorMerges]
   )
 
+  const addImages = (files: File[]) => {
+    const valid = files.filter((f) =>
+      ['image/jpeg', 'image/png', 'image/webp'].includes(f.type) && f.size <= 4 * 1024 * 1024,
+    )
+    const remaining = 5 - imageFiles.length
+    const toAdd = valid.slice(0, remaining)
+    if (toAdd.length === 0) return
+    setImageFiles((prev) => [...prev, ...toAdd])
+    for (const file of toAdd) {
+      const reader = new FileReader()
+      reader.onload = () => {
+        setImagePreviews((prev) => [...prev, reader.result as string])
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const removeImage = (index: number) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index))
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index))
+  }
+
   const resetAll = () => {
     setPhase('input')
+    setInputMode('text')
     setRawText('')
+    setImageFiles([])
+    setImagePreviews([])
     setParsed([])
     setChecked(new Set())
     setEditingCell(null)
@@ -83,16 +111,7 @@ export function useSmartImportModalLogic({
     setLinkDirection('master-cites-imported')
   }
 
-  const handleAnalyze = async () => {
-    const localResults = parseSmartInput(rawText, existingNodes, knownAuthors, knownEditions)
-    setEditingCell(null)
-    setEditingAuthor(null)
-    setMergedIds(new Set())
-    setInjected(false)
-    setAnalyzing(true)
-    setAnalyzeProgress(0)
-
-    // Simulated progress that creeps up to ~85% while waiting for the API
+  const startFakeProgress = () => {
     if (fakeTimerRef.current) clearInterval(fakeTimerRef.current)
     fakeTimerRef.current = setInterval(() => {
       setAnalyzeProgress((p) => {
@@ -100,6 +119,70 @@ export function useSmartImportModalLogic({
         return p + (85 - p) * 0.08
       })
     }, 400)
+  }
+
+  const stopFakeProgress = () => {
+    if (fakeTimerRef.current) { clearInterval(fakeTimerRef.current); fakeTimerRef.current = null }
+  }
+
+  const handleAnalyzeImages = async () => {
+    setEditingCell(null)
+    setEditingAuthor(null)
+    setMergedIds(new Set())
+    setInjected(false)
+    setAnalyzing(true)
+    setAnalyzeProgress(0)
+    startFakeProgress()
+
+    try {
+      // Convert files to base64
+      const images = await Promise.all(
+        imageFiles.map(
+          (file) =>
+            new Promise<{ base64: string; mimeType: string }>((resolve, reject) => {
+              const reader = new FileReader()
+              reader.onload = () => {
+                const dataUrl = reader.result as string
+                const base64 = dataUrl.split(',')[1]
+                resolve({ base64, mimeType: file.type })
+              }
+              reader.onerror = reject
+              reader.readAsDataURL(file)
+            }),
+        ),
+      )
+
+      const results = await parseSmartInputFromImages(images, existingNodes, (done, total) => {
+        const real = Math.round((done / total) * 100)
+        setAnalyzeProgress((p) => Math.max(p, real))
+      })
+      stopFakeProgress()
+      setAnalyzeProgress(100)
+      setParsed(results)
+      setChecked(new Set(results.filter((r) => !r.isDuplicate).map((r) => r.id)))
+    } catch (err) {
+      if (import.meta.env.DEV) console.warn('[SmartImport] Image analysis failed:', err)
+      stopFakeProgress()
+      setAnalyzeProgress(100)
+      setParsed([])
+      setChecked(new Set())
+    }
+
+    setAnalyzing(false)
+    setPhase('preview')
+  }
+
+  const handleAnalyze = async () => {
+    if (inputMode === 'image') return handleAnalyzeImages()
+
+    const localResults = parseSmartInput(rawText, existingNodes, knownAuthors, knownEditions)
+    setEditingCell(null)
+    setEditingAuthor(null)
+    setMergedIds(new Set())
+    setInjected(false)
+    setAnalyzing(true)
+    setAnalyzeProgress(0)
+    startFakeProgress()
 
     try {
       const enriched = await parseSmartInputHybrid(localResults, existingNodes, (done, total) => {
@@ -107,7 +190,7 @@ export function useSmartImportModalLogic({
         const real = Math.round((done / total) * 100)
         setAnalyzeProgress((p) => Math.max(p, real))
       })
-      if (fakeTimerRef.current) { clearInterval(fakeTimerRef.current); fakeTimerRef.current = null }
+      stopFakeProgress()
       setAnalyzeProgress(100)
       if (enriched.some((r) => r.parsedByLLM)) {
         setParsed(enriched)
@@ -118,7 +201,7 @@ export function useSmartImportModalLogic({
       }
     } catch (err) {
       if (import.meta.env.DEV) console.warn('[SmartImport] LLM enrichment failed, using local results:', err)
-      if (fakeTimerRef.current) { clearInterval(fakeTimerRef.current); fakeTimerRef.current = null }
+      stopFakeProgress()
       setAnalyzeProgress(100)
       setParsed(localResults)
       setChecked(new Set(localResults.filter((r) => !r.isDuplicate).map((r) => r.id)))
@@ -307,36 +390,6 @@ export function useSmartImportModalLogic({
     )
   }
 
-  const handleInsertRow = (afterIndex: number) => {
-    const id = `manual-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-    const empty: ParsedBook = {
-      id,
-      authors: [{ firstName: '', lastName: '' }],
-      firstName: '',
-      lastName: '',
-      title: '',
-      edition: '',
-      page: '',
-      year: 0,
-      yearMissing: false,
-      axes: [],
-      citation: '',
-      isDuplicate: false,
-      isFuzzyDuplicate: false,
-      existingNode: null,
-      raw: '',
-    }
-    setParsed((prev) => {
-      const next = [...prev]
-      next.splice(afterIndex + 1, 0, empty)
-      return next
-    })
-    setChecked((prev) => new Set([...prev, id]))
-    // Auto-open title editing on the new row
-    setEditingCell({ id, field: 'title' })
-    setEditingValue('')
-  }
-
   const handleAddCoAuthor = (itemId: string) => {
     const item = parsed.find((row) => row.id === itemId)
     if (!item) return
@@ -406,14 +459,21 @@ export function useSmartImportModalLogic({
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
-    if (phase === 'input' && rawText.trim() && !analyzing) void handleAnalyze()
+    const canAnalyze = inputMode === 'image' ? imageFiles.length > 0 : rawText.trim()
+    if (phase === 'input' && canAnalyze && !analyzing) void handleAnalyze()
     else if (phase === 'preview' && checked.size > 0 && !injected && !inserting) void handleInject()
   }
 
   return {
     phase,
+    inputMode,
+    setInputMode,
     rawText,
     setRawText,
+    imageFiles,
+    imagePreviews,
+    addImages,
+    removeImage,
     parsed: effectiveParsed,
     checked,
     injected,
@@ -445,7 +505,6 @@ export function useSmartImportModalLogic({
     handleMerge,
     handleUnmerge,
     dismissDuplicate,
-    handleInsertRow,
     handleAddCoAuthor,
     handleUpdateAxes,
     handleUpdateField,

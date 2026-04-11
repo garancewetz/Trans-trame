@@ -26,11 +26,45 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_log: {
+        Row: {
+          id: string
+          entity_type: string
+          entity_id: string
+          operation: string
+          old_values: Json | null
+          new_values: Json | null
+          created_at: string
+          created_by: string | null
+        }
+        Insert: {
+          id?: string
+          entity_type: string
+          entity_id: string
+          operation: string
+          old_values?: Json | null
+          new_values?: Json | null
+          created_at?: string
+          created_by?: string | null
+        }
+        Update: {
+          id?: string
+          entity_type?: string
+          entity_id?: string
+          operation?: string
+          old_values?: Json | null
+          new_values?: Json | null
+          created_at?: string
+          created_by?: string | null
+        }
+        Relationships: []
+      }
       authors: {
         Row: {
           axes: string[]
           created_at: string
           created_by: string | null
+          deleted_at: string | null
           first_name: string
           id: string
           last_name: string
@@ -40,6 +74,7 @@ export type Database = {
           axes?: string[]
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
           first_name?: string
           id: string
           last_name?: string
@@ -49,6 +84,7 @@ export type Database = {
           axes?: string[]
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
           first_name?: string
           id?: string
           last_name?: string
@@ -91,6 +127,7 @@ export type Database = {
           axes: string[]
           created_at: string
           created_by: string | null
+          deleted_at: string | null
           description: string
           first_name: string
           id: string
@@ -104,6 +141,7 @@ export type Database = {
           axes?: string[]
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
           description?: string
           first_name?: string
           id: string
@@ -117,6 +155,7 @@ export type Database = {
           axes?: string[]
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
           description?: string
           first_name?: string
           id?: string
@@ -134,6 +173,7 @@ export type Database = {
           context: string
           created_at: string
           created_by: string | null
+          deleted_at: string | null
           edition: string
           id: string
           page: string
@@ -146,6 +186,7 @@ export type Database = {
           context?: string
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
           edition?: string
           id?: string
           page?: string
@@ -158,6 +199,7 @@ export type Database = {
           context?: string
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
           edition?: string
           id?: string
           page?: string
@@ -185,18 +227,21 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          email: string
           first_name: string
           id: string
           last_name: string
         }
         Insert: {
           created_at?: string
+          email?: string
           first_name?: string
           id: string
           last_name?: string
         }
         Update: {
           created_at?: string
+          email?: string
           first_name?: string
           id?: string
           last_name?: string

@@ -10,10 +10,13 @@ import { TableView } from '@/features/table/components/TableView'
 import { Timeline } from '@/features/timeline/components/Timeline'
 import { TextsPanel } from '@/features/texts-panel/components/TextsPanel'
 import { AuthorsPanel } from '@/features/authors-panel/components/AuthorsPanel'
+import { ActiveFilterBar } from '@/common/components/ActiveFilterBar'
 import { KeyboardHints } from '@/common/components/ui/KeyboardHints'
 import { LoginModal } from '@/pages/LoginPage'
 
 import { AXES_COLORS } from '@/common/utils/categories'
+import { authorName } from '@/common/utils/authorUtils'
+import type { Highlight } from '@/core/FilterContext'
 import { ErrorBoundary } from '@/common/components/ErrorBoundary'
 import { useAppData } from '@/core/AppDataContext'
 import { useAppTimelineAndLayout } from '@/common/hooks/useAppTimelineAndLayout'
@@ -41,7 +44,7 @@ export function GraphApp() {
 }
 
 function GraphAppContent() {
-  const { graphData, authors, axisCountsByAxis } = useAppData()
+  const { graphData, authors, authorsMap, axisCountsByAxis } = useAppData()
   const selection = useSelection()
   const filter = useFilter()
   const tableUi = useTableUi()
@@ -51,6 +54,23 @@ function GraphAppContent() {
   const analysisPanelRef = useRef<AnalysisPanelImperativeHandle | null>(null)
   const timeline = useAppTimelineAndLayout(graphData)
   useMapUrlSync()
+
+  // Compute display label for active highlight
+  const highlightLabel = (() => {
+    const h = filter.activeHighlight
+    if (!h) return null
+    switch (h.kind) {
+      case 'decade': return `${h.decade}s`
+      case 'book': {
+        const node = graphData.nodes.find((n) => n.id === h.bookId)
+        return node?.title ?? h.bookId
+      }
+      case 'author': {
+        const author = authorsMap.get(h.authorId)
+        return author ? authorName(author) : h.authorId
+      }
+    }
+  })()
 
   // Cross-cutting: node click combines selection + filter
   const handleNodeClick = useCallback(
@@ -81,6 +101,7 @@ function GraphAppContent() {
               selectedAuthorId={filter.selectedAuthor}
               peekNodeId={selection.peekNodeId}
               activeFilter={filter.activeFilter}
+              activeHighlight={filter.activeHighlight}
               hoveredFilter={filter.hoveredFilter}
               onNodeClick={handleNodeClick}
               onLinkClick={() => {}}
@@ -106,6 +127,17 @@ function GraphAppContent() {
         analysisPanelRef={analysisPanelRef}
         viewMode={timeline.viewMode}
         onViewChange={timeline.handleViewChange}
+      />
+
+      <ActiveFilterBar
+        activeFilter={filter.activeFilter}
+        activeHighlight={filter.activeHighlight}
+        highlightLabel={highlightLabel}
+        selectedAuthor={filter.selectedAuthor}
+        selectedAuthorName={filter.selectedAuthor ? authorName(authorsMap.get(filter.selectedAuthor) ?? {}) || null : null}
+        onClearAxis={filter.clearActiveFilter}
+        onClearHighlight={filter.clearHighlight}
+        onClearAuthor={() => filter.setSelectedAuthor(null)}
       />
 
       <Legend
@@ -139,12 +171,17 @@ function GraphAppContent() {
         ref={analysisPanelRef}
         graphData={timeline.filteredGraphData}
         activeFilter={filter.activeFilter}
+        activeHighlight={filter.activeHighlight}
         onFilterChange={(axis) => {
           if (axis === null) filter.clearActiveFilter()
           else filter.toggleFilter(axis)
         }}
+        onHighlightChange={(h: Highlight | null) => {
+          if (h === null) filter.clearHighlight()
+          else filter.toggleHighlight(h)
+        }}
         showTrigger={false}
-        authorsMap={useAppData().authorsMap}
+        authorsMap={authorsMap}
       />
 
       <TextsPanel

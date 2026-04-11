@@ -21,9 +21,12 @@ function citationAnchorRole(
   return null
 }
 
+import type { Highlight } from '@/core/FilterContext'
+
 type Args = {
   hasSelection: boolean
   activeFilter: string | null
+  activeHighlight: Highlight | null
   anchorIds: Set<string> | null
   connectedLinks: Set<string>
   linkWeights: Map<string, number>
@@ -34,6 +37,7 @@ type Args = {
 export function useGraphLinkCallbacks({
   hasSelection,
   activeFilter,
+  activeHighlight,
   anchorIds,
   connectedLinks,
   linkWeights,
@@ -77,7 +81,7 @@ export function useGraphLinkCallbacks({
         if (isLinkActive(link)) return linkCitesRgba(0.45)
         return linkCitesRgba(0.1)
       }
-      if (!hasSelection && !activeFilter) return linkCitesRgba(0.15)
+      if (!hasSelection && !activeFilter && !activeHighlight) return linkCitesRgba(0.15)
       if (isLinkActive(link)) {
         const role = citationAnchorRole(link, anchorIds)
         if (role === 'citedBy') return linkCitedByRgba(0.85)
@@ -85,7 +89,7 @@ export function useGraphLinkCallbacks({
       }
       return linkCitesRgba(0.1)
     },
-    [hasSelection, activeFilter, isLinkActive, isLinkHovered, anchorIds],
+    [hasSelection, activeFilter, activeHighlight, isLinkActive, isLinkHovered, anchorIds],
   )
 
   const linkWidth = useCallback(
@@ -165,7 +169,7 @@ export function useGraphLinkCallbacks({
   const linkDirectionalParticles = useCallback(
     (link: { source: unknown; target: unknown }) => {
       if (hoveredNodeRef.current && !hasSelection) return isLinkHovered(link) ? 3 : 0
-      return !hasSelection ? 2 : isLinkActive(link) ? 5 : 0
+      return !hasSelection ? 0 : isLinkActive(link) ? 5 : 0
     },
     [hasSelection, isLinkActive, isLinkHovered],
   )
@@ -173,7 +177,7 @@ export function useGraphLinkCallbacks({
   const linkDirectionalParticleWidth = useCallback(
     (link: { source: unknown; target: unknown }) => {
       if (hoveredNodeRef.current && !hasSelection) return isLinkHovered(link) ? 2 : 0
-      return !hasSelection ? 1 : isLinkActive(link) ? 2 : 0
+      return !hasSelection ? 0 : isLinkActive(link) ? 2 : 0
     },
     [hasSelection, isLinkActive, isLinkHovered],
   )

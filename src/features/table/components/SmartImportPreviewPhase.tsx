@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react'
-import { AlertTriangle, Check, GitMerge, Info, Link2, Loader2, Plus, X, Zap } from 'lucide-react'
+import { AlertTriangle, Check, GitMerge, Info, Link2, Loader2, X, Zap } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import type { Book } from '@/types/domain'
 import type { Axis } from '@/common/utils/categories'
@@ -26,7 +26,6 @@ type Props = {
   handleMerge: (item: ParsedBook) => void
   handleUnmerge: (item: ParsedBook) => void
   onDismissDuplicate: (id: string) => void
-  onInsertRow: (index: number) => void
   onAddCoAuthor: (id: string) => void
   onUpdateAxes: (id: string, axes: Axis[]) => void
   onSwapFields: (id: string, field: 'title' | 'edition') => void
@@ -59,7 +58,6 @@ export function SmartImportPreviewPhase({
   handleMerge,
   handleUnmerge,
   onDismissDuplicate,
-  onInsertRow,
   onAddCoAuthor,
   onUpdateAxes,
   onSwapFields,
@@ -212,19 +210,6 @@ export function SmartImportPreviewPhase({
                 masterNode={masterNode}
                 knownEditions={knownEditions}
               />
-              <div
-                className="group/insert relative flex h-2 items-center justify-center transition-[height] hover:h-5"
-              >
-                <button
-                  type="button"
-                  onClick={() => onInsertRow(idx)}
-                  className="z-10 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/0 opacity-0 transition-all hover:border-cyan/40 hover:bg-cyan/15 hover:text-cyan group-hover/insert:text-white/40 group-hover/insert:opacity-100"
-                  title="Insérer une ligne"
-                >
-                  <Plus size={10} />
-                </button>
-                <div className="absolute inset-x-3 h-px bg-white/0 transition-colors group-hover/insert:bg-white/8" />
-              </div>
             </div>
           ))}
         </div>

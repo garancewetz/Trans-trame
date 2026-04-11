@@ -8,6 +8,7 @@ import { TableFilterBar } from './TableFilterBar'
 import { BooksTab as TableBooksTab } from './tabs/BooksTab'
 import { AuthorsTab as TableAuthorsTab } from './tabs/AuthorsTab'
 import { LinksTab as TableLinksTab } from './tabs/LinksTab'
+import { HistoryTab as TableHistoryTab } from './tabs/HistoryTab'
 import { TableOrphanModal } from './TableOrphanModal'
 import { TableDedupeModal } from './TableDedupeModal'
 import { TableAuthorDedupeModal } from './TableAuthorDedupeModal'
@@ -18,7 +19,7 @@ import type { Book } from '@/types/domain'
 import { useTableViewController } from '../hooks/useTableViewController'
 
 function tableInitialTabFromState(tab: string): NonNullable<TableViewProps['initialTab']> {
-  if (tab === 'authors' || tab === 'links') return tab
+  if (tab === 'authors' || tab === 'links' || tab === 'history') return tab
   return 'books'
 }
 
@@ -146,19 +147,21 @@ export function TableView() {
         onSmartImport={() => c.setSmartImportModal(true)}
       />
 
-      <TableFilterBar
-        tab={c.tab}
-        search={c.search}
-        setSearch={c.setSearch}
-        authorSearch={c.authorSearch}
-        setAuthorSearch={c.setAuthorSearch}
-        linkSearch={c.linkSearch}
-        setLinkSearch={c.setLinkSearch}
-        nodes={books}
-        authors={authors}
-        links={links}
-        authorsMap={c.authorsMap}
-      />
+      {c.tab !== 'history' && (
+        <TableFilterBar
+          tab={c.tab}
+          search={c.search}
+          setSearch={c.setSearch}
+          authorSearch={c.authorSearch}
+          setAuthorSearch={c.setAuthorSearch}
+          linkSearch={c.linkSearch}
+          setLinkSearch={c.setLinkSearch}
+          nodes={books}
+          authors={authors}
+          links={links}
+          authorsMap={c.authorsMap}
+        />
+      )}
 
       {c.tab === 'books' && (
         <TableBooksTab
@@ -207,6 +210,8 @@ export function TableView() {
           onOpenAuthorDedupeModal={() => { c.setAuthorDedupeModal(true); c.setAuthorDedupeConfirm(false) }}
         />
       )}
+
+      {c.tab === 'history' && <TableHistoryTab />}
 
       {c.tab === 'links' && (
         <TableLinksTab

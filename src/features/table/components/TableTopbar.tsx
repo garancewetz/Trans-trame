@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { ArrowLeft, Download, Zap } from 'lucide-react'
+import { ArrowLeft, Clock, Download, Zap } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { exportFullDatabase } from '@/features/graph/api/graphDataApi'
 import type { Author, Book, Link } from '@/types/domain'
 
-type TabId = 'books' | 'authors' | 'links'
+type TabId = 'books' | 'authors' | 'links' | 'history'
 
 type Props = {
   onClose: () => void
@@ -68,6 +68,17 @@ export function TableTopbar({
           </Button>
         ))}
       </div>
+
+      <Button
+        type="button"
+        variant="chip"
+        className="flex items-center gap-1.5"
+        selected={tab === 'history'}
+        onClick={() => { setTab('history'); setSearch(''); setLinkSearch(''); setAuthorSearch('') }}
+      >
+        <Clock size={12} />
+        Historique
+      </Button>
 
       <div className="ml-auto flex items-center gap-2">
         <ExportButton />

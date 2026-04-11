@@ -11,7 +11,7 @@ export type TableViewProps = {
   onUpdateLink?: (linkId: string, updatedFields: TablesUpdate<'links'>) => unknown
   onMergeBooks?: (fromNodeId: BookId, intoNodeId: BookId) => unknown
   onDeleteAuthor?: (authorId: AuthorId) => unknown
-  initialTab?: 'books' | 'authors' | 'links'
+  initialTab?: 'books' | 'authors' | 'links' | 'history'
   initialLinkSourceId?: BookId | null
   initialFocusBookId?: BookId | null
 }

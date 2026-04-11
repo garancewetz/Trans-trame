@@ -14,7 +14,7 @@ type TableUiContextValue = {
   setTableFocusBookId: (id: string | null) => void
   setLastEditedNodeId: (id: string | null) => void
   setFlashNodeIds: (ids: Set<string> | null) => void
-  openTable: (tab?: 'books' | 'authors' | 'links', linkSourceId?: string | null, focusBookId?: string | null) => void
+  openTable: (tab?: 'books' | 'authors' | 'links' | 'history', linkSourceId?: string | null, focusBookId?: string | null) => void
 }
 
 const TableUiContext = createContext<TableUiContextValue | null>(null)
@@ -28,7 +28,7 @@ export function TableUiProvider({ children }: { children: ReactNode }) {
   const [flashNodeIds, setFlashNodeIds] = useState<Set<string> | null>(null)
 
   const openTable = useCallback(
-    (tab: 'books' | 'authors' | 'links' = 'books', linkSourceId: string | null = null, focusBookId: string | null = null) => {
+    (tab: 'books' | 'authors' | 'links' | 'history' = 'books', linkSourceId: string | null = null, focusBookId: string | null = null) => {
       setTableInitialTab(tab)
       setTableLinkSourceId(linkSourceId)
       setTableFocusBookId(focusBookId)

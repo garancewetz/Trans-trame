@@ -7,7 +7,7 @@ import {
   parseAuthorString,
 } from './parseSmartInput.authorString'
 import { detectAxes } from './parseSmartInput.detectAxes'
-import { parseWithLLMBatch } from './parseSmartInput.llm'
+import { parseWithLLMBatch, parseWithLLMImages } from './parseSmartInput.llm'
 import type { ExistingNode, ParsedAuthor, ParsedBook } from './parseSmartInput.types'
 import { titleSimilarity } from './parseSmartInput.titleSimilarity'
 import type { KnownAuthor } from './hooks/useKnownData'
@@ -547,4 +547,72 @@ export async function parseSmartInputHybrid(
   })
 
   return merged
+}
+
+// ─── Image-based parsing (fully LLM) ────────────────────────────────────────
+
+/**
+ * Parses bibliographic references from images using Gemini multimodal OCR.
+ * Bypasses local parsing entirely — everything goes through the LLM.
+ */
+export async function parseSmartInputFromImages(
+  images: { base64: string; mimeType: string }[],
+  existingNodes: ExistingNode[] = [],
+  onProgress?: (done: number, total: number) => void,
+): Promise<ParsedBook[]> {
+  const llmResults = await parseWithLLMImages(images, onProgress)
+
+  if (llmResults.size === 0) return []
+
+  const results: ParsedBook[] = []
+
+  for (const [, item] of llmResults) {
+    if (!item.title) continue
+
+    const authors = item.authors.filter((a) => a.firstName || a.lastName)
+    const first = authors[0] || { firstName: '', lastName: '' }
+    const title = item.title.trim()
+    const edition = item.edition
+      ? (item.city ? `${item.edition}, ${item.city}` : item.edition)
+      : ''
+
+    // Duplicate detection
+    let bestNode: ExistingNode | null = null
+    let bestScore = 0
+    for (const n of existingNodes) {
+      const score = titleSimilarity(n.title ?? '', title)
+      if (score > bestScore) { bestScore = score; bestNode = n }
+    }
+    let authorMatch = true
+    if (bestNode && bestScore >= 0.82) {
+      const parsedLast = (first.lastName || '').toLowerCase().trim()
+      const existLast = String(bestNode.lastName ?? '').toLowerCase().trim()
+      if (parsedLast && existLast && parsedLast !== existLast) authorMatch = false
+    }
+    const isDuplicate = bestScore === 1 && authorMatch
+    const isFuzzyDuplicate = !isDuplicate && bestScore >= 0.82
+
+    results.push({
+      id: crypto.randomUUID(),
+      authors,
+      firstName: first.firstName.trim(),
+      lastName: first.lastName.trim(),
+      title,
+      edition: edition.trim(),
+      page: item.page || '',
+      year: item.year,
+      yearMissing: !item.year,
+      axes: item.axes.length > 0 ? item.axes : ['UNCATEGORIZED' as ParsedBook['axes'][number]],
+      isDuplicate,
+      isFuzzyDuplicate,
+      citation: '',
+      existingNode: (isDuplicate || isFuzzyDuplicate) ? bestNode : null,
+      raw: `[image import]`,
+      confidence: 0.95,
+      needsLLM: false,
+      parsedByLLM: true,
+    })
+  }
+
+  return results
 }

@@ -19,22 +19,22 @@ const AXIS_KEY_SET = new Set<string>(AXES)
 /** Ne garde que les axes reconnus (données livre / table / import). */
 export function narrowAxes(axes: readonly string[] | undefined | null): Axis[] {
   if (!axes?.length) return []
-  return axes.filter((a): a is Axis => AXIS_KEY_SET.has(a))
+  return [...new Set(axes.filter((a): a is Axis => AXIS_KEY_SET.has(a)))]
 }
 
 /** Sépare les axes connus et les thèmes secondaires (« UNCATEGORIZED:label »). */
 export function splitBookAxes(raw: readonly string[] | undefined | null): { axes: Axis[]; themes: string[] } {
   if (!raw?.length) return { axes: [], themes: [] }
-  const axes: Axis[] = []
-  const themes: string[] = []
+  const axesSet = new Set<Axis>()
+  const themesSet = new Set<string>()
   for (const a of raw) {
     if (a.startsWith('UNCATEGORIZED:')) {
-      themes.push(a.slice('UNCATEGORIZED:'.length))
+      themesSet.add(a.slice('UNCATEGORIZED:'.length))
     } else if (AXIS_KEY_SET.has(a)) {
-      axes.push(a as Axis)
+      axesSet.add(a as Axis)
     }
   }
-  return { axes, themes }
+  return { axes: [...axesSet], themes: [...themesSet] }
 }
 
 // Backward-compat alias

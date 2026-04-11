@@ -1,5 +1,5 @@
 // @ts-nocheck — react-force-graph-2d's recursive LinkObject / NodeObject generics fight our domain `Link`/`Book` types; avoiding hundreds of assertions or brittle duplicates of upstream props.
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
+import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import type { ForceGraphMethods } from 'react-force-graph-2d'
 import { forceCollide } from 'd3-force-3d'
@@ -10,6 +10,7 @@ import {
   startPanZoomLoop,
   syncedZoomToFit,
   animateCameraToNode,
+  isNavigationActive,
 } from '../cameraControls'
 import { drawNode, getNodePointerHitRadius, getNodeRadius, clearHoverAnim } from '../nodeObject'
 import {
@@ -23,6 +24,7 @@ import { useFlashAnimation } from '../hooks/useFlashAnimation'
 import { useGraphLayout } from '../hooks/useGraphLayout'
 
 import type { GraphData, Link, Book, Author, AuthorId } from '@/types/domain'
+import type { Highlight } from '@/core/FilterContext'
 import { normalizeEndpointId } from '../domain/graphDataModel'
 import { useGraphDerivedLinkState } from '../hooks/useGraphDerivedLinkState'
 import { useGraphLinkCallbacks } from '../hooks/useGraphLinkCallbacks'
@@ -49,6 +51,7 @@ type GraphProps = {
   selectedAuthorId: AuthorId | null
   peekNodeId: string | null
   activeFilter: string | null
+  activeHighlight: Highlight | null
   hoveredFilter: string | null
   onNodeClick: (node: Book | Author) => void
   onLinkClick: (link: GraphLink) => void
@@ -68,6 +71,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     selectedAuthorId,
     peekNodeId,
     activeFilter,
+    activeHighlight,
     hoveredFilter,
     onNodeClick,
     onLinkClick,
@@ -91,6 +95,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   const keysRef = useRef<Set<string>>(new Set())
   const velRef = useRef({ moveX: 0, moveY: 0, zoom: 0 })
   const animFrameRef = useRef<number | null>(null)
+  const wakeRef = useRef<(() => void) | null>(null)
   const selectedNodeRef = useRef(selectedNode)
 
   const { flashNodeIdsRef, flashAlphaRef } = useFlashAnimation({ flashNodeIds, fgRef })
@@ -108,10 +113,13 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     }, 950)
   }, [])
 
-  useEffect(() => setupKeyboardHandlers({ keysRef, onSpace: resetToOverview }), [resetToOverview])
-  useEffect(() => setupMouseDragHandlers({ containerRef, velRef, hoveredNodeRef }), [])
+  useEffect(() => {
+    const { cleanup, wake } = startPanZoomLoop({ fgRef, keysRef, velRef, animFrameRef, camRef })
+    wakeRef.current = wake
+    return () => { wakeRef.current = null; cleanup() }
+  }, [])
+  useEffect(() => setupMouseDragHandlers({ containerRef, velRef, hoveredNodeRef, wake: () => wakeRef.current?.() }), [])
   useEffect(() => setupWheelZoomHandlers({ containerRef, fgRef, velRef, camRef }), [])
-  useEffect(() => startPanZoomLoop({ fgRef, keysRef, velRef, animFrameRef, camRef }), [])
   useEffect(() => clearHoverAnim, [])
 
   const { anchorIds, connectedLinks, connectedNodes, citationsByNodeId, linkWeights, degreeByNodeId } = useGraphDerivedLinkState({
@@ -136,6 +144,27 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     return animateCameraToNode(fg, camRef, velRef, px, py)
   }, [selectedNode, peekNodeId, viewMode, graphData.nodes])
 
+  // Pre-computed adjacency index: O(degree) hover lookups instead of O(links)
+  const linksByNodeId = useMemo(() => {
+    const map = new Map<string, { linkKeys: string[]; neighborIds: string[] }>()
+    const ensure = (id: string) => {
+      let entry = map.get(id)
+      if (!entry) { entry = { linkKeys: [], neighborIds: [] }; map.set(id, entry) }
+      return entry
+    }
+    graphData.links.forEach((link) => {
+      const srcId = normalizeEndpointId(link.source)
+      const tgtId = normalizeEndpointId(link.target)
+      if (!srcId || !tgtId) return
+      const key = `${srcId}-${tgtId}`
+      ensure(srcId).linkKeys.push(key)
+      ensure(srcId).neighborIds.push(tgtId)
+      ensure(tgtId).linkKeys.push(key)
+      ensure(tgtId).neighborIds.push(srcId)
+    })
+    return map
+  }, [graphData.links])
+
   // Links and neighbor nodes connected to hovered node (refs for perf — no re-render)
   const hoveredLinksRef = useRef(new Set<string>())
   const hoveredNeighborIdsRef = useRef(new Set<string>())
@@ -144,16 +173,24 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     hoveredNeighborIdsRef.current.clear()
     if (!node) return
     hoveredNeighborIdsRef.current.add(node.id)
-    graphData.links.forEach((link) => {
-      const srcId = normalizeEndpointId(link.source)
-      const tgtId = normalizeEndpointId(link.target)
-      if (!srcId || !tgtId) return
-      if (srcId === node.id || tgtId === node.id) {
-        hoveredLinksRef.current.add(`${srcId}-${tgtId}`)
-        hoveredNeighborIdsRef.current.add(srcId === node.id ? tgtId : srcId)
+    const entry = linksByNodeId.get(node.id)
+    if (!entry) return
+    for (const k of entry.linkKeys) hoveredLinksRef.current.add(k)
+    for (const id of entry.neighborIds) hoveredNeighborIdsRef.current.add(id)
+  }, [linksByNodeId])
+
+  useEffect(() => setupKeyboardHandlers({
+    keysRef,
+    onSpace: resetToOverview,
+    wake: () => wakeRef.current?.(),
+    onNavigate: () => {
+      if (hoveredNodeRef.current) {
+        hoveredNodeRef.current = null
+        updateHoveredLinks(null)
+        graphInstanceRefresh(fgRef.current)
       }
-    })
-  }, [graphData.links])
+    },
+  }), [resetToOverview, updateHoveredLinks])
 
   const handleInit = useCallback((fg) => {
     // Les auteurs ont une répulsion plus forte pour créer des "systèmes stellaires" distincts
@@ -183,10 +220,29 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
 
   const isNodeVisible = useCallback(
     (node) => {
+      if (activeHighlight) {
+        switch (activeHighlight.kind) {
+          case 'decade': {
+            if (node.type === 'author') return true
+            const y = node.year
+            return y != null && Math.floor(y / 10) * 10 === activeHighlight.decade
+          }
+          case 'book': {
+            if (node.id === activeHighlight.bookId) return true
+            const entry = linksByNodeId.get(activeHighlight.bookId)
+            return entry?.neighborIds.includes(node.id) ?? false
+          }
+          case 'author': {
+            if (node.type === 'author') return node.id === activeHighlight.authorId
+            return (node.authorIds || []).includes(activeHighlight.authorId)
+          }
+        }
+      }
       if (!activeFilter) return true
+      if (node.type === 'author') return true
       return (node.axes || []).includes(activeFilter)
     },
-    [activeFilter]
+    [activeFilter, activeHighlight, linksByNodeId]
   )
 
   const orderedGraphData = useMemo(() => {
@@ -215,13 +271,12 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         isNodeVisible,
         hoveredFilter,
         citationCount: citationsByNodeId.get(node.id) || 0,
-        degree: degreeByNodeId.get(node.id) || 0,
         skipLabel: hoveredNodeRef.current?.id === node.id,
       })
       // Flash ring for newly imported nodes
       if (flashNodeIdsRef.current.has(node.id) && Number.isFinite(node.x) && Number.isFinite(node.y)) {
         const alpha = flashAlphaRef.current
-        const r = getNodeRadius(node, citationsByNodeId.get(node.id) || 0, degreeByNodeId.get(node.id) || 0)
+        const r = getNodeRadius(node, citationsByNodeId.get(node.id) || 0)
         const expansion = (1 - alpha) * 10
         ctx.save()
         ctx.beginPath()
@@ -232,7 +287,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         ctx.restore()
       }
     },
-    [selectedNode, selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, degreeByNodeId]
+    [selectedNode, selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId]
   )
 
   const nodePointerAreaPaint = useCallback(
@@ -240,7 +295,6 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
       const r = getNodePointerHitRadius(
         node,
         citationsByNodeId.get(node.id) || 0,
-        degreeByNodeId.get(node.id) || 0,
         globalScale,
       )
       if (!Number.isFinite(node?.x) || !Number.isFinite(node?.y) || !Number.isFinite(r) || r <= 0) return
@@ -249,7 +303,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
       ctx.arc(node.x, node.y, r, 0, Math.PI * 2)
       ctx.fill()
     },
-    [citationsByNodeId, degreeByNodeId]
+    [citationsByNodeId]
   )
 
   const hasSelection = Boolean(anchorIds)
@@ -266,6 +320,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   } = useGraphLinkCallbacks({
     hasSelection,
     activeFilter,
+    activeHighlight,
     anchorIds,
     connectedLinks,
     linkWeights,
@@ -294,31 +349,26 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
 
   const onRenderFramePost = useCallback(
     (ctx, globalScale) => {
-      const baseOpts = {
-        selectedNode: selectedNodeRef.current,
-        selectedAuthorId,
-        peekNodeId,
-        authors,
-        hoveredNode: hoveredNodeRef.current,
-        hoveredNeighborIds: hoveredNeighborIdsRef.current,
-        connectedNodes,
-        isNodeVisible,
-        hoveredFilter,
-      }
-      // Redraw selected/peek node on top — always resolve from graphData.nodes
-      // to use the live force-graph object (with current x/y), not a stale selectedNode copy.
-      const topId = selectedNodeRef.current?.id || peekNodeId
-      const topNode = topId ? graphData.nodes?.find((n) => n.id === topId) : null
-      if (topNode) {
-        drawNode(topNode, ctx, globalScale, { ...baseOpts, citationCount: citationsByNodeId.get(topNode.id) || 0, degree: degreeByNodeId.get(topNode.id) || 0 })
-      }
       // Redraw hovered node label on top of everything
+      // (selected/peek node body is already drawn last via orderedGraphData)
       const hovered = hoveredNodeRef.current
       if (hovered && Number.isFinite(hovered.x) && Number.isFinite(hovered.y)) {
-        drawNode(hovered, ctx, globalScale, { ...baseOpts, citationCount: citationsByNodeId.get(hovered.id) || 0, degree: degreeByNodeId.get(hovered.id) || 0, labelOnly: true })
+        drawNode(hovered, ctx, globalScale, {
+          selectedNode: selectedNodeRef.current,
+          selectedAuthorId,
+          peekNodeId,
+          authors,
+          hoveredNode: hoveredNodeRef.current,
+          hoveredNeighborIds: hoveredNeighborIdsRef.current,
+          connectedNodes,
+          isNodeVisible,
+          hoveredFilter,
+          citationCount: citationsByNodeId.get(hovered.id) || 0,
+          labelOnly: true,
+        })
       }
     },
-    [selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, degreeByNodeId, graphData.nodes]
+    [selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId]
   )
 
   return (
@@ -331,8 +381,12 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         nodeCanvasObject={nodeCanvasObject}
         nodePointerAreaPaint={nodePointerAreaPaint}
         onNodeHover={(node) => {
-          hoveredNodeRef.current = isBookOrAuthor(node) ? node : null
-          updateHoveredLinks(isBookOrAuthor(node) ? node : null)
+          // Suppress hover while navigating with keyboard — the cursor stays
+          // in place and nodes drift under it, causing unwanted hover triggers
+          const navigating = isNavigationActive(keysRef.current)
+          const effective = !navigating && isBookOrAuthor(node) ? node : null
+          hoveredNodeRef.current = effective
+          updateHoveredLinks(effective)
           graphInstanceRefresh(fgRef.current)
         }}
         onNodeClick={(node) => {
@@ -364,5 +418,5 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
 })
 
 
-const MemoGraph = Graph
+const MemoGraph = memo(Graph)
 export { MemoGraph as Graph }

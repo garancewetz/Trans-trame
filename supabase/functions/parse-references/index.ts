@@ -86,6 +86,11 @@ interface LineInput {
   raw: string
 }
 
+interface ImageInput {
+  base64: string   // base64-encoded image data (no data URI prefix)
+  mimeType: string // e.g. "image/jpeg", "image/png", "image/webp"
+}
+
 interface ParsedResult {
   authors: { firstName: string; lastName: string }[]
   title: string
@@ -181,53 +186,149 @@ async function callGemini(
   for (let i = 0; i < Math.min(parsed.length, lines.length); i++) {
     const item = parsed[i] as Record<string, unknown> | null
     if (!item) continue
+    results.set(lines[i].index, validateParsedItem(item))
+  }
 
-    const rawAxes: string[] = (
-      Array.isArray(item.axes)
-        ? item.axes
-        : typeof item.axes === 'string'
-          ? [item.axes]
-          : []
-    )
-      .map((a: unknown) => String(a).trim())
-      .filter(Boolean)
+  return results
+}
 
-    const knownAxes = rawAxes.filter(
-      (a): a is AxisName =>
-        (VALID_AXES as readonly string[]).includes(a) &&
-        a !== 'UNCATEGORIZED',
-    )
+// ─── Shared result validation ──────────────────────────────────────────────
 
-    const suggestedThemes = rawAxes
-      .flatMap((a) => {
-        if (a.startsWith('UNCATEGORIZED:'))
-          return [a.slice('UNCATEGORIZED:'.length).trim()]
-        if (!(VALID_AXES as readonly string[]).includes(a)) return [a]
-        return []
-      })
-      .map((t) => t.toLowerCase().replace(/_/g, ' ').trim())
-      .filter((t) => ALLOWED_THEMES.has(t))
-      .filter((v, idx, arr) => arr.indexOf(v) === idx)
+function validateParsedItem(item: Record<string, unknown>): ParsedResult {
+  const rawAxes: string[] = (
+    Array.isArray(item.axes)
+      ? item.axes
+      : typeof item.axes === 'string'
+        ? [item.axes]
+        : []
+  )
+    .map((a: unknown) => String(a).trim())
+    .filter(Boolean)
 
-    const rawAuthors = Array.isArray(item.authors) ? item.authors : []
-    results.set(lines[i].index, {
-      authors: rawAuthors
-        .filter(
-          (a): a is Record<string, unknown> =>
-            a != null && typeof a === 'object',
-        )
-        .map((a) => ({
-          firstName: String(a.firstName ?? '').trim(),
-          lastName: String(a.lastName ?? '').trim(),
-        })),
-      title: String(item.title ?? '').trim(),
-      edition: String(item.edition ?? '').trim(),
-      city: String(item.city ?? '').trim(),
-      year: typeof item.year === 'number' ? item.year : null,
-      page: String(item.page ?? '').trim(),
-      axes: knownAxes.length > 0 ? knownAxes : ['UNCATEGORIZED'],
-      suggestedThemes,
+  const knownAxes = rawAxes.filter(
+    (a): a is AxisName =>
+      (VALID_AXES as readonly string[]).includes(a) &&
+      a !== 'UNCATEGORIZED',
+  )
+
+  const suggestedThemes = rawAxes
+    .flatMap((a) => {
+      if (a.startsWith('UNCATEGORIZED:'))
+        return [a.slice('UNCATEGORIZED:'.length).trim()]
+      if (!(VALID_AXES as readonly string[]).includes(a)) return [a]
+      return []
     })
+    .map((t) => t.toLowerCase().replace(/_/g, ' ').trim())
+    .filter((t) => ALLOWED_THEMES.has(t))
+    .filter((v, idx, arr) => arr.indexOf(v) === idx)
+
+  const rawAuthors = Array.isArray(item.authors) ? item.authors : []
+  return {
+    authors: rawAuthors
+      .filter(
+        (a): a is Record<string, unknown> =>
+          a != null && typeof a === 'object',
+      )
+      .map((a) => ({
+        firstName: String(a.firstName ?? '').trim(),
+        lastName: String(a.lastName ?? '').trim(),
+      })),
+    title: String(item.title ?? '').trim(),
+    edition: String(item.edition ?? '').trim(),
+    city: String(item.city ?? '').trim(),
+    year: typeof item.year === 'number' ? item.year : null,
+    page: String(item.page ?? '').trim(),
+    axes: knownAxes.length > 0 ? knownAxes : ['UNCATEGORIZED'],
+    suggestedThemes,
+  }
+}
+
+// ─── Gemini call with images (multimodal) ──────────────────────────────────
+
+const IMAGE_SYSTEM_PROMPT = `You are a bibliographic reference parser. You receive one or more images of bibliographies or reference lists. Extract ALL bibliographic references visible in the image(s).
+
+For EACH reference, extract bibliographic fields and classify the work thematically. Return a JSON array.
+
+${SYSTEM_PROMPT.split('\n').slice(1).join('\n')}`
+
+async function callGeminiWithImages(
+  images: ImageInput[],
+  apiKey: string,
+): Promise<Map<number, ParsedResult>> {
+  const results = new Map<number, ParsedResult>()
+
+  const parts: { text?: string; inlineData?: { mimeType: string; data: string } }[] = [
+    { text: IMAGE_SYSTEM_PROMPT },
+    ...images.map((img) => ({
+      inlineData: { mimeType: img.mimeType, data: img.base64 },
+    })),
+  ]
+
+  const body = JSON.stringify({
+    contents: [{ role: 'user', parts }],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      temperature: 0,
+    },
+  })
+
+  let response: Response | null = null
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(120_000),
+        body,
+      })
+
+      if (response.status !== 429) break
+
+      const errorBody = await response.json().catch(() => null)
+      const details = errorBody?.error?.details as
+        | { '@type': string; retryDelay?: string; violations?: { quotaId: string }[] }[]
+        | undefined
+
+      const isDailyExhausted = details?.some((d) =>
+        d.violations?.some((v) => v.quotaId?.includes('PerDay')),
+      )
+      if (isDailyExhausted) {
+        console.warn('[parse-references] Daily quota exhausted.')
+        return results
+      }
+
+      if (attempt === MAX_RETRIES) break
+
+      const retryInfo = details?.find((d) => d.retryDelay)
+      const apiDelay = retryInfo?.retryDelay
+        ? parseFloat(retryInfo.retryDelay)
+        : NaN
+      const wait = (!isNaN(apiDelay) ? Math.ceil(apiDelay) + 2 : 45) * 1000
+
+      console.warn(
+        `[parse-references] 429 — retry ${attempt + 1}/${MAX_RETRIES} in ${wait / 1000}s`,
+      )
+      await new Promise((r) => setTimeout(r, wait))
+    } catch (err) {
+      if (attempt === MAX_RETRIES) throw err
+    }
+  }
+
+  if (!response || !response.ok) return results
+
+  const data = await response.json()
+  const text: string =
+    data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+  if (!text) return results
+
+  const parsed: unknown = JSON.parse(text)
+  if (!Array.isArray(parsed)) return results
+
+  for (let i = 0; i < parsed.length; i++) {
+    const item = parsed[i] as Record<string, unknown> | null
+    if (!item) continue
+    results.set(i, validateParsedItem(item))
   }
 
   return results
@@ -250,10 +351,33 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    const { lines } = (await req.json()) as { lines: LineInput[] }
+    const { lines, images } = (await req.json()) as {
+      lines?: LineInput[]
+      images?: ImageInput[]
+    }
+
+    // ── Image mode ──────────────────────────────────────────────────────
+    if (Array.isArray(images) && images.length > 0) {
+      if (images.length > 5) {
+        return new Response(
+          JSON.stringify({ error: 'Maximum 5 images per request' }),
+          { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+        )
+      }
+      const imageResults = await callGeminiWithImages(images, apiKey)
+      const allResults: [number, ParsedResult][] = []
+      for (const [idx, val] of imageResults) {
+        allResults.push([idx, val])
+      }
+      return new Response(JSON.stringify({ results: allResults }), {
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // ── Text mode (existing) ────────────────────────────────────────────
     if (!Array.isArray(lines) || lines.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'Invalid request: lines array required' }),
+        JSON.stringify({ error: 'Invalid request: lines or images array required' }),
         { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
       )
     }

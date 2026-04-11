@@ -164,6 +164,53 @@ export function LinksTab({
         )}
       </div>
 
+      {/* ── Focused book (when navigating from Books tab) ── */}
+      {mode === 'list' && linkSourceNode && (
+        <div className="shrink-0 border-b border-white/8 px-5 py-3">
+          <div className="flex items-center gap-2 rounded-lg border border-cyan/15 bg-cyan/3 px-3 py-2.5">
+            <AxesDot axes={linkSourceNode.axes || []} />
+            <div className="min-w-0 flex-1">
+              <span className="block truncate font-mono text-[0.88rem] font-semibold text-white/85">
+                {linkSourceNode.title}
+              </span>
+              <span className="block font-mono text-[0.72rem] text-white/30">
+                {bookAuthorDisplay(linkSourceNode, authorsMap)}
+                {linkSourceNode.year ? `, ${linkSourceNode.year}` : ''}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setLinkCheckedIds(new Set<BookId>())
+                setChecklistSearch('')
+                switchToCreate()
+              }}
+              className="shrink-0 inline-flex items-center gap-1 rounded-md border border-cyan/20 bg-cyan/6 px-2.5 py-1 font-mono text-[0.78rem] text-cyan/60 transition-all hover:border-cyan/40 hover:bg-cyan/12 hover:text-cyan/90"
+            >
+              <Plus size={10} />
+              Tisser
+            </button>
+            {onSmartImportFrom && (
+              <button
+                type="button"
+                onClick={() => onSmartImportFrom(linkSourceNode)}
+                className="shrink-0 inline-flex items-center gap-1 rounded-md border border-amber/20 bg-amber/6 px-2.5 py-1 font-mono text-[0.78rem] text-amber/60 transition-all hover:border-amber/40 hover:bg-amber/12 hover:text-amber/90"
+              >
+                <Zap size={10} />
+                Import
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setLinkSourceNode(null)}
+              className="shrink-0 text-white/25 transition-colors hover:text-white/55"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── List mode ── */}
       {mode === 'list' && (
         <div className="flex flex-1 flex-col overflow-hidden px-5 py-3">
@@ -172,7 +219,7 @@ export function LinksTab({
               <p className="font-mono text-[0.88rem] text-white/22">
                 {linkSearch ? `Aucun résultat pour « ${linkSearch} »` : 'Aucun lien créé'}
               </p>
-              {!linkSearch && (
+              {!linkSearch && !linkSourceNode && (
                 <button
                   type="button"
                   onClick={switchToCreate}

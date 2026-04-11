@@ -6,6 +6,7 @@ import type { AuthorNode } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
 import { Panel } from '@/common/components/ui/Panel'
 import { PANEL_WIDTH } from '@/common/constants/panels'
+import type { Highlight } from '@/core/FilterContext'
 import {
   computePanorama,
   computeAxisStats,
@@ -21,7 +22,9 @@ type AnalysisPanelProps = {
     links: unknown[]
   }
   activeFilter: string | null
+  activeHighlight: Highlight | null
   onFilterChange: (axis: string | null) => void
+  onHighlightChange: (h: Highlight | null) => void
   showTrigger?: boolean
   authorsMap: Map<string, AuthorNode>
 }
@@ -35,7 +38,7 @@ type AnyBook = { id: string; title?: string; year?: number | null; axes?: string
 type AnyLink = { source: unknown; target: unknown }
 
 const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelProps>(function AnalysisPanel(
-  { graphData, activeFilter, onFilterChange, showTrigger = true, authorsMap }: AnalysisPanelProps,
+  { graphData, activeFilter, activeHighlight, onFilterChange, onHighlightChange, showTrigger = true, authorsMap }: AnalysisPanelProps,
   ref,
 ) {
   const [open, setOpen] = useState(false)
@@ -169,20 +172,31 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
             <section className="mb-5">
               <h3 className="mb-2 text-[0.82rem] font-semibold uppercase tracking-wide text-white/50">Décennies</h3>
               <div className="flex flex-col gap-[3px]">
-                {decades.decades.map(({ decade, count, pct }) => (
-                  <div key={decade} className="flex items-center gap-2">
-                    <span className="w-10 shrink-0 text-right text-[0.72rem] tabular-nums text-white/35">
-                      {decade}
-                    </span>
-                    <div className="h-[6px] flex-1 overflow-hidden rounded-full bg-white/5">
-                      <div
-                        className="h-full rounded-full bg-white/30 transition-all duration-500"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="w-6 text-right text-[0.72rem] tabular-nums text-white/30">{count}</span>
-                  </div>
-                ))}
+                {decades.decades.map(({ decade, count, pct }) => {
+                  const isActive = activeHighlight?.kind === 'decade' && activeHighlight.decade === decade
+                  return (
+                    <button
+                      key={decade}
+                      type="button"
+                      onClick={() => onHighlightChange(isActive ? null : { kind: 'decade', decade })}
+                      className={[
+                        'flex w-full cursor-pointer items-center gap-2 rounded-md px-1 py-0.5 transition-all',
+                        isActive ? 'bg-white/10' : 'hover:bg-white/5',
+                      ].join(' ')}
+                    >
+                      <span className={`w-10 shrink-0 text-right text-[0.72rem] tabular-nums ${isActive ? 'text-white/80 font-semibold' : 'text-white/35'}`}>
+                        {decade}
+                      </span>
+                      <div className="h-[6px] flex-1 overflow-hidden rounded-full bg-white/5">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${isActive ? 'bg-white/60' : 'bg-white/30'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className={`w-6 text-right text-[0.72rem] tabular-nums ${isActive ? 'text-white/60' : 'text-white/30'}`}>{count}</span>
+                    </button>
+                  )
+                })}
               </div>
             </section>
           )}
@@ -193,22 +207,30 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
               <Quote size={12} /> Œuvres pivots
             </h3>
             <div className="flex flex-col gap-1.5">
-              {mostCited.map((node, i) => (
-                <div
-                  key={node.id}
-                  className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-xl"
-                >
-                  <span className="text-[0.9rem] font-bold text-white/30">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[0.85rem] font-semibold text-white/85">{node.title}</p>
-                    <p className="text-[0.75rem] text-white/35">
-                      {bookAuthorDisplay(node, authorsMap)} — {node.citedBy} citation{node.citedBy > 1 ? 's' : ''}
-                    </p>
-                  </div>
-                </div>
-              ))}
+              {mostCited.map((node, i) => {
+                const isActive = activeHighlight?.kind === 'book' && activeHighlight.bookId === node.id
+                return (
+                  <button
+                    key={node.id}
+                    type="button"
+                    onClick={() => onHighlightChange(isActive ? null : { kind: 'book', bookId: node.id })}
+                    className={[
+                      'flex w-full cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-left backdrop-blur-xl transition-all',
+                      isActive ? 'border-white/25 bg-white/12' : 'border-white/10 bg-white/5 hover:border-white/15 hover:bg-white/8',
+                    ].join(' ')}
+                  >
+                    <span className="text-[0.9rem] font-bold text-white/30">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className={`truncate text-[0.85rem] font-semibold ${isActive ? 'text-white' : 'text-white/85'}`}>{node.title}</p>
+                      <p className="text-[0.75rem] text-white/35">
+                        {bookAuthorDisplay(node, authorsMap)} — {node.citedBy} citation{node.citedBy > 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           </section>
 
@@ -218,22 +240,30 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
               <Users size={12} /> Voix majeures
             </h3>
             <div className="flex flex-col gap-1.5">
-              {topAuthors.map((a, i) => (
-                <div
-                  key={a.id}
-                  className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-xl"
-                >
-                  <span className="text-[0.9rem] font-bold text-white/30">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[0.85rem] font-semibold text-white/85">{a.name}</p>
-                    <p className="text-[0.75rem] text-white/35">
-                      {a.bookCount} ouvrage{a.bookCount > 1 ? 's' : ''}
-                    </p>
-                  </div>
-                </div>
-              ))}
+              {topAuthors.map((a, i) => {
+                const isActive = activeHighlight?.kind === 'author' && activeHighlight.authorId === a.id
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => onHighlightChange(isActive ? null : { kind: 'author', authorId: a.id })}
+                    className={[
+                      'flex w-full cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-left backdrop-blur-xl transition-all',
+                      isActive ? 'border-white/25 bg-white/12' : 'border-white/10 bg-white/5 hover:border-white/15 hover:bg-white/8',
+                    ].join(' ')}
+                  >
+                    <span className="text-[0.9rem] font-bold text-white/30">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className={`truncate text-[0.85rem] font-semibold ${isActive ? 'text-white' : 'text-white/85'}`}>{a.name}</p>
+                      <p className="text-[0.75rem] text-white/35">
+                        {a.bookCount} ouvrage{a.bookCount > 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </button>
+                )
+              })}
               {topAuthors.length === 0 && (
                 <p className="text-[0.75rem] text-white/35">Aucun auteur·ice référencé·e</p>
               )}

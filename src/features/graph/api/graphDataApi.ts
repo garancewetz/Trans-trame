@@ -1,11 +1,11 @@
 import { supabase } from '@/core/supabase'
-import type { TablesInsert, TablesUpdate } from '@/types/supabase'
+import type { Tables, TablesInsert, TablesUpdate } from '@/types/supabase'
 
 export async function loadGraphDataFromSupabase() {
   const [booksRes, authorsRes, linksRes, bookAuthorsRes] = await Promise.all([
-    supabase.from('books').select('*').order('created_at', { ascending: true }),
-    supabase.from('authors').select('*').order('created_at', { ascending: true }),
-    supabase.from('links').select('*'),
+    supabase.from('books').select('*').is('deleted_at', null).order('created_at', { ascending: true }),
+    supabase.from('authors').select('*').is('deleted_at', null).order('created_at', { ascending: true }),
+    supabase.from('links').select('*').is('deleted_at', null),
     supabase.from('book_authors').select('*'),
   ])
 
@@ -21,7 +21,7 @@ export function updateBookRowById(id: string, fields: TablesUpdate<'books'>) {
 }
 
 export function deleteBookRowById(id: string) {
-  return supabase.from('books').delete().eq('id', id)
+  return supabase.from('books').update({ deleted_at: new Date().toISOString() }).eq('id', id)
 }
 
 export function insertAuthorRow(row: TablesInsert<'authors'>) {
@@ -37,7 +37,7 @@ export function updateAuthorRowById(id: string, fields: TablesUpdate<'authors'>)
 }
 
 export function deleteAuthorRowById(id: string) {
-  return supabase.from('authors').delete().eq('id', id)
+  return supabase.from('authors').update({ deleted_at: new Date().toISOString() }).eq('id', id)
 }
 
 export function insertLinkRow(row: TablesInsert<'links'>) {
@@ -49,11 +49,11 @@ export function updateLinkRowById(id: string, fields: TablesUpdate<'links'>) {
 }
 
 export function deleteLinkRowById(id: string) {
-  return supabase.from('links').delete().eq('id', id)
+  return supabase.from('links').update({ deleted_at: new Date().toISOString() }).eq('id', id)
 }
 
 export function deleteAllBooks() {
-  return supabase.from('books').delete().not('id', 'is', null)
+  return supabase.from('books').update({ deleted_at: new Date().toISOString() }).not('id', 'is', null)
 }
 
 // ── Book-Authors junction ─────────────────────────────────────────────────
@@ -151,4 +151,57 @@ export async function exportLinks() {
     },
     exportFilename('liens'),
   )
+}
+
+// ── Entity name lookup (for human-readable activity log) ───────────────────
+
+export async function loadEntityNamesForLog() {
+  const [books, authors] = await Promise.all([
+    supabase.from('books').select('id, title'),
+    supabase.from('authors').select('id, first_name, last_name'),
+  ])
+  return { books: books.data ?? [], authors: authors.data ?? [] }
+}
+
+// ── Activity log ────────────────────────────────────────────────────────────
+
+export async function loadActivityLog(limit = 50, offset = 0) {
+  return supabase
+    .from('activity_log')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+}
+
+export async function loadProfiles() {
+  return supabase.from('profiles').select('id, first_name, last_name, email')
+}
+
+const META_FIELDS = ['created_at', 'created_by', 'updated_by', 'deleted_at']
+
+export type ActivityLogEntry = Tables<'activity_log'>
+
+export async function rollbackActivityEntry(entry: ActivityLogEntry) {
+  const { entity_type, entity_id, operation, old_values } = entry
+  const table = entity_type as 'books' | 'authors' | 'links'
+
+  switch (operation) {
+    case 'INSERT':
+      return supabase.from(table).update({ deleted_at: new Date().toISOString() }).eq('id', entity_id)
+
+    case 'UPDATE': {
+      if (!old_values || typeof old_values !== 'object' || Array.isArray(old_values)) break
+      const fields: Record<string, unknown> = {}
+      for (const [k, v] of Object.entries(old_values)) {
+        if (!META_FIELDS.includes(k)) fields[k] = v
+      }
+      return supabase.from(table).update(fields).eq('id', entity_id)
+    }
+
+    case 'DELETE':
+      return supabase.from(table).update({ deleted_at: null }).eq('id', entity_id)
+
+    case 'RESTORE':
+      return supabase.from(table).update({ deleted_at: new Date().toISOString() }).eq('id', entity_id)
+  }
 }

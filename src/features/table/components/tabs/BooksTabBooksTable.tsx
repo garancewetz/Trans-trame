@@ -14,6 +14,7 @@ export type BooksTabBooksTableProps = {
   authors: Author[]
   authorsMap: Map<string, Author>
   linkCountByNode: Map<string, number>
+  workSiblingsMap: Map<BookId, Book[]>
   sortCol: string
   sortDir: 'asc' | 'desc'
   selectedIds: Set<BookId>
@@ -56,6 +57,7 @@ export function BooksTabBooksTable({
   authors,
   authorsMap,
   linkCountByNode,
+  workSiblingsMap,
   sortCol,
   sortDir,
   selectedIds,
@@ -164,6 +166,7 @@ export function BooksTabBooksTable({
               authors={authors}
               authorsMap={authorsMap}
               linkCount={linkCountByNode.get(node.id) ?? 0}
+              workSiblings={workSiblingsMap.get(node.id)}
               toggleRow={toggleRow}
               commitNodeEdit={commitNodeEdit}
               onUpdateBook={onUpdateBook}

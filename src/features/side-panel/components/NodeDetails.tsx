@@ -1,9 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { useFloating, flip, shift, offset, autoUpdate, useHover, useDismiss, useInteractions, useClick } from '@floating-ui/react'
 import { Link } from 'react-router-dom'
 import {
   Pencil,
   ArrowRight,
   ArrowLeft,
+  BookCopy,
   Link2,
 } from 'lucide-react'
 import {
@@ -22,6 +24,7 @@ import { mapBookUrlSearch } from '@/common/utils/bookSlug'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { AXES_COLORS } from '@/common/utils/categories'
 import { AxisBadge } from '@/common/components/ui/AxisBadge'
+import { Tooltip } from '@/common/components/ui/Tooltip'
 import { Button } from '@/common/components/ui/Button'
 import { linkExcerpt, refMetaLine } from '@/features/books/workPageCopy'
 import { getOutgoingRefs, getIncomingRefs, computeSameAuthorBooks } from '@/features/graph/graphRelations'
@@ -96,6 +99,75 @@ function PanelRefRow({
   )
 }
 
+function PanelWorkBadge({
+  siblings,
+  authorsMap,
+}: {
+  siblings: Book[]
+  authorsMap: Map<string, AuthorNode>
+}) {
+  const [open, setOpen] = useState(false)
+  const { refs, floatingStyles, context } = useFloating({
+    open,
+    onOpenChange: setOpen,
+    placement: 'bottom-start',
+    middleware: [offset(6), flip(), shift({ padding: 8 })],
+    whileElementsMounted: autoUpdate,
+  })
+  const hover = useHover(context, { delay: { open: 150, close: 200 } })
+  const click = useClick(context)
+  const dismiss = useDismiss(context)
+  const { getReferenceProps, getFloatingProps } = useInteractions([hover, click, dismiss])
+
+  return (
+    <>
+      <span
+        ref={refs.setReference}
+        {...getReferenceProps()}
+        className="ml-2 inline-flex shrink-0"
+      >
+        <Tooltip content="Fait partie d'une même œuvre">
+          <span className="inline-flex cursor-pointer items-center rounded px-1 py-0.5 text-amber/60 transition-colors hover:text-amber">
+            <BookCopy size={15} />
+          </span>
+        </Tooltip>
+      </span>
+      {open && (
+        <div
+          ref={refs.setFloating}
+          style={floatingStyles}
+          {...getFloatingProps()}
+          className="z-50 min-w-80 max-w-md rounded-lg border border-white/10 bg-bg-overlay/95 p-3 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
+        >
+          <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-widest text-white/35">
+            Éditions de cette œuvre ({siblings.length})
+          </p>
+          <ul className="flex flex-col gap-1.5">
+            {siblings.map((s) => (
+              <li key={s.id} className="flex gap-2 text-[0.82rem] leading-snug">
+                <span className="mt-0.5 shrink-0 text-amber/40">•</span>
+                <div className="flex flex-col">
+                  <span className="text-white/75">
+                    {s.title}
+                    {s.year != null && (
+                      <span className="ml-1.5 font-mono text-[0.72rem] text-white/30">{s.year}</span>
+                    )}
+                  </span>
+                  {(s.authorIds?.length ?? 0) > 0 && (
+                    <span className="text-[0.72rem] text-white/25">
+                      {bookAuthorDisplay(s, authorsMap)}
+                    </span>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
+  )
+}
+
 export function NodeDetails() {
   const {
     selectedNode,
@@ -103,14 +175,35 @@ export function NodeDetails() {
     setLinkContextNode,
     selectNode,
   } = useSelection()
-  const { graphData, authorsMap } = useAppData()
+  const { graphData, books, authorsMap } = useAppData()
   const { openTable } = useTableUi()
 
-  const sameAuthorBooks = useMemo(() => computeSameAuthorBooks(graphData, selectedNode), [graphData, selectedNode])
+  // Resolve to the collapsed oeuvre node from graphData so we always display
+  // original title, merged authors, earliest year, etc.
+  const node = useMemo(() => {
+    if (!selectedNode) return null
+    return graphData.nodes.find((n) => n.id === selectedNode.id) ?? selectedNode
+  }, [graphData, selectedNode])
 
-  if (!selectedNode) return null
+  const sameAuthorBooks = useMemo(() => computeSameAuthorBooks(graphData, node), [graphData, node])
+
+  const outgoingRefs = useMemo(() => node ? getOutgoingRefs(graphData, node) : [], [graphData, node])
+  const incomingRefs = useMemo(() => node ? getIncomingRefs(graphData, node) : [], [graphData, node])
+
+  /** All raw editions sharing the same originalTitle as the selected oeuvre node. */
+  const workEditions = useMemo(() => {
+    if (!node?.originalTitle) return []
+    const norm = (s: string) =>
+      s.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/\s+/g, ' ').trim()
+    const key = norm(node.originalTitle)
+    if (!key) return []
+    const editions = books.filter((b) => b.originalTitle && norm(b.originalTitle) === key)
+    return editions.length >= 2 ? editions : []
+  }, [books, node])
+
+  if (!node) return null
   const map = authorsMap || new Map<string, AuthorNode>()
-  const axes = (selectedNode.axes || []).filter(Boolean)
+  const axes = (node.axes || []).filter(Boolean)
 
   return (
     <div className="px-6 pb-10 pt-14 text-text-main">
@@ -125,13 +218,16 @@ export function NodeDetails() {
               ))}
             </div>
           )}
-          <h2 className="text-[1.5rem] font-semibold leading-[1.2] tracking-tight text-white md:text-[1.65rem]">
-            {selectedNode.title}
+          <h2 className="flex items-center gap-1 text-[1.5rem] font-semibold leading-[1.2] tracking-tight text-white md:text-[1.65rem]">
+            {node.title}
+            {workEditions.length > 0 && (
+              <PanelWorkBadge siblings={workEditions} authorsMap={map} />
+            )}
           </h2>
           <p className="mt-5 text-[0.95rem] leading-relaxed text-white/42">
-            {bookAuthorDisplay(selectedNode, map)}
-            {selectedNode.year != null && (
-              <span className="text-white/28"> · {selectedNode.year}</span>
+            {bookAuthorDisplay(node, map)}
+            {node.year != null && (
+              <span className="text-white/28"> · {node.year}</span>
             )}
           </p>
         </div>
@@ -139,7 +235,7 @@ export function NodeDetails() {
           <Button
             type="button"
             className="cursor-pointer rounded-lg border border-white/10 bg-transparent px-2.5 py-1 text-[0.8rem] font-medium text-white/30 transition-colors hover:border-white/18 hover:bg-white/4 hover:text-white/60"
-            onClick={() => openTable('books', null, selectedNode.id)}
+            onClick={() => openTable('books', null, node.id)}
             title="Ouvrir dans le catalogue contributeurs"
           >
             <span className="inline-flex items-center gap-1.5">
@@ -149,8 +245,8 @@ export function NodeDetails() {
         </div>
       </div>
 
-      {selectedNode.description ? (
-        <p className="mb-12 text-[0.92rem] leading-[1.7] text-white/48">{selectedNode.description}</p>
+      {node.description ? (
+        <p className="mb-12 text-[0.92rem] leading-[1.7] text-white/48">{node.description}</p>
       ) : null}
 
       {sameAuthorBooks.length > 0 && (
@@ -177,8 +273,8 @@ export function NodeDetails() {
         </section>
       )}
 
-<div className="space-y-10">
-        {getOutgoingRefs(graphData, selectedNode).length > 0 && (
+      <div className="space-y-10">
+        {outgoingRefs.length > 0 && (
           <section>
             <h3
               className="mb-3 flex items-center gap-2 text-[0.75rem] font-semibold uppercase tracking-[0.2em]"
@@ -188,7 +284,7 @@ export function NodeDetails() {
               Références citées
             </h3>
             <ul>
-              {getOutgoingRefs(graphData, selectedNode).map(({ link, other }: { link: GraphLink; other: Book | undefined }, i: number) => (
+              {outgoingRefs.map(({ link, other }: { link: GraphLink; other: Book | undefined }, i: number) => (
                 <PanelRefRow
                   key={link.id ?? `o-${i}`}
                   variant="cites"
@@ -196,7 +292,7 @@ export function NodeDetails() {
                   meta={refMetaLine(other, link, map)}
                   excerpt={linkExcerpt(link)}
                   onClick={() => {
-                    setLinkContextNode(selectedNode)
+                    setLinkContextNode(node)
                     setSelectedLink(link)
                   }}
                 />
@@ -205,7 +301,7 @@ export function NodeDetails() {
           </section>
         )}
 
-        {getIncomingRefs(graphData, selectedNode).length > 0 && (
+        {incomingRefs.length > 0 && (
           <section>
             <h3
               className="mb-3 flex items-center gap-2 text-[0.75rem] font-semibold uppercase tracking-[0.2em]"
@@ -215,7 +311,7 @@ export function NodeDetails() {
               Cité par
             </h3>
             <ul>
-              {getIncomingRefs(graphData, selectedNode).map(({ link, other }: { link: GraphLink; other: Book | undefined }, i: number) => (
+              {incomingRefs.map(({ link, other }: { link: GraphLink; other: Book | undefined }, i: number) => (
                 <PanelRefRow
                   key={link.id ?? `i-${i}`}
                   variant="citedBy"
@@ -223,7 +319,7 @@ export function NodeDetails() {
                   meta={refMetaLine(other, link, map)}
                   excerpt={linkExcerpt(link)}
                   onClick={() => {
-                    setLinkContextNode(selectedNode)
+                    setLinkContextNode(node)
                     setSelectedLink(link)
                   }}
                 />

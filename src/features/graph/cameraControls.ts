@@ -1,7 +1,7 @@
 import type { RefObject } from 'react'
 import type { ForceGraphMethods } from 'react-force-graph-2d'
 
-export const NODE_FOCUS_ZOOM = 1.9
+export const NODE_FOCUS_ZOOM = 0.5
 
 /** Zoom min / max gérés à la main (enableZoomInteraction désactivé sur le graphe). */
 const MIN_ZOOM = 0.02
@@ -54,9 +54,24 @@ export function animateCameraToNode(
   return () => cancelAnimationFrame(rafId)
 }
 
-export function setupKeyboardHandlers({ keysRef, onSpace }: {
+const NAV_KEYS = new Set([
+  'arrowup', 'arrowdown', 'arrowleft', 'arrowright',
+  'keyz', 'keys', 'equal', 'minus', 'z', 's', '+', '-', '=',
+])
+
+/** Returns true when any camera-navigation key is currently held. */
+export function isNavigationActive(keys: Set<string>): boolean {
+  for (const k of keys) {
+    if (NAV_KEYS.has(k)) return true
+  }
+  return false
+}
+
+export function setupKeyboardHandlers({ keysRef, onSpace, wake, onNavigate }: {
   keysRef: RefObject<Set<string>>
   onSpace?: () => void
+  wake?: () => void
+  onNavigate?: () => void
 }) {
   const BLOCKED = [
     'arrowup', 'arrowdown', 'arrowleft', 'arrowright',
@@ -71,9 +86,9 @@ export function setupKeyboardHandlers({ keysRef, onSpace }: {
     if (charKey) keysRef.current.add(charKey)
     if (BLOCKED.includes(codeKey) || BLOCKED.includes(charKey)) e.preventDefault()
 
-    if (charKey === ' ') {
-      onSpace?.()
-    }
+    if (NAV_KEYS.has(codeKey) || NAV_KEYS.has(charKey)) onNavigate?.()
+    if (charKey === ' ') onSpace?.()
+    wake?.()
   }
 
   const onUp = (e: KeyboardEvent) => {
@@ -97,16 +112,19 @@ export function startPanZoomLoop({ fgRef, keysRef, velRef, animFrameRef, camRef 
   velRef: RefObject<{ moveX: number; moveY: number; zoom: number }>
   animFrameRef: RefObject<number>
   camRef: RefObject<{ x: number; y: number; zoom: number }>
-}) {
+}): { cleanup: () => void; wake: () => void } {
   const PAN_ACCEL = 4.5
   const MAX_PAN = 55
   const ZOOM_ACCEL = 0.008
   const MAX_ZOOM_VEL = 0.07
   const DAMP = 0.82
+  const PAN_EPSILON = 0.1
+  const ZOOM_EPSILON = 0.001
+  let running = false
+
   const animate = () => {
-    animFrameRef.current = requestAnimationFrame(animate)
     const fg = fgRef.current
-    if (!fg) return
+    if (!fg) { running = false; return }
 
     const keys = keysRef.current
     const vel = velRef.current
@@ -126,11 +144,14 @@ export function startPanZoomLoop({ fgRef, keysRef, velRef, animFrameRef, camRef 
     vel.moveX = Math.max(-MAX_PAN, Math.min(MAX_PAN, vel.moveX))
     vel.moveY = Math.max(-MAX_PAN, Math.min(MAX_PAN, vel.moveY))
 
-    if (Math.abs(vel.moveX) > 0.1 || Math.abs(vel.moveY) > 0.1) {
+    if (Math.abs(vel.moveX) > PAN_EPSILON || Math.abs(vel.moveY) > PAN_EPSILON) {
       const scale = cam.zoom || 1
       cam.x += vel.moveX / scale
       cam.y += vel.moveY / scale
       fg.centerAt(cam.x, cam.y, 0)
+    } else {
+      vel.moveX = 0
+      vel.moveY = 0
     }
 
     // Zoom (+/- / Z/S)
@@ -141,20 +162,42 @@ export function startPanZoomLoop({ fgRef, keysRef, velRef, animFrameRef, camRef 
     vel.zoom = (vel.zoom ?? 0) * DAMP + targetZoom * ZOOM_ACCEL
     vel.zoom = Math.max(-MAX_ZOOM_VEL, Math.min(MAX_ZOOM_VEL, vel.zoom))
 
-    if (Math.abs(vel.zoom) > 0.001) {
+    if (Math.abs(vel.zoom) > ZOOM_EPSILON) {
       cam.zoom = clampZoom(cam.zoom * (1 + vel.zoom))
       fg.zoom(cam.zoom, 0)
+    } else {
+      vel.zoom = 0
+    }
+
+    // Keep looping only while there is active input or residual velocity
+    const hasInput = targetMoveX !== 0 || targetMoveY !== 0 || targetZoom !== 0
+    const hasVelocity = vel.moveX !== 0 || vel.moveY !== 0 || vel.zoom !== 0
+    if (hasInput || hasVelocity) {
+      animFrameRef.current = requestAnimationFrame(animate)
+    } else {
+      running = false
     }
   }
 
-  animFrameRef.current = requestAnimationFrame(animate)
-  return () => cancelAnimationFrame(animFrameRef.current)
+  const wake = () => {
+    if (running) return
+    running = true
+    animFrameRef.current = requestAnimationFrame(animate)
+  }
+
+  const cleanup = () => {
+    running = false
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
+  }
+
+  return { cleanup, wake }
 }
 
-export function setupMouseDragHandlers({ containerRef, velRef, hoveredNodeRef }: {
+export function setupMouseDragHandlers({ containerRef, velRef, hoveredNodeRef, wake }: {
   containerRef: RefObject<HTMLElement | null>
   velRef: RefObject<{ moveX: number; moveY: number; zoom: number }>
   hoveredNodeRef: RefObject<unknown>
+  wake?: () => void
 }) {
   let dragging = false
   let lastX = 0
@@ -180,6 +223,7 @@ export function setupMouseDragHandlers({ containerRef, velRef, hoveredNodeRef }:
     const vel = velRef.current
     vel.moveX = (vel.moveX ?? 0) - dx * DRAG_TO_VEL
     vel.moveY = (vel.moveY ?? 0) - dy * DRAG_TO_VEL
+    wake?.()
   }
 
   const stopDragging = () => { dragging = false }
