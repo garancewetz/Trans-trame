@@ -448,6 +448,16 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         fgRef={fgRef}
         camRef={camRef}
         containerRef={containerRef}
+        onEnter={() => {
+          // When the pointer enters the minimap, release any hover state on
+          // the main graph — otherwise the last hovered node keeps its label
+          // and highlight because pointerleave on the container never fires
+          // (the minimap is a child of containerRef).
+          if (!hoveredNodeRef.current) return
+          hoveredNodeRef.current = null
+          updateHoveredLinks(null)
+          graphInstanceRefresh(fgRef.current)
+        }}
       />
     </div>
   )

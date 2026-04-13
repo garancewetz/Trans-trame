@@ -8,6 +8,7 @@ type MinimapProps = {
   fgRef: RefObject<ForceGraphMethods | undefined>
   camRef: RefObject<{ x: number; y: number; zoom: number }>
   containerRef: RefObject<HTMLDivElement | null>
+  onEnter?: () => void
 }
 
 const MINIMAP_W = 170
@@ -27,7 +28,7 @@ function readCssVar(name: string, fallback: string): string {
   return v || fallback
 }
 
-export function Minimap({ graphData, fgRef, camRef, containerRef }: MinimapProps) {
+export function Minimap({ graphData, fgRef, camRef, containerRef, onEnter }: MinimapProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const wrapperRef = useRef<HTMLDivElement | null>(null)
   const bboxRef = useRef<Bbox | null>(null)
@@ -152,6 +153,10 @@ export function Minimap({ graphData, fgRef, camRef, containerRef }: MinimapProps
 
   // Click to recenter: convert minimap pixel → world coord, then centerAt.
   const handlePointerEvent = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Stop propagation: the parent graph container listens for pointerdown to
+    // start camera dragging — without this, clicking the minimap would also
+    // arm a pan-drag on the underlying graph.
+    e.stopPropagation()
     const wrapper = wrapperRef.current
     const fg = fgRef.current
     const t = transformRef.current
@@ -174,6 +179,7 @@ export function Minimap({ graphData, fgRef, camRef, containerRef }: MinimapProps
       onPointerMove={(e) => {
         if (e.buttons === 1) handlePointerEvent(e)
       }}
+      onPointerEnter={() => onEnter?.()}
       className="absolute bottom-20 right-3 z-20 cursor-pointer rounded-[10px] border border-white/10 bg-bg-base/45 p-1 backdrop-blur-2xl backdrop-saturate-150"
       style={{ width: MINIMAP_W + 8, height: MINIMAP_H + 8 }}
       aria-label="Mini-carte du graphe"
