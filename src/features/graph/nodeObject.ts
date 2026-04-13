@@ -116,15 +116,45 @@ const LABEL_TEXT_DIM = 'rgba(255, 255, 255, 0.55)'
 const LABEL_MAX_W_FACTOR = 14
 const LANDMARK_RADIUS = 20
 
-function truncateText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
-  if (ctx.measureText(text).width <= maxWidth) return text
-  let lo = 0, hi = text.length
-  while (lo < hi) {
-    const mid = (lo + hi + 1) >>> 1
-    if (ctx.measureText(text.slice(0, mid) + '…').width <= maxWidth) lo = mid
-    else hi = mid - 1
+/**
+ * Découpe `text` en plusieurs lignes respectant `maxWidth`. Coupe sur les espaces ;
+ * si un mot seul dépasse, il est coupé par caractère. Contexte : le ctx doit avoir
+ * la police déjà configurée avant l'appel (measureText en dépend).
+ */
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  if (!text) return ['']
+  if (ctx.measureText(text).width <= maxWidth) return [text]
+  const words = text.split(/\s+/).filter(Boolean)
+  const lines: string[] = []
+  let current = ''
+  const pushCurrent = () => { if (current) { lines.push(current); current = '' } }
+
+  for (const word of words) {
+    const candidate = current ? current + ' ' + word : word
+    if (ctx.measureText(candidate).width <= maxWidth) {
+      current = candidate
+      continue
+    }
+    pushCurrent()
+    // Word alone may overflow — break it by characters
+    if (ctx.measureText(word).width <= maxWidth) {
+      current = word
+    } else {
+      let chunk = ''
+      for (const ch of word) {
+        const next = chunk + ch
+        if (ctx.measureText(next).width <= maxWidth) {
+          chunk = next
+        } else {
+          if (chunk) lines.push(chunk)
+          chunk = ch
+        }
+      }
+      current = chunk
+    }
   }
-  return lo > 0 ? text.slice(0, lo) + '…' : '…'
+  pushCurrent()
+  return lines.length ? lines : [text]
 }
 
 // ── Shared node state ─────────────────────────────────────────────────────────
@@ -286,15 +316,16 @@ function drawAuthorLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScal
   ctx.textAlign = 'center'
   ctx.textBaseline = 'top'
 
-  const name = truncateText(ctx, rawName, maxW)
+  const nameLines = wrapText(ctx, rawName, maxW)
+  const lineHeight = fontSize * 1.25
 
   if (showCard) {
-    const nameW = ctx.measureText(name).width
+    const nameW = Math.max(...nameLines.map((l) => ctx.measureText(l).width))
     const padX = fontSize * 0.8
     const padY = fontSize * 0.5
     const borderR = fontSize * 0.6
     const boxW = nameW + padX * 2
-    const boxH = fontSize + padY * 2
+    const boxH = lineHeight * nameLines.length + padY * 2
     const boxX = node.x - boxW / 2
     const boxY = node.y - nodeRadius - boxH - fontSize * 0.4
 
@@ -307,11 +338,15 @@ function drawAuthorLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScal
     ctx.stroke()
 
     ctx.fillStyle = LABEL_TEXT
-    ctx.fillText(name, node.x, boxY + padY)
+    nameLines.forEach((line, i) => {
+      ctx.fillText(line, node.x, boxY + padY + lineHeight * i)
+    })
   } else {
-    const labelY = node.y - nodeRadius - fontSize * 2.5
+    const labelY = node.y - nodeRadius - fontSize * 1.25 - lineHeight * nameLines.length
     ctx.fillStyle = 'rgba(255,255,255,0.28)'
-    ctx.fillText(name, node.x, labelY)
+    nameLines.forEach((line, i) => {
+      ctx.fillText(line, node.x, labelY + lineHeight * i)
+    })
   }
 
   ctx.restore()
@@ -391,21 +426,25 @@ function drawBookLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScale:
   ctx.textAlign = 'center'
   ctx.textBaseline = 'top'
 
+  const titleLineHeight = fontSize * 0.9 * 1.25
+
   if (showCard) {
     ctx.font = `600 ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
-    const name = truncateText(ctx, rawName, maxW)
-    const nameW = ctx.measureText(name).width
+    const nameLines = wrapText(ctx, rawName, maxW)
+    const nameW = Math.max(...nameLines.map((l) => ctx.measureText(l).width))
 
     ctx.font = `400 ${fontSize * 0.9}px 'Space Grotesk', system-ui, sans-serif`
-    const title = truncateText(ctx, rawTitle, maxW)
-    const titleW = ctx.measureText(title).width
+    const titleLines = wrapText(ctx, rawTitle, maxW)
+    const titleW = Math.max(...titleLines.map((l) => ctx.measureText(l).width))
 
     const padX = fontSize * 0.8
     const padY = fontSize * 0.5
     const borderR = fontSize * 0.6
     const contentW = Math.max(nameW, titleW)
     const boxW = contentW + padX * 2
-    const boxH = lineHeight * 2 + padY * 2
+    const nameBlockH = lineHeight * nameLines.length
+    const titleBlockH = titleLineHeight * titleLines.length
+    const boxH = nameBlockH + titleBlockH + padY * 2
     const boxX = node.x - boxW / 2
     const boxY = node.y - nodeRadius - boxH - fontSize * 0.4
 
@@ -419,21 +458,36 @@ function drawBookLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScale:
 
     ctx.font = `600 ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
     ctx.fillStyle = LABEL_TEXT
-    ctx.fillText(name, node.x, boxY + padY)
+    nameLines.forEach((line, i) => {
+      ctx.fillText(line, node.x, boxY + padY + lineHeight * i)
+    })
 
     ctx.font = `400 ${fontSize * 0.9}px 'Space Grotesk', system-ui, sans-serif`
     ctx.fillStyle = LABEL_TEXT_DIM
-    ctx.fillText(title, node.x, boxY + padY + lineHeight)
+    const titleStartY = boxY + padY + nameBlockH
+    titleLines.forEach((line, i) => {
+      ctx.fillText(line, node.x, titleStartY + titleLineHeight * i)
+    })
   } else {
     ctx.font = `500 ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
-    const name = truncateText(ctx, rawName, maxW)
-    const labelY = node.y - nodeRadius - fontSize * 3.0
-    ctx.fillStyle = 'rgba(255,255,255,0.18)'
-    ctx.fillText(name, node.x, labelY)
+    const nameLines = wrapText(ctx, rawName, maxW)
 
     ctx.font = `400 ${fontSize * 0.9}px 'Space Grotesk', system-ui, sans-serif`
-    const title = truncateText(ctx, rawTitle, maxW)
-    ctx.fillText(title, node.x, labelY + lineHeight)
+    const titleLines = wrapText(ctx, rawTitle, maxW)
+
+    const labelY = node.y - nodeRadius - fontSize * 1.0 - lineHeight * nameLines.length - titleLineHeight * titleLines.length
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'
+
+    ctx.font = `500 ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
+    nameLines.forEach((line, i) => {
+      ctx.fillText(line, node.x, labelY + lineHeight * i)
+    })
+
+    ctx.font = `400 ${fontSize * 0.9}px 'Space Grotesk', system-ui, sans-serif`
+    const titleStartY = labelY + lineHeight * nameLines.length
+    titleLines.forEach((line, i) => {
+      ctx.fillText(line, node.x, titleStartY + titleLineHeight * i)
+    })
   }
 
   ctx.restore()

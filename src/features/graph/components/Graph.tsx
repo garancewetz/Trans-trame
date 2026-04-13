@@ -15,10 +15,10 @@ import {
 import { drawNode, getNodePointerHitRadius, getNodeRadius, clearHoverAnim } from '../nodeObject'
 import {
   FORCE_CHARGE_DIST_MAX,
-  FORCE_LINK_DIST_AUTHOR_BOOK,
-  FORCE_LINK_DIST_CITATION,
-  FORCE_COLLIDE_RADIUS,
+  FORCE_COLLIDE_PADDING,
   chargeStrengthForNode,
+  linkDistanceForType,
+  linkStrengthForType,
 } from '../layoutEngine'
 import { useFlashAnimation } from '../hooks/useFlashAnimation'
 import { useGraphLayout } from '../hooks/useGraphLayout'
@@ -27,6 +27,7 @@ import type { GraphData, Link, Book, Author, AuthorId } from '@/types/domain'
 import type { Highlight } from '@/core/FilterContext'
 import { normalizeEndpointId } from '../domain/graphDataModel'
 import { useGraphDerivedLinkState } from '../hooks/useGraphDerivedLinkState'
+import { linkKeyOf } from '../domain/linkStyle'
 import { useGraphLinkCallbacks } from '../hooks/useGraphLinkCallbacks'
 
 function graphInstanceRefresh(fg: ForceGraphMethods | null | undefined) {
@@ -129,7 +130,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     selectedNode,
   })
 
-  useGraphLayout({ fgRef, camRef, graphData, viewMode, degreeByNodeId })
+  useGraphLayout({ fgRef, camRef, graphData, viewMode, degreeByNodeId, citationsByNodeId })
 
   useEffect(() => {
     const fg = fgRef.current
@@ -156,7 +157,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
       const srcId = normalizeEndpointId(link.source)
       const tgtId = normalizeEndpointId(link.target)
       if (!srcId || !tgtId) return
-      const key = `${srcId}-${tgtId}`
+      const key = linkKeyOf(srcId, tgtId)
       ensure(srcId).linkKeys.push(key)
       ensure(srcId).neighborIds.push(tgtId)
       ensure(tgtId).linkKeys.push(key)
@@ -198,14 +199,16 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
       .d3Force('charge')
       .strength((node) => chargeStrengthForNode(node, degreeByNodeId))
       .distanceMax(FORCE_CHARGE_DIST_MAX)
-    // Citations (livre→livre) : ressort plus long pour aérer ; auteur→livre reste compact
-    fg.d3Force('link').distance((link) =>
-      link.type === 'author-book' ? FORCE_LINK_DIST_AUTHOR_BOOK : FORCE_LINK_DIST_CITATION
-    )
-    // Collision force — prevent node overlap
+    // Citations (livre→livre) : ressort plus long pour aérer ; auteur→livre reste compact.
+    // Strength par type : auteur-livre fort (ancre les galaxies), citation modéré (tire les ponts).
+    fg.d3Force('link')
+      .distance(linkDistanceForType)
+      .strength(linkStrengthForType)
+    // Collision : alignée sur le *rayon visuel* du nœud pour éviter tout chevauchement
+    // (les livres très cités peuvent atteindre 46px de rayon — cf. getNodeRadius).
     fg.d3Force('collide', forceCollide((node) => {
-      const degree = degreeByNodeId.get(node.id) || 0
-      return FORCE_COLLIDE_RADIUS + Math.sqrt(degree) * 4
+      const cit = citationsByNodeId.get(node.id) || 0
+      return getNodeRadius(node, cit) + FORCE_COLLIDE_PADDING
     }))
     fg.centerAt(0, 0, 0)
     fg.zoom(0.7, 0)
@@ -216,7 +219,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         syncedZoomToFit(fg, camRef, 1200, 80)
       }
     }, 800)
-  }, [degreeByNodeId])
+  }, [degreeByNodeId, citationsByNodeId])
 
   const isNodeVisible = useCallback(
     (node) => {
@@ -321,7 +324,6 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     hasSelection,
     activeFilter,
     activeHighlight,
-    anchorIds,
     connectedLinks,
     linkWeights,
     hoveredNodeRef,

@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { AuthorId, Book, GraphData } from '@/types/domain'
 import { normalizeEndpointId } from '../domain/graphDataModel'
+import { linkKeyOf } from '../domain/linkStyle'
 
 type Args = {
   graphData: GraphData
@@ -34,7 +35,7 @@ export function useGraphDerivedLinkState({ graphData, selectedAuthorId, peekNode
       const srcId = normalizeEndpointId(link.source)
       const tgtId = normalizeEndpointId(link.target)
       if (!srcId || !tgtId) return
-      if (anchorIds.has(srcId) || anchorIds.has(tgtId)) set.add(`${srcId}-${tgtId}`)
+      if (anchorIds.has(srcId) || anchorIds.has(tgtId)) set.add(linkKeyOf(srcId, tgtId))
     })
     return set
   }, [anchorIds, graphData.links])
@@ -52,41 +53,27 @@ export function useGraphDerivedLinkState({ graphData, selectedAuthorId, peekNode
     return set
   }, [anchorIds, graphData.links])
 
-  const citationsByNodeId = useMemo(() => {
-    const counts = new Map<string, number>()
-    graphData.links.forEach((link) => {
-      if (link.type === 'author-book') return
-      const targetId = normalizeEndpointId(link.target)
-      if (!targetId) return
-      counts.set(targetId, (counts.get(targetId) || 0) + 1)
-    })
-    return counts
-  }, [graphData.links])
+  // Tous les comptages basés sur les liens citation (hors author-book) : une
+  // seule passe sur `graphData.links`, 3 Maps en sortie.
+  const { citationsByNodeId, linkWeights, degreeByNodeId } = useMemo(() => {
+    const citations = new Map<string, number>()
+    const weights = new Map<string, number>()
+    const degree = new Map<string, number>()
+    const bump = (m: Map<string, number>, key: string) => m.set(key, (m.get(key) || 0) + 1)
 
-  const linkWeights = useMemo(() => {
-    const counts = new Map<string, number>()
     graphData.links.forEach((link) => {
       if (link.type === 'author-book') return
       const srcId = normalizeEndpointId(link.source)
       const tgtId = normalizeEndpointId(link.target)
       if (!srcId || !tgtId) return
-      const key = [srcId, tgtId].sort().join('-')
-      counts.set(key, (counts.get(key) || 0) + 1)
-    })
-    return counts
-  }, [graphData.links])
 
-  // Total degree (in + out connections) per node — used for dynamic node sizing
-  const degreeByNodeId = useMemo(() => {
-    const deg = new Map<string, number>()
-    graphData.links.forEach((link) => {
-      if (link.type === 'author-book') return
-      const srcId = normalizeEndpointId(link.source)
-      const tgtId = normalizeEndpointId(link.target)
-      if (srcId) deg.set(srcId, (deg.get(srcId) || 0) + 1)
-      if (tgtId) deg.set(tgtId, (deg.get(tgtId) || 0) + 1)
+      bump(citations, tgtId) // inlinks (cité par N)
+      bump(weights, linkKeyOf(srcId, tgtId)) // multiplicité dirigée A→B (≠ B→A)
+      bump(degree, srcId) // degré total (in + out)
+      bump(degree, tgtId)
     })
-    return deg
+
+    return { citationsByNodeId: citations, linkWeights: weights, degreeByNodeId: degree }
   }, [graphData.links])
 
   return {
