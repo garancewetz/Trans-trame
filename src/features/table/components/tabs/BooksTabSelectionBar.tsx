@@ -43,7 +43,7 @@ export function BooksTabSelectionBar({
 
   return (
     <div className="flex shrink-0 items-center gap-3 border-b border-white/6 bg-white/1.5 px-5 py-2">
-      <span className="font-mono text-[0.82rem] text-white/45">
+      <span className="font-mono text-label text-white/45">
         {selectedCount} sélectionné{selectedCount > 1 ? 's' : ''}
       </span>
       {showSameWork && (

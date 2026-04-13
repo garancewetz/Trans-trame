@@ -17,6 +17,13 @@ interface DrawNodeOpts {
   hoveredFilter?: string | null
   isNodeVisible?: (node: D3Node) => boolean
   citationCount?: number
+  /**
+   * Livre totalement isolé (aucune citation entrante ni sortante, degré = 0
+   * dans le graphe des citations). Sert à atténuer fortement son opacité
+   * par défaut pour ne pas saturer la vue d'ensemble — les hubs et les
+   * chaînes de filiation peuvent alors respirer.
+   */
+  isIsolated?: boolean
   skipLabel?: boolean
   labelOnly?: boolean
   authors?: Author[]
@@ -113,6 +120,11 @@ const LABEL_BG = '#080416'
 const LABEL_BORDER = 'rgba(255, 255, 255, 0.1)'
 const LABEL_TEXT = '#ece9ff'
 const LABEL_TEXT_DIM = 'rgba(255, 255, 255, 0.55)'
+// Idle landmark card : fond semi-transparent, pas de bordure, pour rester lisible
+// sur fond varié (liens, autres nœuds) sans créer de rectangles marqués.
+const LABEL_BG_IDLE = 'rgba(8, 4, 22, 0.55)'
+const LABEL_TEXT_IDLE = 'rgba(236, 233, 255, 0.82)'
+const LABEL_TEXT_IDLE_DIM = 'rgba(255, 255, 255, 0.5)'
 const LABEL_MAX_W_FACTOR = 14
 const LANDMARK_RADIUS = 20
 
@@ -185,12 +197,20 @@ function computeNodeState(node: D3Node, opts: DrawNodeOpts) {
     ? (!hasAnySelection || isConnected || isHighlighted) && (isNodeVisible?.(node) ?? true)
     : (!hasAnySelection || isConnected) && (isNodeVisible?.(node) ?? true)
 
-  const opacity = hasHoverFocus && !isHovered && !isHoverNeighbor ? 0.05
-    : hover > 0.01 ? 1
-    : dimmedByHover ? 0.01
-    : node.type === 'author'
-      ? ((isHighlighted || isActive) ? 0.85 : 0.25)
-      : ((isHighlighted || isActive) ? 1 : 0.22)
+  // Feuille isolée (book sans lien de citation) : fortement atténuée par défaut
+  // pour décongestionner la vue — elle reste visible mais s'efface derrière
+  // les hubs et les chaînes de filiation. Redevient pleine opacité dès qu'elle
+  // est activée, mise en surbrillance, ou ciblée par un filtre/hover.
+  const isIsolatedLeaf = node.type !== 'author' && !!opts.isIsolated
+  let opacity: number
+  if (hasHoverFocus && !isHovered && !isHoverNeighbor) opacity = 0.05
+  else if (hover > 0.01) opacity = 1
+  else if (dimmedByHover) opacity = 0.01
+  else if (node.type === 'author') opacity = (isHighlighted || isActive) ? 0.85 : 0.25
+  else if (isHighlighted) opacity = 1
+  else if (!isActive) opacity = 0.22
+  else if (isIsolatedLeaf && !matchesHover) opacity = 0.18
+  else opacity = 1
 
   const blendedColor = node.type === 'author'
     ? (nodeAxes.length ? blendAxesColors(nodeAxes) : '#b0b8d0')
@@ -199,17 +219,33 @@ function computeNodeState(node: D3Node, opts: DrawNodeOpts) {
   return { hover, opacity, isActive, isHighlighted, matchesHover, blendedColor, hasHoverFocus, isHoverNeighbor }
 }
 
+// Progressive landmark disclosure : plus on est loin, plus on est sélectif.
+// Paliers de rayon des livres : 0-1cit=6, 2cit=13, 3cit=27, 4cit=55, 5+cit=58.
+// - overview (<0.75) : uniquement les super-landmarks (5+ citations)
+// - zoom moyen (<1.1) : ajoute les 4+ citations
+// - zoom proche : tous les livres ≥ 3 citations (rayon ≥ 20)
+function minLandmarkRadiusForZoom(globalScale: number): number {
+  if (globalScale < 0.75) return 58
+  if (globalScale < 1.1) return 55
+  return LANDMARK_RADIUS
+}
+
 function shouldShowLabel(node: D3Node, globalScale: number, state: ReturnType<typeof computeNodeState>, opts: DrawNodeOpts) {
   const { hover, isHighlighted, hasHoverFocus, isHoverNeighbor } = state
-  const { selectedNode, connectedNodes, citationCount = 0 } = opts
+  const { selectedNode, citationCount = 0 } = opts
   if (hasHoverFocus && hover <= 0.01 && !isHoverNeighbor) return false
   if (hover > 0.01) return true
-  // Landmark: always show label for large / important nodes
-  if (getNodeRadius(node, citationCount) >= LANDMARK_RADIUS) return true
+  // Landmark: authors (anchors) always shown; books tiered by zoom
+  if (node.type === 'author') return true
+  if (getNodeRadius(node, citationCount) >= minLandmarkRadiusForZoom(globalScale)) return true
   // Hover neighbors: only show label when zoomed in close
   if (hasHoverFocus && isHoverNeighbor) return globalScale > 1.5
+  // Sur sélection, on n'affiche que le label du nœud cliqué lui-même —
+  // afficher les labels de tous les voisins rend illisible un hub qui cite
+  // beaucoup (cf. Haraway). Les voisins restent signalés par l'opacité et
+  // les liens colorés, c'est suffisant pour tracer les connexions.
+  if (selectedNode && node.id === selectedNode.id) return true
   return globalScale > 1.5 || isHighlighted
-    || !!(selectedNode && connectedNodes?.has(node.id))
 }
 
 // ── Node radius ───────────────────────────────────────────────────────────────
@@ -217,8 +253,11 @@ function shouldShowLabel(node: D3Node, globalScale: number, state: ReturnType<ty
 export function getNodeRadius(node: { type?: string }, citationCount: number): number {
   if (node.type === 'author') return 11
   const n = Math.max(0, Number.isFinite(citationCount) ? citationCount : 0)
-  // Exponential: 0→6  1→11  2→21  3→41  4+→capped
-  const boost = Math.min((Math.pow(2, n) - 1) * 5, 40)
+  // Les livres cités 0 ou 1 fois ont la même taille (ce ne sont pas encore des
+  // landmarks). La croissance exponentielle démarre à 2 citations.
+  // Paliers : 0-1→6  2→13  3→27  4→55  5+→capped à 58
+  if (n <= 1) return 6
+  const boost = Math.min((Math.pow(2, n - 1) - 1) * 7, 52)
   return 6 + boost
 }
 
@@ -306,8 +345,11 @@ function drawAuthorLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScal
 
   const { hover, isHighlighted } = state
   const rawName = (authorName(node) || '').toUpperCase()
-  const minHovered = hover > 0.01 ? 20 / Math.max(globalScale, 0.08) : 0
-  const fontSize = Math.max(5.5 * (1 + hover * 0.8), minHovered)
+  const minHovered = hover > 0.01 ? 13 / Math.max(globalScale, 0.08) : 0
+  // Landmark idle : garantit une taille écran minimale pour garder le label
+  // lisible en vue d'ensemble (les auteurs sont les ancres du graphe).
+  const idleFloor = hover <= 0.01 && !isHighlighted ? 11 / Math.max(globalScale, 0.2) : 0
+  const fontSize = Math.max(5.5 * (1 + hover * 0.35), minHovered, idleFloor)
   const maxW = fontSize * LABEL_MAX_W_FACTOR
   const showCard = hover > 0.01 || isHighlighted
 
@@ -342,10 +384,22 @@ function drawAuthorLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScal
       ctx.fillText(line, node.x, boxY + padY + lineHeight * i)
     })
   } else {
-    const labelY = node.y - nodeRadius - fontSize * 1.25 - lineHeight * nameLines.length
-    ctx.fillStyle = 'rgba(255,255,255,0.28)'
+    const nameW = Math.max(...nameLines.map((l) => ctx.measureText(l).width))
+    const padX = fontSize * 0.5
+    const padY = fontSize * 0.3
+    const borderR = fontSize * 0.4
+    const boxW = nameW + padX * 2
+    const boxH = lineHeight * nameLines.length + padY * 2
+    const boxX = node.x - boxW / 2
+    const boxY = node.y - nodeRadius - boxH - fontSize * 0.4
+
+    ctx.fillStyle = LABEL_BG_IDLE
+    roundRect(ctx, boxX, boxY, boxW, boxH, borderR)
+    ctx.fill()
+
+    ctx.fillStyle = LABEL_TEXT_IDLE
     nameLines.forEach((line, i) => {
-      ctx.fillText(line, node.x, labelY + lineHeight * i)
+      ctx.fillText(line, node.x, boxY + padY + lineHeight * i)
     })
   }
 
@@ -413,8 +467,15 @@ function drawBookLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScale:
   const { hover, isHighlighted, matchesHover } = state
   const safeCitations = Number.isFinite(opts.citationCount) ? opts.citationCount : 0
   const baseSize = 4.8 + Math.min(Math.sqrt(safeCitations) * 1.05, 8.5)
-  const minHovered = hover > 0.01 ? 18 / Math.max(globalScale, 0.08) : 0
-  const fontSize = Math.max(baseSize * (1 + hover * 0.75), minHovered)
+  const minHovered = hover > 0.01 ? 11 / Math.max(globalScale, 0.08) : 0
+  // Landmark idle : plancher écran proportionnel aux citations. Plus le livre
+  // est cité, plus son label reste présent en vue d'ensemble (zoom faible).
+  // Capé pour éviter la domination visuelle des super-landmarks.
+  const landmarkScreenPx = hover <= 0.01 && !isHighlighted && !matchesHover
+    ? Math.min(9 + safeCitations * 1.6, 17)
+    : 0
+  const idleFloor = landmarkScreenPx / Math.max(globalScale, 0.2)
+  const fontSize = Math.max(baseSize * (1 + hover * 0.3), minHovered, idleFloor)
 
   const rawName = (bookAuthorDisplay(node, opts.authors || []) || '').toUpperCase()
   const rawTitle = node.title || ''
@@ -471,20 +532,36 @@ function drawBookLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScale:
   } else {
     ctx.font = `500 ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
     const nameLines = wrapText(ctx, rawName, maxW)
+    const nameW = Math.max(...nameLines.map((l) => ctx.measureText(l).width))
 
     ctx.font = `400 ${fontSize * 0.9}px 'Space Grotesk', system-ui, sans-serif`
     const titleLines = wrapText(ctx, rawTitle, maxW)
+    const titleW = Math.max(...titleLines.map((l) => ctx.measureText(l).width))
 
-    const labelY = node.y - nodeRadius - fontSize * 1.0 - lineHeight * nameLines.length - titleLineHeight * titleLines.length
-    ctx.fillStyle = 'rgba(255,255,255,0.18)'
+    const padX = fontSize * 0.5
+    const padY = fontSize * 0.3
+    const borderR = fontSize * 0.4
+    const contentW = Math.max(nameW, titleW)
+    const boxW = contentW + padX * 2
+    const nameBlockH = lineHeight * nameLines.length
+    const titleBlockH = titleLineHeight * titleLines.length
+    const boxH = nameBlockH + titleBlockH + padY * 2
+    const boxX = node.x - boxW / 2
+    const boxY = node.y - nodeRadius - boxH - fontSize * 0.4
+
+    ctx.fillStyle = LABEL_BG_IDLE
+    roundRect(ctx, boxX, boxY, boxW, boxH, borderR)
+    ctx.fill()
 
     ctx.font = `500 ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
+    ctx.fillStyle = LABEL_TEXT_IDLE
     nameLines.forEach((line, i) => {
-      ctx.fillText(line, node.x, labelY + lineHeight * i)
+      ctx.fillText(line, node.x, boxY + padY + lineHeight * i)
     })
 
     ctx.font = `400 ${fontSize * 0.9}px 'Space Grotesk', system-ui, sans-serif`
-    const titleStartY = labelY + lineHeight * nameLines.length
+    ctx.fillStyle = LABEL_TEXT_IDLE_DIM
+    const titleStartY = boxY + padY + nameBlockH
     titleLines.forEach((line, i) => {
       ctx.fillText(line, node.x, titleStartY + titleLineHeight * i)
     })

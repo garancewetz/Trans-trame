@@ -81,10 +81,10 @@ export function AuthorsTab({
         <div className="flex shrink-0 items-center justify-between gap-4 border-b border-cyan/12 bg-cyan/4 px-5 py-3">
           <div className="flex items-center gap-2.5">
             <Sparkles size={13} className="shrink-0 text-cyan/65" />
-            <p className="text-[0.82rem] text-white/55">
+            <p className="text-label text-white/55">
               <span className="font-semibold text-white/80">{legacyCount} ouvrage{legacyCount > 1 ? 's' : ''}</span>
-              {' '}utilisent encore l'ancien format (auteur intégré au livre).
-              Lance la migration pour créer les entités auteurs correspondantes.
+              {' '}utilisent encore l'ancien format (auteur·ice intégré·e au livre).
+              Lance la migration pour créer les entités auteur·ices correspondantes.
             </p>
           </div>
           <Button
@@ -104,7 +104,7 @@ export function AuthorsTab({
           </p>
           <ul className="flex flex-col gap-1">
             {legacyBooks.map((b) => (
-              <li key={b.id} className="flex items-baseline gap-2 font-mono text-[0.75rem]">
+              <li key={b.id} className="flex items-baseline gap-2 font-mono text-caption">
                 <span className="text-white/55">{b.title || '(sans titre)'}</span>
                 <span className="text-white/25">—</span>
                 <span className="text-amber/50">
@@ -121,8 +121,8 @@ export function AuthorsTab({
         <div className="shrink-0 border-b border-green/12 bg-green/4 px-5 py-2.5">
           <div className="flex items-center gap-2">
             <Check size={12} className="shrink-0 text-green" />
-            <p className="text-[0.82rem] text-green/80">
-              Migration terminée — {migrateResult.newAuthors} auteur{migrateResult.newAuthors > 1 ? 's' : ''} créé{migrateResult.newAuthors > 1 ? 's' : ''},
+            <p className="text-label text-green/80">
+              Migration terminée — {migrateResult.newAuthors} auteur·ice{migrateResult.newAuthors > 1 ? 's' : ''} créé·e{migrateResult.newAuthors > 1 ? 's' : ''},
               {' '}{migrateResult.updatedBooks} ouvrage{migrateResult.updatedBooks > 1 ? 's' : ''} mis à jour.
             </p>
           </div>
@@ -131,7 +131,7 @@ export function AuthorsTab({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <AlertTriangle size={12} className="shrink-0 text-red/70" />
-                  <p className="text-[0.82rem] font-semibold text-red/70">
+                  <p className="text-label font-semibold text-red/70">
                     {migrateResult.failures.length} ouvrage{migrateResult.failures.length > 1 ? 's' : ''} en échec
                   </p>
                 </div>
@@ -147,7 +147,7 @@ export function AuthorsTab({
               </div>
               <ul className="mt-2 flex flex-col gap-1.5">
                 {migrateResult.failures.map((f) => (
-                  <li key={f.bookId} className="flex flex-col gap-0.5 font-mono text-[0.75rem]">
+                  <li key={f.bookId} className="flex flex-col gap-0.5 font-mono text-caption">
                     <div className="flex items-baseline gap-2">
                       <span className="text-white/55">{f.title}</span>
                       <span className="text-white/25">—</span>
@@ -183,7 +183,7 @@ export function AuthorsTab({
       {/* Barre de sélection */}
       {selectedIds.size > 0 && (
         <div className="flex shrink-0 items-center gap-3 border-b border-white/6 bg-white/1.5 px-5 py-2">
-          <span className="font-mono text-[0.82rem] text-white/45">
+          <span className="font-mono text-label text-white/45">
             {selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}
           </span>
           {selectedIds.size === 2 && (
@@ -225,13 +225,13 @@ export function AuthorsTab({
 
       {authors.length === 0 && legacyCount === 0 && (
         <div className="flex flex-1 items-center justify-center py-20">
-          <p className="font-mono text-[0.85rem] text-white/22">Aucun auteur·ice</p>
+          <p className="font-mono text-ui text-white/22">Aucun·e auteur·ice</p>
         </div>
       )}
 
       {filteredAuthors.length === 0 && authors.length > 0 && (
         <div className="flex flex-1 items-center justify-center py-20">
-          <p className="font-mono text-[0.85rem] text-white/22">Aucun résultat pour « {search} »</p>
+          <p className="font-mono text-ui text-white/22">Aucun résultat pour « {search} »</p>
         </div>
       )}
 
@@ -295,7 +295,7 @@ export function AuthorsTab({
                     type="button"
                     onClick={handleAddAuthor}
                     disabled={!inputLastName.trim()}
-                    className="shrink-0 cursor-pointer rounded-md border border-cyan/35 bg-cyan/12 px-2 py-1 text-[0.75rem] font-semibold text-cyan/85 transition-all hover:bg-cyan/20 disabled:cursor-not-allowed disabled:opacity-25"
+                    className="shrink-0 cursor-pointer rounded-md border border-cyan/35 bg-cyan/12 px-2 py-1 text-caption font-semibold text-cyan/85 transition-all hover:bg-cyan/20 disabled:cursor-not-allowed disabled:opacity-25"
                   >
                     + Ajouter
                   </Button>

@@ -108,7 +108,7 @@ export function SmartImportPreviewRow({
             <TextInput
               variant="table"
               autoFocus
-              className="w-full rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-[0.85rem] focus:border-cyan/35 focus:bg-white/8"
+              className="w-full rounded border border-cyan/35 bg-white/8 px-1.5 py-0.5 text-ui focus:border-cyan/35 focus:bg-white/8"
               value={editingValue}
               onChange={(e) => setEditingValue(e.target.value)}
               onBlur={() => commitCellEdit()}
@@ -120,7 +120,7 @@ export function SmartImportPreviewRow({
           ) : (
             <span
               className={[
-                'cursor-text wrap-break-word font-mono text-[0.85rem] leading-snug',
+                'cursor-text wrap-break-word font-mono text-ui leading-snug',
                 isDup ? 'text-white/55' : 'text-white hover:text-white/80',
               ].join(' ')}
               onClick={() => {
@@ -141,7 +141,7 @@ export function SmartImportPreviewRow({
               type="button"
               onClick={() => onSwapFields?.(item.id, 'title')}
               className="absolute -right-0.5 top-0 cursor-pointer rounded p-0.5 text-white/0 transition-colors group-hover/row:text-white/15 group-hover/row:hover:bg-white/8 group-hover/row:hover:text-cyan/70"
-              title="Inverser titre ↔ auteur"
+              title="Inverser titre ↔ auteur·ice"
             >
               <ArrowRightLeft size={10} />
             </button>
@@ -204,7 +204,7 @@ export function SmartImportPreviewRow({
               <Button
                 type="button"
                 onClick={() => onAddCoAuthor?.(item.id)}
-                className="mt-0.5 invisible inline-flex w-fit cursor-pointer items-center gap-0.5 rounded border border-white/10 bg-white/4 px-1.5 py-0.5 text-[0.72rem] text-white/35 transition-colors hover:border-cyan/30 hover:bg-cyan/[0.07] hover:text-cyan/70 group-hover/row:visible"
+                className="mt-0.5 invisible inline-flex w-fit cursor-pointer items-center gap-0.5 rounded border border-white/10 bg-white/4 px-1.5 py-0.5 text-micro text-white/35 transition-colors hover:border-cyan/30 hover:bg-cyan/[0.07] hover:text-cyan/70 group-hover/row:visible"
                 title="Ajouter un·e co-auteur·ice"
               >
                 <Plus size={9} /> co-auteur·ice
@@ -217,7 +217,7 @@ export function SmartImportPreviewRow({
               type="button"
               onClick={() => onSwapFields?.(item.id, 'edition')}
               className="absolute -right-0.5 top-0 cursor-pointer rounded p-0.5 text-white/0 transition-colors group-hover/row:text-white/15 group-hover/row:hover:bg-white/8 group-hover/row:hover:text-cyan/70"
-              title="Inverser auteur ↔ édition"
+              title="Inverser auteur·ice ↔ édition"
             >
               <ArrowRightLeft size={10} />
             </button>
@@ -264,7 +264,7 @@ export function SmartImportPreviewRow({
               {item.edition && (
                 <>
                   <Info size={8} className="shrink-0 text-white/20" />
-                  <span className="pointer-events-none absolute left-0 top-full z-50 mt-1 whitespace-nowrap rounded-md border border-white/10 bg-bg-overlay/95 px-2 py-1 text-[0.72rem] font-normal text-white/55 opacity-0 shadow-lg transition-opacity group-hover/ed:opacity-100">
+                  <span className="pointer-events-none absolute left-0 top-full z-50 mt-1 whitespace-nowrap rounded-md border border-white/10 bg-bg-overlay/95 px-2 py-1 text-micro font-normal text-white/55 opacity-0 shadow-lg transition-opacity group-hover/ed:opacity-100">
                     Apparaîtra sur le lien
                   </span>
                 </>
@@ -328,7 +328,7 @@ export function SmartImportPreviewRow({
           >
             <MessageSquare size={11} className={item.citation ? 'fill-cyan/20' : ''} />
             {item.citation && (
-              <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 max-w-48 -translate-x-1/2 truncate whitespace-nowrap rounded-md border border-white/10 bg-bg-overlay/95 px-2 py-1 text-[0.72rem] font-normal text-white/55 opacity-0 shadow-lg transition-opacity group-hover/cit:opacity-100">
+              <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 max-w-48 -translate-x-1/2 truncate whitespace-nowrap rounded-md border border-white/10 bg-bg-overlay/95 px-2 py-1 text-micro font-normal text-white/55 opacity-0 shadow-lg transition-opacity group-hover/cit:opacity-100">
                 {item.citation}
               </span>
             )}
@@ -408,10 +408,10 @@ export function SmartImportPreviewRow({
               size={10}
               className={isExact ? 'shrink-0 text-red/70' : 'shrink-0 text-amber/80'}
             />
-            <span className={['text-[0.75rem]', isExact ? 'text-red/70' : 'text-amber/75'].join(' ')}>
+            <span className={['text-caption', isExact ? 'text-red/70' : 'text-amber/75'].join(' ')}>
               {isExact ? 'Doublon exact' : 'Doublon possible'} —
             </span>
-            <span className="truncate font-mono text-[0.75rem] italic text-white/38">
+            <span className="truncate font-mono text-caption italic text-white/38">
               {[item.existingNode?.firstName, item.existingNode?.lastName].filter(Boolean).join(' ')}
               {item.existingNode?.firstName || item.existingNode?.lastName ? ', ' : ''}
               {item.existingNode?.title}
@@ -422,7 +422,7 @@ export function SmartImportPreviewRow({
             <Button
               type="button"
               onClick={() => handleMerge(item)}
-              className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md border border-cyan/20 bg-cyan/5 px-2 py-0.5 text-[0.72rem] font-semibold text-cyan/60 transition-all hover:bg-cyan/12 hover:text-cyan/90"
+              className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md border border-cyan/20 bg-cyan/5 px-2 py-0.5 text-micro font-semibold text-cyan/60 transition-all hover:bg-cyan/12 hover:text-cyan/90"
             >
               <GitMerge size={9} /> Fusionner
             </Button>
@@ -443,7 +443,7 @@ export function SmartImportPreviewRow({
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-white/4 bg-green/3 px-3 py-1.5">
           <div className="flex items-center gap-1.5">
             <Check size={10} className="shrink-0 text-green/55" />
-            <span className="text-[0.75rem] text-green/50">Ouvrage fusionné</span>
+            <span className="text-caption text-green/50">Ouvrage fusionné</span>
           </div>
 
           <div className="ml-auto flex items-center gap-2">
@@ -454,7 +454,7 @@ export function SmartImportPreviewRow({
                   value={item.edition || ''}
                   onChange={(v) => onUpdateField(item.id, 'edition', v)}
                   knownEditions={knownEditions || []}
-                  className="w-28 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[0.75rem] leading-snug text-white/55 outline-none placeholder:text-white/20 transition-colors focus:border-cyan/30 focus:bg-white/8"
+                  className="w-28 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-caption leading-snug text-white/55 outline-none placeholder:text-white/20 transition-colors focus:border-cyan/30 focus:bg-white/8"
                   placeholder="Édition"
                   onCommit={() => {}}
                 />
@@ -462,7 +462,7 @@ export function SmartImportPreviewRow({
                   variant="table"
                   value={item.page || ''}
                   onChange={(e) => onUpdateField(item.id, 'page', e.target.value)}
-                  className="w-14 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[0.75rem] leading-snug text-white/55 outline-none placeholder:text-white/20 transition-colors focus:border-cyan/30 focus:bg-white/8"
+                  className="w-14 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-caption leading-snug text-white/55 outline-none placeholder:text-white/20 transition-colors focus:border-cyan/30 focus:bg-white/8"
                   placeholder="page / vol."
                 />
               </>
@@ -470,7 +470,7 @@ export function SmartImportPreviewRow({
             <button
               type="button"
               onClick={() => handleUnmerge(item)}
-              className="cursor-pointer rounded px-1.5 py-0.5 text-[0.72rem] text-white/30 transition-colors hover:bg-white/5 hover:text-white/55"
+              className="cursor-pointer rounded px-1.5 py-0.5 text-micro text-white/30 transition-colors hover:bg-white/5 hover:text-white/55"
             >
               Annuler
             </button>

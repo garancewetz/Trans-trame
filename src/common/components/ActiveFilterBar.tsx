@@ -9,9 +9,11 @@ type ActiveFilterBarProps = {
   highlightLabel: string | null
   selectedAuthor: string | null
   selectedAuthorName: string | null
+  selectedBookTitle: string | null
   onClearAxis: () => void
   onClearHighlight: () => void
   onClearAuthor: () => void
+  onClearSelectedBook: () => void
 }
 
 const HIGHLIGHT_ICON = { decade: Calendar, book: BookOpen, author: Users } as const
@@ -22,11 +24,13 @@ export function ActiveFilterBar({
   highlightLabel,
   selectedAuthor,
   selectedAuthorName,
+  selectedBookTitle,
   onClearAxis,
   onClearHighlight,
   onClearAuthor,
+  onClearSelectedBook,
 }: ActiveFilterBarProps) {
-  if (!activeFilter && !activeHighlight && !selectedAuthor) return null
+  if (!activeFilter && !activeHighlight && !selectedAuthor && !selectedBookTitle) return null
 
   const HighlightIcon = activeHighlight ? HIGHLIGHT_ICON[activeHighlight.kind] : null
 
@@ -79,6 +83,21 @@ export function ActiveFilterBar({
             <span className="truncate max-w-[180px]">
               {selectedAuthorName ?? 'Auteur·ice'}
             </span>
+            <X
+              size={12}
+              className="shrink-0 text-amber/40 transition-colors group-hover:text-amber/80"
+            />
+          </button>
+        )}
+
+        {selectedBookTitle && (
+          <button
+            type="button"
+            onClick={onClearSelectedBook}
+            className="group inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-amber/20 bg-amber/8 py-0.5 pl-2 pr-1.5 text-[0.8rem] font-semibold text-amber/80 transition-all hover:border-amber/40 hover:bg-amber/15 hover:text-amber"
+          >
+            <BookOpen size={10} className="shrink-0 text-amber/60" />
+            <span className="truncate max-w-[200px]">{selectedBookTitle}</span>
             <X
               size={12}
               className="shrink-0 text-amber/40 transition-colors group-hover:text-amber/80"

@@ -66,13 +66,13 @@ export function TableMergeAuthorsModal({
               checked={keepId === a.id}
               onChange={() => { setKeepId(a.id); setConfirm(false) }}
             >
-              <strong className="block font-mono text-[0.92rem] text-white">
+              <strong className="block font-mono text-body text-white">
                 {authorName(a)}
               </strong>
               <span className="font-mono text-[0.8rem] text-white/40">
                 {a.lastName ? a.lastName.toUpperCase() : '—'}{a.firstName ? `, ${a.firstName}` : ''}
               </span>
-              <span className="ml-2 font-mono text-[0.75rem] text-white/28">
+              <span className="ml-2 font-mono text-caption text-white/28">
                 · {booksCount} ouvrage{booksCount > 1 ? 's' : ''}
               </span>
             </RadioCard>

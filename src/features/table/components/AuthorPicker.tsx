@@ -84,7 +84,7 @@ export function AuthorPicker({
         {selectedAuthors.map((a) => (
           <span
             key={a.id}
-            className="inline-flex items-center gap-1 rounded-full border border-white/14 bg-white/8 px-1.5 py-px text-[0.72rem] text-white/75"
+            className="inline-flex items-center gap-1 rounded-full border border-white/14 bg-white/8 px-1.5 py-px text-micro text-white/75"
           >
             {authorName(a)}
             <Button

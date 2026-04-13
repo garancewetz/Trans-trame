@@ -119,7 +119,7 @@ export function TableOrphanModal({
         />
         {linkTarget && (
           <div className="mt-2 flex items-center justify-between">
-            <p className="text-[0.75rem] text-white/35">
+            <p className="text-caption text-white/35">
               {checkedIds.size} orphelin{checkedIds.size > 1 ? 's' : ''} sélectionné{checkedIds.size > 1 ? 's' : ''}
             </p>
             <ConfirmButton
@@ -138,7 +138,7 @@ export function TableOrphanModal({
       {/* Orphan list with checkboxes */}
       <div className="mb-4 max-h-[min(50vh,360px)] overflow-y-auto rounded-xl border border-white/8 bg-white/2.5 p-2">
         {/* Select all */}
-        <label className="mb-1 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-[0.72rem] text-white/35 hover:bg-white/4">
+        <label className="mb-1 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-micro text-white/35 hover:bg-white/4">
           <input
             type="checkbox"
             checked={allChecked}
@@ -162,7 +162,7 @@ export function TableOrphanModal({
             <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: axesGradient(n.axes) }} />
             <span>
               <strong className="block font-mono text-[0.88rem] text-white">{n.title}</strong>
-              <span className="font-mono text-[0.75rem] text-white/32">
+              <span className="font-mono text-caption text-white/32">
                 {bookAuthorDisplay(n, authorsMap)}{n.year ? `, ${n.year}` : ''}
               </span>
             </span>

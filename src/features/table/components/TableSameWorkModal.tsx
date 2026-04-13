@@ -63,7 +63,7 @@ export function TableSameWorkModal({
               checked={selectedTitle === b.title}
               onChange={() => { setSelectedTitle(b.title); setConfirm(false) }}
             >
-              <strong className="block font-mono text-[0.92rem] text-white">{b.title}</strong>
+              <strong className="block font-mono text-body text-white">{b.title}</strong>
               <span className="font-mono text-[0.8rem] text-white/40">
                 {authorDisplay}{b.year ? `, ${b.year}` : ''}
               </span>
@@ -78,7 +78,7 @@ export function TableSameWorkModal({
           {selectedTitle || '—'}
         </strong>
       </p>
-      <p className="mt-1 text-[0.75rem] text-white/20">
+      <p className="mt-1 text-caption text-white/20">
         Tous les ouvrages ci-dessus recevront ce titre original et seront regroupés en un seul nœud dans le graphe. Chaque ouvrage reste une entrée séparée en base.
       </p>
     </Modal>

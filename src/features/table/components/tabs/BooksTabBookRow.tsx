@@ -5,7 +5,7 @@ import { mapBookUrlSearch } from '@/common/utils/bookSlug'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
 import { Tooltip } from '@/common/components/ui/Tooltip'
-import { OutlineBadge } from '@/common/components/ui/OutlineBadge'
+import { Badge } from '@/common/components/ui/Badge'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { INPUT, TD } from '../../tableConstants'
 import { AxisDots, AuthorPicker } from '../TableSubcomponents'
@@ -201,17 +201,18 @@ export function BooksTabBookRow({
             {(node.authorIds ?? []).map((aid) => {
               const a = authorsMap.get(aid)
               return a ? (
-                <OutlineBadge
+                <Badge
                   key={aid}
+                  variant="outline"
                   onClick={(e) => {
                     e.stopPropagation()
                     onFocusAuthorInAuthorsTab?.(aid)
                   }}
-                  title="Aller à l'auteur dans la table"
+                  title="Aller à l'auteur·ice dans la table"
                   className="cursor-pointer hover:text-white"
                 >
                   {bookAuthorDisplay({ authorIds: [aid] }, authorsMap)}
-                </OutlineBadge>
+                </Badge>
               ) : null
             })}
           </div>
@@ -290,7 +291,7 @@ export function BooksTabBookRow({
             type="button"
             title="Ouvrir la grande fiche ouvrage"
             onClick={() => onOpenWorkDetail(node.id)}
-            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-2 py-0.5 text-[0.75rem] font-semibold text-white/45 transition-all hover:border-violet/40 hover:bg-violet/10 hover:text-violet/95"
+            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-2 py-0.5 text-caption font-semibold text-white/45 transition-all hover:border-violet/40 hover:bg-violet/10 hover:text-violet/95"
           >
             <Eye size={12} className="shrink-0" />
             Graphe
@@ -301,7 +302,7 @@ export function BooksTabBookRow({
             target="_blank"
             rel="noopener noreferrer"
             title="Ouvrir la carte sur cet ouvrage (nouvel onglet, ?book=…)"
-            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-2 py-0.5 text-[0.75rem] font-semibold text-white/45 transition-all hover:border-violet/40 hover:bg-violet/10 hover:text-violet/95"
+            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-2 py-0.5 text-caption font-semibold text-white/45 transition-all hover:border-violet/40 hover:bg-violet/10 hover:text-violet/95"
           >
             <Eye size={12} className="shrink-0" />
             Graphe

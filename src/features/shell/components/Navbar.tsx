@@ -7,7 +7,7 @@ import { Logo } from '@/common/components/Logo'
 import { ViewSelector } from './ViewSelector'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { axesGradient } from '@/common/utils/categories'
-import { CountBadge } from '@/common/components/ui/CountBadge'
+import { Badge } from '@/common/components/ui/Badge'
 import { useAppData } from '@/core/AppDataContext'
 import { useFilter } from '@/core/FilterContext'
 import { useTableUi } from '@/core/TableUiContext'
@@ -115,12 +115,13 @@ export function Navbar({ analysisPanelRef, viewMode, onViewChange }: NavbarProps
             <span className="flex min-w-0 flex-col">
               <span className="flex items-center gap-2">
                 Trans-Trame
-                <CountBadge
+                <Badge
+                  variant="count"
                   count={graphData.nodes.length}
-                  className="bg-white/10 px-[7px] py-px text-[0.75rem] font-bold text-white/50"
+                  className="bg-white/10 px-[7px] py-px text-caption font-bold text-white/50"
                 />
               </span>
-              <span className="text-[0.82rem] font-semibold text-white/50">
+              <span className="text-label font-semibold text-white/50">
                 Cartographie de l'Intersectionnalité
               </span>
             </span>
@@ -190,8 +191,8 @@ export function Navbar({ analysisPanelRef, viewMode, onViewChange }: NavbarProps
                           type="button"
                         >
                           <span className="min-w-0">
-                            <strong className="truncate text-[0.92rem] font-semibold">{item.author}</strong>
-                            <span className="block text-[0.82rem] text-white/35">Auteur·ice</span>
+                            <strong className="truncate text-body font-semibold">{item.author}</strong>
+                            <span className="block text-label text-white/35">Auteur·ice</span>
                           </span>
                           <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[0.8rem] font-semibold text-white/60 tabular-nums">
                             {item.count}
@@ -215,8 +216,8 @@ export function Navbar({ analysisPanelRef, viewMode, onViewChange }: NavbarProps
                           style={{ background: axesGradient(node.axes) }}
                         />
                         <span className="flex min-w-0 flex-col gap-px">
-                          <strong className="truncate text-[0.92rem] font-semibold">{node.title}</strong>
-                          <span className="text-[0.82rem] text-white/35">
+                          <strong className="truncate text-body font-semibold">{node.title}</strong>
+                          <span className="text-label text-white/35">
                             {bookAuthorDisplay(node, authorsMap)}, {node.year}
                           </span>
                         </span>
@@ -255,9 +256,10 @@ export function Navbar({ analysisPanelRef, viewMode, onViewChange }: NavbarProps
                 <span className="inline-flex items-center gap-2">
                   <BookOpen size={14} />
                   Textes
-                  <CountBadge
+                  <Badge
+                    variant="count"
                     count={graphData.nodes.length}
-                    className="bg-white/15 px-[7px] py-px text-[0.75rem] font-bold text-white/90"
+                    className="bg-white/15 px-[7px] py-px text-caption font-bold text-white/90"
                   />
                 </span>
               </Button>
@@ -273,7 +275,7 @@ export function Navbar({ analysisPanelRef, viewMode, onViewChange }: NavbarProps
                 <span className="inline-flex items-center gap-2">
                   <Users size={14} />
                   Auteur·ices
-                  <span className="rounded-full bg-white/15 px-[7px] py-px text-[0.75rem] font-bold tabular-nums text-white/90">
+                  <span className="rounded-full bg-white/15 px-[7px] py-px text-caption font-bold tabular-nums text-white/90">
                     {authorCount}
                   </span>
                 </span>

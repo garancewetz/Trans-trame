@@ -33,7 +33,7 @@ export function InlineEditField({
     return (
       <input
         autoFocus
-        className="w-full rounded-md border border-white/10 bg-white/4 px-2 py-1 font-mono text-[0.82rem] text-white outline-none focus:border-cyan/[0.28]"
+        className="w-full rounded-md border border-white/10 bg-white/4 px-2 py-1 font-mono text-label text-white outline-none focus:border-cyan/[0.28]"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onCommit}
@@ -51,7 +51,7 @@ export function InlineEditField({
       {displayValue}
       <Button
         type="button"
-        className="shrink-0 cursor-pointer rounded border border-white/10 bg-white/5 px-2 py-0.5 text-[0.72rem] font-semibold text-white/60 transition-all hover:border-white/20 hover:bg-white/8"
+        className="shrink-0 cursor-pointer rounded border border-white/10 bg-white/5 px-2 py-0.5 text-micro font-semibold text-white/60 transition-all hover:border-white/20 hover:bg-white/8"
         onClick={onStartEdit}
         title={editTitle}
       >

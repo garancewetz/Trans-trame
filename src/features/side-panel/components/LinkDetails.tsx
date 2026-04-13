@@ -1,14 +1,24 @@
 import { ArrowRight, ArrowLeft, LinkIcon, BookCopy, ExternalLink, Trash2, Pencil, MoreHorizontal, Eye } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { blendAxesColors } from '@/common/utils/categories'
 import { Button } from '@/common/components/ui/Button'
+import { AuthorLinks } from '@/common/components/AuthorLinks'
 import { TextareaInline } from '@/common/components/ui/TextareaInline'
-import { InlineBadge } from '@/common/components/ui/InlineBadge'
+import { Badge } from '@/common/components/ui/Badge'
 import { InlineEditField } from '@/common/components/ui/InlineEditField'
 import { getLinkNodes } from '@/features/graph/graphRelations'
 import { useSelection } from '@/core/SelectionContext'
-import { useAppData } from '@/core/AppDataContext'
+import { useAppData, useAppMutations } from '@/core/AppDataContext'
+
+/** Shell used by the contextual action buttons in this panel. */
+const ACTION_BTN_BASE =
+  'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-ui font-semibold transition-all'
+const ACTION_BTN_NEUTRAL =
+  `${ACTION_BTN_BASE} text-white/75 hover:border-white/35 hover:bg-white/10 hover:text-white`
+const ACTION_BTN_SOURCE =
+  `${ACTION_BTN_BASE} text-orange/75 hover:border-orange/45 hover:bg-orange/15 hover:text-white`
+const ACTION_BTN_TARGET =
+  `${ACTION_BTN_BASE} text-cyan/75 hover:border-cyan/50 hover:bg-cyan/15 hover:text-white`
 
 type LinkDetailsProps = {
   showBackButton?: boolean
@@ -22,12 +32,8 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
     closePanel,
   } = useSelection()
 
-  const {
-    graphData,
-    authorsMap,
-    handleUpdateLink,
-    handleDeleteLink,
-  } = useAppData()
+  const { graphData, authorsMap } = useAppData()
+  const { handleUpdateLink, handleDeleteLink } = useAppMutations()
 
   const suppressCommitRef = useRef(false)
   const [editingField, setEditingField] = useState<string | null>(null)
@@ -42,7 +48,7 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
   const contextIsTarget = linkContextNode?.id && target?.id && linkContextNode.id === target.id
   const isContextPanel = !showBackButton && Boolean(linkContextNode)
   const relatedNode = contextIsSource ? target : source
-  const relationBadgeLabel = isContextPanel ? (contextIsSource ? 'cite' : 'est cite par') : 'Lien'
+  const relationBadgeLabel = isContextPanel ? (contextIsSource ? 'cite' : 'est cité·e par') : 'Lien'
   const relationBadgeClass = isContextPanel
     ? contextIsSource
       ? 'bg-cyan/20 text-cyan/95'
@@ -109,20 +115,20 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
           <span className="mx-1 text-white/25">{'>'}</span> Citation
         </p>
       )}
-      <InlineBadge className={`mb-3 ${relationBadgeClass}`}>
+      <Badge variant="inline" className={`mb-3 ${relationBadgeClass}`}>
         <LinkIcon size={11} /> {relationBadgeLabel}
-      </InlineBadge>
+      </Badge>
       {source && target && (
         <div className="mb-4 rounded-md border border-white/8 bg-white/2 px-2.5 py-2">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[0.72rem] font-semibold uppercase tracking-[1px] text-white/30">Source</span>
+            <span className="text-micro font-semibold uppercase tracking-[1px] text-white/30">Source</span>
             <span className="min-w-0 truncate text-[0.74rem] font-mono text-white/85">
               {source.title}
               {source.year ? `, ${source.year}` : ''}
             </span>
           </div>
           <div className="mt-0.5 flex items-center justify-between gap-2">
-            <span className="text-[0.72rem] font-semibold uppercase tracking-[1px] text-white/30">Cité</span>
+            <span className="text-micro font-semibold uppercase tracking-[1px] text-white/30">Cité</span>
             <span className="min-w-0 truncate text-[0.74rem] font-mono text-white/85">
               {target.title}
               {target.year ? `, ${target.year}` : ''}
@@ -132,13 +138,15 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
       )}
       {isContextPanel ? (
         <>
-          <h2 className="mb-1 text-[1.05rem] font-bold leading-snug text-white">{relatedNode?.title}</h2>
+          <h2 className="mb-1 text-lead font-bold leading-snug text-white">{relatedNode?.title}</h2>
           <p className="mb-3 text-[0.83rem] text-white/50">
-            {relatedNode ? bookAuthorDisplay(relatedNode, authorsMap || []) : ''}
+            {relatedNode && (
+              <AuthorLinks book={relatedNode} authors={authorsMap || []} />
+            )}
             {relatedNode?.year ? ` — ${relatedNode.year}` : ''}
           </p>
 
-          <p className="mb-3 flex items-center justify-between gap-2 text-[0.85rem] font-semibold uppercase tracking-[0.5px] text-white/45">
+          <p className="mb-3 flex items-center justify-between gap-2 text-ui font-semibold uppercase tracking-[0.5px] text-white/45">
             <span>Passage:</span>
             <InlineEditField
               editing={editingField === 'page'}
@@ -159,32 +167,33 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
         <>
           <p className="mb-2 text-[0.88rem] text-white/55">
             Lecture simple: <strong className="text-orange/90">ouvrage qui cite</strong> <ArrowRight size={12} className="mx-1 inline text-white/35" />
-            <strong className="text-cyan/90">ouvrage cite</strong>
+            <strong className="text-cyan/90">ouvrage cité</strong>
           </p>
           <h2 className="mb-1 flex items-center gap-2 text-[1.1rem] font-bold leading-snug text-white">
             {source?.title} <ArrowRight size={16} className="shrink-0 text-white/40" /> {target?.title}
           </h2>
           <p className="mb-5 text-[0.95rem] text-white/45">
-            {source ? bookAuthorDisplay(source, authorsMap || []) : ''} &mdash;{' '}
-            {target ? bookAuthorDisplay(target, authorsMap || []) : ''}
+            {source && <AuthorLinks book={source} authors={authorsMap || []} />}
+            {' '}&mdash;{' '}
+            {target && <AuthorLinks book={target} authors={authorsMap || []} />}
           </p>
         </>
       )}
       {linkContextNode && showBackButton && (
         <Button
           type="button"
-          className="mb-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.85rem] font-semibold text-white/70 transition-all hover:border-white/35 hover:bg-white/10 hover:text-white"
+          className={`mb-3 ${ACTION_BTN_NEUTRAL}`}
           onClick={() => selectNode(linkContextNode)}
         >
           <ArrowLeft size={12} />
-          Revenir a l'ouvrage de depart
+          Revenir à l'ouvrage de départ
         </Button>
       )}
       <div className="mb-5 flex flex-wrap gap-2">
         {isContextPanel && relatedNode && (
           <Button
             type="button"
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.85rem] font-semibold text-white/75 transition-all hover:border-white/35 hover:bg-white/10 hover:text-white"
+            className={ACTION_BTN_NEUTRAL}
             onClick={() => selectNode(relatedNode)}
           >
             <Eye size={12} />
@@ -194,7 +203,7 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
         {!isContextPanel && source && !contextIsSource && (
           <Button
             type="button"
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.85rem] font-semibold text-orange/75 transition-all hover:border-orange/45 hover:bg-orange/15 hover:text-white"
+            className={ACTION_BTN_SOURCE}
             onClick={() => selectNode(source)}
           >
             <ExternalLink size={12} />
@@ -204,11 +213,11 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
         {!isContextPanel && target && !contextIsTarget && (
           <Button
             type="button"
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-[6px] text-[0.85rem] font-semibold text-cyan/75 transition-all hover:border-cyan/50 hover:bg-cyan/15 hover:text-white"
+            className={ACTION_BTN_TARGET}
             onClick={() => selectNode(target)}
           >
             <ExternalLink size={12} />
-            Ouvrir l'ouvrage cite
+            Ouvrir l'ouvrage cité
           </Button>
         )}
       </div>
@@ -229,7 +238,7 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
               <div className="absolute right-0 z-10 mt-2 w-[220px] overflow-hidden rounded-lg border border-white/10 bg-bg-overlay/72 backdrop-blur-xl">
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.92rem] font-semibold text-white/80 hover:bg-white/8"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-body font-semibold text-white/80 hover:bg-white/8"
                   onClick={() => {
                     setIsActionsOpen(false)
                     if (editingField === 'citation_text') cancelEdit()
@@ -245,7 +254,7 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
 
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.92rem] font-semibold text-white/80 hover:bg-white/8"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-body font-semibold text-white/80 hover:bg-white/8"
                   onClick={() => {
                     setIsActionsOpen(false)
                     handleConfirmDelete()
@@ -260,7 +269,7 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
         </div>
 
         <blockquote
-          className="rounded-md border-l-4 bg-white/5 px-4 py-3 font-serif text-[1.05rem] italic leading-relaxed text-white/85 backdrop-blur-md"
+          className="rounded-md border-l-4 bg-white/5 px-4 py-3 font-serif text-lead italic leading-relaxed text-white/85 backdrop-blur-md"
         >
           {editingField === 'citation_text' ? (
             <TextareaInline
@@ -278,7 +287,7 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
             excerpt || '—'
           )}
 
-          <div className="mt-2 border-t border-white/10 pt-2 font-sans text-[0.75rem] not-italic text-white/40">
+          <div className="mt-2 border-t border-white/10 pt-2 font-sans text-caption not-italic text-white/40">
             {[
               selectedLink.page ? selectedLink.page : null,
               citationMetaYear ? String(citationMetaYear) : null,

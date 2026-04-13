@@ -10,7 +10,7 @@ type Props = {
 export function AxisSelector({ selectedAxes, toggleAxis }: Props) {
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="mb-1 text-[0.75rem] font-semibold uppercase tracking-[1px] text-white/35">
+      <legend className="mb-1 text-caption font-semibold uppercase tracking-[1px] text-white/35">
         Axes de r&eacute;sonance
       </legend>
       <div className="flex flex-wrap gap-2">

@@ -1,9 +1,10 @@
-import { Plus, X } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Virtuoso } from 'react-virtuoso'
 import { authorName, authorSortKey } from '@/common/utils/authorUtils'
 import { axesGradient } from '@/common/utils/categories'
 import { Button } from '@/common/components/ui/Button'
+import { PanelHeader } from '@/common/components/ui/PanelHeader'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
 import { PANEL_WIDTH } from '@/common/constants/panels'
 import { useAppData } from '@/core/AppDataContext'
@@ -86,32 +87,22 @@ export function AuthorsPanel({
       ].join(' ')}
     >
       <div className="flex h-full flex-col px-4 pt-4">
-        <div className="mb-4 flex shrink-0 items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-[1rem] font-semibold text-white/90">Auteur·ices</h2>
-            <p className="text-[0.8rem] text-white/40">{authorEntries.length} au total</p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {selectedAuthorId && (
+        <PanelHeader
+          title="Auteur·ices"
+          subtitle={`${authorEntries.length} au total`}
+          onClose={onClose}
+          actions={
+            selectedAuthorId && (
               <Button
                 type="button"
-                className="cursor-pointer rounded-lg border border-peach/30 bg-peach/10 px-2.5 py-1.5 text-[0.82rem] font-semibold text-peach/90 transition-colors hover:bg-peach/20"
+                className="cursor-pointer rounded-lg border border-peach/30 bg-peach/10 px-2.5 py-1.5 text-label font-semibold text-peach/90 transition-colors hover:bg-peach/20"
                 onClick={() => handleSelectAuthor(null)}
               >
                 Retirer le filtre
               </Button>
-            )}
-            <Button
-              type="button"
-              className="cursor-pointer rounded-lg border border-white/10 bg-white/5 p-2 text-white/40 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
-              onClick={onClose}
-              aria-label="Fermer"
-            >
-              <X size={18} />
-            </Button>
-          </div>
-        </div>
+            )
+          }
+        />
 
         <SearchInputWithClear
           value={q}
@@ -161,7 +152,7 @@ export function AuthorsPanel({
                       type="button"
                       className="shrink-0 cursor-pointer rounded-md border border-white/10 bg-white/5 p-2 text-peach/80 transition-colors hover:border-peach/40 hover:bg-peach/12 hover:text-white"
                       aria-label={`Ajouter un ouvrage pour ${a.name}`}
-                      title="Ajouter un ouvrage pour cet auteur"
+                      title="Ajouter un ouvrage pour cet·te auteur·ice"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleAddWorkForAuthor(a.name)
@@ -186,7 +177,7 @@ export function AuthorsPanel({
                               className="h-2 w-2 shrink-0 rounded-full"
                               style={{ background: axesGradient(n.axes) }}
                             />
-                            <span className="truncate text-[0.85rem] text-white/55">
+                            <span className="truncate text-ui text-white/55">
                               {n.title}
                               {n.year ? ` (${n.year})` : ''}
                             </span>
@@ -202,7 +193,7 @@ export function AuthorsPanel({
                 <div className="mt-4 pb-6">
                   <Button
                     type="button"
-                    className="w-full cursor-pointer rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-left text-[0.92rem] font-semibold text-white/70 transition-colors hover:border-violet/45 hover:bg-violet/15 hover:text-white"
+                    className="w-full cursor-pointer rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-left text-body font-semibold text-white/70 transition-colors hover:border-violet/45 hover:bg-violet/15 hover:text-white"
                     onClick={() => handleOpenAddBookFromSearch(q)}
                   >
                     Ajouter un·e auteur·ice (nouvel ouvrage)

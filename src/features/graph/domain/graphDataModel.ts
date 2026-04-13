@@ -46,7 +46,9 @@ export function sanitizeAxes(axes: unknown, axesColors: AxesColorMap): string[] 
   const allowed = new Set(Object.keys(axesColors))
   return axes
     .map((a) => (typeof a === 'string' ? (AXES_MIGRATION[a] ?? a) : String(a)))
-    .filter((a): a is string => typeof a === 'string' && allowed.has(a))
+    .filter((a): a is string =>
+      typeof a === 'string' && (allowed.has(a) || a.startsWith('UNCATEGORIZED:'))
+    )
 }
 
 export function sanitizeBook<T extends Record<string, unknown>>(node: T, axesColors: AxesColorMap): T {

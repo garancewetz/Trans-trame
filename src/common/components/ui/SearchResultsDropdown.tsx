@@ -48,7 +48,7 @@ export function SearchResultsDropdown<T extends ResultItem>({
     >
       {results.length === 0 ? (
         <div className="p-2">
-          <p className="p-2 text-center text-[0.92rem] leading-relaxed text-white/40">
+          <p className="p-2 text-center text-body leading-relaxed text-white/40">
             {emptyLabel}
           </p>
           {emptyAction}
@@ -74,7 +74,7 @@ export function SearchResultsDropdown<T extends ResultItem>({
                         {item.title}
                       </strong>
                       {item.meta && (
-                        <span className="mt-0.5 block text-[0.85rem] text-white/35">{item.meta}</span>
+                        <span className="mt-0.5 block text-ui text-white/35">{item.meta}</span>
                       )}
                     </span>
                   </>

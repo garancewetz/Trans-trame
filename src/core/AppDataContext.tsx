@@ -8,13 +8,37 @@ import { computeAxisStats } from '@/features/analysis-panel/analysisMetrics'
 import { useGraphData } from '@/features/graph/hooks/useGraphData'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 
-type AppDataValue = ReturnType<typeof useGraphData> & {
+type GraphData = ReturnType<typeof useGraphData>
+
+type AppDataValue = {
+  graphData: GraphData['graphData']
+  books: GraphData['books']
+  authors: GraphData['authors']
+  links: GraphData['links']
+  isLoading: GraphData['isLoading']
+  isError: GraphData['isError']
   authorsMap: Map<string, AuthorNode>
   authorCount: number
   axisCountsByAxis: Record<string, number>
 }
 
+type AppMutationsValue = {
+  handleAddBook: GraphData['handleAddBook']
+  handleUpdateBook: GraphData['handleUpdateBook']
+  handleDeleteBook: GraphData['handleDeleteBook']
+  handleAddAuthor: GraphData['handleAddAuthor']
+  handleUpdateAuthor: GraphData['handleUpdateAuthor']
+  handleDeleteAuthor: GraphData['handleDeleteAuthor']
+  handleAddLink: GraphData['handleAddLink']
+  handleDeleteLink: GraphData['handleDeleteLink']
+  handleUpdateLink: GraphData['handleUpdateLink']
+  handleMergeBooks: GraphData['handleMergeBooks']
+  handleMigrateData: GraphData['handleMigrateData']
+  resetToDefault: GraphData['resetToDefault']
+}
+
 const AppDataContext = createContext<AppDataValue | null>(null)
+const AppMutationsContext = createContext<AppMutationsValue | null>(null)
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
   const data = useGraphData({ axesColors: AXES_COLORS })
@@ -36,16 +60,77 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     return Object.fromEntries(stats.map((s) => [s.axis, s.count]))
   }, [data.books])
 
-  const value = useMemo(
-    () => ({ ...data, authorsMap, authorCount, axisCountsByAxis }),
-    [data, authorsMap, authorCount, axisCountsByAxis],
+  const dataValue = useMemo<AppDataValue>(
+    () => ({
+      graphData: data.graphData,
+      books: data.books,
+      authors: data.authors,
+      links: data.links,
+      isLoading: data.isLoading,
+      isError: data.isError,
+      authorsMap,
+      authorCount,
+      axisCountsByAxis,
+    }),
+    [
+      data.graphData,
+      data.books,
+      data.authors,
+      data.links,
+      data.isLoading,
+      data.isError,
+      authorsMap,
+      authorCount,
+      axisCountsByAxis,
+    ],
   )
 
-  return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>
+  const mutationsValue = useMemo<AppMutationsValue>(
+    () => ({
+      handleAddBook: data.handleAddBook,
+      handleUpdateBook: data.handleUpdateBook,
+      handleDeleteBook: data.handleDeleteBook,
+      handleAddAuthor: data.handleAddAuthor,
+      handleUpdateAuthor: data.handleUpdateAuthor,
+      handleDeleteAuthor: data.handleDeleteAuthor,
+      handleAddLink: data.handleAddLink,
+      handleDeleteLink: data.handleDeleteLink,
+      handleUpdateLink: data.handleUpdateLink,
+      handleMergeBooks: data.handleMergeBooks,
+      handleMigrateData: data.handleMigrateData,
+      resetToDefault: data.resetToDefault,
+    }),
+    [
+      data.handleAddBook,
+      data.handleUpdateBook,
+      data.handleDeleteBook,
+      data.handleAddAuthor,
+      data.handleUpdateAuthor,
+      data.handleDeleteAuthor,
+      data.handleAddLink,
+      data.handleDeleteLink,
+      data.handleUpdateLink,
+      data.handleMergeBooks,
+      data.handleMigrateData,
+      data.resetToDefault,
+    ],
+  )
+
+  return (
+    <AppDataContext.Provider value={dataValue}>
+      <AppMutationsContext.Provider value={mutationsValue}>{children}</AppMutationsContext.Provider>
+    </AppDataContext.Provider>
+  )
 }
 
 export function useAppData() {
   const ctx = useContext(AppDataContext)
   if (!ctx) throw new Error('useAppData must be used within <AppDataProvider>')
+  return ctx
+}
+
+export function useAppMutations() {
+  const ctx = useContext(AppMutationsContext)
+  if (!ctx) throw new Error('useAppMutations must be used within <AppDataProvider>')
   return ctx
 }

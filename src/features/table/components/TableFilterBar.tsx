@@ -111,7 +111,7 @@ export function TableFilterBar({
         <Search size={12} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-white/22" />
         <TextInput
           variant="table"
-          className="rounded-lg border-white/8 bg-white/4 py-1.5 pl-7 pr-6 text-[0.85rem] focus:border-cyan/[0.28] focus:bg-white/6"
+          className="rounded-lg border-white/8 bg-white/4 py-1.5 pl-7 pr-6 text-ui focus:border-cyan/[0.28] focus:bg-white/6"
           placeholder={placeholder}
           value={value}
           onChange={(e) => setValue(e.target.value)}

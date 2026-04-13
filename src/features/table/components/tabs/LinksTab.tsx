@@ -133,7 +133,7 @@ export function LinksTab({
           type="button"
           onClick={switchToList}
           className={[
-            'rounded-md px-3 py-1.5 text-[0.82rem] font-semibold transition-all',
+            'rounded-md px-3 py-1.5 text-label font-semibold transition-all',
             mode === 'list'
               ? 'bg-white/8 text-white/80'
               : 'text-white/35 hover:text-white/55',
@@ -141,14 +141,14 @@ export function LinksTab({
         >
           Relations
           {totalLinks > 0 && (
-            <span className="ml-1.5 text-[0.72rem] font-normal text-white/25">{totalLinks}</span>
+            <span className="ml-1.5 text-micro font-normal text-white/25">{totalLinks}</span>
           )}
         </button>
         <button
           type="button"
           onClick={switchToCreate}
           className={[
-            'rounded-md px-3 py-1.5 text-[0.82rem] font-semibold transition-all',
+            'rounded-md px-3 py-1.5 text-label font-semibold transition-all',
             mode === 'create'
               ? 'bg-cyan/10 text-cyan/80'
               : 'text-white/35 hover:text-cyan/60',
@@ -158,7 +158,7 @@ export function LinksTab({
         </button>
 
         {linkSearch && mode === 'list' && (
-          <span className="ml-auto text-[0.72rem] text-white/20">
+          <span className="ml-auto text-micro text-white/20">
             filtrées par «&nbsp;{linkSearch}&nbsp;»
           </span>
         )}
@@ -173,7 +173,7 @@ export function LinksTab({
               <span className="block truncate font-mono text-[0.88rem] font-semibold text-white/85">
                 {linkSourceNode.title}
               </span>
-              <span className="block font-mono text-[0.72rem] text-white/30">
+              <span className="block font-mono text-micro text-white/30">
                 {bookAuthorDisplay(linkSourceNode, authorsMap)}
                 {linkSourceNode.year ? `, ${linkSourceNode.year}` : ''}
               </span>
@@ -223,7 +223,7 @@ export function LinksTab({
                 <button
                   type="button"
                   onClick={switchToCreate}
-                  className="rounded-lg border border-cyan/25 bg-cyan/6 px-4 py-2 text-[0.82rem] font-semibold text-cyan/70 transition-all hover:bg-cyan/12 hover:text-cyan/90"
+                  className="rounded-lg border border-cyan/25 bg-cyan/6 px-4 py-2 text-label font-semibold text-cyan/70 transition-all hover:bg-cyan/12 hover:text-cyan/90"
                 >
                   <Link2 size={12} className="mr-1.5 inline-block -translate-y-px" />
                   Créer un premier lien
@@ -277,7 +277,7 @@ export function LinksTab({
                 type="button"
                 onClick={() => { setLinkDirection('source'); setLinkCheckedIds(new Set<BookId>()) }}
                 className={[
-                  'rounded-md px-2 py-1 text-[0.72rem] font-semibold transition-all',
+                  'rounded-md px-2 py-1 text-micro font-semibold transition-all',
                   linkDirection === 'source'
                     ? 'bg-cyan/12 text-cyan/80'
                     : 'text-white/30 hover:text-white/55',
@@ -289,7 +289,7 @@ export function LinksTab({
                 type="button"
                 onClick={() => { setLinkDirection('cited'); setLinkCheckedIds(new Set<BookId>()) }}
                 className={[
-                  'rounded-md px-2 py-1 text-[0.72rem] font-semibold transition-all',
+                  'rounded-md px-2 py-1 text-micro font-semibold transition-all',
                   linkDirection === 'cited'
                     ? 'bg-cyan/12 text-cyan/80'
                     : 'text-white/30 hover:text-white/55',
@@ -313,7 +313,7 @@ export function LinksTab({
               <button
                 type="button"
                 onClick={() => { setLinkSourceNode(null); setLinkCheckedIds(new Set<BookId>()) }}
-                className="mt-1.5 inline-flex items-center gap-1 font-mono text-[0.72rem] text-white/25 transition-colors hover:text-white/55"
+                className="mt-1.5 inline-flex items-center gap-1 font-mono text-micro text-white/25 transition-colors hover:text-white/55"
               >
                 <X size={10} /> retirer
               </button>
@@ -328,13 +328,13 @@ export function LinksTab({
                   <Search size={11} className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-white/22" />
                   <TextInput
                     variant="table"
-                    className="rounded-md border border-white/8 bg-white/4 py-1 pl-6 pr-2 text-[0.82rem] focus:border-cyan/[0.28]"
+                    className="rounded-md border border-white/8 bg-white/4 py-1 pl-6 pr-2 text-label focus:border-cyan/[0.28]"
                     placeholder={linkDirection === 'source' ? 'Filtrer les livres cités…' : 'Filtrer les livres sources…'}
                     value={checklistSearch}
                     onChange={(e) => setChecklistSearch(e.target.value)}
                   />
                 </div>
-                <p className="mt-1 text-[0.72rem] text-white/25">
+                <p className="mt-1 text-micro text-white/25">
                   {newLinksCount > 0
                     ? `${newLinksCount} nouveau${newLinksCount > 1 ? 'x' : ''} lien${newLinksCount > 1 ? 's' : ''} sélectionné${newLinksCount > 1 ? 's' : ''}`
                     : linkDirection === 'source' ? 'Cochez les livres cités' : 'Cochez les livres qui le citent'}
@@ -381,8 +381,8 @@ export function LinksTab({
                             onChange={() => toggleChecklist(n.id)}
                           />
                           <span className="min-w-0">
-                            <span className="block truncate font-mono text-[0.82rem] text-white/75">{n.title}</span>
-                            <span className="block font-mono text-[0.72rem] text-white/30">
+                            <span className="block truncate font-mono text-label text-white/75">{n.title}</span>
+                            <span className="block font-mono text-micro text-white/30">
                               {bookAuthorDisplay(n, authorsMap)}{n.year ? `, ${n.year}` : ''}
                               {existing && ' · déjà lié'}
                             </span>
@@ -393,7 +393,7 @@ export function LinksTab({
                   />
                 ) : !inlineOpen ? (
                   <div className="px-5 py-4">
-                    <p className="font-mono text-[0.82rem] text-white/22">
+                    <p className="font-mono text-label text-white/22">
                       {checklistSearch ? 'Aucun résultat' : 'Aucun autre ouvrage'}
                     </p>
                     {checklistSearch && canInline && (
@@ -514,19 +514,19 @@ function SourceGroup({
         <AxesDot axes={group.sourceNode?.axes || []} />
         <span className="min-w-0 flex-1 truncate font-mono text-[0.88rem] font-semibold text-white/85">
           {group.sourceNode?.title || '[ouvrage supprimé]'}
-          <span className="ml-1.5 font-normal text-[0.75rem] text-white/30">
+          <span className="ml-1.5 font-normal text-caption text-white/30">
             {group.sourceNode ? bookAuthorDisplay(group.sourceNode, authorsMap) : ''}
             {group.sourceNode?.year ? `, ${group.sourceNode.year}` : ''}
           </span>
         </span>
-        <span className="shrink-0 rounded-full bg-white/6 px-2 py-px font-mono text-[0.72rem] text-white/30">
+        <span className="shrink-0 rounded-full bg-white/6 px-2 py-px font-mono text-micro text-white/30">
           {group.links.length}
         </span>
         {onTisserFrom && (
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onTisserFrom() }}
-            className="shrink-0 inline-flex items-center gap-1 rounded-md border border-cyan/20 bg-cyan/6 px-2 py-0.5 font-mono text-[0.72rem] text-cyan/60 transition-all hover:border-cyan/40 hover:bg-cyan/12 hover:text-cyan/90"
+            className="shrink-0 inline-flex items-center gap-1 rounded-md border border-cyan/20 bg-cyan/6 px-2 py-0.5 font-mono text-micro text-cyan/60 transition-all hover:border-cyan/40 hover:bg-cyan/12 hover:text-cyan/90"
           >
             <Plus size={10} />
             Tisser
@@ -536,7 +536,7 @@ function SourceGroup({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onSmartImportFrom() }}
-            className="shrink-0 inline-flex items-center gap-1 rounded-md border border-amber/20 bg-amber/6 px-2 py-0.5 font-mono text-[0.72rem] text-amber/60 transition-all hover:border-amber/40 hover:bg-amber/12 hover:text-amber/90"
+            className="shrink-0 inline-flex items-center gap-1 rounded-md border border-amber/20 bg-amber/6 px-2 py-0.5 font-mono text-micro text-amber/60 transition-all hover:border-amber/40 hover:bg-amber/12 hover:text-amber/90"
           >
             <Zap size={10} />
             Import
@@ -628,7 +628,7 @@ function LinkRow({
           ].join(' ')}
         />
         <AxesDot axes={link.targetNode?.axes || []} size="small" />
-        <span className="min-w-0 flex-1 truncate font-mono text-[0.85rem] text-white/75">
+        <span className="min-w-0 flex-1 truncate font-mono text-ui text-white/75">
           {link.targetNode?.title || '[ouvrage supprimé]'}
           {link.targetNode && (
             <span className="ml-1.5 text-white/30">
@@ -640,7 +640,7 @@ function LinkRow({
 
         {/* Inline meta preview (collapsed) */}
         {!isExpanded && hasMeta && (
-          <span className="hidden shrink-0 items-center gap-2 font-mono text-[0.72rem] text-white/25 sm:flex">
+          <span className="hidden shrink-0 items-center gap-2 font-mono text-micro text-white/25 sm:flex">
             {link.page && <span className="tabular-nums">{link.page}</span>}
             {link.edition && (
               <span className="flex items-center gap-0.5"><BookCopy size={8} />{link.edition}</span>
@@ -659,7 +659,7 @@ function LinkRow({
           }}
           onBlur={() => { if (isDeleting) setDeletingLinkId(null) }}
           className={[
-            'shrink-0 rounded border px-1 py-0.5 text-[0.72rem] transition-all',
+            'shrink-0 rounded border px-1 py-0.5 text-micro transition-all',
             isDeleting
               ? 'border-red/45 text-red/80'
               : 'border-transparent text-transparent group-hover:border-red/22 group-hover:bg-red/6 group-hover:text-red/50',
@@ -674,7 +674,7 @@ function LinkRow({
       {!isExpanded && (link.citation_text || link.context) && (
         <div className="ml-7 mb-1 flex items-start gap-1.5 px-2">
           <Quote size={10} className="mt-0.5 shrink-0 text-white/20" />
-          <p className="whitespace-pre-wrap font-mono text-[0.75rem] italic leading-relaxed text-white/30">
+          <p className="whitespace-pre-wrap font-mono text-caption italic leading-relaxed text-white/30">
             {link.citation_text || link.context}
           </p>
         </div>
@@ -689,7 +689,7 @@ function LinkRow({
               <button
                 type="button"
                 onClick={() => onOpenWorkDetail(link.targetNode!.id)}
-                className="inline-flex items-center gap-1 rounded border border-white/10 bg-white/4 px-2 py-1 text-[0.72rem] text-white/45 transition-colors hover:border-violet/30 hover:bg-violet/8 hover:text-violet/90"
+                className="inline-flex items-center gap-1 rounded border border-white/10 bg-white/4 px-2 py-1 text-micro text-white/45 transition-colors hover:border-violet/30 hover:bg-violet/8 hover:text-violet/90"
               >
                 <Eye size={11} /> Graphe
               </button>
@@ -698,13 +698,13 @@ function LinkRow({
 
           {/* Citation */}
           <div className="mb-2">
-            <label className="mb-0.5 block text-[0.72rem] font-semibold uppercase tracking-[1px] text-white/25">
+            <label className="mb-0.5 block text-micro font-semibold uppercase tracking-[1px] text-white/25">
               Citation
             </label>
             {isEditCtx ? (
               <Textarea
                 autoFocus
-                className={`${INPUT} w-full resize-none text-[0.82rem] leading-snug`}
+                className={`${INPUT} w-full resize-none text-label leading-snug`}
                 rows={2}
                 value={editingLinkValue}
                 onChange={(e) => setEditingLinkValue(e.target.value)}
@@ -731,14 +731,14 @@ function LinkRow({
           {/* Page + Édition */}
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="mb-0.5 block text-[0.72rem] font-semibold uppercase tracking-[1px] text-white/25">
+              <label className="mb-0.5 block text-micro font-semibold uppercase tracking-[1px] text-white/25">
                 Page
               </label>
               {isEditPage ? (
                 <TextInput
                   variant="table"
                   autoFocus
-                  className={`${INPUT} w-full text-[0.82rem]`}
+                  className={`${INPUT} w-full text-label`}
                   value={editingLinkValue}
                   onChange={(e) => setEditingLinkValue(e.target.value)}
                   onBlur={commitLinkEdit}
@@ -764,14 +764,14 @@ function LinkRow({
               )}
             </div>
             <div className="flex-1">
-              <label className="mb-0.5 block text-[0.72rem] font-semibold uppercase tracking-[1px] text-white/25">
+              <label className="mb-0.5 block text-micro font-semibold uppercase tracking-[1px] text-white/25">
                 Édition
               </label>
               {isEditEdition ? (
                 <TextInput
                   variant="table"
                   autoFocus
-                  className={`${INPUT} w-full text-[0.82rem]`}
+                  className={`${INPUT} w-full text-label`}
                   value={editingLinkValue}
                   onChange={(e) => setEditingLinkValue(e.target.value)}
                   onBlur={commitLinkEdit}

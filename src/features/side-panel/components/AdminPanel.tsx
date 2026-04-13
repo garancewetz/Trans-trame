@@ -1,5 +1,5 @@
 import { useSelection } from '@/core/SelectionContext'
-import { useAppData } from '@/core/AppDataContext'
+import { useAppData, useAppMutations } from '@/core/AppDataContext'
 import { AddBookForm } from '../../add-book-form/components/AddBookForm'
 
 export function AdminPanel() {
@@ -13,17 +13,15 @@ export function AdminPanel() {
     closePanel,
   } = useSelection()
 
+  const { graphData, authors, authorsMap } = useAppData()
   const {
-    graphData,
-    authors,
-    authorsMap,
     handleAddBook,
     handleAddLink,
     handleAddAuthor,
     handleUpdateBook,
     handleDeleteBook,
     handleMergeBooks,
-  } = useAppData()
+  } = useAppMutations()
 
   return (
     <div className="px-6 pb-8 pt-12">

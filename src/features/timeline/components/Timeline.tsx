@@ -23,6 +23,7 @@ export function Timeline({ graphData, timelineRange, onRangeChange }: TimelinePr
   const playRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const trackRef = useRef<HTMLDivElement | null>(null)
   const dragTargetRef = useRef<'start' | 'end'>('end')
+  const targetLockedRef = useRef(false)
 
   const { minYear, maxYear, booksByYear } = useMemo(() => {
     const years = graphData.nodes
@@ -85,6 +86,16 @@ export function Timeline({ graphData, timelineRange, onRangeChange }: TimelinePr
     (e: ReactPointerEvent<HTMLDivElement>) => {
       setIsDragging(true)
       e.currentTarget.setPointerCapture(e.pointerId)
+      // If the pointerdown originated on a specific thumb, lock to it so we
+      // don't misattribute the drag to the nearer thumb in "year" space.
+      const origin = e.target as HTMLElement | null
+      const thumbHit = origin?.dataset?.thumb as 'start' | 'end' | undefined
+      if (thumbHit) {
+        dragTargetRef.current = thumbHit
+        targetLockedRef.current = true
+      } else {
+        targetLockedRef.current = false
+      }
       updateFromPointer(e)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `updateFromPointer` reads latest range from refs/state each event; listing it would recreate the handler every render.
@@ -102,6 +113,7 @@ export function Timeline({ graphData, timelineRange, onRangeChange }: TimelinePr
 
   const handlePointerUp = useCallback(() => {
     setIsDragging(false)
+    targetLockedRef.current = false
   }, [])
 
   function updateFromPointer(e: ReactPointerEvent<HTMLDivElement>) {
@@ -113,10 +125,12 @@ export function Timeline({ graphData, timelineRange, onRangeChange }: TimelinePr
     const start = timelineRange?.start ?? minYear
     const end = timelineRange?.end ?? maxYear
 
-    if (!isDragging) {
+    if (!isDragging && !targetLockedRef.current) {
       const distStart = Math.abs(year - start)
       const distEnd = Math.abs(year - end)
-      dragTargetRef.current = distStart <= distEnd ? 'start' : 'end'
+      // Tie-break towards `end` so a click equidistant from both thumbs
+      // extends the range rather than collapsing it onto the start.
+      dragTargetRef.current = distStart < distEnd ? 'start' : 'end'
     }
 
     const target = dragTargetRef.current
@@ -235,9 +249,20 @@ export function Timeline({ graphData, timelineRange, onRangeChange }: TimelinePr
             />
           ))}
 
-          {/* Thumb start */}
+          {/* Thumb start — visible dot + invisible 20px hit area so clicks land on the right thumb even when the two are close */}
           <div
-            className="absolute top-1/2"
+            data-thumb="start"
+            className="absolute top-1/2 -translate-y-1/2"
+            style={{
+              left: `calc(${startProgress}% - 10px)`,
+              width: '20px',
+              height: '20px',
+              transition: isDragging ? 'none' : 'left 0.075s ease-out',
+              zIndex: 2,
+            }}
+          />
+          <div
+            className="absolute top-1/2 pointer-events-none"
             style={{
               left: `${startProgress}%`,
               width: '8px',
@@ -250,9 +275,20 @@ export function Timeline({ graphData, timelineRange, onRangeChange }: TimelinePr
             }}
           />
 
-          {/* Thumb end */}
+          {/* Thumb end — same pattern; rendered after start so its hit area wins on overlap */}
           <div
-            className="absolute top-1/2"
+            data-thumb="end"
+            className="absolute top-1/2 -translate-y-1/2"
+            style={{
+              left: `calc(${endProgress}% - 10px)`,
+              width: '20px',
+              height: '20px',
+              transition: isDragging ? 'none' : 'left 0.075s ease-out',
+              zIndex: 3,
+            }}
+          />
+          <div
+            className="absolute top-1/2 pointer-events-none"
             style={{
               left: `${endProgress}%`,
               width: '8px',

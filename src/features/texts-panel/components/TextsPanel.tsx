@@ -147,7 +147,7 @@ export function TextsPanel({
                     />
                     <div className="min-w-0">
                       <div className="truncate text-[0.95rem] font-semibold text-white/85">{n.title}</div>
-                      <div className="truncate text-[0.82rem] text-white/35">
+                      <div className="truncate text-label text-white/35">
                         {bookAuthorDisplay(n, authorsMap)}
                         {n.year ? ` — ${n.year}` : ''}
                       </div>
@@ -169,7 +169,7 @@ export function TextsPanel({
                     <Button
                       type="button"
                       title="Grande fiche ouvrage"
-                      className="inline-flex cursor-pointer items-center justify-center gap-1 border-t border-white/10 px-2 py-2 text-[0.75rem] font-semibold text-white/40 transition-colors hover:bg-white/10 hover:text-violet/95 sm:border-l sm:border-t-0 sm:px-2.5"
+                      className="inline-flex cursor-pointer items-center justify-center gap-1 border-t border-white/10 px-2 py-2 text-caption font-semibold text-white/40 transition-colors hover:bg-white/10 hover:text-violet/95 sm:border-l sm:border-t-0 sm:px-2.5"
                       onClick={(e) => {
                         e.stopPropagation()
                         onOpenWorkDetail(n.id)

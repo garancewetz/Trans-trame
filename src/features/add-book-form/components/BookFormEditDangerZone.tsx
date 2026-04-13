@@ -60,12 +60,12 @@ export function BookFormEditDangerZone({
 
   return (
     <div className="mt-4 rounded-xl border border-white/8 bg-white/2 p-4">
-      <h4 className="mb-4 text-[0.82rem] font-semibold uppercase tracking-[1.5px] text-white/25">
+      <h4 className="mb-4 text-label font-semibold uppercase tracking-[1.5px] text-white/25">
         Zone dangereuse
       </h4>
 
       <div className="mb-4">
-        <p className="mb-2 text-[0.85rem] text-white/40">
+        <p className="mb-2 text-ui text-white/40">
           Fusionner cet ouvrage dans un autre (les liens seront transférés)
         </p>
         {!mergeTarget ? (
@@ -85,8 +85,8 @@ export function BookFormEditDangerZone({
               <>
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: axesGradient(n.axes) }} />
                 <span className="min-w-0">
-                  <strong className="block text-[0.92rem] font-semibold text-white">{n.title}</strong>
-                  <span className="mt-0.5 block text-[0.82rem] text-white/35">
+                  <strong className="block text-body font-semibold text-white">{n.title}</strong>
+                  <span className="mt-0.5 block text-label text-white/35">
                     {bookAuthorDisplay(n, authorsMap)}
                     {n.year ? `, ${n.year}` : ''}
                   </span>
@@ -101,7 +101,7 @@ export function BookFormEditDangerZone({
                 className="h-2 w-2 shrink-0 rounded-full"
                 style={{ background: axesGradient(mergeTarget.axes) }}
               />
-              <span className="min-w-0 truncate text-[0.92rem] text-white">{mergeTarget.title}</span>
+              <span className="min-w-0 truncate text-body text-white">{mergeTarget.title}</span>
               <Button
                 variant="icon"
                 className="ml-auto shrink-0"

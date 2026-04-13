@@ -1,8 +1,7 @@
 // @ts-nocheck — interacts with d3-force internals not exposed in react-force-graph-2d types
-import { useEffect, type RefObject } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 import type { ForceGraphMethods } from 'react-force-graph-2d'
 import { forceCollide } from 'd3-force-3d'
-import { syncedZoomToFit } from '../cameraControls'
 import { getNodeRadius } from '../nodeObject'
 import {
   FORCE_CHARGE_DIST_MAX,
@@ -18,35 +17,65 @@ import type { GraphData } from '@/types/domain'
 
 type Args = {
   fgRef: RefObject<ForceGraphMethods | undefined>
-  camRef: RefObject<{ x: number; y: number; zoom: number }>
   graphData: GraphData
   viewMode: string
   degreeByNodeId: Map<string, number>
   citationsByNodeId: Map<string, number>
+  bookCountByAuthorId: Map<string, number>
+  externalCitationsByBookId: Map<string, number>
 }
 
-export function useGraphLayout({ fgRef, camRef, graphData, viewMode, degreeByNodeId, citationsByNodeId }: Args) {
+export function useGraphLayout({
+  fgRef, graphData, viewMode,
+  degreeByNodeId, citationsByNodeId, bookCountByAuthorId, externalCitationsByBookId,
+}: Args) {
+  // Les maps sont référencées via refs pour que les closures de forces lisent
+  // toujours la dernière valeur sans que l'effet ait besoin de re-tourner
+  // (sinon chaque refetch TanStack — qui crée de nouveaux Map — dépinglerait
+  //  tous les nœuds et relancerait la simulation à alpha=1, provoquant un
+  //  réarrangement + zoomToFit non sollicité, aka le "désoom auto").
+  const degreeRef = useRef(degreeByNodeId)
+  const citationsRef = useRef(citationsByNodeId)
+  const bookCountRef = useRef(bookCountByAuthorId)
+  const externalCitRef = useRef(externalCitationsByBookId)
+  degreeRef.current = degreeByNodeId
+  citationsRef.current = citationsByNodeId
+  bookCountRef.current = bookCountByAuthorId
+  externalCitRef.current = externalCitationsByBookId
+
+  const hasInitRef = useRef(false)
+
   useEffect(() => {
     const fg = fgRef.current
     if (!fg) return
+    // Attend qu'il y ait des nœuds à disposer — au premier render graphData est vide.
+    if (graphData.nodes.length === 0) return
+
+    const isFirstInit = !hasInitRef.current
+    hasInitRef.current = true
 
     const timer = setTimeout(() => {
-      graphData.nodes.forEach((node) => {
-        node.fx = undefined
-        node.fy = undefined
-      })
+      // Ne dépingler les nœuds QUE lors de la première mise en place ou d'un
+      // changement de viewMode : sinon on casserait une disposition stabilisée
+      // à chaque ajout/suppression ou refetch.
+      if (isFirstInit) {
+        graphData.nodes.forEach((node) => {
+          node.fx = undefined
+          node.fy = undefined
+        })
+      }
 
       fg.d3Force('charge')
-        .strength((node) => chargeStrengthForNode(node, degreeByNodeId))
+        .strength((node) => chargeStrengthForNode(node, degreeRef.current, citationsRef.current))
         .distanceMax(FORCE_CHARGE_DIST_MAX)
       fg.d3Force('link')
-        .distance(linkDistanceForType)
-        .strength(linkStrengthForType)
+        .distance((link) => linkDistanceForType(link, bookCountRef.current, citationsRef.current))
+        .strength((link) => linkStrengthForType(link, externalCitRef.current, citationsRef.current))
 
       // Collision : rayon *visuel* + padding — évite tout chevauchement même pour
       // les livres très cités (rayon jusqu'à 46px).
       fg.d3Force('collide', forceCollide((node) => {
-        const cit = citationsByNodeId.get(node.id) || 0
+        const cit = citationsRef.current.get(node.id) || 0
         return getNodeRadius(node, cit) + FORCE_COLLIDE_PADDING
       }))
 
@@ -74,12 +103,21 @@ export function useGraphLayout({ fgRef, camRef, graphData, viewMode, degreeByNod
         Reflect.get(forceY, 'y')?.call(forceY, 0)
       }
 
-      fg.d3ReheatSimulation()
-      setTimeout(() => syncedZoomToFit(fg, camRef, 1200, 80), 800)
+      // Ne reheat QUE lors du premier placement : un refetch ou un ajout
+      // ponctuel n'a pas à relancer toute la simulation.
+      // NB: on NE déclenche PAS de zoomToFit ici — c'est `handleInit` dans Graph.tsx
+      // qui gère le recadrage initial (à 800ms post engine-init). Déclencher un
+      // second fit ici créait un "dézoom fantôme" quand les données arrivaient
+      // tardivement (la simu mettait plusieurs secondes à se stabiliser avec
+      // les forces courantes, et le fit tombait en plein dans l'interaction).
+      if (isFirstInit) {
+        fg.d3ReheatSimulation()
+      }
     }, 100)
 
     return () => clearTimeout(timer)
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- graphData.nodes reference changes every render;
-  // we only need to re-run when the count changes (structural change) or viewMode/degreeByNodeId change.
-  }, [viewMode, graphData.nodes.length, degreeByNodeId, citationsByNodeId, fgRef, camRef])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- voir commentaire sur les refs ci-dessus.
+  // `graphData.nodes.length` est gardé pour détecter la transition 0→N au
+  // premier chargement (quand TanStack Query résout les données).
+  }, [viewMode, graphData.nodes.length, fgRef])
 }

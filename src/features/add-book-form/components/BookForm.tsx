@@ -9,7 +9,7 @@ import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { Textarea } from '@/common/components/ui/Textarea'
 import { FormField } from '@/common/components/ui/FormField'
-import { Pill } from '@/common/components/ui/Pill'
+import { Badge } from '@/common/components/ui/Badge'
 import { AuthorPicker } from '../../table/components/TableSubcomponents'
 import { AxisSelector } from './AxisSelector'
 import { DuplicateWarning } from './DuplicateWarning'
@@ -69,7 +69,7 @@ export function BookForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-[18px]">
-      <h3 className="border-b border-white/10 pb-2.5 text-[0.92rem] font-bold uppercase tracking-[2px] text-white/50">
+      <h3 className="border-b border-white/10 pb-2.5 text-body font-bold uppercase tracking-[2px] text-white/50">
         {mode === 'edit' ? 'Modifier l\u2019ouvrage' : 'Nouvel ouvrage'}
       </h3>
 
@@ -98,7 +98,7 @@ export function BookForm({
                 onAddAuthor={onAddAuthor}
               />
               {fieldState.error?.message && (
-                <span className="text-[0.75rem] text-red/85">{fieldState.error.message}</span>
+                <span className="text-caption text-red/85">{fieldState.error.message}</span>
               )}
             </>
           )}
@@ -130,7 +130,7 @@ export function BookForm({
                   ].join(' ')}
                 />
               </Button>
-              <span className="inline-flex items-center gap-1.5 text-[0.85rem] text-white/50 transition-colors">
+              <span className="inline-flex items-center gap-1.5 text-ui text-white/50 transition-colors">
                 <Pin size={11} className={value ? 'text-green' : 'text-white/30'} />
                 Garder les auteur·ices pour la suite
               </span>
@@ -171,18 +171,19 @@ export function BookForm({
 
       {mode === 'book' && recentQueue && recentQueue.length > 0 && (
         <div className="flex flex-col gap-2">
-          <span className="text-[0.75rem] font-semibold uppercase tracking-[1.5px] text-white/25">
+          <span className="text-caption font-semibold uppercase tracking-[1.5px] text-white/25">
             Ajout&eacute;s cette session
           </span>
           <div className="flex flex-wrap gap-1.5">
             {recentQueue.map((item, i) => (
-              <Pill
+              <Badge
                 key={i}
+                variant="pill"
                 title={`${item.title} — ${bookAuthorDisplay({ authorIds: item.authorIds }, authorsMap)}, ${item.year}`}
                 suffix={item.year || null}
               >
                 {item.title}
-              </Pill>
+              </Badge>
             ))}
           </div>
         </div>

@@ -255,7 +255,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
       {phase === 'idle' && (
         <div className="flex flex-col items-center gap-4 py-6">
           {error && (
-            <p className="rounded-lg border border-red/20 bg-red/5 px-4 py-2 text-[0.85rem] text-red/70">
+            <p className="rounded-lg border border-red/20 bg-red/5 px-4 py-2 text-ui text-red/70">
               {error}
             </p>
           )}
@@ -302,7 +302,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
       {phase === 'applying' && (
         <div className="flex flex-col items-center gap-3 py-8">
           <Loader2 size={20} className="animate-spin text-cyan/60" />
-          <p className="text-[0.85rem] text-white/50">Application des modifications…</p>
+          <p className="text-ui text-white/50">Application des modifications…</p>
         </div>
       )}
 
@@ -321,7 +321,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
           <div className="flex max-h-[70vh] flex-col gap-3">
             {/* Header: stats + select all */}
             <div className="flex shrink-0 items-center justify-between">
-              <p className="text-[0.82rem] text-white/45">
+              <p className="text-label text-white/45">
                 {enrichments.length} enrichissement{enrichments.length > 1 ? 's' : ''}
                 {unchangedCount > 0 && (
                   <span className="text-white/25"> · {unchangedCount} ouvrage{unchangedCount > 1 ? 's' : ''} déjà complet{unchangedCount > 1 ? 's' : ''}</span>
@@ -339,7 +339,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
             {/* Emerging themes summary — above table */}
             {sortedThemes.length > 0 && (
               <div className="shrink-0 rounded-lg border border-dashed border-white/10 bg-white/2 px-4 py-2.5">
-                <p className="mb-1.5 text-[0.75rem] font-medium text-white/35">
+                <p className="mb-1.5 text-caption font-medium text-white/35">
                   Thématiques émergentes
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -360,7 +360,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
 
             {/* Enrichments table */}
             <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-white/6">
-              <table className="w-full text-[0.82rem]">
+              <table className="w-full text-label">
                 <thead className="sticky top-0 z-10 bg-[#1a1a2e]">
                   <tr className="border-b border-white/8 text-left text-white/35">
                     <th className="w-8 px-3 py-2" />
@@ -409,7 +409,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
                           <div className="font-medium text-white/80">{e.book.title}</div>
                           {authorNames && <div className="text-[0.78rem] text-white/40">{authorNames}</div>}
                           {currentAxes.length > 0 && (
-                            <div className="mt-0.5 text-[0.72rem] text-white/25">{currentAxes.join(', ')}</div>
+                            <div className="mt-0.5 text-micro text-white/25">{currentAxes.join(', ')}</div>
                           )}
                         </td>
                         <td className="px-2 py-2">
@@ -452,11 +452,11 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
                                   {e.acceptedFields.has('axes') && <Check size={8} className="text-cyan" />}
                                 </button>
                                 <div className={['flex flex-wrap items-center gap-1', !e.acceptedFields.has('axes') ? 'opacity-35' : ''].join(' ')}>
-                                  <span className="text-[0.72rem] text-white/35">Catégories :</span>
+                                  <span className="text-micro text-white/35">Catégories :</span>
                                   {e.newAxes.map((a) => (
                                     <span
                                       key={a}
-                                      className="rounded-full px-2 py-0.5 text-[0.72rem] font-medium"
+                                      className="rounded-full px-2 py-0.5 text-micro font-medium"
                                       style={{
                                         backgroundColor: CATEGORY_THEME[a]?.color + '18',
                                         color: CATEGORY_THEME[a]?.color,
@@ -486,7 +486,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
                                   {e.suggestedThemes.map((theme) => (
                                     <span
                                       key={theme}
-                                      className="rounded-full border border-dashed border-white/20 bg-white/4 px-2 py-0.5 text-[0.72rem] text-white/50"
+                                      className="rounded-full border border-dashed border-white/20 bg-white/4 px-2 py-0.5 text-micro text-white/50"
                                     >
                                       {theme}
                                     </span>
@@ -512,7 +512,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
                 disabled={checkedCount === 0}
                 onClick={applySelected}
                 className={[
-                  'inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-[0.85rem] font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-30',
+                  'inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-ui font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-30',
                   'border-green/30 bg-green/6 text-green/75 hover:bg-green/12',
                 ].join(' ')}
               >

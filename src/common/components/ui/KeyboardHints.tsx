@@ -60,7 +60,7 @@ export function KeyboardHints() {
         aria-expanded={!collapsed}
         aria-controls={panelId}
         aria-label={collapsed ? 'Développer les raccourcis de déplacement' : 'Réduire les raccourcis de déplacement'}
-        className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-md text-left text-[0.72rem] font-bold uppercase tracking-[2px] text-white/30 outline-none transition-colors hover:text-white/45 focus-visible:ring-1 focus-visible:ring-white/20 min-h-9`}
+        className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-md text-left text-micro font-bold uppercase tracking-[2px] text-white/30 outline-none transition-colors hover:text-white/45 focus-visible:ring-1 focus-visible:ring-white/20 min-h-9`}
       >
         <span className="inline-flex min-w-0 items-center gap-1.5">
           <Move size={12} className="shrink-0" />

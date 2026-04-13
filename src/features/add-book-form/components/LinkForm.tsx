@@ -87,10 +87,10 @@ export function LinkForm({
           <ArrowLeft size={14} /> Retour
         </Button>
       )}
-      <h3 className="border-b border-white/10 pb-2.5 text-[0.92rem] font-bold uppercase tracking-[2px] text-white/50">
+      <h3 className="border-b border-white/10 pb-2.5 text-body font-bold uppercase tracking-[2px] text-white/50">
         Nouveau lien
       </h3>
-      <p className="-mt-2 text-[0.92rem] leading-relaxed text-white/35">
+      <p className="-mt-2 text-body leading-relaxed text-white/35">
         Le livre <strong className="text-white/60">source</strong> cite le(s) livre(s){' '}
         <strong className="text-white/60">cible(s)</strong>.
       </p>
@@ -128,7 +128,7 @@ export function LinkForm({
 
       {/* Multi-select target section */}
       <div className="flex flex-col gap-2">
-        <span className="text-[0.75rem] font-semibold uppercase tracking-[1px] text-white/35">
+        <span className="text-caption font-semibold uppercase tracking-[1px] text-white/35">
           ...{linkCount > 1 ? `ces ${linkCount} livres` : 'ce livre'}
         </span>
 
@@ -167,7 +167,7 @@ export function LinkForm({
 
       {/* Shared citation fields */}
       {linkCount > 1 && (
-        <p className="-mt-1 text-[0.82rem] text-white/30">
+        <p className="-mt-1 text-label text-white/30">
           Ces champs s&apos;appliquent à tous les liens créés.
         </p>
       )}

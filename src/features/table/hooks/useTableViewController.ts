@@ -186,13 +186,19 @@ export function useTableViewController({
     setDedupeConfirm(false)
   }
 
-  const handleMergeAuthorDupes = (choices: Map<number, AuthorId>) => {
+  const handleMergeAuthorDupes = (
+    choices: Map<number, AuthorId>,
+    excluded: Map<number, Set<AuthorId>>,
+  ) => {
     if (!authorDedupeConfirm) { setAuthorDedupeConfirm(true); return }
     authorDuplicateGroups.forEach((group, i) => {
       const keepId = choices.get(i) || group[0]?.id
       if (!keepId) return
+      const excludedSet = excluded.get(i)
       group.forEach((a) => {
-        if (a.id !== keepId) mergeAuthors(a.id, keepId)
+        if (a.id === keepId) return
+        if (excludedSet && excludedSet.has(a.id)) return
+        mergeAuthors(a.id, keepId)
       })
     })
     setAuthorDedupeModal(false)

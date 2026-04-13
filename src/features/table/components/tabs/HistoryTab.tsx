@@ -206,7 +206,7 @@ export function HistoryTab() {
               </div>
 
               <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <div className="flex items-center gap-1.5 text-[0.85rem]">
+                <div className="flex items-center gap-1.5 text-ui">
                   <span className="font-medium text-white/70">
                     {actorName(entry.created_by, profilesMap)}
                   </span>
@@ -229,7 +229,7 @@ export function HistoryTab() {
                 </div>
 
                 {diffs.length > 0 && (
-                  <div className="mt-1 flex flex-col gap-0.5 text-[0.75rem]">
+                  <div className="mt-1 flex flex-col gap-0.5 text-caption">
                     {diffs.slice(0, 5).map((d) => {
                       const resolveVal = (v: unknown) => {
                         const s = String(v ?? '')
@@ -254,7 +254,7 @@ export function HistoryTab() {
                   </div>
                 )}
 
-                <div className="mt-1 text-[0.72rem] text-white/20">
+                <div className="mt-1 text-micro text-white/20">
                   {timeAgo(entry.created_at)}
                 </div>
               </div>
@@ -268,7 +268,7 @@ export function HistoryTab() {
                   icon={isRollingBack ? <Loader2 size={11} className="animate-spin" /> : <Undo2 size={11} />}
                   onClick={() => handleRollback(entry)}
                   disabled={isRollingBack}
-                  className="text-[0.75rem] opacity-0 transition-opacity group-hover:opacity-100 data-confirming:opacity-100"
+                  className="text-caption opacity-0 transition-opacity group-hover:opacity-100 data-confirming:opacity-100"
                   data-confirming={isConfirming || undefined}
                 >
                   {isConfirming ? 'Confirmer ?' : 'Annuler'}

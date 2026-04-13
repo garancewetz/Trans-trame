@@ -192,9 +192,9 @@ export function SmartImportInputPhase({
 
   return (
     <>
-      <p className="mb-3 text-[0.82rem] text-white/40">
+      <p className="mb-3 text-label text-white/40">
         Colle une bibliographie ou importe une photo de page de bibliographie.
-        L&apos;app détectera auteurs, titres et années.
+        L&apos;app détectera auteur·ices, titres et années.
       </p>
 
       {/* ── Mode toggle ───────────────────────────────────────── */}
@@ -256,10 +256,10 @@ export function SmartImportInputPhase({
             }`}
           >
             <Upload size={24} className="mb-2 text-white/25" />
-            <p className="text-[0.82rem] text-white/40">
+            <p className="text-label text-white/40">
               Glisse une image ici ou clique pour en sélectionner
             </p>
-            <p className="mt-1 text-[0.72rem] text-white/22">
+            <p className="mt-1 text-micro text-white/22">
               JPG, PNG ou WebP — max 4 Mo par image, 5 images max
             </p>
           </div>
@@ -294,7 +294,7 @@ export function SmartImportInputPhase({
                     key={key}
                     type="button"
                     onClick={() => setCropShape(key)}
-                    className={`flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-[0.72rem] font-medium transition-all ${
+                    className={`flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-micro font-medium transition-all ${
                       cropShape === key
                         ? 'bg-white/12 text-white/80'
                         : 'text-white/30 hover:text-white/55'
@@ -304,7 +304,7 @@ export function SmartImportInputPhase({
                   </button>
                 ))}
               </div>
-              <p className="text-center text-[0.72rem] text-white/30">
+              <p className="text-center text-micro text-white/30">
                 Glisse pour déplacer, scroll pour zoomer
               </p>
               <div className="flex justify-center gap-2">
@@ -388,7 +388,7 @@ export function SmartImportInputPhase({
       )}
 
       <div className="mb-4 rounded-xl border border-white/8 bg-white/2 p-3">
-        <label className="mb-2 flex items-center gap-1.5 text-[0.75rem] font-semibold uppercase tracking-[1.2px] text-white/35">
+        <label className="mb-2 flex items-center gap-1.5 text-caption font-semibold uppercase tracking-[1.2px] text-white/35">
           <Link2 size={10} /> Créer des liens avec…
           <span className="ml-1 font-normal normal-case tracking-normal text-white/22">(optionnel)</span>
         </label>
@@ -435,7 +435,7 @@ export function SmartImportInputPhase({
 
       {analyzing ? (
         <div className="flex flex-col items-center gap-3 py-2">
-          <div className="flex items-center gap-2 text-[0.85rem] text-cyan/70">
+          <div className="flex items-center gap-2 text-ui text-cyan/70">
             <Loader2 size={14} className="animate-spin" />
             <span>Analyse en cours… {Math.round(analyzeProgress)}%</span>
           </div>
@@ -451,7 +451,7 @@ export function SmartImportInputPhase({
           <Button
             type="submit"
             disabled={!canSubmit}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-cyan/35 bg-cyan/10 px-4 py-2 text-[0.85rem] font-semibold text-cyan/85 transition-all hover:bg-cyan/18 disabled:cursor-not-allowed disabled:opacity-30"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-cyan/35 bg-cyan/10 px-4 py-2 text-ui font-semibold text-cyan/85 transition-all hover:bg-cyan/18 disabled:cursor-not-allowed disabled:opacity-30"
           >
             <Zap size={13} /> Analyser
           </Button>

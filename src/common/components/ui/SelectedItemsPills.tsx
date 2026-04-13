@@ -27,7 +27,7 @@ export function SelectedItemsPills<T extends PillItem>({
       {items.map((item) => (
         <span
           key={item.id}
-          className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/15 bg-white/8 py-1 pl-2 pr-1.5 text-[0.85rem] text-white/75"
+          className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/15 bg-white/8 py-1 pl-2 pr-1.5 text-ui text-white/75"
         >
           {item.axes && <AxesDot axes={item.axes} size="small" />}
           <span className={`truncate ${titleMaxWidth}`}>{item.title}</span>

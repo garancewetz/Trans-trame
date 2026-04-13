@@ -59,7 +59,7 @@ export function TableTopbar({
             {t.label}
             <span
               className={[
-                'ml-1.5 rounded-full px-1.5 py-px text-[0.72rem] tabular-nums',
+                'ml-1.5 rounded-full px-1.5 py-px text-micro tabular-nums',
                 tab === t.id ? 'bg-white/15 text-white/75' : 'bg-white/5 text-white/30',
               ].join(' ')}
             >

@@ -83,10 +83,10 @@ const GLASS_TONE: Record<
 }
 
 const GLASS_MD =
-  'inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-[16px] py-[6px] text-[0.85rem] font-semibold text-white/70 backdrop-blur-lg transition-all'
+  'inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-[16px] py-[6px] text-ui font-semibold text-white/70 backdrop-blur-lg transition-all'
 
 const GLASS_SM =
-  'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-[10px] py-[5px] text-[0.82rem] font-semibold backdrop-blur-lg transition-all'
+  'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-[10px] py-[5px] text-label font-semibold backdrop-blur-lg transition-all'
 
 function resolveVariant(v: ButtonVariant): Exclude<ButtonVariant, 'buttonIcon'> {
   return v === 'buttonIcon' ? 'icon' : v
@@ -119,7 +119,7 @@ export function Button({
     classes = ''
   } else if (v === 'surface') {
     classes =
-      'flex-1 cursor-pointer rounded-lg border border-white/10 bg-white/4 px-4 py-2 text-[0.85rem] font-semibold text-white/55 transition-all hover:text-white'
+      'flex-1 cursor-pointer rounded-lg border border-white/10 bg-white/4 px-4 py-2 text-ui font-semibold text-white/55 transition-all hover:text-white'
   } else if (v === 'icon') {
     classes = clsx(
       iconDensity === 'soft'
@@ -148,7 +148,7 @@ export function Button({
   } else if (v === 'outline') {
     const shell =
       outlineWeight === 'strong'
-        ? 'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-2 text-[0.85rem] font-semibold transition-all'
+        ? 'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-2 text-ui font-semibold transition-all'
         : 'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.8rem] font-semibold transition-all'
     classes = shell
 
@@ -211,11 +211,11 @@ export function Button({
       )
     } else {
       classes =
-        'flex w-full cursor-pointer items-center justify-center rounded-lg bg-transparent px-3 py-3 text-center text-[0.92rem] font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white'
+        'flex w-full cursor-pointer items-center justify-center rounded-lg bg-transparent px-3 py-3 text-center text-body font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white'
     }
   } else if (v === 'chip') {
     classes = clsx(
-      'cursor-pointer rounded-md px-3 py-1 text-[0.82rem] font-semibold transition-all',
+      'cursor-pointer rounded-md px-3 py-1 text-label font-semibold transition-all',
       selected ? 'bg-white/10 text-white shadow-sm' : 'text-white/38 hover:text-white/70'
     )
   }
@@ -231,8 +231,14 @@ export function Button({
       children
     )
 
+  // A11y: keyboard focus ring for every non-unstyled variant.
+  const focusRing =
+    v === 'unstyled'
+      ? ''
+      : 'focus:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-0'
+
   return (
-    <button type={type} className={clsx(classes, className)} style={style} {...props}>
+    <button type={type} className={clsx(classes, focusRing, className)} style={style} {...props}>
       {content}
     </button>
   )

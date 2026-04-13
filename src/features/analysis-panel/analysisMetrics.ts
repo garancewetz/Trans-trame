@@ -54,7 +54,11 @@ export function computeDecades(bookNodes: { year?: number | null }[]) {
 
 /* ── Œuvres pivots (most cited) ────────────────────────── */
 
-export function computeMostCitedWorks(bookNodes: { id: string; title?: string }[], links: { source: unknown; target: unknown }[]) {
+export function computeMostCitedWorks(
+  bookNodes: { id: string; title?: string }[],
+  links: { source: unknown; target: unknown }[],
+  limit = 5,
+) {
   const citedByCount: Record<string, number> = {}
   for (const node of bookNodes) citedByCount[node.id] = 0
   for (const link of links) {
@@ -63,7 +67,7 @@ export function computeMostCitedWorks(bookNodes: { id: string; title?: string }[
   }
   return [...bookNodes]
     .sort((a, b) => (citedByCount[b.id] || 0) - (citedByCount[a.id] || 0))
-    .slice(0, 3)
+    .slice(0, limit)
     .map((n) => ({ ...n, citedBy: citedByCount[n.id] || 0 }))
 }
 
@@ -87,6 +91,136 @@ export function computeTopAuthors(
       const author = authorsMap.get(id)
       return { id, name: author ? authorName(author) : id, bookCount }
     })
+}
+
+/* ── Ponts inter-axes ──────────────────────────────────── */
+/**
+ * Pour chaque œuvre, compte les liens (entrants + sortants) où le·la voisin·e
+ * ne partage aucun axe — indicateur de transversalité. On renvoie aussi un
+ * ratio (liens transversaux / liens totaux) pour contextualiser les hubs.
+ */
+
+export function computeInterAxisBridges(
+  bookNodes: { id: string; title?: string; axes?: string[]; authorIds?: string[] }[],
+  links: { source: unknown; target: unknown }[],
+  limit = 5,
+) {
+  const byId = new Map(bookNodes.map((n) => [n.id, n]))
+  const totalByNode = new Map<string, number>()
+  const bridgeByNode = new Map<string, number>()
+
+  const resolveId = (ref: unknown): string | null => {
+    if (typeof ref === 'string') return ref
+    if (typeof ref === 'object' && ref !== null && 'id' in ref) {
+      const id = (ref as { id: unknown }).id
+      return typeof id === 'string' ? id : null
+    }
+    return null
+  }
+
+  for (const link of links) {
+    const srcId = resolveId(link.source)
+    const tgtId = resolveId(link.target)
+    if (!srcId || !tgtId) continue
+    const src = byId.get(srcId)
+    const tgt = byId.get(tgtId)
+    if (!src || !tgt) continue
+    const srcAxes = new Set(src.axes || [])
+    const tgtAxes = tgt.axes || []
+    const shared = tgtAxes.some((a) => srcAxes.has(a))
+    totalByNode.set(srcId, (totalByNode.get(srcId) || 0) + 1)
+    totalByNode.set(tgtId, (totalByNode.get(tgtId) || 0) + 1)
+    if (!shared) {
+      bridgeByNode.set(srcId, (bridgeByNode.get(srcId) || 0) + 1)
+      bridgeByNode.set(tgtId, (bridgeByNode.get(tgtId) || 0) + 1)
+    }
+  }
+
+  const enriched = bookNodes
+    .map((n) => {
+      const bridges = bridgeByNode.get(n.id) || 0
+      const total = totalByNode.get(n.id) || 0
+      const ratio = total > 0 ? bridges / total : 0
+      return { ...n, bridges, total, ratio }
+    })
+    .filter((n) => n.bridges > 0)
+    .sort((a, b) => b.bridges - a.bridges || b.ratio - a.ratio)
+    .slice(0, limit)
+
+  return enriched
+}
+
+/* ── Archipels (composantes connexes) ──────────────────── */
+/**
+ * Groupe les œuvres en composantes connexes (liens traités comme non-orientés).
+ * Renvoie la taille de la composante principale et les petits archipels isolés
+ * (2–4 nœuds), qui sont souvent des îlots thématiques non encore rattachés.
+ */
+
+export function computeArchipelagos(
+  bookNodes: { id: string }[],
+  links: { source: unknown; target: unknown }[],
+) {
+  if (bookNodes.length === 0) {
+    return { componentCount: 0, mainSize: 0, mainPct: 0, smallIslands: [] as number[], orphans: 0 }
+  }
+
+  const parent = new Map<string, string>()
+  for (const n of bookNodes) parent.set(n.id, n.id)
+
+  const find = (x: string): string => {
+    let root = x
+    while (parent.get(root) !== root) root = parent.get(root)!
+    // path compression
+    let cur = x
+    while (parent.get(cur) !== root) {
+      const next = parent.get(cur)!
+      parent.set(cur, root)
+      cur = next
+    }
+    return root
+  }
+
+  const union = (a: string, b: string) => {
+    const ra = find(a)
+    const rb = find(b)
+    if (ra !== rb) parent.set(ra, rb)
+  }
+
+  const resolveId = (ref: unknown): string | null => {
+    if (typeof ref === 'string') return ref
+    if (typeof ref === 'object' && ref !== null && 'id' in ref) {
+      const id = (ref as { id: unknown }).id
+      return typeof id === 'string' ? id : null
+    }
+    return null
+  }
+
+  for (const link of links) {
+    const s = resolveId(link.source)
+    const t = resolveId(link.target)
+    if (s && t && parent.has(s) && parent.has(t)) union(s, t)
+  }
+
+  const sizes = new Map<string, number>()
+  for (const n of bookNodes) {
+    const r = find(n.id)
+    sizes.set(r, (sizes.get(r) || 0) + 1)
+  }
+
+  const counts = [...sizes.values()].sort((a, b) => b - a)
+  const mainSize = counts[0] || 0
+  const mainPct = Math.round((mainSize / bookNodes.length) * 100)
+  const orphans = counts.filter((c) => c === 1).length
+  const smallIslands = counts.slice(1).filter((c) => c >= 2 && c <= 4)
+
+  return {
+    componentCount: counts.length,
+    mainSize,
+    mainPct,
+    smallIslands,
+    orphans,
+  }
 }
 
 /* ── Maillage (network health) ─────────────────────────── */

@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
-import { useAppData } from '@/core/AppDataContext'
+import { useAppData, useAppMutations } from '@/core/AppDataContext'
 import { useSelection } from '@/core/SelectionContext'
 import { useTableUi } from '@/core/TableUiContext'
 import { TableTopbar } from './TableTopbar'
@@ -24,10 +24,8 @@ function tableInitialTabFromState(tab: string): NonNullable<TableViewProps['init
 }
 
 export function TableView() {
+  const { books, links, authors } = useAppData()
   const {
-    books,
-    links,
-    authors,
     handleAddBook,
     handleAddLink,
     handleUpdateBook,
@@ -39,7 +37,7 @@ export function TableView() {
     handleUpdateAuthor,
     handleDeleteAuthor,
     handleMigrateData,
-  } = useAppData()
+  } = useAppMutations()
 
   const {
     selectedNode,

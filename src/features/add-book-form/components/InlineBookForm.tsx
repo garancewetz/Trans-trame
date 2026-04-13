@@ -121,14 +121,14 @@ export function InlineBookForm({
           type="button"
           disabled={!canSubmit}
           onClick={handleSubmit}
-          className="flex-1 cursor-pointer rounded-[8px] bg-linear-to-br from-cyan/70 to-blue/90 px-4 py-2.5 text-[0.85rem] font-semibold text-white transition-all hover:-translate-y-px hover:from-cyan/90 hover:to-blue/100 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex-1 cursor-pointer rounded-[8px] bg-linear-to-br from-cyan/70 to-blue/90 px-4 py-2.5 text-ui font-semibold text-white transition-all hover:-translate-y-px hover:from-cyan/90 hover:to-blue/100 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Créer et sélectionner
         </Button>
         <Button
           type="button"
           onClick={onCancel}
-          className="cursor-pointer rounded-[8px] border border-white/10 bg-white/5 px-4 py-2.5 text-[0.85rem] text-white/50 transition-all hover:bg-white/10 hover:text-white/70"
+          className="cursor-pointer rounded-[8px] border border-white/10 bg-white/5 px-4 py-2.5 text-ui text-white/50 transition-all hover:bg-white/10 hover:text-white/70"
         >
           Annuler
         </Button>

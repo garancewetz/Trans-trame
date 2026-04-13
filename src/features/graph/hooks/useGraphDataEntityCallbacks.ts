@@ -122,7 +122,7 @@ export function useGraphDataEntityCallbacks({
       const sanitized = sanitizeAuthor({ ...author, type: 'author' as const }, axesColorsRef.current!)
       setAuthors((prev) => (prev.some((a) => a.id === sanitized.id) ? prev : [...prev, sanitized]))
     },
-    onError: (err) => { devWarn('Erreur ajout auteur', err); toast.error("Impossible d'ajouter l'auteur"); invalidate() },
+    onError: (err) => { devWarn('Erreur ajout auteur', err); toast.error("Impossible d'ajouter l'auteur·ice"); invalidate() },
   })
 
   const updateAuthorMutation = useMutation({
@@ -136,7 +136,7 @@ export function useGraphDataEntityCallbacks({
       const sanitized = sanitizeAuthor({ ...updatedAuthor, type: 'author' as const }, axesColorsRef.current!)
       setAuthors((prev) => prev.map((a) => (a.id === sanitized.id ? sanitized : a)))
     },
-    onError: (err) => { devWarn('Erreur mise à jour auteur', err); toast.error("Impossible de modifier l'auteur"); invalidate() },
+    onError: (err) => { devWarn('Erreur mise à jour auteur', err); toast.error("Impossible de modifier l'auteur·ice"); invalidate() },
   })
 
   const deleteAuthorMutation = useMutation({
@@ -154,7 +154,7 @@ export function useGraphDataEntityCallbacks({
         )
       )
     },
-    onError: (err) => { devWarn('Erreur suppression auteur', err); toast.error("Impossible de supprimer l'auteur"); invalidate() },
+    onError: (err) => { devWarn('Erreur suppression auteur', err); toast.error("Impossible de supprimer l'auteur·ice"); invalidate() },
   })
 
   // ── Links ────────────────────────────────────────────────────────────────────
@@ -246,10 +246,20 @@ export function useGraphDataEntityCallbacks({
       const srcId = normalizeId((link as Link).source) as string
       const tgtId = normalizeId((link as Link).target) as string
       const citationText = link.citation_text || ''
+      const page = link.page || ''
+      const edition = link.edition || ''
+      // A citation is uniquely identified by (source, target, citation_text, page, edition):
+      // the same work can be cited multiple times in another on different passages.
       const isDuplicate = linksRef.current!.some((l) => {
         const s = normalizeId(l.source)
         const t = normalizeId(l.target)
-        return s === srcId && t === tgtId && l.citation_text === citationText
+        return (
+          s === srcId &&
+          t === tgtId &&
+          (l.citation_text || '') === citationText &&
+          (l.page || '') === page &&
+          (l.edition || '') === edition
+        )
       })
       if (isDuplicate) return
       addLinkMutation.mutate({
@@ -257,8 +267,8 @@ export function useGraphDataEntityCallbacks({
         source: srcId,
         target: tgtId,
         citation_text: citationText,
-        edition: link.edition || '',
-        page: link.page || '',
+        edition,
+        page,
         context: link.context || '',
       })
     },

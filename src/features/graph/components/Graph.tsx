@@ -29,6 +29,7 @@ import { normalizeEndpointId } from '../domain/graphDataModel'
 import { useGraphDerivedLinkState } from '../hooks/useGraphDerivedLinkState'
 import { linkKeyOf } from '../domain/linkStyle'
 import { useGraphLinkCallbacks } from '../hooks/useGraphLinkCallbacks'
+import { Minimap } from './Minimap'
 
 function graphInstanceRefresh(fg: ForceGraphMethods | null | undefined) {
   if (!fg) return
@@ -123,14 +124,22 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   useEffect(() => setupWheelZoomHandlers({ containerRef, fgRef, velRef, camRef }), [])
   useEffect(() => clearHoverAnim, [])
 
-  const { anchorIds, connectedLinks, connectedNodes, citationsByNodeId, linkWeights, degreeByNodeId } = useGraphDerivedLinkState({
+  const {
+    anchorIds, connectedLinks, connectedNodes,
+    citationsByNodeId, linkWeights, degreeByNodeId,
+    bookCountByAuthorId, externalCitationsByBookId,
+  } = useGraphDerivedLinkState({
     graphData,
     selectedAuthorId,
     peekNodeId,
     selectedNode,
   })
 
-  useGraphLayout({ fgRef, camRef, graphData, viewMode, degreeByNodeId, citationsByNodeId })
+  useGraphLayout({
+    fgRef, graphData, viewMode,
+    degreeByNodeId, citationsByNodeId,
+    bookCountByAuthorId, externalCitationsByBookId,
+  })
 
   useEffect(() => {
     const fg = fgRef.current
@@ -193,17 +202,52 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     },
   }), [resetToOverview, updateHoveredLinks])
 
+  // Filet de sécurité anti-légende coincée : quand le pointeur quitte le canvas
+  // ou quand le nœud survolé disparaît des données (filtre timeline, refetch,
+  // suppression), react-force-graph n'envoie pas toujours onNodeHover(null).
+  // Résultat : `hoveredNodeRef` garde une référence périmée → `onRenderFramePost`
+  // continue à dessiner sa légende à des coordonnées figées.
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const onLeave = () => {
+      if (!hoveredNodeRef.current) return
+      hoveredNodeRef.current = null
+      updateHoveredLinks(null)
+      graphInstanceRefresh(fgRef.current)
+    }
+    el.addEventListener('pointerleave', onLeave)
+    return () => el.removeEventListener('pointerleave', onLeave)
+  }, [updateHoveredLinks])
+
+  // Resynchronise `hoveredNodeRef` avec les données courantes : si le nœud a
+  // disparu → on le libère ; si c'est un autre objet (nouveau refetch avec
+  // mêmes IDs), on re-pointe sur la référence live pour garder les bonnes x/y.
+  useEffect(() => {
+    const hovered = hoveredNodeRef.current
+    if (!hovered) return
+    const live = graphData.nodes.find((n) => n.id === hovered.id)
+    if (!live) {
+      hoveredNodeRef.current = null
+      updateHoveredLinks(null)
+      graphInstanceRefresh(fgRef.current)
+    } else if (live !== hovered) {
+      hoveredNodeRef.current = live
+      graphInstanceRefresh(fgRef.current)
+    }
+  }, [graphData.nodes, updateHoveredLinks])
+
   const handleInit = useCallback((fg) => {
     // Les auteurs ont une répulsion plus forte pour créer des "systèmes stellaires" distincts
     fg
       .d3Force('charge')
-      .strength((node) => chargeStrengthForNode(node, degreeByNodeId))
+      .strength((node) => chargeStrengthForNode(node, degreeByNodeId, citationsByNodeId))
       .distanceMax(FORCE_CHARGE_DIST_MAX)
     // Citations (livre→livre) : ressort plus long pour aérer ; auteur→livre reste compact.
     // Strength par type : auteur-livre fort (ancre les galaxies), citation modéré (tire les ponts).
     fg.d3Force('link')
-      .distance(linkDistanceForType)
-      .strength(linkStrengthForType)
+      .distance((link) => linkDistanceForType(link, bookCountByAuthorId, citationsByNodeId))
+      .strength((link) => linkStrengthForType(link, externalCitationsByBookId, citationsByNodeId))
     // Collision : alignée sur le *rayon visuel* du nœud pour éviter tout chevauchement
     // (les livres très cités peuvent atteindre 46px de rayon — cf. getNodeRadius).
     fg.d3Force('collide', forceCollide((node) => {
@@ -219,7 +263,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         syncedZoomToFit(fg, camRef, 1200, 80)
       }
     }, 800)
-  }, [degreeByNodeId, citationsByNodeId])
+  }, [degreeByNodeId, citationsByNodeId, bookCountByAuthorId, externalCitationsByBookId])
 
   const isNodeVisible = useCallback(
     (node) => {
@@ -274,6 +318,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         isNodeVisible,
         hoveredFilter,
         citationCount: citationsByNodeId.get(node.id) || 0,
+        isIsolated: node.type !== 'author' && (degreeByNodeId.get(node.id) ?? 0) === 0,
         skipLabel: hoveredNodeRef.current?.id === node.id,
       })
       // Flash ring for newly imported nodes
@@ -290,7 +335,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         ctx.restore()
       }
     },
-    [selectedNode, selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId]
+    [selectedNode, selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, degreeByNodeId]
   )
 
   const nodePointerAreaPaint = useCallback(
@@ -330,24 +375,10 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     hoveredLinksRef,
   })
 
-  // Auto recadrage (vue d'ensemble) : au chargement / changement de vue,
-  // s'assurer que le graphe "tient" dans l'écran pour voir plus de connexions d'un coup d'œil.
-  useEffect(() => {
-    didInitialFitRef.current = false
-  }, [viewMode, graphData.nodes.length, graphData.links.length])
-
-  const maybeZoomToFitOverview = useCallback(
-    (duration = 900) => {
-      const fg = fgRef.current
-      if (!fg) return
-      if (hasSelection) return
-      if (activeFilter) return
-      if (didInitialFitRef.current) return
-      didInitialFitRef.current = true
-      syncedZoomToFit(fg, camRef, duration, 80)
-    },
-    [hasSelection, activeFilter],
-  )
+  // Auto-recadrage supprimé : seul `handleInit` déclenche un fit initial à
+  // 800ms post engine-init. Aucun fit automatique ne peut survenir ensuite,
+  // même si la simulation se stabilise tardivement ou redémarre. L'utilisateur
+  // peut toujours recadrer manuellement via Espace ou `centerCamera()`.
 
   const onRenderFramePost = useCallback(
     (ctx, globalScale) => {
@@ -366,11 +397,12 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
           isNodeVisible,
           hoveredFilter,
           citationCount: citationsByNodeId.get(hovered.id) || 0,
+          isIsolated: hovered.type !== 'author' && (degreeByNodeId.get(hovered.id) ?? 0) === 0,
           labelOnly: true,
         })
       }
     },
-    [selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId]
+    [selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, degreeByNodeId]
   )
 
   return (
@@ -409,11 +441,13 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         linkDirectionalParticleColor={linkDirectionalParticleColor}
         backgroundColor={getComputedStyle(document.documentElement).getPropertyValue('--color-bg-base').trim()}
         onEngineInit={handleInit}
-        onEngineStop={() => {
-          // Le recadrage est plus fiable une fois la simulation stabilisée.
-          maybeZoomToFitOverview(900)
-        }}
         onRenderFramePost={onRenderFramePost}
+      />
+      <Minimap
+        graphData={graphData}
+        fgRef={fgRef}
+        camRef={camRef}
+        containerRef={containerRef}
       />
     </div>
   )

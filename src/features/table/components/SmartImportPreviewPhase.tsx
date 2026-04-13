@@ -79,7 +79,7 @@ export function SmartImportPreviewPhase({
   return (
     <>
       {/* Stats bar */}
-      <div className="mb-3 flex flex-wrap items-center gap-2 text-[0.82rem]">
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-label">
         <span className="text-white/40">
           {parsed.length} ligne{parsed.length > 1 ? 's' : ''} détectée{parsed.length > 1 ? 's' : ''}
         </span>
@@ -102,13 +102,13 @@ export function SmartImportPreviewPhase({
             {masterNode.title}
           </span>
         )}
-        <span className="ml-auto text-[0.75rem] text-white/22">Cliquer pour modifier</span>
+        <span className="ml-auto text-caption text-white/22">Cliquer pour modifier</span>
       </div>
 
       {/* Author initial-match suggestions */}
       {authorMergeSuggestions.length > 0 && (
         <div className="mb-3 overflow-hidden rounded-xl border border-violet/20 bg-violet/3">
-          <div className="flex items-center gap-1.5 border-b border-violet/10 px-3 py-1.5 text-[0.72rem] font-semibold uppercase tracking-[1.3px] text-violet/45">
+          <div className="flex items-center gap-1.5 border-b border-violet/10 px-3 py-1.5 text-micro font-semibold uppercase tracking-[1.3px] text-violet/45">
             <GitMerge size={10} />
             Auteur·ices à fusionner ?
           </div>
@@ -118,7 +118,7 @@ export function SmartImportPreviewPhase({
               className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-x-3 border-b border-violet/8 px-3 py-1.5 last:border-0"
             >
               {/* Initial author (left) */}
-              <div className="min-w-0 font-mono text-[0.82rem]">
+              <div className="min-w-0 font-mono text-label">
                 <span className="text-white/45">{s.initialAuthor.firstName}</span>
                 {' '}
                 <span className="font-semibold text-white/65">{s.initialAuthor.lastName.toUpperCase()}</span>
@@ -131,7 +131,7 @@ export function SmartImportPreviewPhase({
               <span className="text-[0.8rem] text-violet/40">→</span>
 
               {/* Full author (right) */}
-              <div className="min-w-0 font-mono text-[0.82rem]">
+              <div className="min-w-0 font-mono text-label">
                 <span className="text-white/60">{s.fullAuthor.firstName}</span>
                 {' '}
                 <span className="font-semibold text-white/80">{s.fullAuthor.lastName.toUpperCase()}</span>
@@ -145,7 +145,7 @@ export function SmartImportPreviewPhase({
                 <Button
                   type="button"
                   onClick={() => onAuthorMerge(s)}
-                  className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-violet/25 bg-violet/8 px-2 py-0.5 text-[0.72rem] font-semibold text-violet/70 transition-all hover:bg-violet/18 hover:text-violet/95"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-violet/25 bg-violet/8 px-2 py-0.5 text-micro font-semibold text-violet/70 transition-all hover:bg-violet/18 hover:text-violet/95"
                 >
                   <GitMerge size={9} /> Fusionner
                 </Button>
@@ -165,7 +165,7 @@ export function SmartImportPreviewPhase({
 
       {/* Table */}
       <div className="mb-4 overflow-hidden rounded-xl border border-white/8">
-        <div className="grid grid-cols-[28px_2fr_1.2fr_0.5fr_1fr_48px_28px_54px] border-b border-white/6 bg-white/2.5 px-3 py-1.5 text-[0.72rem] font-semibold uppercase tracking-[1.3px] text-white/28">
+        <div className="grid grid-cols-[28px_2fr_1.2fr_0.5fr_1fr_48px_28px_54px] border-b border-white/6 bg-white/2.5 px-3 py-1.5 text-micro font-semibold uppercase tracking-[1.3px] text-white/28">
           <span />
           <span>Titre</span>
           <span>Auteur·ice</span>
@@ -173,7 +173,7 @@ export function SmartImportPreviewPhase({
           <span className="group/tip relative flex items-center gap-1">
             Édition
             <Info size={10} className="text-white/25 transition-colors group-hover/tip:text-white/50" />
-            <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-white/10 bg-bg-overlay/95 px-2.5 py-1.5 text-[0.72rem] font-normal normal-case tracking-normal text-white/65 opacity-0 shadow-lg transition-opacity group-hover/tip:opacity-100">
+            <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-white/10 bg-bg-overlay/95 px-2.5 py-1.5 text-micro font-normal normal-case tracking-normal text-white/65 opacity-0 shadow-lg transition-opacity group-hover/tip:opacity-100">
               Info du lien, pas de l'ouvrage
             </span>
           </span>
@@ -183,7 +183,7 @@ export function SmartImportPreviewPhase({
         </div>
         <div className="max-h-[min(55vh,480px)] overflow-y-auto">
           {parsed.length === 0 && (
-            <p className="p-4 text-center text-[0.82rem] text-white/50">Aucun ouvrage reconnu.</p>
+            <p className="p-4 text-center text-label text-white/50">Aucun ouvrage reconnu.</p>
           )}
           {parsed.map((item, idx) => (
             <div key={item.id}>
@@ -228,7 +228,7 @@ export function SmartImportPreviewPhase({
           type="submit"
           disabled={selectedCount === 0 || injected || inserting}
           className={[
-            'inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-[0.85rem] font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-30',
+            'inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-ui font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-30',
             injected
               ? 'border-green/50 bg-green/10 text-green'
               : 'border-green/30 bg-green/6 text-green/75 hover:bg-green/12',

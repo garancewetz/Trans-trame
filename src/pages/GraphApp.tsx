@@ -135,9 +135,11 @@ function GraphAppContent() {
         highlightLabel={highlightLabel}
         selectedAuthor={filter.selectedAuthor}
         selectedAuthorName={filter.selectedAuthor ? authorName(authorsMap.get(filter.selectedAuthor) ?? {}) || null : null}
+        selectedBookTitle={selection.selectedNode?.title ?? null}
         onClearAxis={filter.clearActiveFilter}
         onClearHighlight={filter.clearHighlight}
         onClearAuthor={() => filter.setSelectedAuthor(null)}
+        onClearSelectedBook={selection.closePanel}
       />
 
       <Legend
@@ -151,15 +153,6 @@ function GraphAppContent() {
       />
 
       <SidePanel graphRef={graphRef} />
-
-      {isGraphView && selection.selectedNode && (
-        <div className="pointer-events-none absolute bottom-20 left-1/2 z-30 -translate-x-1/2 rounded-lg border border-white/10 bg-bg-overlay/92 px-4 py-2 text-center backdrop-blur-md">
-          <div className="text-[14px] font-semibold text-white/90">{selection.selectedNode.title}</div>
-          {selection.selectedNode.year && (
-            <div className="text-[14px] text-white/40">{selection.selectedNode.year}</div>
-          )}
-        </div>
-      )}
 
       <Timeline
         graphData={graphData}

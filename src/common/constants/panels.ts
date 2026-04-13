@@ -2,8 +2,10 @@
 
 /** Valeurs brutes en rem (pour calculs) */
 export const PANEL_REM = {
-  /** Panels latéraux par défaut (Textes, Auteurs, Analyse, SidePanel simple) */
+  /** Panels latéraux par défaut (Textes, Auteurs, SidePanel simple) */
   default: 23.75, // 380px
+  /** Panel Analyse (plus large pour accueillir graphes et métriques) */
+  analysis: 32, // 512px
   /** SidePanel en mode ouvrage (node sélectionné) */
   book: 32,
   /** Panel source de liens (LinkSourcePanel) */
@@ -18,6 +20,7 @@ export const PANEL_REM = {
  */
 export const PANEL_WIDTH = {
   default: 'w-[23.75rem]',
+  analysis: 'w-[min(100vw,32rem)]',
   book: 'w-[min(100vw,32rem)]',
   dual: 'w-[min(100vw,52rem)]',
   linkSource: 'w-[20rem]',
