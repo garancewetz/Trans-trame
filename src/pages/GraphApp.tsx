@@ -152,7 +152,7 @@ function GraphAppContent() {
         clearFilter={filter.clearActiveFilter}
       />
 
-      <SidePanel graphRef={graphRef} />
+      <SidePanel />
 
       <Timeline
         graphData={graphData}

@@ -1,6 +1,5 @@
 import { ArrowRight, ArrowLeft, LinkIcon, BookCopy, ExternalLink, Trash2, Pencil, MoreHorizontal, Eye } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { blendAxesColors } from '@/common/utils/categories'
 import { Button } from '@/common/components/ui/Button'
 import { AuthorLinks } from '@/common/components/AuthorLinks'
 import { TextareaInline } from '@/common/components/ui/TextareaInline'
@@ -56,8 +55,6 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
     : 'bg-linear-to-br from-cyan/80 to-blue/90 text-white'
 
   const excerpt = (selectedLink?.citation_text || selectedLink?.context || '').trim()
-  const axesForCitation = linkContextNode?.axes ?? relatedNode?.axes
-  const citationAxisColor = blendAxesColors(axesForCitation)
   const citationMetaYear = linkContextNode?.year ?? relatedNode?.year ?? source?.year ?? target?.year
 
   if (!selectedLink) return null

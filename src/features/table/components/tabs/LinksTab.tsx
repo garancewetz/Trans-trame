@@ -46,7 +46,6 @@ type LinksTabProps = {
   deletingLinkId: string | null
   setDeletingLinkId: (id: string | null) => void
   onDeleteLink: (linkId: string) => void
-  onFocusBookOnMap?: (bookId: BookId) => void
   onOpenWorkDetail?: (bookId: BookId) => void
   authors?: Author[]
   onAddAuthor?: (author: Author) => void
@@ -82,7 +81,6 @@ export function LinksTab({
   deletingLinkId,
   setDeletingLinkId,
   onDeleteLink,
-  onFocusBookOnMap,
   onOpenWorkDetail,
   authors,
   onAddAuthor,

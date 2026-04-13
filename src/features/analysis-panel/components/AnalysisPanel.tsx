@@ -145,7 +145,7 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
 
             {/* Legend */}
             <div className="flex flex-wrap gap-x-3 gap-y-1">
-              {axisStats.map(({ axis, count, pct, color }) => (
+              {axisStats.map(({ axis, count, color }) => (
                 <button
                   key={axis}
                   type="button"

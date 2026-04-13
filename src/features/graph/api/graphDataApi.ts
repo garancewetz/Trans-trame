@@ -190,7 +190,7 @@ export async function rollbackActivityEntry(entry: ActivityLogEntry) {
       return supabase.from(table).update({ deleted_at: new Date().toISOString() }).eq('id', entity_id)
 
     case 'UPDATE': {
-      if (!old_values || typeof old_values !== 'object' || Array.isArray(old_values)) break
+      if (!old_values || typeof old_values !== 'object' || Array.isArray(old_values)) return null
       const fields: Record<string, unknown> = {}
       for (const [k, v] of Object.entries(old_values)) {
         if (!META_FIELDS.includes(k)) fields[k] = v
@@ -203,5 +203,8 @@ export async function rollbackActivityEntry(entry: ActivityLogEntry) {
 
     case 'RESTORE':
       return supabase.from(table).update({ deleted_at: new Date().toISOString() }).eq('id', entity_id)
+
+    default:
+      return null
   }
 }

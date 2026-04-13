@@ -1,22 +1,15 @@
 import clsx from 'clsx'
 import { X, PanelRightClose, ChevronRight, ChevronLeft, ArrowLeft } from 'lucide-react'
-import { type RefObject, useCallback, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Button } from '@/common/components/ui/Button'
 import { PANEL_WIDTH } from '@/common/constants/panels'
 import { useSelection } from '@/core/SelectionContext'
-import { useAppData } from '@/core/AppDataContext'
-import { useTableUi } from '@/core/TableUiContext'
-import type { GraphImperativeHandle } from '@/features/graph/components/Graph'
 import { AdminPanel } from './AdminPanel'
 import { EmptyState } from './EmptyState'
 import { LinkDetails } from './LinkDetails'
 import { NodeDetails } from './NodeDetails'
 
-type SidePanelProps = {
-  graphRef: RefObject<GraphImperativeHandle | null>
-}
-
-export function SidePanel({ graphRef }: SidePanelProps) {
+export function SidePanel() {
   const {
     panelOpen,
     panelTab,
@@ -24,14 +17,10 @@ export function SidePanel({ graphRef }: SidePanelProps) {
     selectedLink,
     linkContextNode,
     setPanelTab,
-    setSelectedNode,
     setSelectedLink,
     setLinkContextNode,
     closePanel,
   } = useSelection()
-
-  const { graphData } = useAppData()
-  const { openTable } = useTableUi()
 
   const [panelCollapsed, setPanelCollapsed] = useState(false)
   const isAdminTab = panelTab === 'edit'

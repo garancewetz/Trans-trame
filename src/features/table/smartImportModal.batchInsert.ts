@@ -36,7 +36,6 @@ export async function runSmartImportBatchInsert(params: {
 
   const toAdd = parsed.filter((r) => checked.has(r.id))
   const newItems = toAdd.filter((r) => !mergedIds.has(r.id))
-  const mergedItems = toAdd.filter((r) => mergedIds.has(r.id))
   const newIds: string[] = []
   const localAuthors: Author[] = [...existingAuthors]
 

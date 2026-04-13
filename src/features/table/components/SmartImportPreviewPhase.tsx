@@ -185,7 +185,7 @@ export function SmartImportPreviewPhase({
           {parsed.length === 0 && (
             <p className="p-4 text-center text-label text-white/50">Aucun ouvrage reconnu.</p>
           )}
-          {parsed.map((item, idx) => (
+          {parsed.map((item) => (
             <div key={item.id}>
               <SmartImportPreviewRow
                 item={item}

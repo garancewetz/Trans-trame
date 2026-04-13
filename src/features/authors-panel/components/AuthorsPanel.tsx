@@ -42,12 +42,12 @@ export function AuthorsPanel({
     filter.toggleSelectedAuthor(authorId)
   }, [selection, filter])
 
-  const handleAddWorkForAuthor = useCallback((_authorName?: string) => {
+  const handleAddWorkForAuthor = useCallback(() => {
     tableUi.openTable('books')
     panels.setAuthorsPanelOpen(false)
   }, [tableUi, panels])
 
-  const handleOpenAddBookFromSearch = useCallback((_searchQuery?: string) => {
+  const handleOpenAddBookFromSearch = useCallback(() => {
     tableUi.openTable('books')
     panels.setAuthorsPanelOpen(false)
   }, [tableUi, panels])
@@ -155,7 +155,7 @@ export function AuthorsPanel({
                       title="Ajouter un ouvrage pour cet·te auteur·ice"
                       onClick={(e) => {
                         e.stopPropagation()
-                        handleAddWorkForAuthor(a.name)
+                        handleAddWorkForAuthor()
                       }}
                     >
                       <Plus size={18} strokeWidth={2.25} />
@@ -194,7 +194,7 @@ export function AuthorsPanel({
                   <Button
                     type="button"
                     className="w-full cursor-pointer rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-left text-body font-semibold text-white/70 transition-colors hover:border-violet/45 hover:bg-violet/15 hover:text-white"
-                    onClick={() => handleOpenAddBookFromSearch(q)}
+                    onClick={() => handleOpenAddBookFromSearch()}
                   >
                     Ajouter un·e auteur·ice (nouvel ouvrage)
                   </Button>

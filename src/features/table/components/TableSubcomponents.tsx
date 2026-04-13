@@ -313,10 +313,13 @@ export function NodeSearch({
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement | null>(null)
 
-  // Sync display when value changes externally (selection or clear)
-  useEffect(() => {
+  // Sync display when value changes externally (selection or clear) — the
+  // React-recommended "adjust state during render" pattern.
+  const [prevValue, setPrevValue] = useState(value)
+  if (value !== prevValue) {
+    setPrevValue(value)
     if (!isSearching) setQuery(value?.title ?? '')
-  }, [value, isSearching])
+  }
 
   useEffect(() => {
     function onDown(e: PointerEvent) {

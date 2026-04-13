@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useMemo, useRef, useState, type FormEvent } from 'react'
 import { toggleSetItem } from '@/common/utils/setUtils'
 import type { Book } from '@/types/domain'
 import { parseSmartInput, parseSmartInputHybrid, parseSmartInputFromImages, type ParsedBook } from '../parseSmartInput'
@@ -46,11 +46,12 @@ export function useSmartImportModalLogic({
   const [dismissedAuthorMerges, setDismissedAuthorMerges] = useState<Set<string>>(new Set())
   const [dismissedDuplicates, setDismissedDuplicates] = useState<Set<string>>(new Set())
 
-  useEffect(() => {
-    if (initialMasterNode) {
-      setMasterNode(initialMasterNode)
-    }
-  }, [initialMasterNode])
+  // Sync masterNode when the prop changes (React "adjust state during render" pattern).
+  const [prevInitialMasterNode, setPrevInitialMasterNode] = useState(initialMasterNode)
+  if (initialMasterNode !== prevInitialMasterNode) {
+    setPrevInitialMasterNode(initialMasterNode)
+    if (initialMasterNode) setMasterNode(initialMasterNode)
+  }
 
   const effectiveParsed = useMemo(
     () => parsed.map((item) =>

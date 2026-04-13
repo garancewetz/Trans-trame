@@ -238,7 +238,6 @@ export function TableView() {
           deletingLinkId={c.deletingLinkId}
           setDeletingLinkId={c.setDeletingLinkId}
           onDeleteLink={(id) => handleDeleteLink?.(id)}
-          onFocusBookOnMap={openBookInSidePanel}
           onOpenWorkDetail={openBookInSidePanel}
           authors={authors}
           onAddAuthor={(a) => handleAddAuthor?.(a)}

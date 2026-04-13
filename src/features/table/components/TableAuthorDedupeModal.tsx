@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Check } from 'lucide-react'
 import type { Author, AuthorId, Book } from '@/types/domain'
 import { Button } from '@/common/components/ui/Button'
@@ -30,16 +30,21 @@ export function TableAuthorDedupeModal({
   const [choices, setChoices] = useState<Map<number, AuthorId>>(new Map())
   const [excluded, setExcluded] = useState<Map<number, Set<AuthorId>>>(new Map())
 
-  // Initialize choices: default to the first author in each group
-  useEffect(() => {
-    if (!open) return
+  // Initialize choices when the modal opens (or its groups change while open):
+  // default to the first author in each group. Done via the React "adjust
+  // state during render" pattern to avoid a cascading effect.
+  const [prevOpenKey, setPrevOpenKey] = useState<{ open: boolean; groups: Author[][] } | null>(null)
+  if (open && (!prevOpenKey || !prevOpenKey.open || prevOpenKey.groups !== duplicateGroups)) {
+    setPrevOpenKey({ open, groups: duplicateGroups })
     const init = new Map<number, AuthorId>()
     duplicateGroups.forEach((group, i) => {
       if (group.length > 0) init.set(i, group[0].id)
     })
     setChoices(init)
     setExcluded(new Map())
-  }, [open, duplicateGroups])
+  } else if (!open && prevOpenKey?.open) {
+    setPrevOpenKey({ open: false, groups: duplicateGroups })
+  }
 
   const bookCountById = useMemo(() => {
     const m = new Map<AuthorId, number>()

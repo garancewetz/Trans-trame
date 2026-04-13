@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toggleSetItem } from '@/common/utils/setUtils'
 import { buildAuthorsMap } from '@/common/utils/authorUtils'
 import type { AuthorId, Book, BookId } from '@/types/domain'
@@ -28,9 +28,11 @@ export function useTableViewController({
   const [booksPrefill, setBooksPrefill] = useState<null | { nonce: string; authorId: AuthorId }>(null)
 
   /** Évite de réappliquer un auteur prérempli à chaque retour sur l'onglet Ouvrages. */
-  useEffect(() => {
+  const [prevTab, setPrevTab] = useState(tab)
+  if (tab !== prevTab) {
+    setPrevTab(tab)
     if (tab !== 'books') setBooksPrefill(null)
-  }, [tab])
+  }
 
   const [search, setSearch] = useState('')
   const [authorSearch, setAuthorSearch] = useState('')
@@ -39,18 +41,17 @@ export function useTableViewController({
     () => (initialLinkSourceId ? nodes.find((n) => n.id === initialLinkSourceId) ?? null : null),
   )
 
-  const didPrefillLinkSearchFromInitialSource = useRef(false)
-
-  /** Même logique que depuis l'onglet Ouvrages : titre dans la recherche liens (barre du haut). */
-  useEffect(() => {
-    if (didPrefillLinkSearchFromInitialSource.current) return
-    if (!initialLinkSourceId) return
+  /** Même logique que depuis l'onglet Ouvrages : titre dans la recherche liens (barre du haut).
+   *  Prérempli une seule fois dès que `nodes` contient la source initiale. */
+  const [hasPrefilledLinkSearch, setHasPrefilledLinkSearch] = useState(false)
+  if (!hasPrefilledLinkSearch && initialLinkSourceId) {
     const n = nodes.find((b) => b.id === initialLinkSourceId)
     const title = (n?.title || '').trim()
-    if (!title) return
-    setLinkSearch(title)
-    didPrefillLinkSearchFromInitialSource.current = true
-  }, [initialLinkSourceId, nodes])
+    if (title) {
+      setHasPrefilledLinkSearch(true)
+      setLinkSearch(title)
+    }
+  }
 
   const focusAuthorInAuthorsTab = (authorId: AuthorId) => {
     if (!authorId) return
