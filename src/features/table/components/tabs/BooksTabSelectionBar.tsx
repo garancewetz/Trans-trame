@@ -1,4 +1,4 @@
-import { BookOpen, ClipboardCopy, Merge, Sparkles, Trash2 } from 'lucide-react'
+import { BookOpen, ClipboardCopy, Info, Merge, Sparkles, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/common/components/ui/Button'
 import { Tooltip } from '@/common/components/ui/Tooltip'
@@ -15,6 +15,7 @@ type Props = {
   onOpenSameWorkModal: () => void
   onExport: () => string
   onAIEnrich?: () => void
+  onShowInfo?: () => void
 }
 
 export function BooksTabSelectionBar({
@@ -29,6 +30,7 @@ export function BooksTabSelectionBar({
   onOpenSameWorkModal,
   onExport,
   onAIEnrich,
+  onShowInfo,
 }: Props) {
   const [copied, setCopied] = useState(false)
 
@@ -76,6 +78,17 @@ export function BooksTabSelectionBar({
         <ClipboardCopy size={11} />
         {copied ? 'Copié !' : `Copier texte (${selectedCount})`}
       </Button>
+      {onShowInfo && (
+        <Tooltip content="Date d'ajout et éléments importés au même moment">
+          <Button
+            type="button"
+            onClick={onShowInfo}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/4 px-3 py-1.5 text-[0.8rem] font-semibold text-white/50 transition-all hover:bg-white/8"
+          >
+            <Info size={11} /> Informations
+          </Button>
+        </Tooltip>
+      )}
       {onAIEnrich && (
         <Tooltip content="Enrichir les ouvrages sélectionnés via Gemini (catégories, édition, année…)">
           <Button

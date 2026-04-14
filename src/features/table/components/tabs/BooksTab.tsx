@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toggleSetItem } from '@/common/utils/setUtils'
 import { useColumnSort } from '../../hooks/useColumnSort'
-import { Merge, Sparkles } from 'lucide-react'
+import { ClipboardList, Merge, Sparkles } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { TableMergeModal } from '../TableMergeModal'
 import { TableSameWorkModal } from '../TableSameWorkModal'
 import { AIEnrichModal } from '../AIEnrichModal'
+import { BatchInfoModal } from '../BatchInfoModal'
 import type { Author, AuthorId, Book, BookId, Link } from '@/types/domain'
 import { type Axis } from '@/common/utils/categories'
 import { BooksTabBooksTable } from './BooksTabBooksTable'
 import { BooksTabSelectionBar } from './BooksTabSelectionBar'
 import { useBooksTabTableDerived } from './useBooksTabTableDerived'
+import type { DuplicateGroup } from '../../hooks/useTableViewDuplicateDerived'
 
 type BooksTabProps = {
   nodes: Book[]
@@ -28,10 +30,13 @@ type BooksTabProps = {
   onOpenWorkDetail?: (bookId: BookId) => unknown
   initialAuthorIds?: AuthorId[]
   autoFocusTitle?: boolean
-  duplicateGroups?: Book[][]
+  duplicateGroups?: DuplicateGroup[]
   onOpenDedupeModal?: () => void
   orphans?: Book[]
   onOpenOrphanModal?: () => void
+  onOpenAIOrphanReconcile?: () => void
+  showAIReconcile?: boolean
+  todoCount?: number
   focusBookId?: BookId | null
 }
 
@@ -55,6 +60,9 @@ export function BooksTab({
   onOpenDedupeModal,
   orphans = [],
   onOpenOrphanModal,
+  onOpenAIOrphanReconcile,
+  showAIReconcile = false,
+  todoCount = 0,
   focusBookId = null,
 }: BooksTabProps) {
   const [editingAuthorsNodeId, setEditingAuthorsNodeId] = useState<BookId | null>(null)
@@ -185,7 +193,11 @@ export function BooksTab({
     setTimeout(() => {
       titleInputRef.current?.focus()
       const el = document.querySelector(`[data-book-row-id="${newId}"]`)
-      if (el instanceof HTMLElement) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      if (el instanceof HTMLElement) {
+        const rect = el.getBoundingClientRect()
+        const fullyVisible = rect.top >= 0 && rect.bottom <= window.innerHeight
+        if (!fullyVisible) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      }
     }, 50)
     setTimeout(() => setJustAddedBookId((prev) => (prev === newId ? null : prev)), 3000)
   }
@@ -216,6 +228,7 @@ export function BooksTab({
 
   const [aiEnrichModal, setAiEnrichModal] = useState(false)
   const [aiEnrichBooks, setAiEnrichBooks] = useState<Book[]>([])
+  const [batchInfoModal, setBatchInfoModal] = useState(false)
 
   const openAIEnrich = () => {
     const selected = nodes.filter((n) => selectedIds.has(n.id))
@@ -226,8 +239,23 @@ export function BooksTab({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      {(duplicateGroups.length > 0 || orphans.length > 0) && (
+      {(duplicateGroups.length > 0 || orphans.length > 0 || showAIReconcile || todoCount > 0) && (
         <div className="flex shrink-0 items-center gap-2 border-b border-white/6 px-5 py-2">
+          {todoCount > 0 && (
+            <Button
+              variant="outline"
+              outlineWeight="faint"
+              tone="amber"
+              emphasis
+              icon={<ClipboardList size={11} />}
+              onClick={() => setAxisFilter(null as never)}
+              type="button"
+              title={`${todoCount} élément${todoCount > 1 ? 's' : ''} à traiter`}
+            >
+              À traiter
+              <span className="tabular-nums">({todoCount})</span>
+            </Button>
+          )}
           {duplicateGroups.length > 0 && (
             <Button
               variant="outline"
@@ -258,6 +286,20 @@ export function BooksTab({
               <span className="tabular-nums">({orphans.length})</span>
             </Button>
           )}
+          {showAIReconcile && onOpenAIOrphanReconcile && (
+            <Button
+              variant="outline"
+              outlineWeight="faint"
+              tone="magic"
+              emphasis
+              icon={<Sparkles size={11} />}
+              onClick={onOpenAIOrphanReconcile}
+              type="button"
+              title="Réconcilier auteur·ices et ouvrages via Gemini (contexte de batch + graphe)"
+            >
+              AI Réconcilier
+            </Button>
+          )}
         </div>
       )}
 
@@ -282,6 +324,7 @@ export function BooksTab({
           setMergeModal(true)
         }}
         onAIEnrich={openAIEnrich}
+        onShowInfo={() => setBatchInfoModal(true)}
         onExport={() => {
           const selected = (nodes || []).filter((n) => selectedIds.has(n.id))
           return selected
@@ -372,6 +415,15 @@ export function BooksTab({
         onUpdateBook={onUpdateBook}
         onAddAuthor={onAddAuthor}
         onClose={() => { setAiEnrichModal(false); setAiEnrichBooks([]) }}
+      />
+
+      <BatchInfoModal
+        open={batchInfoModal}
+        onClose={() => setBatchInfoModal(false)}
+        selectedBooks={nodes.filter((n) => selectedIds.has(n.id))}
+        allBooks={nodes}
+        allAuthors={authors}
+        authorsMap={authorsMap}
       />
     </div>
   )

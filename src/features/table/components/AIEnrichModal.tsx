@@ -64,7 +64,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
         .filter(Boolean)
         .map((a) => [a!.firstName, a!.lastName].filter(Boolean).join(' '))
         .join(', ')
-      const raw = [authorNames, n.title, n.year].filter(Boolean).join(', ') + '.'
+      const raw = [authorNames || '[auteur·ice inconnu·e]', n.title, n.year].filter(Boolean).join(', ') + '.'
       return { index: i, raw }
     })
 
@@ -527,7 +527,11 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
       {phase === 'done' && (
         <div className="flex flex-col items-center gap-3 py-6">
           {enrichments.length === 0 ? (
-            <p className="text-[0.9rem] text-white/50">Aucun enrichissement trouvé — les ouvrages sont déjà complets.</p>
+            <p className="text-[0.9rem] text-white/50">
+              {books.some((b) => !b.authorIds || b.authorIds.length === 0)
+                ? 'Aucun enrichissement trouvé — l\'IA n\'a pas pu identifier les auteur·ices manquant·es.'
+                : 'Aucun enrichissement trouvé — les ouvrages sont déjà complets.'}
+            </p>
           ) : (
             <p className="text-[0.9rem] text-green/70">
               <Check size={14} className="mr-1 inline" />

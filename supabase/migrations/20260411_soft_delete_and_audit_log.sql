@@ -8,9 +8,9 @@
 -- 1. SOFT DELETE COLUMNS
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-ALTER TABLE books   ADD COLUMN deleted_at TIMESTAMPTZ DEFAULT NULL;
-ALTER TABLE authors ADD COLUMN deleted_at TIMESTAMPTZ DEFAULT NULL;
-ALTER TABLE links   ADD COLUMN deleted_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE books   ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE authors ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE links   ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL;
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- 2. UPDATE RLS POLICIES
@@ -68,7 +68,7 @@ CREATE POLICY "links_delete" ON links
 -- 3. ACTIVITY LOG TABLE
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-CREATE TABLE activity_log (
+CREATE TABLE IF NOT EXISTS activity_log (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   entity_type TEXT NOT NULL,
   entity_id   TEXT NOT NULL,
@@ -79,12 +79,13 @@ CREATE TABLE activity_log (
   created_by  UUID REFERENCES auth.users(id)
 );
 
-CREATE INDEX idx_activity_log_created_at ON activity_log(created_at DESC);
-CREATE INDEX idx_activity_log_entity     ON activity_log(entity_type, entity_id);
-CREATE INDEX idx_activity_log_created_by ON activity_log(created_by);
+CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON activity_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_log_entity     ON activity_log(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_activity_log_created_by ON activity_log(created_by);
 
 ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "activity_log_select" ON activity_log;
 CREATE POLICY "activity_log_select" ON activity_log
   FOR SELECT TO authenticated
   USING (is_whitelisted());
@@ -151,14 +152,17 @@ $$;
 -- 5. ATTACH AUDIT TRIGGERS
 -- ═══════════════════════════════════════════════════════════════════════════════
 
+DROP TRIGGER IF EXISTS trg_books_audit ON books;
 CREATE TRIGGER trg_books_audit
   AFTER INSERT OR UPDATE ON books
   FOR EACH ROW EXECUTE FUNCTION log_activity();
 
+DROP TRIGGER IF EXISTS trg_authors_audit ON authors;
 CREATE TRIGGER trg_authors_audit
   AFTER INSERT OR UPDATE ON authors
   FOR EACH ROW EXECUTE FUNCTION log_activity();
 
+DROP TRIGGER IF EXISTS trg_links_audit ON links;
 CREATE TRIGGER trg_links_audit
   AFTER INSERT OR UPDATE ON links
   FOR EACH ROW EXECUTE FUNCTION log_activity();

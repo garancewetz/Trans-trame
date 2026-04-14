@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo, type ReactElement } from 'react'
 import type { Book, Author, GraphData } from '@/types/domain'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { useVizSize } from './useVizSize'
@@ -12,6 +12,14 @@ const PAD = { left: 70, right: 70, top: 80, bottom: 96 }
 const NODE_R = 5
 const STACK_GAP = 22
 
+// Style « idle » des arcs de fond — inlined pour que la couche de base se
+// rende sans dépendre de `hoveredId` ni passer par le coûteux `CitationLink`.
+const BASE_ARC_STROKE = 'rgba(140,220,255,1)'
+const BASE_ARC_OPACITY_IDLE = 0.15
+const BASE_ARC_OPACITY_FOCUSED = 0.08
+const BASE_ARC_WIDTH_IDLE = 0.5
+const BASE_ARC_WIDTH_FOCUSED = 0.3
+
 interface Props {
   graphData: GraphData
   authors: Author[]
@@ -19,6 +27,17 @@ interface Props {
   onNodeClick?: (node: Book) => void
   activeFilter?: string | null
   hoveredFilter?: string | null
+}
+
+type Arc = {
+  d: string
+  sourceId: string
+  targetId: string
+  sx: number
+  sy: number
+  tx: number
+  ty: number
+  key: string
 }
 
 export function HistCiteView({ graphData, authors, selectedNode, onNodeClick, activeFilter, hoveredFilter }: Props) {
@@ -35,11 +54,6 @@ export function HistCiteView({ graphData, authors, selectedNode, onNodeClick, ac
     () => allBooks.filter((b) => typeof b.year === 'number') as (Book & { year: number })[],
     [allBooks],
   )
-
-  const { minYear, maxYear } = useMemo(() => {
-    const years = books.map((b) => b.year)
-    return { minYear: Math.min(...years), maxYear: Math.max(...years, 2025) }
-  }, [books])
 
   const nodePositions = useMemo(() => {
     const PX_PER_BOOK = 18
@@ -79,7 +93,6 @@ export function HistCiteView({ graphData, authors, selectedNode, onNodeClick, ac
 
     // Position each node within its decade's horizontal band
     const pos = new Map<string, { x: number; y: number }>()
-    // Group years per decade for sub-positioning
     const yearsByDecade = new Map<number, number[]>()
     for (const year of [...byYear.keys()].sort((a, b) => a - b)) {
       const dec = Math.floor(year / 10) * 10
@@ -102,7 +115,7 @@ export function HistCiteView({ graphData, authors, selectedNode, onNodeClick, ac
     }
 
     return { pos, decadeStart, decadeWidth, decades, innerW }
-  }, [books, w, h, minYear, maxYear])
+  }, [books, w, h])
 
   const nodePos = nodePositions.pos
   const { decadeStart, decadeWidth, decades } = nodePositions
@@ -116,17 +129,166 @@ export function HistCiteView({ graphData, authors, selectedNode, onNodeClick, ac
     return counts
   }, [edges])
 
-  const arcs = useMemo(() => {
-    return edges.flatMap(({ sourceId, targetId }) => {
+  const arcs = useMemo<Arc[]>(() => {
+    const out: Arc[] = []
+    let i = 0
+    for (const { sourceId, targetId } of edges) {
       const src = nodePos.get(sourceId)
       const tgt = nodePos.get(targetId)
-      if (!src || !tgt || src.x === tgt.x) return []
+      if (!src || !tgt || src.x === tgt.x) continue
       const cpX = (src.x + tgt.x) / 2
       const dx = Math.abs(src.x - tgt.x)
       const cpY = Math.min(src.y, tgt.y) - Math.max(32, dx * 0.38)
-      return [{ d: `M ${src.x} ${src.y} Q ${cpX} ${cpY} ${tgt.x} ${tgt.y}`, sourceId, targetId, sx: src.x, sy: src.y, tx: tgt.x, ty: tgt.y }]
+      out.push({
+        d: `M ${src.x} ${src.y} Q ${cpX} ${cpY} ${tgt.x} ${tgt.y}`,
+        sourceId,
+        targetId,
+        sx: src.x,
+        sy: src.y,
+        tx: tgt.x,
+        ty: tgt.y,
+        key: `${sourceId}|${targetId}|${i++}`,
+      })
+    }
+    return out
+  }, [edges, nodePos])
+
+  // Couche de fond des arcs — mémorisée, ne dépend PAS de `hoveredId`.
+  // Se rerender uniquement quand la topologie (arcs), le filtre, ou l'état
+  // sélection/hover transitionne (booléen, pas l'id). → plus de cascade de
+  // re-render sur chaque mouvement de souris.
+  const browsing = !!hoveredId && !selectedId
+  const baseArcsLayer = useMemo(() => {
+    const opacity = selectedId || browsing ? BASE_ARC_OPACITY_FOCUSED : BASE_ARC_OPACITY_IDLE
+    const strokeWidth = selectedId || browsing ? BASE_ARC_WIDTH_FOCUSED : BASE_ARC_WIDTH_IDLE
+    const marker = selectedId || browsing ? undefined : 'url(#arrow-cite-faint)'
+    return arcs.map((arc) => (
+      <path
+        key={arc.key}
+        d={arc.d}
+        fill="none"
+        stroke={BASE_ARC_STROKE}
+        strokeOpacity={opacity}
+        strokeWidth={strokeWidth}
+        markerEnd={marker}
+        opacity={linkFilterOpacity(arc.sourceId, arc.targetId)}
+      />
+    ))
+  }, [arcs, selectedId, browsing, linkFilterOpacity])
+
+  // Overlay des arcs focaux (sélection + hover). Ne rend QUE les quelques
+  // arcs touchant l'ancre ou le nœud survolé — typiquement < 10 éléments.
+  // Ces arcs recyclent `CitationLink` (gradient directionnel + particules).
+  const focalArcsLayer = useMemo(() => {
+    if (!selectedId && !hoveredId) return null
+    const focalIds = new Set<string>()
+    if (selectedId) focalIds.add(selectedId)
+    if (hoveredId) focalIds.add(hoveredId)
+    return arcs.flatMap((arc, i) => {
+      if (!focalIds.has(arc.sourceId) && !focalIds.has(arc.targetId)) return []
+      return [(
+        <g key={arc.key} opacity={linkFilterOpacity(arc.sourceId, arc.targetId)}>
+          <CitationLink
+            d={arc.d}
+            sourceId={arc.sourceId}
+            targetId={arc.targetId}
+            selectedId={selectedId}
+            hoveredId={hoveredId}
+            linkIndex={i}
+            sx={arc.sx}
+            sy={arc.sy}
+            tx={arc.tx}
+            ty={arc.ty}
+          />
+        </g>
+      )]
     })
-  }, [edges, nodePositions])
+  }, [arcs, selectedId, hoveredId, linkFilterOpacity])
+
+  // Handlers stables pour les nœuds — mémorisés pour que la couche de base
+  // ne soit pas invalidée à chaque render.
+  const onEnter = useCallback((id: string) => setHoveredId(id), [setHoveredId])
+  const onLeave = useCallback(() => setHoveredId(null), [setHoveredId])
+  const onClick = useCallback((book: Book & { year: number }) => {
+    if (hasMoved()) return
+    onNodeClick?.(book)
+  }, [hasMoved, onNodeClick])
+
+  // Couche de fond des nœuds — pas de glow, pas de scale hover, pas de
+  // dépendance sur hoveredId. Ne re-render que si la liste, les positions
+  // ou le filtre changent.
+  const baseNodesLayer = useMemo(() => {
+    return books.map((book) => {
+      const pos = nodePos.get(book.id)
+      if (!pos) return null
+      const fill = nodeFill(book.axes)
+      const cites = citationCount.get(book.id) ?? 0
+      const bookR = NODE_R + Math.min(Math.sqrt(cites) * 3, 12)
+      return (
+        <circle
+          key={book.id}
+          cx={pos.x}
+          cy={pos.y}
+          r={bookR}
+          fill={fill}
+          fillOpacity={0.88}
+          opacity={filterOpacity(book.id)}
+          style={{ cursor: 'pointer' }}
+          onClick={() => onClick(book)}
+          onMouseEnter={() => onEnter(book.id)}
+          onMouseLeave={onLeave}
+        />
+      )
+    })
+  }, [books, nodePos, citationCount, filterOpacity, onClick, onEnter, onLeave])
+
+  // Overlay des nœuds focaux (sélection + voisins + hovered + voisins).
+  // Rendu par-dessus la base : les nœuds focaux prennent leur taille/glow,
+  // les non-focaux gardent leur apparence de base MAIS on baisse l'opacité
+  // globale du calque de base pour simuler le « dim » de Galaxy.
+  const focalNodesLayer = useMemo(() => {
+    if (!selectedId && !hoveredId) return null
+    const focalIds = new Set<string>()
+    if (selectedId) {
+      focalIds.add(selectedId)
+      relatedIds?.forEach((id) => focalIds.add(id))
+    }
+    if (hoveredId) {
+      focalIds.add(hoveredId)
+      hoveredNeighborIds?.forEach((id) => focalIds.add(id))
+    }
+    const out: ReactElement[] = []
+    for (const id of focalIds) {
+      const book = bookMap.get(id) as (Book & { year: number }) | undefined
+      const pos = nodePos.get(id)
+      if (!book || !pos) continue
+      const fill = nodeFill(book.axes)
+      const cites = citationCount.get(id) ?? 0
+      const bookR = NODE_R + Math.min(Math.sqrt(cites) * 3, 12)
+      const nv = getNodeVisual(id, bookR, selectedId, relatedIds, hoveredId, hoveredNeighborIds)
+      const isHovered = id === hoveredId
+      out.push(
+        <g
+          key={id}
+          opacity={filterOpacity(id)}
+          onClick={() => onClick(book)}
+          onMouseEnter={() => onEnter(id)}
+          onMouseLeave={onLeave}
+          style={nodeHoverStyle(isHovered)}
+        >
+          {nv.glowR != null && (
+            <circle cx={pos.x} cy={pos.y} r={nv.glowR} fill={fill} fillOpacity={nv.glowOpacity} />
+          )}
+          <circle cx={pos.x} cy={pos.y} r={nv.r} fill={fill} fillOpacity={nv.opacity} />
+        </g>,
+      )
+    }
+    return out
+  }, [
+    selectedId, hoveredId, relatedIds, hoveredNeighborIds,
+    bookMap, nodePos, citationCount, filterOpacity,
+    onClick, onEnter, onLeave,
+  ])
 
   const ticks = useMemo(() => {
     const baselineY = h - PAD.bottom
@@ -139,34 +301,16 @@ export function HistCiteView({ graphData, authors, selectedNode, onNodeClick, ac
 
   const baselineY = h - PAD.bottom
 
-  function handleNodeClick(book: Book & { year: number }) {
-    if (hasMoved()) return
-    onNodeClick?.(book)
-  }
+  // Quand une focalisation est active, on estompe le calque de base pour
+  // que les overlays focaux ressortent — sans invalider la memo du calque.
+  const hasFocus = !!selectedId || !!hoveredId
+  const baseLayerOpacity = hasFocus ? 0.35 : 1
 
   return (
     <div ref={ref} className="absolute inset-0 bg-bg-base overflow-hidden">
       <svg ref={svgRef} width={w} height={h} {...svgHandlers}>
         <SvgDefs nodeAxesSet={nodeAxesSet} />
         <g transform={transformStr}>
-          {/* Citation arcs */}
-          {arcs.map((arc, i) => (
-            <g key={`${arc.sourceId}|${arc.targetId}|${i}`} opacity={linkFilterOpacity(arc.sourceId, arc.targetId)}>
-              <CitationLink
-                d={arc.d}
-                sourceId={arc.sourceId}
-                targetId={arc.targetId}
-                selectedId={selectedId}
-                hoveredId={hoveredId}
-                linkIndex={i}
-                sx={arc.sx}
-                sy={arc.sy}
-                tx={arc.tx}
-                ty={arc.ty}
-              />
-            </g>
-          ))}
-
           {/* Baseline */}
           <line
             x1={PAD.left}
@@ -187,37 +331,15 @@ export function HistCiteView({ graphData, authors, selectedNode, onNodeClick, ac
             </g>
           ))}
 
-          {/* Book nodes */}
-          {books.map((book) => {
-            const pos = nodePos.get(book.id)
-            if (!pos) return null
-            const fill = nodeFill(book.axes)
-            const cites = citationCount.get(book.id) ?? 0
-            const bookR = NODE_R + Math.min(Math.sqrt(cites) * 3, 12)
-            const nv = getNodeVisual(book.id, bookR, selectedId, relatedIds, hoveredId, hoveredNeighborIds)
-            const fOpacity = filterOpacity(book.id)
-            return (
-              <g
-                key={book.id}
-                opacity={fOpacity}
-                onClick={() => handleNodeClick(book)}
-                onMouseEnter={() => setHoveredId(book.id)}
-                onMouseLeave={() => setHoveredId(null)}
-                style={nodeHoverStyle(hoveredId === book.id)}
-              >
-                {nv.glowR != null && (
-                  <circle cx={pos.x} cy={pos.y} r={nv.glowR} fill={fill} fillOpacity={nv.glowOpacity} />
-                )}
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r={nv.r}
-                  fill={fill}
-                  fillOpacity={nv.opacity}
-                />
-              </g>
-            )
-          })}
+          {/* Base layer (arcs + nodes) — dimmed when a focus is active */}
+          <g opacity={baseLayerOpacity}>
+            {baseArcsLayer}
+            {baseNodesLayer}
+          </g>
+
+          {/* Focal overlays — re-render seulement quand la sélection/hover change */}
+          {focalArcsLayer}
+          {focalNodesLayer}
 
           {/* Hover label */}
           {hoveredId && (() => {

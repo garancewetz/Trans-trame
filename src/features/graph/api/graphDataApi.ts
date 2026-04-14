@@ -2,14 +2,13 @@ import { supabase } from '@/core/supabase'
 import type { Tables, TablesInsert, TablesUpdate } from '@/types/supabase'
 
 export async function loadGraphDataFromSupabase() {
-  const [booksRes, authorsRes, linksRes, bookAuthorsRes] = await Promise.all([
-    supabase.from('books').select('*').is('deleted_at', null).order('created_at', { ascending: true }),
-    supabase.from('authors').select('*').is('deleted_at', null).order('created_at', { ascending: true }),
-    supabase.from('links').select('*').is('deleted_at', null),
-    supabase.from('book_authors').select('*'),
+  const [booksRes, authorsRes, linksRes] = await Promise.all([
+    supabase.from('books').select('*, book_authors(author_id)').is('deleted_at', null).order('created_at', { ascending: true }).limit(10000),
+    supabase.from('authors').select('*').is('deleted_at', null).order('created_at', { ascending: true }).limit(10000),
+    supabase.from('links').select('*').is('deleted_at', null).limit(10000),
   ])
 
-  return { booksRes, authorsRes, linksRes, bookAuthorsRes }
+  return { booksRes, authorsRes, linksRes }
 }
 
 export function insertBookRow(row: TablesInsert<'books'>) {
@@ -59,11 +58,24 @@ export function deleteAllBooks() {
 // ── Book-Authors junction ─────────────────────────────────────────────────
 
 export async function setBookAuthors(bookId: string, authorIds: string[]) {
-  await supabase.from('book_authors').delete().eq('book_id', bookId)
+  const delResult = await supabase.from('book_authors').delete().eq('book_id', bookId).select()
+  if (delResult.error) {
+    console.warn('[setBookAuthors] delete failed for', bookId, delResult.error)
+    return { error: delResult.error }
+  }
   if (authorIds.length === 0) return { error: null }
-  return supabase.from('book_authors').insert(
-    authorIds.map((author_id) => ({ book_id: bookId, author_id }))
+  const rows = authorIds.map((author_id) => ({ book_id: bookId, author_id }))
+  const insResult = await supabase.from('book_authors').insert(rows).select()
+  console.info(
+    `[setBookAuthors] book=${bookId} sent=${rows.length} returned=${insResult.data?.length ?? 'null'} error=${insResult.error?.message ?? 'none'}`,
   )
+  if (insResult.error) {
+    console.warn('[setBookAuthors] insert failed for', bookId, insResult.error)
+  } else if (!insResult.data?.length) {
+    console.warn('[setBookAuthors] insert returned no data — RLS may be silently blocking', bookId)
+    return { error: { message: 'Insert silencieux : aucune donnée retournée (vérifier RLS)' } }
+  }
+  return insResult
 }
 
 export function insertBookAuthors(bookId: string, authorIds: string[]) {
@@ -96,71 +108,48 @@ export function exportFilename(suffix: string) {
 }
 
 export async function exportFullDatabase() {
-  const { booksRes, authorsRes, linksRes, bookAuthorsRes } =
-    await loadGraphDataFromSupabase()
+  const { booksRes, authorsRes, linksRes } = await loadGraphDataFromSupabase()
 
-  const errors = [booksRes, authorsRes, linksRes, bookAuthorsRes]
+  const errors = [booksRes, authorsRes, linksRes]
     .map((r) => r.error)
     .filter(Boolean)
   if (errors.length > 0) {
     console.error('[export] Certaines données n\'ont pas pu être chargées :', errors)
   }
 
+  // Extraire book_authors depuis la relation embarquée
+  const bookAuthors = (booksRes.data ?? []).flatMap((b) =>
+    ((b.book_authors as { author_id: string }[] | null) ?? []).map((ba) => ({
+      book_id: b.id,
+      author_id: ba.author_id,
+    })),
+  )
+
   downloadJson(
     {
       exportedAt: new Date().toISOString(),
       books: booksRes.data ?? [],
       authors: authorsRes.data ?? [],
       links: linksRes.data ?? [],
-      bookAuthors: bookAuthorsRes.data ?? [],
+      bookAuthors,
     },
     exportFilename('backup'),
-  )
-}
-
-export async function exportBooks() {
-  const { booksRes, bookAuthorsRes } = await loadGraphDataFromSupabase()
-  downloadJson(
-    {
-      exportedAt: new Date().toISOString(),
-      books: booksRes.data ?? [],
-      bookAuthors: bookAuthorsRes.data ?? [],
-    },
-    exportFilename('ouvrages'),
-  )
-}
-
-export async function exportAuthors() {
-  const { authorsRes, bookAuthorsRes } = await loadGraphDataFromSupabase()
-  downloadJson(
-    {
-      exportedAt: new Date().toISOString(),
-      authors: authorsRes.data ?? [],
-      bookAuthors: bookAuthorsRes.data ?? [],
-    },
-    exportFilename('auteurs'),
-  )
-}
-
-export async function exportLinks() {
-  const { linksRes } = await loadGraphDataFromSupabase()
-  downloadJson(
-    {
-      exportedAt: new Date().toISOString(),
-      links: linksRes.data ?? [],
-    },
-    exportFilename('liens'),
   )
 }
 
 // ── Entity name lookup (for human-readable activity log) ───────────────────
 
 export async function loadEntityNamesForLog() {
-  const [books, authors] = await Promise.all([
+  const [books, authors, bookAuthors] = await Promise.all([
     supabase.from('books').select('id, title'),
     supabase.from('authors').select('id, first_name, last_name'),
+    supabase.from('book_authors').select('book_id, author_id'),
   ])
-  return { books: books.data ?? [], authors: authors.data ?? [] }
+  return {
+    books: books.data ?? [],
+    authors: authors.data ?? [],
+    bookAuthors: bookAuthors.data ?? [],
+  }
 }
 
 // ── Activity log ────────────────────────────────────────────────────────────

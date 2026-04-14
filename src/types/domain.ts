@@ -11,6 +11,7 @@ export type Book = {
   originalTitle?: string | null
   year?: number | null
   description?: string
+  todo?: string | null
   axes?: AxisId[]
   authorIds?: AuthorId[]
 
@@ -32,6 +33,7 @@ export type Author = {
   type: 'author'
   firstName?: string
   lastName?: string
+  todo?: string | null
   axes?: AxisId[]
 } & Record<string, unknown>
 

@@ -1,6 +1,7 @@
-import { AlertTriangle, BookPlus, Check } from 'lucide-react'
+import { AlertTriangle, BookPlus, Check, ClipboardList } from 'lucide-react'
 import { authorName } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
+import { Tooltip } from '@/common/components/ui/Tooltip'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { INPUT, TD } from '../tableConstants'
 import type { Author, AuthorId } from '@/types/domain'
@@ -86,15 +87,22 @@ export function AuthorTableRow({
             }}
           />
         ) : (
-          <span
-            className="block min-h-[1.2em] cursor-text px-0.5 hover:text-white"
-            onClick={(e) => {
-              e.stopPropagation()
-              setEditingCell({ authorId: author.id, field: 'lastName' })
-              setEditingValue(author.lastName || '')
-            }}
-          >
-            {author.lastName ? author.lastName.toUpperCase() : <span className="text-white/18">—</span>}
+          <span className="flex items-center">
+            <span
+              className="block min-h-[1.2em] cursor-text px-0.5 hover:text-white"
+              onClick={(e) => {
+                e.stopPropagation()
+                setEditingCell({ authorId: author.id, field: 'lastName' })
+                setEditingValue(author.lastName || '')
+              }}
+            >
+              {author.lastName ? author.lastName.toUpperCase() : <span className="text-white/18">—</span>}
+            </span>
+            {author.todo && (
+              <Tooltip content={author.todo}>
+                <ClipboardList size={11} className="ml-1.5 shrink-0 text-amber/50" />
+              </Tooltip>
+            )}
           </span>
         )}
       </td>

@@ -10,7 +10,7 @@ function normalize(s: unknown): string {
     .trim()
 }
 
-export type GlobalSearchResultItem =
+type GlobalSearchResultItem =
   | { kind: 'author'; authorId: string; author: string; count: number }
   | { kind: 'node'; node: Book }
 

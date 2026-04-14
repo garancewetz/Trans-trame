@@ -2,6 +2,8 @@
 // Deno-based Supabase Edge Function that proxies Gemini API calls for
 // bibliographic reference parsing, keeping the API key server-side.
 
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
@@ -13,7 +15,6 @@ const CORS_HEADERS: Record<string, string> = {
 
 const GEMINI_MODEL = 'gemini-2.5-flash'
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
-const CHUNK_SIZE = 40
 const MAX_RETRIES = 2
 
 const VALID_AXES = [
@@ -31,19 +32,26 @@ const SYSTEM_PROMPT = `You are a bibliographic reference parser. You receive a l
 Context: this is an intersectional corpus mapping intellectual filiations across feminism, afrofeminism, queer studies, disability, race, body politics, and social justice.
 
 Response format (array, one object per line, in order):
-[{"authors":[{"firstName":"","lastName":""}],"title":"","edition":"","city":"","year":null,"page":"","axes":[]}]
+[{"authors":[{"firstName":"","lastName":""}],"title":"","originalTitle":"","edition":"","city":"","year":null,"page":"","axes":[]}]
 
 Bibliographic fields:
 - "authors": ALL authors/co-authors, including (dir.), (eds.), (coord.). Separate first name and last name.
   * IMPORTANT: For collectives (e.g. "Combahee River Collective") or single-name authors (e.g. "bell hooks"), put the full name in "lastName" and leave "firstName" empty.
 - "title": full title including subtitles after a colon or period. WITHOUT quotation marks. Do NOT include "tome", "vol.", volume numbers.
   * For articles, this is the article title; the journal/review name goes in "edition".
+- "originalTitle": canonical title in the work's ORIGINAL language, used to group editions and translations of a single work.
+  * IF you recognize the reference as a well-known work: output the title as it was first published in its original language. Example: "The Second Sex" → "Le Deuxième Sexe"; "Capital" → "Das Kapital"; "Les Damnés de la terre" → "Les Damnés de la terre".
+  * IF the cited title IS already the original title: repeat it verbatim here.
+  * IF you do NOT recognize the work, or have ANY uncertainty about its canonical form: output "" (empty string). NEVER guess. A false canonical title corrupts duplicate detection across the corpus.
+  * For articles, chapters, and lesser-known works: almost always "".
 - "edition": publisher, or journal/review name for articles. If dual publisher (e.g. "Gallimard/Le Seuil"), keep as-is.
 - "city": city of publication if present, otherwise "".
 - "year": first year of publication (number). For a range "1976-1984", return 1976. If absent, null.
 - "page": cited pages AND/OR volume/tome indication. Combine if both present. Examples: "p. 27-29", "tome 2", "Vols. 1, 2, 3", "vol. 2, p. 10-15". If absent, "".
 
 CRITICAL RULE: Ensure that "title" and "authors" are never swapped. For classic authors (e.g., Balzac, Flaubert), extract the person's name even if the source text is ambiguous. If a name like "Le Père Goriot" appears as an author, it is an error; identify "Honoré de Balzac" as the author.
+
+MISSING AUTHOR RULE: When a line contains "[auteur·ice inconnu·e]", the author is missing from the database. You MUST try to identify the author(s) from the title alone using your knowledge. If you recognize the work, return the correct author(s). Only return an empty authors array if you truly cannot identify who wrote the work.
 
 Thematic classification ("axes") — pick 1 to 3 categories from:
 - QUEER: queer studies, trans, gender, LGBT sexualities, drag, homonormativity
@@ -66,16 +74,22 @@ Priority rules for classification:
 
 Examples:
 Input: Didier Eribon (dir.), Les études gay et lesbiennes, Centre Georges-Pompidou, Paris, 1998.
-→ {"authors":[{"firstName":"Didier","lastName":"Eribon"}],"title":"Les études gay et lesbiennes","edition":"Centre Georges-Pompidou","city":"Paris","year":1998,"page":"","axes":["QUEER"]}
+→ {"authors":[{"firstName":"Didier","lastName":"Eribon"}],"title":"Les études gay et lesbiennes","originalTitle":"","edition":"Centre Georges-Pompidou","city":"Paris","year":1998,"page":"","axes":["QUEER"]}
 
 Input: Richard Dyer, « Male Gay Porn : Coming to Terms », in Jump Cut, Mars, 1985, p. 27-29.
-→ {"authors":[{"firstName":"Richard","lastName":"Dyer"}],"title":"Male Gay Porn : Coming to Terms","edition":"Jump Cut","city":"","year":1985,"page":"p. 27-29","axes":["QUEER","BODY"]}
+→ {"authors":[{"firstName":"Richard","lastName":"Dyer"}],"title":"Male Gay Porn : Coming to Terms","originalTitle":"","edition":"Jump Cut","city":"","year":1985,"page":"p. 27-29","axes":["QUEER","BODY"]}
 
 Input: Audre Lorde, Sister Outsider, Crossing Press, 1984.
-→ {"authors":[{"firstName":"Audre","lastName":"Lorde"}],"title":"Sister Outsider","edition":"Crossing Press","city":"","year":1984,"page":"","axes":["AFROFEMINIST","QUEER","FEMINIST"]}
+→ {"authors":[{"firstName":"Audre","lastName":"Lorde"}],"title":"Sister Outsider","originalTitle":"Sister Outsider","edition":"Crossing Press","city":"","year":1984,"page":"","axes":["AFROFEMINIST","QUEER","FEMINIST"]}
+
+Input: Simone de Beauvoir, The Second Sex, Vintage, New York, 2011.
+→ {"authors":[{"firstName":"Simone","lastName":"de Beauvoir"}],"title":"The Second Sex","originalTitle":"Le Deuxième Sexe","edition":"Vintage","city":"New York","year":2011,"page":"","axes":["FEMINIST"]}
+
+Input: Simone de Beauvoir, Le Deuxième Sexe, Gallimard, Paris, 1949.
+→ {"authors":[{"firstName":"Simone","lastName":"de Beauvoir"}],"title":"Le Deuxième Sexe","originalTitle":"Le Deuxième Sexe","edition":"Gallimard","city":"Paris","year":1949,"page":"","axes":["FEMINIST"]}
 
 Input: Jacques Lacan, Écrits, Seuil, Paris, 1966.
-→ {"authors":[{"firstName":"Jacques","lastName":"Lacan"}],"title":"Écrits","edition":"Seuil","city":"Paris","year":1966,"page":"","axes":["UNCATEGORIZED:psychoanalysis"]}`
+→ {"authors":[{"firstName":"Jacques","lastName":"Lacan"}],"title":"Écrits","originalTitle":"Écrits","edition":"Seuil","city":"Paris","year":1966,"page":"","axes":["UNCATEGORIZED:psychoanalysis"]}`
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -94,6 +108,12 @@ interface ImageInput {
 interface ParsedResult {
   authors: { firstName: string; lastName: string }[]
   title: string
+  /**
+   * Canonical title in the work's original language, used to group editions
+   * and translations. Empty string when the LLM doesn't recognize the work.
+   * See SYSTEM_PROMPT for the conservative extraction rules.
+   */
+  originalTitle: string
   edition: string
   city: string
   year: number | null
@@ -234,6 +254,7 @@ function validateParsedItem(item: Record<string, unknown>): ParsedResult {
         lastName: String(a.lastName ?? '').trim(),
       })),
     title: String(item.title ?? '').trim(),
+    originalTitle: String(item.originalTitle ?? '').trim(),
     edition: String(item.edition ?? '').trim(),
     city: String(item.city ?? '').trim(),
     year: typeof item.year === 'number' ? item.year : null,
@@ -343,6 +364,41 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // ── Authentication ────────────────────────────────────────────────────
+    // We verify the caller's JWT here (rather than at the gateway via
+    // `verify_jwt = true`) because the gateway currently validates in HS256
+    // while user sessions are issued in ES256 — producing spurious 401s.
+    // Delegating to auth.getUser() asks Supabase Auth directly, which knows
+    // the right signing key.
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Missing Authorization header' }),
+        { status: 401, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return new Response(
+        JSON.stringify({ error: 'Supabase env not configured' }),
+        { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    const jwt = authHeader.slice('Bearer '.length).trim()
+    const supabase = createClient(supabaseUrl, supabaseAnonKey)
+    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt)
+    if (authError || !user) {
+      console.warn('[parse-references] Auth rejected:', authError?.message || 'no user')
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired session' }),
+        { status: 401, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // ── Gemini proxy ──────────────────────────────────────────────────────
     const apiKey = Deno.env.get('GEMINI_API_KEY')
     if (!apiKey) {
       return new Response(
@@ -382,28 +438,12 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Split into chunks of CHUNK_SIZE
-    const chunks: LineInput[][] = []
-    for (let i = 0; i < lines.length; i += CHUNK_SIZE) {
-      chunks.push(lines.slice(i, i + CHUNK_SIZE))
-    }
-
-    const allResults: [number, ParsedResult][] = []
-
-    for (let c = 0; c < chunks.length; c++) {
-      // Pause between chunks to avoid rate limiting
-      if (c > 0) {
-        console.log(
-          `[parse-references] pause 4s before chunk ${c + 1}/${chunks.length}`,
-        )
-        await new Promise((r) => setTimeout(r, 4000))
-      }
-
-      const chunkResults = await callGemini(chunks[c], apiKey)
-      for (const [idx, val] of chunkResults) {
-        allResults.push([idx, val])
-      }
-    }
+    // One invocation = one Gemini call. The client (parseSmartInput.llm.ts)
+    // is responsible for chunking large imports and spacing requests to stay
+    // within the Gemini free-tier quota (15 RPM). This keeps each Edge
+    // Function call short-lived and well under the wall-clock timeout.
+    const chunkResults = await callGemini(lines, apiKey)
+    const allResults: [number, ParsedResult][] = Array.from(chunkResults)
 
     return new Response(JSON.stringify({ results: allResults }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },

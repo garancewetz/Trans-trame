@@ -24,6 +24,12 @@ interface DrawNodeOpts {
    * chaînes de filiation peuvent alors respirer.
    */
   isIsolated?: boolean
+  /**
+   * IDs des livres à étiqueter de manière permanente — top N par degré
+   * (in+out). Affiche leur label quel que soit le zoom, pour donner des
+   * points de repère nommés dans la vue d'ensemble sans surcharger.
+   */
+  topDegreeNodeIds?: Set<string>
   skipLabel?: boolean
   labelOnly?: boolean
   authors?: Author[]
@@ -122,9 +128,12 @@ const LABEL_TEXT = '#ece9ff'
 const LABEL_TEXT_DIM = 'rgba(255, 255, 255, 0.55)'
 // Idle landmark card : fond semi-transparent, pas de bordure, pour rester lisible
 // sur fond varié (liens, autres nœuds) sans créer de rectangles marqués.
-const LABEL_BG_IDLE = 'rgba(8, 4, 22, 0.55)'
-const LABEL_TEXT_IDLE = 'rgba(236, 233, 255, 0.82)'
-const LABEL_TEXT_IDLE_DIM = 'rgba(255, 255, 255, 0.5)'
+// Alpha relevé (0.55 → 0.72) pour que le label ne se fonde pas avec les
+// arêtes qui passent derrière — sans atteindre l'opacité de la carte active
+// qui reste le marqueur visuel du hover/sélection.
+const LABEL_BG_IDLE = 'rgba(8, 4, 22, 0.72)'
+const LABEL_TEXT_IDLE = 'rgba(236, 233, 255, 0.88)'
+const LABEL_TEXT_IDLE_DIM = 'rgba(255, 255, 255, 0.55)'
 const LABEL_MAX_W_FACTOR = 14
 const LANDMARK_RADIUS = 20
 
@@ -220,24 +229,57 @@ function computeNodeState(node: D3Node, opts: DrawNodeOpts) {
 }
 
 // Progressive landmark disclosure : plus on est loin, plus on est sélectif.
-// Paliers de rayon des livres : 0-1cit=6, 2cit=13, 3cit=27, 4cit=55, 5+cit=58.
-// - overview (<0.75) : uniquement les super-landmarks (5+ citations)
-// - zoom moyen (<1.1) : ajoute les 4+ citations
-// - zoom proche : tous les livres ≥ 3 citations (rayon ≥ 20)
+// Paliers de rayon des livres : 0cit=2.2, 1cit=4, 2cit=12, 3cit=28, 4cit=60, 5cit=100, 6+=100.
+// Interpolation continue (au lieu de paliers durs) : évite le pop-in/pop-out
+// visible à 0.75 et 1.1. Les labels émergent progressivement à mesure que le
+// zoom augmente, ce qui se lit comme un "focus" plutôt qu'un switch binaire.
 function minLandmarkRadiusForZoom(globalScale: number): number {
-  if (globalScale < 0.75) return 58
-  if (globalScale < 1.1) return 55
-  return LANDMARK_RADIUS
+  // Points d'ancrage calés sur les anciens paliers durs (≥1.1 → r≥20,
+  // ≥0.75 → r≥55, sinon r≥90) mais interpolés de façon continue pour
+  // lisser les transitions au zoom.
+  if (globalScale >= 1.1) return LANDMARK_RADIUS
+  if (globalScale >= 0.9) {
+    const t = (globalScale - 0.9) / (1.1 - 0.9)
+    return 40 + (LANDMARK_RADIUS - 40) * t
+  }
+  if (globalScale >= 0.75) {
+    const t = (globalScale - 0.75) / (0.9 - 0.75)
+    return 55 + (40 - 55) * t
+  }
+  if (globalScale >= 0.55) {
+    const t = (globalScale - 0.55) / (0.75 - 0.55)
+    return 90 + (55 - 90) * t
+  }
+  return 90
+}
+
+/**
+ * Opacité progressive d'un label livre à l'approche de son seuil d'apparition.
+ * Fade band de 14 unités (rayon graphe) sous le seuil : le label devient
+ * visible en fondu plutôt qu'en pop quand on zoome. Retourne 1 pour un livre
+ * au-delà du seuil, 0 sous la fade band, interpolé entre les deux.
+ */
+function landmarkLabelAlpha(radius: number, globalScale: number): number {
+  const threshold = minLandmarkRadiusForZoom(globalScale)
+  const fadeBand = 14
+  if (radius >= threshold) return 1
+  if (radius <= threshold - fadeBand) return 0
+  return (radius - (threshold - fadeBand)) / fadeBand
 }
 
 function shouldShowLabel(node: D3Node, globalScale: number, state: ReturnType<typeof computeNodeState>, opts: DrawNodeOpts) {
   const { hover, isHighlighted, hasHoverFocus, isHoverNeighbor } = state
-  const { selectedNode, citationCount = 0 } = opts
+  const { selectedNode, citationCount = 0, topDegreeNodeIds } = opts
   if (hasHoverFocus && hover <= 0.01 && !isHoverNeighbor) return false
   if (hover > 0.01) return true
   // Landmark: authors (anchors) always shown; books tiered by zoom
   if (node.type === 'author') return true
-  if (getNodeRadius(node, citationCount) >= minLandmarkRadiusForZoom(globalScale)) return true
+  // Top-N livres par degré : toujours étiquetés, quel que soit le zoom.
+  // Sert de repère nommé dans la vue d'ensemble même pour les carrefours
+  // qui ne sont pas énormes par citations entrantes (ex: un livre qui cite
+  // beaucoup mais peu cité).
+  if (topDegreeNodeIds?.has(node.id)) return true
+  if (landmarkLabelAlpha(getNodeRadius(node, citationCount), globalScale) > 0.01) return true
   // Hover neighbors: only show label when zoomed in close
   if (hasHoverFocus && isHoverNeighbor) return globalScale > 1.5
   // Sur sélection, on n'affiche que le label du nœud cliqué lui-même —
@@ -245,7 +287,11 @@ function shouldShowLabel(node: D3Node, globalScale: number, state: ReturnType<ty
   // beaucoup (cf. Haraway). Les voisins restent signalés par l'opacité et
   // les liens colorés, c'est suffisant pour tracer les connexions.
   if (selectedNode && node.id === selectedNode.id) return true
-  return globalScale > 1.5 || isHighlighted
+  // En vue rapprochée, on révèle progressivement TOUS les labels (y compris
+  // les livres sans citation) — l'utilisateur a explicitement zoomé pour
+  // lire le détail. Seuil aligné sur le bas de la fade-band closeUp (1.1).
+  if (globalScale > 1.1) return true
+  return isHighlighted
 }
 
 // ── Node radius ───────────────────────────────────────────────────────────────
@@ -253,12 +299,15 @@ function shouldShowLabel(node: D3Node, globalScale: number, state: ReturnType<ty
 export function getNodeRadius(node: { type?: string }, citationCount: number): number {
   if (node.type === 'author') return 11
   const n = Math.max(0, Number.isFinite(citationCount) ? citationCount : 0)
-  // Les livres cités 0 ou 1 fois ont la même taille (ce ne sont pas encore des
-  // landmarks). La croissance exponentielle démarre à 2 citations.
-  // Paliers : 0-1→6  2→13  3→27  4→55  5+→capped à 58
-  if (n <= 1) return 6
-  const boost = Math.min((Math.pow(2, n - 1) - 1) * 7, 52)
-  return 6 + boost
+  // Contraste hub/feuille amplifié : les feuilles (0 cit) deviennent des
+  // poussières pour décongestionner la vue d'ensemble ; les super-hubs
+  // grossissent au-delà du plafond précédent pour distinguer « très cité »
+  // de « extrêmement cité ».
+  // Paliers : 0→2.2  1→4  2→12  3→28  4→60  5→100  6+→100 (cap)
+  if (n === 0) return 2.2
+  if (n === 1) return 4
+  const boost = Math.min((Math.pow(2, n - 1) - 1) * 8, 96)
+  return 4 + boost
 }
 
 function hoveredRadius(baseR: number, hover: number, globalScale: number): number {
@@ -470,12 +519,18 @@ function drawBookLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScale:
   const minHovered = hover > 0.01 ? 11 / Math.max(globalScale, 0.08) : 0
   // Landmark idle : plancher écran proportionnel aux citations. Plus le livre
   // est cité, plus son label reste présent en vue d'ensemble (zoom faible).
-  // Capé pour éviter la domination visuelle des super-landmarks.
+  // Cap relevé (22 → 28) et pente plus franche (1.8 → 2.2) pour que les
+  // super-hubs (Foucault, Haraway…) dominent typographiquement les livres
+  // moyennement cités — sinon la hiérarchie visuelle s'aplatit au zoom large.
   const landmarkScreenPx = hover <= 0.01 && !isHighlighted && !matchesHover
-    ? Math.min(9 + safeCitations * 1.6, 17)
+    ? Math.min(9 + safeCitations * 2.2, 28)
     : 0
   const idleFloor = landmarkScreenPx / Math.max(globalScale, 0.2)
   const fontSize = Math.max(baseSize * (1 + hover * 0.3), minHovered, idleFloor)
+  // Poids typo aligné sur la hiérarchie des citations : un super-hub doit
+  // peser visuellement plus qu'un livre cité 1 ou 2 fois, même à taille
+  // comparable (le plafond de fontSize écrase sinon la différence).
+  const idleWeight = safeCitations >= 5 ? 700 : safeCitations >= 3 ? 600 : 500
 
   const rawName = (bookAuthorDisplay(node, opts.authors || []) || '').toUpperCase()
   const rawTitle = node.title || ''
@@ -530,7 +585,38 @@ function drawBookLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScale:
       ctx.fillText(line, node.x, titleStartY + titleLineHeight * i)
     })
   } else {
-    ctx.font = `500 ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
+    // Opacité du label idle = combinaison de :
+    //   - reveal au zoom (landmarkLabelAlpha + closeUp pour les petits nœuds)
+    //   - PLAFOND par importance : un hub (5+ cit) peut atteindre 1, une
+    //     poussière (0 cit) reste plafonnée à ~0.35 quoi qu'il arrive.
+    // → la hiérarchie visuelle est maintenue à tous les zooms : même à fort
+    //   zoom, les hubs continuent de dominer les feuilles. Sans ce cap, tous
+    //   les labels finissaient à alpha 1 et la lecture s'aplatissait.
+    const baseRForFade = getNodeRadius(node, safeCitations)
+    const topForced = opts.topDegreeNodeIds?.has(node.id)
+    // Seuil d'apparition au close-up différé selon les citations.
+    // Le zoom max du graphe est 8 (cf. cameraControls.MAX_ZOOM) — on étale les
+    // seuils sur tout cet intervalle pour que les feuilles ne se révèlent
+    // vraiment qu'en vue maximale, où les nœuds sont assez espacés à l'écran
+    // pour qu'aucun chevauchement ne pose problème.
+    //   0 cit → start 6.5 / full 7.5   (poussière, presque au zoom max)
+    //   1 cit → start 5.4 / full 6.4
+    //   2 cit → start 4.3 / full 5.3
+    //   3 cit → couvert par landmarkLabelAlpha avant ce seuil
+    //   4+    → couvert par landmarkLabelAlpha
+    const closeUpStart = Math.max(1.1, 6.5 - safeCitations * 1.1)
+    const closeUpEnd = closeUpStart + 1.0
+    const closeUpAlpha = globalScale >= closeUpEnd ? 1
+      : globalScale >= closeUpStart ? (globalScale - closeUpStart) / (closeUpEnd - closeUpStart)
+      : 0
+    // Ramp d'opacité max : 0c→0.35, 1c→0.63, 2c→0.75, 3c→0.83, 4c→0.91, 5c+→1
+    const importanceCap = Math.min(1, 0.35 + Math.sqrt(safeCitations) * 0.28)
+    const revealAlpha = Math.max(landmarkLabelAlpha(baseRForFade, globalScale), closeUpAlpha)
+    const idleAlpha = topForced ? 1 : Math.min(importanceCap, revealAlpha)
+    if (idleAlpha <= 0.01) { ctx.restore(); return }
+    ctx.globalAlpha = idleAlpha
+
+    ctx.font = `${idleWeight} ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
     const nameLines = wrapText(ctx, rawName, maxW)
     const nameW = Math.max(...nameLines.map((l) => ctx.measureText(l).width))
 
@@ -553,7 +639,7 @@ function drawBookLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScale:
     roundRect(ctx, boxX, boxY, boxW, boxH, borderR)
     ctx.fill()
 
-    ctx.font = `500 ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
+    ctx.font = `${idleWeight} ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
     ctx.fillStyle = LABEL_TEXT_IDLE
     nameLines.forEach((line, i) => {
       ctx.fillText(line, node.x, boxY + padY + lineHeight * i)

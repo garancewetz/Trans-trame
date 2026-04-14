@@ -7,7 +7,7 @@ import { type Axis } from '@/common/utils/categories'
 import { BooksTabAddRow } from './BooksTabAddRow'
 import { BooksTabBookRow } from './BooksTabBookRow'
 
-export type BooksTabBooksTableProps = {
+type BooksTabBooksTableProps = {
   sortedNodes: Book[]
   search: string
   justAddedBookId?: BookId | null

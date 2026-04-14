@@ -226,14 +226,18 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
   // ── Migration legacy → entités auteurs ───────────────────────────────────────
 
   const handleMigrateData = useCallback(async () => {
-    return migrateLegacyAuthorsAndBooks({
+    const result = await migrateLegacyAuthorsAndBooks({
       books,
       authors,
       axesColors: axesColorsRef.current,
       setBooks,
       setAuthors,
     })
-  }, [books, authors])
+    if (!result.error && result.updatedBooks > 0) {
+      await invalidate()
+    }
+    return result
+  }, [books, authors, invalidate])
 
   // ── Reset ─────────────────────────────────────────────────────────────────────
 

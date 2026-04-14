@@ -79,6 +79,23 @@ export function useGraphDerivedLinkState({ graphData, selectedAuthorId, peekNode
     }
   }, [graphData.links])
 
+  // Top N livres par degré (in+out) : sert à étiqueter en permanence les
+  // carrefours bibliographiques de la constellation, même en vue d'ensemble.
+  // N choisi pour rester lisible sans saturer (~12 ancres nommées).
+  // Les auteurs sont naturellement exclus : degreeByNodeId ignore les liens
+  // author-book, donc ils tombent toujours à 0 et sont filtrés par `d <= 0`.
+  const topDegreeNodeIds = useMemo(() => {
+    const TOP_LANDMARK_COUNT = 12
+    const candidates: Array<{ id: string; degree: number }> = []
+    graphData.nodes.forEach((n) => {
+      const d = degreeByNodeId.get(n.id) || 0
+      if (d <= 0) return
+      candidates.push({ id: n.id, degree: d })
+    })
+    candidates.sort((a, b) => b.degree - a.degree)
+    return new Set(candidates.slice(0, TOP_LANDMARK_COUNT).map((c) => c.id))
+  }, [graphData.nodes, degreeByNodeId])
+
   return {
     authorNodeIds,
     anchorIds,
@@ -87,5 +104,6 @@ export function useGraphDerivedLinkState({ graphData, selectedAuthorId, peekNode
     citationsByNodeId,
     linkWeights,
     degreeByNodeId,
+    topDegreeNodeIds,
   }
 }

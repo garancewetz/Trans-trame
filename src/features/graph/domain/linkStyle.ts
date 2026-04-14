@@ -33,10 +33,10 @@ export type LinkLike = {
   __controlPoints?: number[]
 }
 
-export type LinkKind = 'citation' | 'authorBook'
-export type LinkMode = 'idle' | 'browsing' | 'selected'
+type LinkKind = 'citation' | 'authorBook'
+type LinkMode = 'idle' | 'browsing' | 'selected'
 
-export type LinkVisualState = {
+type LinkVisualState = {
   mode: LinkMode
   kind: LinkKind
   isAnchored: boolean
@@ -45,7 +45,7 @@ export type LinkVisualState = {
   isFiltered: boolean
 }
 
-export type LinkVisualContext = {
+type LinkVisualContext = {
   hasSelection: boolean
   hasHover: boolean
   isFiltered: boolean

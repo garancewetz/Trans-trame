@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { toggleSetItem } from '@/common/utils/setUtils'
 import { useColumnSort } from './useColumnSort'
 import type { Author, AuthorId, Book } from '@/types/domain'
-import type { MigrationFailure, MigrationResult } from '@/features/graph/hooks/graphDataMigration'
+import type { MigrationResult } from '@/features/graph/hooks/graphDataMigration'
 
 type Args = {
   authors: Author[]
@@ -11,7 +11,7 @@ type Args = {
   onAddAuthor: (author: Author) => unknown
   onUpdateAuthor: (author: Author) => unknown
   onDeleteAuthor: (authorId: AuthorId) => unknown
-  onMigrateData?: () => Promise<MigrationResult | null> | MigrationResult | null
+  onMigrateData?: () => Promise<MigrationResult> | MigrationResult
   onMergeAuthors?: (fromAuthorId: AuthorId, keepAuthorId: AuthorId) => unknown
   focusAuthorId?: AuthorId | null
 }
@@ -55,9 +55,19 @@ export function useAuthorsTabState({
     if (!onMigrateData) return
     setMigrating(true)
     setMigrateResult(null)
-    const result = await onMigrateData()
-    setMigrating(false)
-    setMigrateResult(result)
+    try {
+      const result = await onMigrateData()
+      setMigrateResult(result)
+    } catch (err) {
+      setMigrateResult({
+        newAuthors: 0,
+        updatedBooks: 0,
+        failures: [],
+        error: err instanceof Error ? err.message : String(err),
+      })
+    } finally {
+      setMigrating(false)
+    }
   }
 
   const bookCountByAuthor = useMemo(() => {
@@ -151,7 +161,11 @@ export function useAuthorsTabState({
     setTimeout(() => {
       firstNameRef.current?.focus()
       const el = document.querySelector(`[data-author-row-id="${newId}"]`)
-      if (el instanceof HTMLElement) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      if (el instanceof HTMLElement) {
+        const rect = el.getBoundingClientRect()
+        const fullyVisible = rect.top >= 0 && rect.bottom <= window.innerHeight
+        if (!fullyVisible) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      }
     }, 50)
     setTimeout(() => setJustAddedAuthorId((prev) => (prev === newId ? null : prev)), 3000)
   }

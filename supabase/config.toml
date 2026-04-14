@@ -1,0 +1,18 @@
+# Supabase local config.
+# Ce fichier verrouille les réglages sensibles des Edge Functions pour qu'ils
+# ne dépendent pas d'un flag CLI ponctuel (ex : --no-verify-jwt) ou de l'état
+# courant du dashboard.
+
+[functions.parse-references]
+# Vérification JWT gérée DANS la fonction (voir `auth.getUser()` en début de
+# handler), pas au niveau de la gateway. Raison : la gateway Supabase valide
+# encore les JWT en HS256, alors que les sessions utilisateur·ices sont
+# émises en ES256 (nouveau format asymétrique) → faux 401 sur tout appel.
+# En validant côté fonction avec le SDK, on délègue la vérif à Supabase Auth
+# qui connaît le bon format. Sécurité équivalente : une requête sans JWT
+# valide est rejetée avec 401 par la fonction elle-même.
+verify_jwt = false
+
+[functions.reconcile-orphans]
+# Même configuration que parse-references : vérification JWT dans la fonction.
+verify_jwt = false

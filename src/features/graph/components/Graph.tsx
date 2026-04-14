@@ -127,6 +127,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   const {
     anchorIds, connectedLinks, connectedNodes,
     citationsByNodeId, linkWeights, degreeByNodeId,
+    topDegreeNodeIds,
     bookCountByAuthorId, externalCitationsByBookId,
   } = useGraphDerivedLinkState({
     graphData,
@@ -319,6 +320,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         hoveredFilter,
         citationCount: citationsByNodeId.get(node.id) || 0,
         isIsolated: node.type !== 'author' && (degreeByNodeId.get(node.id) ?? 0) === 0,
+        topDegreeNodeIds,
         skipLabel: hoveredNodeRef.current?.id === node.id,
       })
       // Flash ring for newly imported nodes
@@ -335,7 +337,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         ctx.restore()
       }
     },
-    [selectedNode, selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, degreeByNodeId]
+    [selectedNode, selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, degreeByNodeId, topDegreeNodeIds]
   )
 
   const nodePointerAreaPaint = useCallback(
@@ -398,11 +400,12 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
           hoveredFilter,
           citationCount: citationsByNodeId.get(hovered.id) || 0,
           isIsolated: hovered.type !== 'author' && (degreeByNodeId.get(hovered.id) ?? 0) === 0,
+          topDegreeNodeIds,
           labelOnly: true,
         })
       }
     },
-    [selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, degreeByNodeId]
+    [selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, degreeByNodeId, topDegreeNodeIds]
   )
 
   return (

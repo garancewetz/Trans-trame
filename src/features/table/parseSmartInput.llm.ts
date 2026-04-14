@@ -7,6 +7,11 @@ import { supabase } from '@/core/supabase'
 export interface LLMParsedResult {
   authors: ParsedAuthor[]
   title: string
+  /**
+   * Canonical title in the work's original language (for grouping editions /
+   * translations). Empty string when the model does not recognize the work.
+   */
+  originalTitle: string
   edition: string
   city: string
   year: number | null
@@ -70,6 +75,7 @@ function validateLLMItem(item: Record<string, unknown>): LLMParsedResult {
         lastName: String(a.lastName ?? '').trim(),
       })),
     title: String(item.title ?? '').trim(),
+    originalTitle: String(item.originalTitle ?? '').trim(),
     edition: String(item.edition ?? '').trim(),
     city: String(item.city ?? '').trim(),
     year: typeof item.year === 'number' ? item.year : null,
@@ -93,14 +99,28 @@ function processRawResults(
 
 // ─── Logic ───────────────────────────────────────────────────────────────────
 
-export async function parseWithLLM(rawLine: string): Promise<LLMParsedResult | null> {
-  const results = await parseWithLLMBatch([{ index: 0, raw: rawLine }])
-  return results.get(0) ?? null
-}
+// Chunk size tuned for two constraints:
+//   1. Each server invocation must complete well under Supabase's Edge Function
+//      wall-clock limit. At ~0.3-0.5s per line through Gemini 2.5 Flash,
+//      20 lines ≈ 5-10s — comfortable headroom.
+//   2. Gemini free tier caps at 15 RPM; at this chunk size, a 100-line import
+//      dispatches 5 requests spaced by CHUNK_PAUSE_MS below, staying well
+//      within quota.
+const LLM_CHUNK_SIZE = 20
+// Defensive spacing between chunks. 15 RPM = 4s minimum; our chunks already
+// take several seconds of Gemini round-trip, so 1.2s of added pause is enough
+// buffer without making the UX feel laggy.
+const LLM_CHUNK_PAUSE_MS = 1200
 
 /**
  * Sends lines to the parse-references Edge Function and validates results.
- * Falls back to an empty Map if the function is unavailable.
+ *
+ * Chunks the input client-side and issues one invocation per chunk. This keeps
+ * each Edge Function call short-lived so it cannot trip Supabase's wall-clock
+ * timeout on large imports (observed as 546 EarlyDrop on ~50+ lines).
+ *
+ * Individual chunk failures are logged and skipped — the remaining chunks still
+ * process normally, so a transient Gemini hiccup doesn't sink the whole batch.
  */
 export async function parseWithLLMBatch(
   lines: { index: number; raw: string }[],
@@ -109,23 +129,30 @@ export async function parseWithLLMBatch(
   const results = new Map<number, LLMParsedResult>()
   if (lines.length === 0) return results
 
-  try {
-    const { data, error } = await supabase.functions.invoke('parse-references', {
-      body: { lines },
-    })
+  let done = 0
+  for (let i = 0; i < lines.length; i += LLM_CHUNK_SIZE) {
+    if (i > 0) await new Promise((r) => setTimeout(r, LLM_CHUNK_PAUSE_MS))
 
-    if (error) {
-      console.warn('[LLM] Edge function error:', error.message)
-      return results
+    const chunk = lines.slice(i, i + LLM_CHUNK_SIZE)
+    const chunkNum = Math.floor(i / LLM_CHUNK_SIZE) + 1
+
+    try {
+      const { data, error } = await supabase.functions.invoke('parse-references', {
+        body: { lines: chunk },
+      })
+
+      if (error) {
+        console.warn(`[LLM] Chunk ${chunkNum} failed:`, error.message)
+      } else {
+        const parsed = processRawResults(data?.results)
+        for (const [k, v] of parsed) results.set(k, v)
+      }
+    } catch (err) {
+      console.warn(`[LLM] Chunk ${chunkNum} threw:`, err)
     }
 
-    const parsed = processRawResults(data?.results)
-    for (const [k, v] of parsed) results.set(k, v)
-
-    // Report full progress since the edge function handles chunking internally
-    onProgress?.(lines.length, lines.length)
-  } catch (err) {
-    console.warn('[LLM] Failed to invoke edge function:', err)
+    done += chunk.length
+    onProgress?.(done, lines.length)
   }
 
   return results

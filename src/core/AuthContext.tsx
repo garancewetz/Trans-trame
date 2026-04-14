@@ -5,7 +5,7 @@ import { supabase } from './supabase'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type Profile = {
+type Profile = {
   id: string
   firstName: string
   lastName: string
@@ -191,8 +191,4 @@ export function useAuthActions() {
   const ctx = useContext(AuthActionsContext)
   if (!ctx) throw new Error('useAuthActions must be inside <AuthProvider>')
   return ctx
-}
-
-export function useAuth() {
-  return { ...useAuthState(), ...useAuthActions() }
 }

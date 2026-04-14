@@ -29,6 +29,7 @@ type Props = {
   onDismissDuplicate: (id: string) => void
   onAddCoAuthor: (id: string) => void
   onUpdateAxes: (id: string, axes: Axis[]) => void
+  onRemoveTheme: (id: string, theme: string) => void
   onSwapFields: (id: string, field: 'title' | 'edition') => void
   onUpdateField: (id: string, field: string, value: string) => void
   masterNode: Book | null
@@ -53,6 +54,7 @@ export function SmartImportPreviewRow({
   onDismissDuplicate,
   onAddCoAuthor,
   onUpdateAxes,
+  onRemoveTheme,
   onSwapFields,
   onUpdateField,
   masterNode,
@@ -228,7 +230,9 @@ export function SmartImportPreviewRow({
         <div className="py-0.5">
           <AxisDots
             axes={item.axes || []}
+            themes={item.suggestedThemes || []}
             onChange={(newAxes) => onUpdateAxes?.(item.id, newAxes)}
+            onRemoveTheme={(theme) => onRemoveTheme(item.id, theme)}
           />
         </div>
 

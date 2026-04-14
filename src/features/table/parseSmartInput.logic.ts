@@ -470,6 +470,10 @@ export function parseSmartInput(
       return {
         id: crypto.randomUUID(),
         ...parsed,
+        // The local parser never produces an originalTitle — only the LLM can
+        // canonicalize. Left null here; the hybrid pass will fill it in when
+        // the LLM recognizes the work.
+        originalTitle: null,
         isDuplicate,
         isFuzzyDuplicate,
         citation: '',
@@ -532,6 +536,7 @@ export async function parseSmartInputHybrid(
       firstName: first.firstName.trim(),
       lastName: first.lastName.trim(),
       title: title.trim(),
+      originalTitle: llm.originalTitle ? llm.originalTitle : item.originalTitle,
       edition: edition.trim(),
       page: llm.page || item.page,
       year: llm.year ?? item.year,
@@ -543,6 +548,7 @@ export async function parseSmartInputHybrid(
       confidence: 0.95,
       needsLLM: false,
       parsedByLLM: true,
+      suggestedThemes: llm.suggestedThemes.length > 0 ? llm.suggestedThemes : item.suggestedThemes,
     }
   })
 
@@ -598,6 +604,7 @@ export async function parseSmartInputFromImages(
       firstName: first.firstName.trim(),
       lastName: first.lastName.trim(),
       title,
+      originalTitle: item.originalTitle || null,
       edition: edition.trim(),
       page: item.page || '',
       year: item.year,
@@ -611,6 +618,7 @@ export async function parseSmartInputFromImages(
       confidence: 0.95,
       needsLLM: false,
       parsedByLLM: true,
+      suggestedThemes: item.suggestedThemes.length > 0 ? item.suggestedThemes : undefined,
     })
   }
 

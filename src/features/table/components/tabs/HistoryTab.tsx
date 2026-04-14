@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { BookOpen, Link2, Loader2, Pencil, Plus, RotateCcw, Trash2, Undo2, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/common/components/ui/Button'
+import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
 import { timeAgo } from '@/common/utils/timeAgo'
 import {
   loadActivityLog,
@@ -33,12 +34,32 @@ const ENTITY_CONFIG: Record<string, { icon: typeof Plus; label: string }> = {
   links:   { icon: Link2,    label: 'lien' },
 }
 
-function entityTitle(entry: ActivityLogEntry, namesMap: Map<string, string>): string {
+function bookLabel(bookId: string, namesMap: Map<string, string>, bookAuthorsMap: Map<string, string[]>): string {
+  const title = namesMap.get(bookId) || '?'
+  const authorIds = bookAuthorsMap.get(bookId)
+  if (authorIds?.length) {
+    const names = authorIds.map((id) => namesMap.get(id)).filter(Boolean)
+    if (names.length) return `${title} — ${names.join(', ')}`
+  }
+  return title
+}
+
+function entityTitle(
+  entry: ActivityLogEntry,
+  namesMap: Map<string, string>,
+  bookAuthorsMap: Map<string, string[]>,
+): string {
   const vals = (entry.operation === 'DELETE' ? entry.old_values : entry.new_values) as Record<string, Json> | null
   if (!vals) return entry.entity_id
 
   if (entry.entity_type === 'books') {
-    return (vals.title as string) || entry.entity_id
+    const title = (vals.title as string) || entry.entity_id
+    const authorIds = bookAuthorsMap.get(entry.entity_id)
+    if (authorIds?.length) {
+      const names = authorIds.map((id) => namesMap.get(id)).filter(Boolean)
+      if (names.length) return `${title} — ${names.join(', ')}`
+    }
+    return title
   }
   if (entry.entity_type === 'authors') {
     const parts = [vals.first_name, vals.last_name].filter(Boolean)
@@ -47,7 +68,7 @@ function entityTitle(entry: ActivityLogEntry, namesMap: Map<string, string>): st
   if (entry.entity_type === 'links') {
     const src = vals.source_id as string | undefined
     const tgt = vals.target_id as string | undefined
-    return `${(src && namesMap.get(src)) || '?'} → ${(tgt && namesMap.get(tgt)) || '?'}`
+    return `${bookLabel(src ?? '', namesMap, bookAuthorsMap)} → ${bookLabel(tgt ?? '', namesMap, bookAuthorsMap)}`
   }
   return entry.entity_id
 }
@@ -88,6 +109,7 @@ export function HistoryTab() {
   const [hasMore, setHasMore] = useState(true)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [rollingBackId, setRollingBackId] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
 
   const { data: logData, isLoading: logLoading } = useQuery({
     queryKey: ['activity_log', page],
@@ -135,6 +157,35 @@ export function HistoryTab() {
     }
     return map
   }, [entityNamesData])
+
+  const bookAuthorsMap = useMemo(() => {
+    const map = new Map<string, string[]>()
+    if (entityNamesData) {
+      for (const ba of entityNamesData.bookAuthors) {
+        const list = map.get(ba.book_id) ?? []
+        list.push(ba.author_id)
+        map.set(ba.book_id, list)
+      }
+    }
+    return map
+  }, [entityNamesData])
+
+  const filteredEntries = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return allEntries
+    return allEntries.filter((entry) => {
+      const actor = actorName(entry.created_by, profilesMap).toLowerCase()
+      const title = entityTitle(entry, entityNamesMap, bookAuthorsMap).toLowerCase()
+      const op = OP_CONFIG[entry.operation]?.label ?? ''
+      const entity = ENTITY_CONFIG[entry.entity_type]?.label ?? entry.entity_type
+      return (
+        actor.includes(q) ||
+        title.includes(q) ||
+        op.includes(q) ||
+        entity.includes(q)
+      )
+    })
+  }, [allEntries, search, profilesMap, entityNamesMap])
 
   const handleRollback = useCallback(async (entry: ActivityLogEntry) => {
     if (confirmingId !== entry.id) {
@@ -189,7 +240,14 @@ export function HistoryTab() {
   return (
     <div className="flex flex-1 flex-col overflow-y-auto px-5 py-4">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-2">
-        {allEntries.map((entry) => {
+        <SearchInputWithClear
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Rechercher dans l'historique…"
+          focusTone="cyan"
+          className="mb-2"
+        />
+        {filteredEntries.map((entry) => {
           const config = OP_CONFIG[entry.operation] ?? OP_CONFIG.UPDATE
           const Icon = config.icon
           const diffs = changedFields(entry)
@@ -225,7 +283,7 @@ export function HistoryTab() {
                 </div>
 
                 <div className="text-[0.8rem] font-medium text-white/55">
-                  {entityTitle(entry, entityNamesMap)}
+                  {entityTitle(entry, entityNamesMap, bookAuthorsMap)}
                 </div>
 
                 {diffs.length > 0 && (
@@ -233,6 +291,7 @@ export function HistoryTab() {
                     {diffs.slice(0, 5).map((d) => {
                       const resolveVal = (v: unknown) => {
                         const s = String(v ?? '')
+                        if (bookAuthorsMap.has(s)) return bookLabel(s, entityNamesMap, bookAuthorsMap)
                         return entityNamesMap.get(s) ?? s
                       }
                       return (
@@ -277,6 +336,12 @@ export function HistoryTab() {
             </div>
           )
         })}
+
+        {filteredEntries.length === 0 && search && (
+          <div className="py-8 text-center text-sm text-white/30">
+            Aucun résultat pour « {search} »
+          </div>
+        )}
 
         {hasMore && (
           <Button

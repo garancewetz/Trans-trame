@@ -1,5 +1,5 @@
 /** Normalise un titre pour comparaison : minuscules, sans ponctuation, espaces repliés. */
-export function normTitle(s: string | undefined): string {
+function normTitle(s: string | undefined): string {
   return String(s || '')
     .toLowerCase()
     .replace(/[^\wàáâãäçèéêëìíîïñòóôùúûü\s]/g, '')

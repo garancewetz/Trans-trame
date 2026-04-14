@@ -5,9 +5,6 @@
   "type": "module",
   "scripts": {
     "gen-types": "supabase gen types typescript --project-id nfecgzmehlloxctfyfao > src/types/supabase.ts",
-    "extract-editions": "node scripts/extract-editions.mjs --out=src/features/table/knownEditions.ts",
-    "extract-authors": "node scripts/extract-authors.mjs --out=src/features/table/knownAuthors.ts",
-    "extract-all": "npm run extract-editions && npm run extract-authors",
     "stress-seed": "node scripts/stress-seed.mjs",
     "dev": "vite",
     "build": "vite build",

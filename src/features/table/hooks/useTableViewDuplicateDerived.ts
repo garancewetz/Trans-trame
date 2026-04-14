@@ -5,6 +5,20 @@ import { maybeNodeId } from '../maybeNodeId'
 
 type AuthorNodeLike = Pick<Author, 'id' | 'firstName' | 'lastName'>
 
+/**
+ * A detected duplicate group of books, tagged by how the match was established.
+ *
+ * - `exact`     — same normalized title AND same author display string.
+ *                 High precision, but rigid (misses translations, subtitle
+ *                 variants, typos).
+ * - `canonical` — same LLM-provided `originalTitle` (the canonical title in
+ *                 the work's original language). Catches editions and
+ *                 translations that `exact` would miss. Lower precision, since
+ *                 it depends on the LLM's recognition of the work — the UI
+ *                 should surface this confidence level to the user.
+ */
+export type DuplicateGroup = { kind: 'exact' | 'canonical'; books: Book[] }
+
 function levenshtein(a: string, b: string): number {
   if (a === b) return 0
   if (!a.length) return b.length
@@ -27,6 +41,10 @@ function levenshtein(a: string, b: string): number {
   return prev[n]
 }
 
+function normalize(s: unknown): string {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim()
+}
+
 export function useTableViewDuplicateDerived(
   nodes: Book[],
   links: Link[],
@@ -44,16 +62,52 @@ export function useTableViewDuplicateDerived(
     return nodes.filter((n) => !linked.has(n.id))
   }, [nodes, links])
 
-  const duplicateGroups = useMemo(() => {
-    const norm = (s: unknown) => String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim()
-    const map = new Map<string, Book[]>()
-    nodes.forEach((n) => {
-      const key = `${norm(n.title)}|||${norm(bookAuthorDisplay(n, authorsMap))}`
-      if (!map.has(key)) map.set(key, [])
-      map.get(key)!.push(n)
-    })
-    return Array.from(map.values()).filter((g) => g.length > 1)
+  const duplicateGroups = useMemo<DuplicateGroup[]>(() => {
+    const groups: DuplicateGroup[] = []
+    const claimed = new Set<string>()
+
+    // Pass 1 — canonical match via originalTitle.
+    // Runs first because it catches broader equivalences (editions, translations).
+    // Books grouped here are excluded from Pass 2 to avoid overlapping groups.
+    const byOriginal = new Map<string, Book[]>()
+    for (const n of nodes) {
+      const key = normalize(n.originalTitle)
+      if (!key) continue
+      const arr = byOriginal.get(key)
+      if (arr) arr.push(n)
+      else byOriginal.set(key, [n])
+    }
+    for (const group of byOriginal.values()) {
+      if (group.length < 2) continue
+      group.forEach((b) => claimed.add(b.id))
+      groups.push({ kind: 'canonical', books: group })
+    }
+
+    // Pass 2 — exact match on normalized title + author display, among books
+    // not already claimed by the canonical pass.
+    const byTitleAuthor = new Map<string, Book[]>()
+    for (const n of nodes) {
+      if (claimed.has(n.id)) continue
+      const key = `${normalize(n.title)}|||${normalize(bookAuthorDisplay(n, authorsMap))}`
+      const arr = byTitleAuthor.get(key)
+      if (arr) arr.push(n)
+      else byTitleAuthor.set(key, [n])
+    }
+    for (const group of byTitleAuthor.values()) {
+      if (group.length < 2) continue
+      groups.push({ kind: 'exact', books: group })
+    }
+
+    return groups
   }, [nodes, authorsMap])
+
+  const orphanedAuthors = useMemo(() => {
+    const linked = new Set<string>()
+    nodes.forEach((b) => {
+      ;(b.authorIds || []).forEach((aid) => linked.add(aid))
+    })
+    return authors.filter((a) => !linked.has(a.id))
+  }, [nodes, authors])
 
   const authorDuplicateGroups = useMemo(() => {
     const norm = (s: unknown) =>
@@ -110,5 +164,17 @@ export function useTableViewDuplicateDerived(
     return groups
   }, [authors])
 
-  return { orphans, duplicateGroups, authorDuplicateGroups }
+  /** Ouvrages sans aucun·e auteur·ice assigné·e (authorIds vide ou absent). */
+  const booksWithoutAuthors = useMemo(
+    () => nodes.filter((b) => !b.authorIds || b.authorIds.length === 0),
+    [nodes],
+  )
+
+  const todoCount = useMemo(() => {
+    const bookTodos = nodes.filter((b) => b.todo).length
+    const authorTodos = authors.filter((a) => a.todo).length
+    return bookTodos + authorTodos
+  }, [nodes, authors])
+
+  return { orphans, duplicateGroups, authorDuplicateGroups, orphanedAuthors, booksWithoutAuthors, todoCount }
 }

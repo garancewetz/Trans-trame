@@ -1,7 +1,7 @@
 import type { BookId, Link } from '@/types/domain'
 import { normalizeEndpointId } from '../domain/graphDataModel'
 
-export type BookMergeLinkPlan = {
+type BookMergeLinkPlan = {
   remappedLinks: Link[]
   linksToUpdate: { id: string; source_id: string; target_id: string }[]
   linkIdsToDelete: string[]

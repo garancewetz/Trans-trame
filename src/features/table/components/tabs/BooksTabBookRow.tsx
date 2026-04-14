@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { BookCopy, Check, Eye, Link2 } from 'lucide-react'
+import { BookCopy, Check, ClipboardList, Eye, Link2 } from 'lucide-react'
 import { mapBookUrlSearch } from '@/common/utils/bookSlug'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
@@ -172,6 +172,11 @@ export function BooksTabBookRow({
             >
               {node.title}
             </span>
+            {node.todo && (
+              <Tooltip content={node.todo}>
+                <ClipboardList size={11} className="ml-1.5 shrink-0 text-amber/50" />
+              </Tooltip>
+            )}
             {workSiblings && workSiblings.length > 0 && (
               <WorkSiblingsBadge siblings={workSiblings} authorsMap={authorsMap} />
             )}

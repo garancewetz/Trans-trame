@@ -37,9 +37,6 @@ export function splitBookAxes(raw: readonly string[] | undefined | null): { axes
   return { axes: [...axesSet], themes: [...themesSet] }
 }
 
-// Backward-compat alias
-export const CATEGORY_COLORS = AXES_COLORS
-
 // Migration des anciennes clés vers les nouvelles
 export const AXES_MIGRATION: Record<string, Axis> = {
   ECOFEMINIST: 'UNCATEGORIZED',

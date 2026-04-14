@@ -76,6 +76,10 @@ export function useTableViewController({
   const [authorDedupeModal, setAuthorDedupeModal] = useState(false)
   const [authorDedupeConfirm, setAuthorDedupeConfirm] = useState(false)
 
+  const [authorReconcileModal, setAuthorReconcileModal] = useState(false)
+
+  const [aiOrphanReconcileModal, setAiOrphanReconcileModal] = useState(false)
+
   const [smartImportModal, setSmartImportModal] = useState(false)
   const [smartImportPrefilledBook, setSmartImportPrefilledBook] = useState<Book | null>(null)
 
@@ -109,12 +113,18 @@ export function useTableViewController({
     linkCheckedIds,
   })
 
-  const { orphans, duplicateGroups, authorDuplicateGroups } = useTableViewDuplicateDerived(
+  const { orphans, duplicateGroups, authorDuplicateGroups, orphanedAuthors, booksWithoutAuthors, todoCount } = useTableViewDuplicateDerived(
     nodes,
     links,
     authors,
     authorsMap,
   )
+
+  const linkAuthorToBook = (authorId: AuthorId, book: Book) => {
+    const currentIds = book.authorIds || []
+    if (currentIds.includes(authorId)) return
+    onUpdateBook?.({ ...book, authorIds: [...currentIds, authorId] })
+  }
 
   const mergeAuthors = (fromAuthorId: AuthorId, keepAuthorId: AuthorId) => {
     if (!fromAuthorId || !keepAuthorId || fromAuthorId === keepAuthorId) return
@@ -179,7 +189,7 @@ export function useTableViewController({
     if (!dedupeConfirm) { setDedupeConfirm(true); return }
     const richness = (n: Book) => [n.firstName, n.lastName, n.year, n.description].filter(Boolean).length
     duplicateGroups.forEach((group) => {
-      const sorted = [...group].sort((a, b) => richness(b) - richness(a))
+      const sorted = [...group.books].sort((a, b) => richness(b) - richness(a))
       const keep = sorted[0]
       sorted.slice(1).forEach((from) => onMergeBooks?.(from.id, keep.id))
     })
@@ -246,6 +256,10 @@ export function useTableViewController({
     setAuthorDedupeModal,
     authorDedupeConfirm,
     setAuthorDedupeConfirm,
+    authorReconcileModal,
+    setAuthorReconcileModal,
+    aiOrphanReconcileModal,
+    setAiOrphanReconcileModal,
     smartImportModal,
     setSmartImportModal,
     smartImportPrefilledBook,
@@ -256,6 +270,10 @@ export function useTableViewController({
     orphans,
     duplicateGroups,
     authorDuplicateGroups,
+    orphanedAuthors,
+    booksWithoutAuthors,
+    todoCount,
+    linkAuthorToBook,
     existingTargetIds,
     checklistNodes,
     newLinksCount,

@@ -103,14 +103,14 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 // ── Hooks ─────────────────────────────────────────────────────────────────────
 
 /** Reactive filter state. */
-export function useFilterState() {
+function useFilterState() {
   const ctx = useContext(FilterStateContext)
   if (!ctx) throw new Error('useFilterState must be inside <FilterProvider>')
   return ctx
 }
 
 /** Stable filter callbacks — never triggers re-renders. */
-export function useFilterActions() {
+function useFilterActions() {
   const ctx = useContext(FilterActionsContext)
   if (!ctx) throw new Error('useFilterActions must be inside <FilterProvider>')
   return ctx

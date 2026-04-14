@@ -1,7 +1,7 @@
 import type { RefObject } from 'react'
 import type { ForceGraphMethods } from 'react-force-graph-2d'
 
-export const NODE_FOCUS_ZOOM = 0.5
+const NODE_FOCUS_ZOOM = 0.5
 
 /** Zoom min / max gérés à la main (enableZoomInteraction désactivé sur le graphe). */
 const MIN_ZOOM = 0.02

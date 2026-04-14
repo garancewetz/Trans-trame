@@ -14,6 +14,12 @@ export type ParsedBook = {
   firstName: string
   lastName: string
   title: string
+  /**
+   * Canonical title in the work's original language, as recognized by the LLM.
+   * Used to group editions/translations at dedup time. Null when the LLM did
+   * not recognize the work (most articles, obscure references, manual entries).
+   */
+  originalTitle: string | null
   edition: string
   page: string
   year: number | null
@@ -30,4 +36,6 @@ export type ParsedBook = {
   needsLLM?: boolean
   /** True if this result was enriched/replaced by the LLM. */
   parsedByLLM?: boolean
+  /** Emerging themes detected by the LLM (e.g. "philosophy", "psychoanalysis"). */
+  suggestedThemes?: string[]
 }

@@ -3,22 +3,22 @@
  * Returns a Map<nodeId, {fx, fy, fz}> or null for constellation (free layout).
  */
 
-export const FORCE_CHARGE_AUTHOR = -400
-export const FORCE_CHARGE_BOOK = -150
+const FORCE_CHARGE_AUTHOR = -400
+const FORCE_CHARGE_BOOK = -150
 export const FORCE_CHARGE_DIST_MAX = 700
 /** Distance de base auteur-livre : moduléee dynamiquement par le nombre de livres de l'auteur (voir linkDistanceForType). */
-export const FORCE_LINK_DIST_AUTHOR_BOOK_BASE = 70
+const FORCE_LINK_DIST_AUTHOR_BOOK_BASE = 70
 /** Facteur de croissance sqrt : +15 unités par sqrt(bookCount). 1 livre → 85, 9 → 115, 25 → 145. */
-export const FORCE_LINK_DIST_AUTHOR_BOOK_SCALE = 15
-export const FORCE_LINK_DIST_CITATION = 240
+const FORCE_LINK_DIST_AUTHOR_BOOK_SCALE = 15
+const FORCE_LINK_DIST_CITATION = 240
 /**
  * Strength par type de lien :
  *  - auteur→livre fort : ancre chaque livre dans sa galaxie, donne des groupes lisibles.
  *  - citation modéré : assez fort pour tirer les livres-ponts entre deux galaxies,
  *    sans collapser les citations internes à une galaxie.
  */
-export const FORCE_LINK_STRENGTH_AUTHOR_BOOK = 0.55
-export const FORCE_LINK_STRENGTH_CITATION = 0.35
+const FORCE_LINK_STRENGTH_AUTHOR_BOOK = 0.55
+const FORCE_LINK_STRENGTH_CITATION = 0.35
 /** Amplitude horizontale de la tendance chronologique (recent -> droite), en coordonnees graphe. */
 export const FORCE_X_YEAR_SPREAD = 4800
 /**
@@ -40,9 +40,9 @@ export const FORCE_Y_CENTER_STRENGTH = 0.12
 export const FORCE_COLLIDE_PADDING = 10
 
 /** Livres sans lien : répulsion plus faible pour ne pas les expulser du nuage. */
-export const FORCE_CHARGE_BOOK_ISOLATE_MULT = 0.48
+const FORCE_CHARGE_BOOK_ISOLATE_MULT = 0.48
 /** Un seul lien : intermédiaire. */
-export const FORCE_CHARGE_BOOK_LOW_MULT = 0.74
+const FORCE_CHARGE_BOOK_LOW_MULT = 0.74
 
 type ChargeNode = { id?: string; type?: string }
 

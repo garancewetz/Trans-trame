@@ -62,14 +62,17 @@ export async function runSmartImportBatchInsert(params: {
   // Phase 2: insert NEW books only (merged books already exist)
   const insertPromises: Promise<unknown>[] = []
   newItems.forEach((r, i) => {
+    const themeAxes = (r.suggestedThemes || []).map((t) => `UNCATEGORIZED:${t}`)
+    const allAxes = [...new Set([...(r.axes || []), ...themeAxes])]
     const pending = onAddBook?.({
       id: r.id,
       title: r.title,
+      originalTitle: r.originalTitle,
       firstName: r.firstName,
       lastName: r.lastName,
       authorIds: authorIdsByBook[i],
       year: r.year,
-      axes: r.axes,
+      axes: allAxes,
       description: '',
     })
     if (isThenable(pending)) insertPromises.push(Promise.resolve(pending))

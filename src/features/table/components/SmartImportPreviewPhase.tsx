@@ -28,6 +28,7 @@ type Props = {
   onDismissDuplicate: (id: string) => void
   onAddCoAuthor: (id: string) => void
   onUpdateAxes: (id: string, axes: Axis[]) => void
+  onRemoveTheme: (id: string, theme: string) => void
   onSwapFields: (id: string, field: 'title' | 'edition') => void
   onUpdateField: (id: string, field: string, value: string) => void
   authorMergeSuggestions: AuthorMergeSuggestion[]
@@ -60,6 +61,7 @@ export function SmartImportPreviewPhase({
   onDismissDuplicate,
   onAddCoAuthor,
   onUpdateAxes,
+  onRemoveTheme,
   onSwapFields,
   onUpdateField,
   authorMergeSuggestions,
@@ -205,6 +207,7 @@ export function SmartImportPreviewPhase({
                 onDismissDuplicate={onDismissDuplicate}
                 onAddCoAuthor={onAddCoAuthor}
                 onUpdateAxes={onUpdateAxes}
+                onRemoveTheme={onRemoveTheme}
                 onSwapFields={onSwapFields}
                 onUpdateField={onUpdateField}
                 masterNode={masterNode}

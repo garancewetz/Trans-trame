@@ -5,8 +5,6 @@ import { SmartImportPreviewPhase } from './SmartImportPreviewPhase'
 import type { SmartImportModalProps } from '../smartImportModal.types'
 import { useSmartImportModalLogic } from '../hooks/useSmartImportModalLogic'
 
-export type { SmartImportModalProps } from '../smartImportModal.types'
-
 export function SmartImportModal(props: SmartImportModalProps) {
   const {
     open,
@@ -72,6 +70,7 @@ export function SmartImportModal(props: SmartImportModalProps) {
           onDismissDuplicate={c.dismissDuplicate}
           onAddCoAuthor={c.handleAddCoAuthor}
           onUpdateAxes={c.handleUpdateAxes}
+          onRemoveTheme={c.handleRemoveTheme}
           onSwapFields={c.handleSwapFields}
           onUpdateField={c.handleUpdateField}
           authorMergeSuggestions={c.authorMergeSuggestions}

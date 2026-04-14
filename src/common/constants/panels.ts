@@ -1,20 +1,6 @@
-/** Largeurs centralisées des panels — modifier ici, tout s'adapte */
-
-/** Valeurs brutes en rem (pour calculs) */
-export const PANEL_REM = {
-  /** Panels latéraux par défaut (Textes, Auteurs, SidePanel simple) */
-  default: 23.75, // 380px
-  /** Panel Analyse (plus large pour accueillir graphes et métriques) */
-  analysis: 32, // 512px
-  /** SidePanel en mode ouvrage (node sélectionné) */
-  book: 32,
-  /** Panel source de liens (LinkSourcePanel) */
-  linkSource: 20, // w-80 = 20rem
-} as const
-
 /**
- * Classes Tailwind — les valeurs DOIVENT correspondre à PANEL_REM.
- * `dual` = book + linkSource (maintenir à jour si on change les rem).
+ * Largeurs Tailwind centralisées des panels.
+ * `dual` = book + linkSource.
  *
  * ⚠️ Classes écrites en dur (pas interpolées) pour que le scanner Tailwind JIT les détecte.
  */

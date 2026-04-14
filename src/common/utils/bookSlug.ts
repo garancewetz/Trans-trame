@@ -1,6 +1,4 @@
-import type { Book, BookId } from '@/types/domain'
-
-const DIACRITICS = /[\u0300-\u036f]/g
+import type { BookId } from '@/types/domain'
 
 const UUID_TAIL =
   /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i
@@ -11,20 +9,6 @@ export const MAP_QUERY_KEYS = {
   link: 'link',
   from: 'from',
 } as const
-
-/**
- * ASCII-ish slug for URLs (Latin base + digits), suitable for English paths.
- */
-export function slugifyForUrl(text: string): string {
-  const t = text
-    .normalize('NFD')
-    .replace(DIACRITICS, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80)
-  return t || 'work'
-}
 
 /**
  * Segment `search` pour ouvrir la carte sur un ouvrage : `?book=<uuid>`.

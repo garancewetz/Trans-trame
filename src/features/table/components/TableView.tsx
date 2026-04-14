@@ -12,6 +12,8 @@ import { HistoryTab as TableHistoryTab } from './tabs/HistoryTab'
 import { TableOrphanModal } from './TableOrphanModal'
 import { TableDedupeModal } from './TableDedupeModal'
 import { TableAuthorDedupeModal } from './TableAuthorDedupeModal'
+import { AuthorOrphanReconcileModal } from './AuthorOrphanReconcileModal'
+import { AIOrphanReconcileModal } from './AIOrphanReconcileModal'
 import { SmartImportModal } from './SmartImportModal'
 
 import type { TableViewProps } from '../tableViewTypes'
@@ -183,6 +185,9 @@ export function TableView() {
           onOpenDedupeModal={() => { c.setDedupeModal(true); c.setDedupeConfirm(false) }}
           orphans={c.orphans}
           onOpenOrphanModal={() => { c.setOrphanModal(true); c.setOrphanConfirm(false) }}
+          onOpenAIOrphanReconcile={() => c.setAiOrphanReconcileModal(true)}
+          showAIReconcile={c.orphanedAuthors.length > 0 || c.booksWithoutAuthors.length > 0}
+          todoCount={c.todoCount}
           focusBookId={c.initialFocusBookId}
         />
       )}
@@ -206,6 +211,9 @@ export function TableView() {
           focusAuthorId={c.focusAuthorId}
           authorDuplicateGroups={c.authorDuplicateGroups}
           onOpenAuthorDedupeModal={() => { c.setAuthorDedupeModal(true); c.setAuthorDedupeConfirm(false) }}
+          orphanedAuthorCount={c.orphanedAuthors.length}
+          onOpenAuthorReconcileModal={() => c.setAuthorReconcileModal(true)}
+          onOpenAIOrphanReconcile={() => c.setAiOrphanReconcileModal(true)}
         />
       )}
 
@@ -261,6 +269,7 @@ export function TableView() {
       <TableDedupeModal
         dedupeModal={c.dedupeModal}
         duplicateGroups={c.duplicateGroups}
+        authors={authors}
         handleCleanDupes={c.handleCleanDupes}
         dedupeConfirm={c.dedupeConfirm}
         setDedupeModal={c.setDedupeModal}
@@ -275,6 +284,28 @@ export function TableView() {
         confirm={c.authorDedupeConfirm}
         setOpen={c.setAuthorDedupeModal}
         setConfirm={c.setAuthorDedupeConfirm}
+      />
+
+      <AuthorOrphanReconcileModal
+        open={c.authorReconcileModal}
+        orphanedAuthors={c.orphanedAuthors}
+        books={books}
+        authorsMap={c.authorsMap}
+        onLinkAuthorToBook={c.linkAuthorToBook}
+        onClose={() => c.setAuthorReconcileModal(false)}
+      />
+
+      <AIOrphanReconcileModal
+        open={c.aiOrphanReconcileModal}
+        orphanBooks={c.orphans}
+        booksWithoutAuthors={c.booksWithoutAuthors}
+        orphanedAuthors={c.orphanedAuthors}
+        allBooks={books}
+        links={links}
+        authorsMap={c.authorsMap}
+        onUpdateBook={handleUpdateBook}
+        onAddLink={handleAddLink}
+        onClose={() => c.setAiOrphanReconcileModal(false)}
       />
 
       <SmartImportModal

@@ -66,7 +66,13 @@ export function useGraphDataEntityCallbacks({
       const sanitized = sanitizeBook({ ...book, type: 'book' as const }, axesColorsRef.current!)
       const { error } = await insertBookRow(bookToDbRow(sanitized))
       if (error) throw new Error(error.message)
-      await insertBookAuthors(sanitized.id, sanitized.authorIds ?? [])
+      const authorIds = sanitized.authorIds ?? []
+      if (authorIds.length > 0) {
+        const result = await insertBookAuthors(sanitized.id, authorIds)
+        if (result && 'error' in result && result.error) {
+          throw new Error(result.error.message || 'Erreur jointure auteur·ices')
+        }
+      }
     },
     onMutate: (book) => {
       const sanitized = sanitizeBook({ ...book, type: 'book' as const }, axesColorsRef.current!)
@@ -81,7 +87,15 @@ export function useGraphDataEntityCallbacks({
       const { id, ...fields } = bookToDbRow(sanitized)
       const { error } = await updateBookRowById(id, fields)
       if (error) throw new Error(error.message)
-      await setBookAuthors(id, sanitized.authorIds ?? [])
+      // Only touch the join table if authorIds was explicitly provided.
+      // Without this guard, an update missing the field would wipe the
+      // book↔author associations and re-create the legacy state.
+      if (Object.prototype.hasOwnProperty.call(updatedNode, 'authorIds')) {
+        const result = await setBookAuthors(id, updatedNode.authorIds ?? [])
+        if (result && 'error' in result && result.error) {
+          throw new Error(result.error.message || 'Erreur jointure auteur·ices')
+        }
+      }
     },
     onMutate: (updatedNode) => {
       const sanitized = sanitizeBook({ ...updatedNode, type: 'book' as const }, axesColorsRef.current!)

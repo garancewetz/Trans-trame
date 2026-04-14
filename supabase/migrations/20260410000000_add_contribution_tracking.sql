@@ -3,19 +3,19 @@
 -- Existing rows are backfilled to garance.wetzel@gmail.com's user id.
 -- Triggers auto-populate the columns on INSERT / UPDATE — zero front-end change.
 
--- ── 1. Add columns ──────────────────────────────────────────────────────────
+-- ── 1. Add columns (idempotent) ─────────────────────────────────────────────
 
 ALTER TABLE books
-  ADD COLUMN created_by UUID REFERENCES auth.users(id),
-  ADD COLUMN updated_by UUID REFERENCES auth.users(id);
+  ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES auth.users(id),
+  ADD COLUMN IF NOT EXISTS updated_by UUID REFERENCES auth.users(id);
 
 ALTER TABLE authors
-  ADD COLUMN created_by UUID REFERENCES auth.users(id),
-  ADD COLUMN updated_by UUID REFERENCES auth.users(id);
+  ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES auth.users(id),
+  ADD COLUMN IF NOT EXISTS updated_by UUID REFERENCES auth.users(id);
 
 ALTER TABLE links
-  ADD COLUMN created_by UUID REFERENCES auth.users(id),
-  ADD COLUMN updated_by UUID REFERENCES auth.users(id);
+  ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES auth.users(id),
+  ADD COLUMN IF NOT EXISTS updated_by UUID REFERENCES auth.users(id);
 
 -- ── 2. Backfill existing rows with garance.wetzel@gmail.com ─────────────────
 
@@ -54,20 +54,23 @@ $$;
 
 -- ── 4. Attach triggers ─────────────────────────────────────────────────────
 
+DROP TRIGGER IF EXISTS trg_books_contribution ON books;
 CREATE TRIGGER trg_books_contribution
   BEFORE INSERT OR UPDATE ON books
   FOR EACH ROW EXECUTE FUNCTION set_contribution_fields();
 
+DROP TRIGGER IF EXISTS trg_authors_contribution ON authors;
 CREATE TRIGGER trg_authors_contribution
   BEFORE INSERT OR UPDATE ON authors
   FOR EACH ROW EXECUTE FUNCTION set_contribution_fields();
 
+DROP TRIGGER IF EXISTS trg_links_contribution ON links;
 CREATE TRIGGER trg_links_contribution
   BEFORE INSERT OR UPDATE ON links
   FOR EACH ROW EXECUTE FUNCTION set_contribution_fields();
 
 -- ── 5. Indexes for "show me everything user X contributed" queries ───────────
 
-CREATE INDEX idx_books_created_by   ON books(created_by);
-CREATE INDEX idx_authors_created_by ON authors(created_by);
-CREATE INDEX idx_links_created_by   ON links(created_by);
+CREATE INDEX IF NOT EXISTS idx_books_created_by   ON books(created_by);
+CREATE INDEX IF NOT EXISTS idx_authors_created_by ON authors(created_by);
+CREATE INDEX IF NOT EXISTS idx_links_created_by   ON links(created_by);

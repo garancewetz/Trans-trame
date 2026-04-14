@@ -112,14 +112,14 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
 // ── Hooks ─────────────────────────────────────────────────────────────────────
 
 /** Reactive selection state — re-renders when any selection value changes. */
-export function useSelectionState() {
+function useSelectionState() {
   const ctx = useContext(SelectionStateContext)
   if (!ctx) throw new Error('useSelectionState must be inside <SelectionProvider>')
   return ctx
 }
 
 /** Stable action callbacks — never triggers re-renders. */
-export function useSelectionActions() {
+function useSelectionActions() {
   const ctx = useContext(SelectionActionsContext)
   if (!ctx) throw new Error('useSelectionActions must be inside <SelectionProvider>')
   return ctx

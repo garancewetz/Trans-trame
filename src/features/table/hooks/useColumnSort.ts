@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export type SortDir = 'asc' | 'desc'
+type SortDir = 'asc' | 'desc'
 
 export function useColumnSort(defaultCol = 'createdAt', defaultDir: SortDir = 'desc') {
   const [sortCol, setSortCol] = useState(defaultCol)

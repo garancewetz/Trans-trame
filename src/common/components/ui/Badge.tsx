@@ -9,7 +9,7 @@ import clsx from 'clsx'
  * - `count`   : bare numeric pill, styled entirely by caller (legacy CountBadge behaviour).
  * - `outline` : bordered pill with translucent surface, for clickable secondary chips (e.g. author links).
  */
-export type BadgeVariant = 'pill' | 'inline' | 'axis' | 'count' | 'outline'
+type BadgeVariant = 'pill' | 'inline' | 'axis' | 'count' | 'outline'
 
 type BadgeProps = Omit<HTMLAttributes<HTMLSpanElement>, 'prefix'> & {
   variant?: BadgeVariant

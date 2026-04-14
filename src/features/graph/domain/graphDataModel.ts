@@ -2,32 +2,34 @@ import { AXES_MIGRATION } from '@/common/utils/categories'
 import type { Author, Book, Link } from '@/types/domain'
 
 /** Entrées minimales pour persistance (hook / migration). */
-export type BookRowInput = Partial<Book> & Pick<Book, 'id'>
-export type AuthorRowInput = Partial<Author> & Pick<Author, 'id'>
+type BookRowInput = Partial<Book> & Pick<Book, 'id'>
+type AuthorRowInput = Partial<Author> & Pick<Author, 'id'>
 
 // ── Types lignes DB (schéma Supabase, sans codegen) ───────────────────────────
 
-export type DbBookRow = {
+type DbBookRow = {
   id: string
   title?: string
   first_name?: string
   last_name?: string
   year?: number | null
   description?: string
+  todo?: string | null
   axes?: string[]
   original_title?: string | null
   created_at?: string | null
 }
 
-export type DbAuthorRow = {
+type DbAuthorRow = {
   id: string
   first_name?: string
   last_name?: string
+  todo?: string | null
   axes?: string[]
   created_at?: string | null
 }
 
-export type DbLinkRow = {
+type DbLinkRow = {
   id: string
   source_id?: string
   target_id?: string
@@ -41,7 +43,7 @@ export type AxesColorMap = Record<string, string>
 
 // ── Helpers: sanitisation ──────────────────────────────────────────────────────
 
-export function sanitizeAxes(axes: unknown, axesColors: AxesColorMap): string[] {
+function sanitizeAxes(axes: unknown, axesColors: AxesColorMap): string[] {
   if (!Array.isArray(axes)) return []
   const allowed = new Set(Object.keys(axesColors))
   return axes
@@ -85,6 +87,7 @@ export function dbBookToNode(row: DbBookRow, authorIds?: string[]): Book {
     authorIds: authorIds ?? [],
     year: row.year ?? null,
     description: row.description || '',
+    todo: row.todo ?? null,
     axes: row.axes || [],
     originalTitle: row.original_title ?? null,
     created_at: row.created_at ?? null,
@@ -97,6 +100,7 @@ export function dbAuthorToNode(row: DbAuthorRow): Author {
     type: 'author',
     firstName: row.first_name,
     lastName: row.last_name,
+    todo: row.todo ?? null,
     axes: row.axes || [],
     created_at: row.created_at ?? null,
   }
@@ -122,6 +126,7 @@ export function bookToDbRow(node: BookRowInput) {
     last_name: node.lastName || '',
     year: node.year != null ? node.year : null,
     description: node.description || '',
+    todo: node.todo ?? null,
     axes: node.axes || [],
     original_title: node.originalTitle ?? null,
   }
@@ -132,6 +137,7 @@ export function authorToDbRow(author: AuthorRowInput) {
     id: author.id,
     first_name: author.firstName || '',
     last_name: author.lastName || '',
+    todo: author.todo ?? null,
     axes: author.axes || [],
   }
 }

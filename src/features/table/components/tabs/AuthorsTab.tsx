@@ -1,9 +1,11 @@
-import { AlertTriangle, Check, Merge, Plus, RotateCcw, Sparkles, Trash2 } from 'lucide-react'
+import { AlertTriangle, Check, Info, Link2, Merge, Plus, RotateCcw, Sparkles, Trash2 } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { INPUT } from '../../tableConstants'
 import { TH } from '../TableSubcomponents'
 import { TableMergeAuthorsModal } from '../TableMergeAuthorsModal'
+import { BatchInfoModal } from '../BatchInfoModal'
 import { AuthorTableRow } from '../AuthorTableRow'
 import { useAuthorsTabState } from '../../hooks/useAuthorsTabState'
 import type { Author, AuthorId, Book } from '@/types/domain'
@@ -16,12 +18,15 @@ type AuthorsTabProps = {
   onAddAuthor: (author: Author) => unknown
   onUpdateAuthor: (author: Author) => unknown
   onDeleteAuthor: (authorId: AuthorId) => unknown
-  onMigrateData?: () => Promise<MigrationResult | null> | MigrationResult | null
+  onMigrateData?: () => Promise<MigrationResult> | MigrationResult
   onAddBookForAuthor?: (author: Author) => unknown
   focusAuthorId?: AuthorId | null
   onMergeAuthors?: (fromAuthorId: AuthorId, keepAuthorId: AuthorId) => unknown
   authorDuplicateGroups?: Author[][]
   onOpenAuthorDedupeModal?: () => void
+  orphanedAuthorCount?: number
+  onOpenAuthorReconcileModal?: () => void
+  onOpenAIOrphanReconcile?: () => void
 }
 
 export function AuthorsTab({
@@ -37,7 +42,17 @@ export function AuthorsTab({
   onMergeAuthors,
   authorDuplicateGroups = [],
   onOpenAuthorDedupeModal,
+  orphanedAuthorCount = 0,
+  onOpenAuthorReconcileModal,
+  onOpenAIOrphanReconcile,
 }: AuthorsTabProps) {
+  const [batchInfoModal, setBatchInfoModal] = useState(false)
+
+  const authorsMap = useMemo(
+    () => new Map(authors.map((a) => [a.id, a])),
+    [authors],
+  )
+
   const {
     editingCell, setEditingCell,
     editingValue, setEditingValue,
@@ -118,14 +133,66 @@ export function AuthorsTab({
 
       {/* Résultat de la migration */}
       {migrateResult && (
-        <div className="shrink-0 border-b border-green/12 bg-green/4 px-5 py-2.5">
-          <div className="flex items-center gap-2">
-            <Check size={12} className="shrink-0 text-green" />
-            <p className="text-label text-green/80">
-              Migration terminée — {migrateResult.newAuthors} auteur·ice{migrateResult.newAuthors > 1 ? 's' : ''} créé·e{migrateResult.newAuthors > 1 ? 's' : ''},
-              {' '}{migrateResult.updatedBooks} ouvrage{migrateResult.updatedBooks > 1 ? 's' : ''} mis à jour.
-            </p>
-          </div>
+        <div
+          className={[
+            'shrink-0 border-b px-5 py-2.5',
+            migrateResult.error
+              ? 'border-red/15 bg-red/4'
+              : legacyCount > 0
+                ? 'border-amber/15 bg-amber/4'
+                : 'border-green/12 bg-green/4',
+          ].join(' ')}
+        >
+          {migrateResult.error ? (
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2">
+                <AlertTriangle size={12} className="mt-0.5 shrink-0 text-red/70" />
+                <div>
+                  <p className="text-label font-semibold text-red/75">
+                    Migration échouée
+                  </p>
+                  <p className="mt-0.5 font-mono text-caption text-red/55">
+                    {migrateResult.error}
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                onClick={handleMigrate}
+                disabled={migrating}
+                className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-red/25 bg-red/8 px-3 py-1.5 text-[0.8rem] font-semibold text-red/70 transition-all hover:bg-red/15 disabled:cursor-wait disabled:opacity-40"
+              >
+                <RotateCcw size={11} />
+                {migrating ? 'Retry…' : 'Réessayer'}
+              </Button>
+            </div>
+          ) : legacyCount > 0 ? (
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <AlertTriangle size={12} className="shrink-0 text-amber/70" />
+                <p className="text-label text-amber/75">
+                  Migration effectuée mais {legacyCount} ouvrage{legacyCount > 1 ? 's' : ''} n'{legacyCount > 1 ? 'ont' : 'a'} pas été mis à jour.
+                </p>
+              </div>
+              <Button
+                type="button"
+                onClick={handleMigrate}
+                disabled={migrating}
+                className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-amber/25 bg-amber/8 px-3 py-1.5 text-[0.8rem] font-semibold text-amber/70 transition-all hover:bg-amber/15 disabled:cursor-wait disabled:opacity-40"
+              >
+                <RotateCcw size={11} />
+                {migrating ? 'Retry…' : 'Réessayer'}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Check size={12} className="shrink-0 text-green" />
+              <p className="text-label text-green/80">
+                Migration terminée — {migrateResult.newAuthors} auteur·ice{migrateResult.newAuthors > 1 ? 's' : ''} créé·e{migrateResult.newAuthors > 1 ? 's' : ''},
+                {' '}{migrateResult.updatedBooks} ouvrage{migrateResult.updatedBooks > 1 ? 's' : ''} mis à jour.
+              </p>
+            </div>
+          )}
           {migrateResult.failures.length > 0 && (
             <div className="mt-2.5 rounded-lg border border-red/15 bg-red/4 px-4 py-3">
               <div className="flex items-center justify-between">
@@ -162,21 +229,54 @@ export function AuthorsTab({
         </div>
       )}
 
-      {authorDuplicateGroups.length > 0 && (
+      {(authorDuplicateGroups.length > 0 || orphanedAuthorCount > 0) && (
         <div className="flex shrink-0 items-center gap-2 border-b border-white/6 px-5 py-2">
-          <Button
-            variant="outline"
-            outlineWeight="faint"
-            tone="warning"
-            emphasis
-            icon={<Merge size={11} />}
-            onClick={onOpenAuthorDedupeModal}
-            type="button"
-            title={`${authorDuplicateGroups.length} groupe${authorDuplicateGroups.length > 1 ? 's' : ''} de doublons`}
-          >
-            Doublons
-            <span className="tabular-nums">({authorDuplicateGroups.length})</span>
-          </Button>
+          {authorDuplicateGroups.length > 0 && (
+            <Button
+              variant="outline"
+              outlineWeight="faint"
+              tone="warning"
+              emphasis
+              icon={<Merge size={11} />}
+              onClick={onOpenAuthorDedupeModal}
+              type="button"
+              title={`${authorDuplicateGroups.length} groupe${authorDuplicateGroups.length > 1 ? 's' : ''} de doublons`}
+            >
+              Doublons
+              <span className="tabular-nums">({authorDuplicateGroups.length})</span>
+            </Button>
+          )}
+          {orphanedAuthorCount > 0 && (
+            <>
+              <Button
+                variant="outline"
+                outlineWeight="faint"
+                tone="orphan"
+                emphasis
+                icon={<Link2 size={11} />}
+                onClick={onOpenAuthorReconcileModal}
+                type="button"
+                title={`${orphanedAuthorCount} auteur·ice${orphanedAuthorCount > 1 ? 's' : ''} sans ouvrage`}
+              >
+                Orphelin·es
+                <span className="tabular-nums">({orphanedAuthorCount})</span>
+              </Button>
+              {onOpenAIOrphanReconcile && (
+                <Button
+                  variant="outline"
+                  outlineWeight="faint"
+                  tone="magic"
+                  emphasis
+                  icon={<Sparkles size={11} />}
+                  onClick={onOpenAIOrphanReconcile}
+                  type="button"
+                  title="Réconcilier les orphelin·es via Gemini (contexte de batch + graphe)"
+                >
+                  AI Réconcilier
+                </Button>
+              )}
+            </>
+          )}
         </div>
       )}
 
@@ -186,6 +286,13 @@ export function AuthorsTab({
           <span className="font-mono text-label text-white/45">
             {selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}
           </span>
+          <Button
+            type="button"
+            onClick={() => setBatchInfoModal(true)}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/4 px-3 py-1.5 text-[0.8rem] font-semibold text-white/50 transition-all hover:bg-white/8"
+          >
+            <Info size={11} /> Informations
+          </Button>
           {selectedIds.size === 2 && (
             <Button
               type="button"
@@ -337,6 +444,15 @@ export function AuthorsTab({
         onConfirm={handleConfirmMerge}
         onClose={() => { setMergeModal(false); setMergeKeepId(null) }}
         bookCountByAuthor={bookCountByAuthor}
+      />
+
+      <BatchInfoModal
+        open={batchInfoModal}
+        onClose={() => setBatchInfoModal(false)}
+        selectedAuthors={authors.filter((a) => selectedIds.has(a.id))}
+        allBooks={books}
+        allAuthors={authors}
+        authorsMap={authorsMap}
       />
     </div>
   )

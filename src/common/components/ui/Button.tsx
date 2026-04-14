@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react'
 import clsx from 'clsx'
 
-export type ButtonVariant =
+type ButtonVariant =
   | 'unstyled'
   /** Surface sombre type secondaire (souvent flex-1 en modale) */
   | 'surface'
@@ -16,7 +16,7 @@ export type ButtonVariant =
   /** Pastille dans un groupe */
   | 'chip'
 
-export type ButtonTone =
+type ButtonTone =
   | 'neutral'
   | 'cyan'
   | 'amber'
@@ -31,16 +31,16 @@ export type ButtonTone =
   | 'muted'
 
 /** Avec `outline` + `frosted` : compact type barre vs taille standard */
-export type OutlineSize = 'sm' | 'md'
+type OutlineSize = 'sm' | 'md'
 
 /** Avec `variant="ghost"` */
-export type GhostLayout = 'inline' | 'row' | 'banner'
+type GhostLayout = 'inline' | 'row' | 'banner'
 
 /** Avec `variant="icon"` : `tight` = coin lg p-1 ; `soft` = zone un peu plus grande, survol léger */
-export type IconDensity = 'tight' | 'soft'
+type IconDensity = 'tight' | 'soft'
 
 /** Avec `outline` sans `frosted` */
-export type OutlineWeight = 'muted' | 'accent' | 'faint' | 'strong'
+type OutlineWeight = 'muted' | 'accent' | 'faint' | 'strong'
 
 type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type'> & {
   type?: ButtonHTMLAttributes<HTMLButtonElement>['type']

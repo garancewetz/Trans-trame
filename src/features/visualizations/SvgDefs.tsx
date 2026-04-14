@@ -20,7 +20,7 @@ function rgba(c: typeof CITE, a: number) {
 
 // ── Public helpers ───────────────────────────────────────────────────────────
 
-export type LinkStyle = {
+type LinkStyle = {
   stroke: string
   strokeOpacity: number
   strokeWidth: number
@@ -31,7 +31,7 @@ export type LinkStyle = {
  * Compute link visual style — mirrors Galaxy logic.
  * Supports both selection and hover focus states.
  */
-export function getLinkStyle(
+function getLinkStyle(
   sourceId: string,
   targetId: string,
   selectedId: string | null,
@@ -72,7 +72,7 @@ export function getLinkStyle(
 
 // ── Node visual state (mirrors Galaxy computeNodeState) ─────────────────────
 
-export type NodeVisual = {
+type NodeVisual = {
   opacity: number
   r: number
   glowR: number | null
@@ -117,7 +117,7 @@ export function getNodeVisual(
 
 // ── Node fill (multi-axis gradient support) ──────────────────────────────────
 
-export function gradientId(axes: string[]): string {
+function gradientId(axes: string[]): string {
   return `grad-${axes.join('-')}`
 }
 
@@ -187,12 +187,16 @@ function hoverGradientId(linkIndex: number) {
 
 type ParticleConfig = { count: number; r: number; color: string; dur: string }
 
-export function getParticleConfig(
+function getParticleConfig(
   sourceId: string,
   targetId: string,
   selectedId: string | null,
   hoveredId?: string | null,
 ): ParticleConfig | null {
+  // Pattern Galaxy : les particules n'apparaissent QUE sur les liens focaux
+  // (sélection ou survol). En idle pur (pas de sélection, pas de hover), on
+  // ne dessine aucune animation — N × animateMotion en continu tue le FPS
+  // dès que le nombre de liens dépasse la centaine.
   const hasHoverFocus = !!hoveredId && !selectedId
   if (hasHoverFocus) {
     const isHoverLink = sourceId === hoveredId || targetId === hoveredId
@@ -200,9 +204,7 @@ export function getParticleConfig(
     const isCite = sourceId === hoveredId
     return { count: 3, r: 1.2, color: rgba(isCite ? CITE : CITED_BY, 0.9), dur: '4s' }
   }
-  if (!selectedId) {
-    return { count: 2, r: 1, color: rgba(CITE, 0.6), dur: '6s' }
-  }
+  if (!selectedId) return null
   const isActive = selectedId === sourceId || selectedId === targetId
   if (!isActive) return null
   const isCite = sourceId === selectedId
@@ -216,7 +218,7 @@ type LinkParticleProps = {
 }
 
 /** Animated dots flowing along a link path. */
-export const LinkParticles = memo(function LinkParticles({ d, config, linkIndex }: LinkParticleProps) {
+const LinkParticles = memo(function LinkParticles({ d, config, linkIndex }: LinkParticleProps) {
   const { count, r, color, dur } = config
   const durSeconds = parseFloat(dur)
   return (

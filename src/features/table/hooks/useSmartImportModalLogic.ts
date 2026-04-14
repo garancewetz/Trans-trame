@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, type FormEvent } from 'react'
 import { toggleSetItem } from '@/common/utils/setUtils'
 import type { Book } from '@/types/domain'
 import { parseSmartInput, parseSmartInputHybrid, parseSmartInputFromImages, type ParsedBook } from '../parseSmartInput'
+import type { ParsedAuthor } from '../parseSmartInput.types'
 import { runSmartImportBatchInsert } from '../smartImportModal.batchInsert'
 import type { SmartImportModalProps } from '../smartImportModal.types'
 import { detectAuthorInitialMatches, normStr, type AuthorMergeSuggestion } from '../smartImportModal.utils'
@@ -326,20 +327,30 @@ export function useSmartImportModalLogic({
     setParsed((prev) =>
       prev.map((item) => {
         if (item.id !== id) return item
-        if (authorIndex != null && item.authors?.length > authorIndex) {
-          let updatedAuthors
-          if (!fn && !ln) {
-            updatedAuthors = item.authors.filter((_, authorIdx) => authorIdx !== authorIndex)
-            if (updatedAuthors.length === 0) updatedAuthors = [{ firstName: '', lastName: '' }]
-          } else {
-            updatedAuthors = item.authors.map((a, i) =>
-              i === authorIndex ? { firstName: fn, lastName: ln } : a
-            )
-          }
-          const first = updatedAuthors[0] || {}
-          return { ...item, authors: updatedAuthors, firstName: first.firstName || '', lastName: first.lastName || '' }
+        // Always work from a non-empty authors list so item.authors stays the
+        // single source of truth (and the batch insert can resolve them).
+        const baseAuthors = item.authors?.length > 0
+          ? item.authors
+          : [{ firstName: item.firstName || '', lastName: item.lastName || '' }]
+        const idx = authorIndex ?? 0
+        let updatedAuthors: ParsedAuthor[]
+        if (!fn && !ln) {
+          updatedAuthors = baseAuthors.filter((_, i) => i !== idx)
+          if (updatedAuthors.length === 0) updatedAuthors = [{ firstName: '', lastName: '' }]
+        } else if (idx >= baseAuthors.length) {
+          updatedAuthors = [...baseAuthors, { firstName: fn, lastName: ln }]
+        } else {
+          updatedAuthors = baseAuthors.map((a, i) =>
+            i === idx ? { firstName: fn, lastName: ln } : a
+          )
         }
-        return { ...item, firstName: fn, lastName: ln }
+        const first = updatedAuthors[0] || { firstName: '', lastName: '' }
+        return {
+          ...item,
+          authors: updatedAuthors,
+          firstName: first.firstName || '',
+          lastName: first.lastName || '',
+        }
       })
     )
     setEditingAuthor(null)
@@ -348,6 +359,16 @@ export function useSmartImportModalLogic({
   const handleUpdateAxes = (itemId: string, newAxes: ParsedBook['axes']) => {
     setParsed((prev) =>
       prev.map((item) => (item.id === itemId ? { ...item, axes: newAxes } : item))
+    )
+  }
+
+  const handleRemoveTheme = (itemId: string, theme: string) => {
+    setParsed((prev) =>
+      prev.map((item) =>
+        item.id === itemId
+          ? { ...item, suggestedThemes: (item.suggestedThemes || []).filter((t) => t !== theme) }
+          : item
+      )
     )
   }
 
@@ -508,6 +529,7 @@ export function useSmartImportModalLogic({
     dismissDuplicate,
     handleAddCoAuthor,
     handleUpdateAxes,
+    handleRemoveTheme,
     handleUpdateField,
     handleSwapFields,
     handleReparseChecked,
