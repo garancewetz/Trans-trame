@@ -1,5 +1,4 @@
 import clsx from 'clsx'
-import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { useAppData, useAppMutations } from '@/core/AppDataContext'
 import { useSelection } from '@/core/SelectionContext'
 import { useTableUi } from '@/core/TableUiContext'
@@ -7,18 +6,13 @@ import { TableTopbar } from './TableTopbar'
 import { TableFilterBar } from './TableFilterBar'
 import { BooksTab as TableBooksTab } from './tabs/BooksTab'
 import { AuthorsTab as TableAuthorsTab } from './tabs/AuthorsTab'
-import { LinksTab as TableLinksTab } from './tabs/LinksTab'
+import { LinksTab as TableLinksTab } from './tabs/links/LinksTab'
 import { HistoryTab as TableHistoryTab } from './tabs/HistoryTab'
-import { TableOrphanModal } from './TableOrphanModal'
-import { TableDedupeModal } from './TableDedupeModal'
-import { TableAuthorDedupeModal } from './TableAuthorDedupeModal'
-import { AuthorOrphanReconcileModal } from './AuthorOrphanReconcileModal'
-import { AIOrphanReconcileModal } from './AIOrphanReconcileModal'
-import { SmartImportModal } from './SmartImportModal'
+import { TableViewModals } from './TableViewModals'
 
 import type { TableViewProps } from '../tableViewTypes'
-import type { Book } from '@/types/domain'
 import { useTableViewController } from '../hooks/useTableViewController'
+import { useTableViewCallbacks } from '../hooks/useTableViewCallbacks'
 
 function tableInitialTabFromState(tab: string): NonNullable<TableViewProps['initialTab']> {
   if (tab === 'authors' || tab === 'links' || tab === 'history') return tab
@@ -27,104 +21,32 @@ function tableInitialTabFromState(tab: string): NonNullable<TableViewProps['init
 
 export function TableView() {
   const { books, links, authors } = useAppData()
-  const {
-    handleAddBook,
-    handleAddLink,
-    handleUpdateBook,
-    handleDeleteBook,
-    handleDeleteLink,
-    handleUpdateLink,
-    handleMergeBooks,
-    handleAddAuthor,
-    handleUpdateAuthor,
-    handleDeleteAuthor,
-    handleMigrateData,
-  } = useAppMutations()
-
-  const {
-    selectedNode,
-    selectNode,
-    setSelectedNode,
-    setSelectedLink,
-    setLinkContextNode,
-    setPanelTab,
-  } = useSelection()
-
-  const {
-    setTableMode,
-    tableInitialTab,
-    setTableInitialTab,
-    tableLinkSourceId,
-    setTableLinkSourceId,
-    tableFocusBookId,
-    lastEditedNodeId,
-    setLastEditedNodeId,
-    setFlashNodeIds,
-  } = useTableUi()
+  const mutations = useAppMutations()
+  const selection = useSelection()
+  const tableUi = useTableUi()
 
   const c = useTableViewController({
     nodes: books,
     links,
     authors,
-    onAddLink: handleAddLink,
-    onUpdateBook: handleUpdateBook,
-    onDeleteBook: handleDeleteBook,
-    onUpdateLink: handleUpdateLink,
-    onMergeBooks: handleMergeBooks,
-    onDeleteAuthor: handleDeleteAuthor,
-    initialTab: tableInitialTabFromState(tableInitialTab),
-    initialLinkSourceId: tableLinkSourceId,
-    initialFocusBookId: tableFocusBookId,
+    onAddLink: mutations.handleAddLink,
+    onUpdateBook: mutations.handleUpdateBook,
+    onDeleteBook: mutations.handleDeleteBook,
+    onUpdateLink: mutations.handleUpdateLink,
+    onMergeBooks: mutations.handleMergeBooks,
+    onDeleteAuthor: mutations.handleDeleteAuthor,
+    initialTab: tableInitialTabFromState(tableUi.tableInitialTab),
+    initialLinkSourceId: tableUi.tableLinkSourceId,
+    initialFocusBookId: tableUi.tableFocusBookId,
   })
 
-  const onClose = () => {
-    setTableMode(false)
-    setTableInitialTab('books')
-    setTableLinkSourceId(null)
-    if (lastEditedNodeId) {
-      const node = books.find((n) => n.id === lastEditedNodeId)
-      if (node) {
-        setSelectedNode(node)
-        setPanelTab('details')
-      }
-      setLastEditedNodeId(null)
-    }
-  }
-
-  const onLastEdited = (nodeId: string) => setLastEditedNodeId(nodeId)
-
-  const onImportComplete = (nodeIds: string[]) => {
-    const ids = new Set(nodeIds)
-    setFlashNodeIds(ids)
-    setTimeout(() => setFlashNodeIds(null), 4000)
-  }
-
-  const openBookInSidePanel = (bookId: string) => {
-    const node = books.find((n) => n.id === bookId)
-    if (!node) return
-    setSelectedLink(null)
-    setLinkContextNode(null)
-    selectNode(node)
-    setTableMode(false)
-  }
-
-  const onUpdateBookWithTracking = (n: Book) => {
-    handleUpdateBook(n)
-    setLastEditedNodeId(n.id)
-  }
-
-  const onDeleteBookWithCleanup = (nodeId: string) => {
-    handleDeleteBook(nodeId)
-    if (selectedNode?.id === nodeId) setSelectedNode(null)
-  }
-
-  const onMergeBooksWithCleanup = (fromNodeId: string, intoNodeId: string) => {
-    const merged = handleMergeBooks(fromNodeId, intoNodeId)
-    if (!merged) return
-    const intoNode = books.find((n) => n.id === intoNodeId)
-    setSelectedNode(intoNode || null)
-    setPanelTab('details')
-  }
+  const cb = useTableViewCallbacks({
+    books,
+    mutations,
+    selection,
+    tableUi,
+    controller: c,
+  })
 
   return (
     <div
@@ -135,7 +57,7 @@ export function TableView() {
       )}
     >
       <TableTopbar
-        onClose={onClose}
+        onClose={cb.onClose}
         tab={c.tab}
         setTab={c.setTab}
         nodes={books}
@@ -170,15 +92,15 @@ export function TableView() {
           links={links}
           search={c.search}
           authors={authors}
-          onAddAuthor={handleAddAuthor}
-          onAddBook={handleAddBook}
-          onUpdateBook={onUpdateBookWithTracking}
-          onDeleteBook={onDeleteBookWithCleanup}
-          onLastEdited={onLastEdited}
-          onMergeBooks={onMergeBooksWithCleanup}
+          onAddAuthor={mutations.handleAddAuthor}
+          onAddBook={mutations.handleAddBook}
+          onUpdateBook={cb.onUpdateBookWithTracking}
+          onDeleteBook={cb.onDeleteBookWithCleanup}
+          onLastEdited={cb.onLastEdited}
+          onMergeBooks={cb.onMergeBooksWithCleanup}
           onOpenLinksForBook={c.openLinksForBook}
           onFocusAuthorInAuthorsTab={c.focusAuthorInAuthorsTab}
-          onOpenWorkDetail={openBookInSidePanel}
+          onOpenWorkDetail={cb.openBookInSidePanel}
           initialAuthorIds={c.booksPrefill?.authorId ? [c.booksPrefill.authorId] : []}
           autoFocusTitle={Boolean(c.booksPrefill?.authorId)}
           duplicateGroups={c.duplicateGroups}
@@ -197,17 +119,12 @@ export function TableView() {
           authors={authors}
           books={books}
           search={c.authorSearch}
-          onAddAuthor={(a) => handleAddAuthor?.(a)}
-          onUpdateAuthor={(a) => handleUpdateAuthor?.(a)}
-          onDeleteAuthor={(id) => handleDeleteAuthor?.(id)}
-          onMigrateData={handleMigrateData}
+          onAddAuthor={(a) => mutations.handleAddAuthor?.(a)}
+          onUpdateAuthor={(a) => mutations.handleUpdateAuthor?.(a)}
+          onDeleteAuthor={(id) => mutations.handleDeleteAuthor?.(id)}
+          onMigrateData={mutations.handleMigrateData}
           onMergeAuthors={c.mergeAuthors}
-          onAddBookForAuthor={(author) => {
-            const authorLabel = bookAuthorDisplay({ authorIds: [author.id] }, c.authorsMap)
-            c.setSearch(authorLabel)
-            c.setBooksPrefill({ nonce: crypto.randomUUID(), authorId: author.id })
-            c.setTab('books')
-          }}
+          onAddBookForAuthor={cb.onAddBookForAuthor}
           focusAuthorId={c.focusAuthorId}
           authorDuplicateGroups={c.authorDuplicateGroups}
           onOpenAuthorDedupeModal={() => { c.setAuthorDedupeModal(true); c.setAuthorDedupeConfirm(false) }}
@@ -245,83 +162,24 @@ export function TableView() {
           commitLinkEdit={c.commitLinkEdit}
           deletingLinkId={c.deletingLinkId}
           setDeletingLinkId={c.setDeletingLinkId}
-          onDeleteLink={(id) => handleDeleteLink?.(id)}
-          onOpenWorkDetail={openBookInSidePanel}
+          onDeleteLink={(id) => mutations.handleDeleteLink?.(id)}
+          onOpenWorkDetail={cb.openBookInSidePanel}
           authors={authors}
-          onAddAuthor={(a) => handleAddAuthor?.(a)}
-          onAddBook={handleAddBook}
+          onAddAuthor={(a) => mutations.handleAddAuthor?.(a)}
+          onAddBook={mutations.handleAddBook}
           onSmartImportFrom={c.openSmartImportForBook}
         />
       )}
 
-      <TableOrphanModal
-        orphanModal={c.orphanModal}
-        orphans={c.orphans}
-        allNodes={books}
-        authorsMap={c.authorsMap}
-        handleCleanOrphans={c.handleCleanOrphans}
-        orphanConfirm={c.orphanConfirm}
-        setOrphanModal={c.setOrphanModal}
-        setOrphanConfirm={c.setOrphanConfirm}
-        onAddLink={handleAddLink}
-      />
-
-      <TableDedupeModal
-        dedupeModal={c.dedupeModal}
-        duplicateGroups={c.duplicateGroups}
-        authors={authors}
-        handleCleanDupes={c.handleCleanDupes}
-        dedupeConfirm={c.dedupeConfirm}
-        setDedupeModal={c.setDedupeModal}
-        setDedupeConfirm={c.setDedupeConfirm}
-      />
-
-      <TableAuthorDedupeModal
-        open={c.authorDedupeModal}
-        duplicateGroups={c.authorDuplicateGroups}
-        handleMergeDupes={c.handleMergeAuthorDupes}
-        nodes={books}
-        confirm={c.authorDedupeConfirm}
-        setOpen={c.setAuthorDedupeModal}
-        setConfirm={c.setAuthorDedupeConfirm}
-      />
-
-      <AuthorOrphanReconcileModal
-        open={c.authorReconcileModal}
-        orphanedAuthors={c.orphanedAuthors}
+      <TableViewModals
         books={books}
-        authorsMap={c.authorsMap}
-        onLinkAuthorToBook={c.linkAuthorToBook}
-        onClose={() => c.setAuthorReconcileModal(false)}
-      />
-
-      <AIOrphanReconcileModal
-        open={c.aiOrphanReconcileModal}
-        orphanBooks={c.orphans}
-        booksWithoutAuthors={c.booksWithoutAuthors}
-        orphanedAuthors={c.orphanedAuthors}
-        allBooks={books}
         links={links}
+        authors={authors}
         authorsMap={c.authorsMap}
-        onUpdateBook={handleUpdateBook}
-        onAddLink={handleAddLink}
-        onClose={() => c.setAiOrphanReconcileModal(false)}
+        mutations={mutations}
+        onImportComplete={cb.onImportComplete}
+        c={c}
       />
-
-      <SmartImportModal
-        open={c.smartImportModal}
-        onClose={c.closeSmartImport}
-        existingNodes={books}
-        existingAuthors={authors}
-        authorsMap={c.authorsMap}
-        onAddBook={handleAddBook}
-        onAddAuthor={handleAddAuthor}
-        onAddLink={handleAddLink}
-        onUpdateBook={handleUpdateBook}
-        onImportComplete={onImportComplete}
-        initialMasterNode={c.smartImportPrefilledBook}
-      />
-
     </div>
   )
 }

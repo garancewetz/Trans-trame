@@ -6,7 +6,7 @@ import { EditionPicker } from '@/features/add-book-form/components/EditionPicker
 import type { Book } from '@/types/domain'
 import type { Axis } from '@/common/utils/categories'
 import type { ParsedBook } from '../parseSmartInput.types'
-import { AxisDots } from './TableSubcomponents'
+import { AxisDots } from './AxisDots'
 
 type EditingCell = { id: string; field: string } | null
 type EditingAuthor = { id: string; authorIndex: number | null; firstName: string; lastName: string } | null

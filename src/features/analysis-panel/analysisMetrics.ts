@@ -1,6 +1,15 @@
 import { AXES, AXES_COLORS } from '@/common/utils/categories'
 import { authorName, type AuthorNode } from '@/common/utils/authorUtils'
 
+/** Extracts a string id from a link endpoint (string or {id} object). */
+function resolveId(ref: unknown): string | null {
+  if (typeof ref === 'string') return ref
+  if (typeof ref === 'object' && ref !== null && 'id' in ref) {
+    return typeof ref.id === 'string' ? ref.id : null
+  }
+  return null
+}
+
 /* ── Panorama KPIs ─────────────────────────────────────── */
 
 export function computePanorama(
@@ -62,8 +71,8 @@ export function computeMostCitedWorks(
   const citedByCount: Record<string, number> = {}
   for (const node of bookNodes) citedByCount[node.id] = 0
   for (const link of links) {
-    const tgtId = typeof link.target === 'object' && link.target !== null ? (link.target as { id: string }).id : link.target
-    if (typeof tgtId === 'string' && citedByCount[tgtId] !== undefined) citedByCount[tgtId]++
+    const tgtId = resolveId(link.target)
+    if (tgtId && citedByCount[tgtId] !== undefined) citedByCount[tgtId]++
   }
   return [...bookNodes]
     .sort((a, b) => (citedByCount[b.id] || 0) - (citedByCount[a.id] || 0))
@@ -109,15 +118,6 @@ export function computeInterAxisBridges(
   const totalByNode = new Map<string, number>()
   const bridgeByNode = new Map<string, number>()
 
-  const resolveId = (ref: unknown): string | null => {
-    if (typeof ref === 'string') return ref
-    if (typeof ref === 'object' && ref !== null && 'id' in ref) {
-      const id = (ref as { id: unknown }).id
-      return typeof id === 'string' ? id : null
-    }
-    return null
-  }
-
   for (const link of links) {
     const srcId = resolveId(link.source)
     const tgtId = resolveId(link.target)
@@ -162,7 +162,8 @@ export function computeArchipelagos(
   links: { source: unknown; target: unknown }[],
 ) {
   if (bookNodes.length === 0) {
-    return { componentCount: 0, mainSize: 0, mainPct: 0, smallIslands: [] as number[], orphans: 0 }
+    const empty: number[] = []
+    return { componentCount: 0, mainSize: 0, mainPct: 0, smallIslands: empty, orphans: 0 }
   }
 
   const parent = new Map<string, string>()
@@ -185,15 +186,6 @@ export function computeArchipelagos(
     const ra = find(a)
     const rb = find(b)
     if (ra !== rb) parent.set(ra, rb)
-  }
-
-  const resolveId = (ref: unknown): string | null => {
-    if (typeof ref === 'string') return ref
-    if (typeof ref === 'object' && ref !== null && 'id' in ref) {
-      const id = (ref as { id: unknown }).id
-      return typeof id === 'string' ? id : null
-    }
-    return null
   }
 
   for (const link of links) {
@@ -228,10 +220,10 @@ export function computeArchipelagos(
 export function computeMaillage(bookNodes: { id: string }[], links: { source: unknown; target: unknown }[]) {
   const connected = new Set<string>()
   for (const link of links) {
-    const srcId = typeof link.source === 'object' && link.source !== null ? (link.source as { id: string }).id : link.source
-    const tgtId = typeof link.target === 'object' && link.target !== null ? (link.target as { id: string }).id : link.target
-    if (typeof srcId === 'string') connected.add(srcId)
-    if (typeof tgtId === 'string') connected.add(tgtId)
+    const srcId = resolveId(link.source)
+    const tgtId = resolveId(link.target)
+    if (srcId) connected.add(srcId)
+    if (tgtId) connected.add(tgtId)
   }
   const orphans = bookNodes.filter((n) => !connected.has(n.id)).length
   const ratio = bookNodes.length > 0 ? links.length / bookNodes.length : 0

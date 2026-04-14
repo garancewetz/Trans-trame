@@ -2,7 +2,9 @@ import type { GraphData, Book, Link } from '@/types/domain'
 
 function endpointId(v: unknown): string | undefined {
   if (typeof v === 'string') return v
-  if (v != null && typeof v === 'object' && 'id' in v) return (v as { id: string }).id
+  if (v != null && typeof v === 'object' && 'id' in v) {
+    return typeof v.id === 'string' ? v.id : undefined
+  }
   return undefined
 }
 

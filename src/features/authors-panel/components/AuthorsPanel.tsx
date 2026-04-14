@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import { Plus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Virtuoso } from 'react-virtuoso'
@@ -81,10 +82,10 @@ export function AuthorsPanel({
 
   return (
     <aside
-      className={[
+      className={clsx(
         `fixed left-0 top-0 z-50 h-screen ${PANEL_WIDTH.default} overflow-hidden border-r border-white/10 bg-bg-overlay/92 backdrop-blur-2xl transition-transform duration-300 ease-in-out`,
         open ? 'translate-x-0' : '-translate-x-[420px]',
-      ].join(' ')}
+      )}
     >
       <div className="flex h-full flex-col px-4 pt-4">
         <PanelHeader
@@ -126,25 +127,25 @@ export function AuthorsPanel({
               return (
                 <div className="mb-1">
                   <div
-                    className={[
+                    className={clsx(
                       'flex w-full items-center gap-1 rounded-lg border px-2 py-1.5 backdrop-blur-xl transition-all',
                       isSelected
                         ? 'border-peach/35 bg-peach/12'
                         : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/8',
-                    ].join(' ')}
+                    )}
                   >
                     <Button
                       type="button"
-                      className={[
+                      className={clsx(
                         'flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-3 rounded-md px-1.5 py-1 text-left transition-colors',
                         isSelected ? 'hover:bg-peach/8' : 'hover:bg-white/5',
-                      ].join(' ')}
+                      )}
                       onClick={() => handleSelectAuthor(isSelected ? null : a.id)}
                     >
-                      <span className={['truncate text-[0.95rem] font-semibold', isSelected ? 'text-peach/95' : 'text-white/85'].join(' ')}>
+                      <span className={clsx('truncate text-[0.95rem] font-semibold', isSelected ? 'text-peach/95' : 'text-white/85')}>
                         {a.name}
                       </span>
-                      <span className={['shrink-0 rounded-full px-2 py-0.5 text-[0.8rem] font-bold tabular-nums', isSelected ? 'bg-peach/20 text-peach/80' : 'bg-white/10 text-white/50'].join(' ')}>
+                      <span className={clsx('shrink-0 rounded-full px-2 py-0.5 text-[0.8rem] font-bold tabular-nums', isSelected ? 'bg-peach/20 text-peach/80' : 'bg-white/10 text-white/50')}>
                         {a.books.length}
                       </span>
                     </Button>

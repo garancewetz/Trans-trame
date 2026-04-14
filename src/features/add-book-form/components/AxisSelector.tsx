@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import type { AxisId } from '@/types/domain'
 import { AXES, AXES_COLORS, AXES_LABELS } from '@/common/utils/categories'
 import { Button } from '@/common/components/ui/Button'
@@ -20,12 +21,12 @@ export function AxisSelector({ selectedAxes, toggleAxis }: Props) {
             <Button
               key={axis}
               type="button"
-              className={[
+              className={clsx(
                 'cursor-pointer rounded-full border px-3 py-1.5 text-[0.8rem] font-bold uppercase tracking-[0.5px] transition-all',
                 active
                   ? 'border-transparent text-black'
                   : 'border-white/15 bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80',
-              ].join(' ')}
+              )}
               style={active ? { backgroundColor: AXES_COLORS[axis] } : {}}
               onClick={() => toggleAxis(axis)}
             >

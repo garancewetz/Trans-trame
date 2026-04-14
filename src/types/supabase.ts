@@ -131,6 +131,7 @@ export type Database = {
           description: string
           first_name: string
           id: string
+          import_source_id: string | null
           last_name: string
           original_title: string | null
           title: string
@@ -145,6 +146,7 @@ export type Database = {
           description?: string
           first_name?: string
           id: string
+          import_source_id?: string | null
           last_name?: string
           original_title?: string | null
           title: string
@@ -159,6 +161,7 @@ export type Database = {
           description?: string
           first_name?: string
           id?: string
+          import_source_id?: string | null
           last_name?: string
           original_title?: string | null
           title?: string

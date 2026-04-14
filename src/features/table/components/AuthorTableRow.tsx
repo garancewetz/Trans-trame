@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import { AlertTriangle, BookPlus, Check, ClipboardList } from 'lucide-react'
 import { authorName } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
@@ -43,13 +44,13 @@ export function AuthorTableRow({
   return (
     <tr
       data-author-row-id={author.id}
-      className={[
+      className={clsx(
         'group cursor-pointer border-b border-white/4 transition-colors',
-        justAdded ? 'animate-flash-row' : '',
-        focusAuthorId === author.id ? 'bg-cyan/8 ring-1 ring-cyan/45' : '',
+        justAdded && 'animate-flash-row',
+        focusAuthorId === author.id && 'bg-cyan/8 ring-1 ring-cyan/45',
         isSelected ? 'bg-green/[0.025]' : index % 2 === 0 ? 'bg-white/[0.003]' : '',
         'hover:bg-white/2.5',
-      ].join(' ')}
+      )}
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('button, input, a')) return
         toggleRow(author.id)
@@ -60,12 +61,12 @@ export function AuthorTableRow({
         <Button
           type="button"
           onClick={() => toggleRow(author.id)}
-          className={[
+          className={clsx(
             'flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded border transition-all',
             isSelected
               ? 'border-green bg-green/18 text-green'
               : 'border-white/14 text-transparent hover:border-white/28',
-          ].join(' ')}
+          )}
         >
           <Check size={9} />
         </Button>

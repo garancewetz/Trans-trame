@@ -134,6 +134,19 @@ export function BatchInfoModal({
                 )}
               </p>
 
+              {/* Import context — which master book was this imported for? */}
+              {item.type === 'book' && (item.data as Book).importSourceId && (() => {
+                const sourceBook = allBooks.find((b) => b.id === (item.data as Book).importSourceId)
+                return sourceBook ? (
+                  <p className="mt-1 text-label text-white/50">
+                    Importé·e pour la bibliographie de{' '}
+                    <span className="font-medium text-white/70">
+                      {bookDisplayName(sourceBook, authorsMap)}
+                    </span>
+                  </p>
+                ) : null
+              })()}
+
               {/* Siblings from same batch */}
               {siblings.length > 0 && (
                 <div className="mt-3 border-t border-white/6 pt-3">

@@ -54,7 +54,8 @@ export function useOrphanReconcileData(
     // Build batch index: minuteKey → books
     const booksByBatch = new Map<string, Book[]>()
     for (const b of allBooks) {
-      const ts = b.created_at as string | undefined
+      const rawTs = b.created_at
+      const ts = typeof rawTs === 'string' ? rawTs : undefined
       if (!ts) continue
       const key = minuteKey(ts)
       if (!booksByBatch.has(key)) booksByBatch.set(key, [])
@@ -64,13 +65,11 @@ export function useOrphanReconcileData(
     // Book ID lookup
     const bookById = new Map(allBooks.map((b) => [b.id, b]))
 
-    // IDs of books being reconciled (to exclude from their own siblings list)
-    const reconcileIds = new Set(orphanBooks.map((b) => b.id))
-
     // Assemble orphaned books with batch context
     const orphanedBooksPayload = orphanBooks.map((ob) => {
-      const ts = ob.created_at as string | undefined
-      const batchKey = ts ? minuteKey(ts) : ''
+      const rawObTs = ob.created_at
+      const obTs = typeof rawObTs === 'string' ? rawObTs : undefined
+      const batchKey = obTs ? minuteKey(obTs) : ''
       const batchBooks = batchKey ? (booksByBatch.get(batchKey) || []) : []
 
       // Connected siblings = books in same batch that have links (excluding self
@@ -115,12 +114,13 @@ export function useOrphanReconcileData(
 
     // Assemble orphaned authors
     const orphanedAuthorsPayload = orphanedAuthors.map((a) => {
-      const ts = a.created_at as string | undefined
+      const rawATs = a.created_at
+      const aTs = typeof rawATs === 'string' ? rawATs : undefined
       return {
         id: a.id,
         firstName: a.firstName || '',
         lastName: a.lastName || '',
-        batchKey: ts ? minuteKey(ts) : '',
+        batchKey: aTs ? minuteKey(aTs) : '',
       }
     })
 

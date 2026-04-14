@@ -5,7 +5,7 @@
  */
 
 import { memo } from 'react'
-import { AXES_COLORS } from '@/common/utils/categories'
+import { AXES_COLORS, axisColor } from '@/common/utils/categories'
 
 // ── Link colors — identical to Galaxy ────────────────────────────────────────
 
@@ -124,7 +124,7 @@ function gradientId(axes: string[]): string {
 export function nodeFill(axes?: string[] | null): string {
   const a = axes ?? []
   if (a.length === 0) return '#888888'
-  if (a.length === 1) return AXES_COLORS[a[0] as keyof typeof AXES_COLORS] ?? '#888888'
+  if (a.length === 1) return axisColor(a[0]) ?? '#888888'
   return `url(#${gradientId(a)})`
 }
 
@@ -139,7 +139,7 @@ export function SvgDefs({ nodeAxesSet }: { nodeAxesSet: Map<string, string[]> })
     const key = axes.join('|')
     if (seen.has(key)) continue
     seen.add(key)
-    const colors = axes.map((a) => AXES_COLORS[a as keyof typeof AXES_COLORS]).filter(Boolean)
+    const colors = axes.map((a) => axisColor(a)).filter((c): c is string => c != null)
     if (colors.length >= 2) gradients.push({ id: gradientId(axes), colors })
   }
 

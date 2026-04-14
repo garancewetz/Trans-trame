@@ -12,6 +12,7 @@ export type Book = {
   year?: number | null
   description?: string
   todo?: string | null
+  importSourceId?: string | null
   axes?: AxisId[]
   authorIds?: AuthorId[]
 

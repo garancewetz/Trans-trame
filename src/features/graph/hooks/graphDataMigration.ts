@@ -34,7 +34,7 @@ function errorMessage(err: unknown): string {
   if (!err) return 'Erreur inconnue'
   if (typeof err === 'string') return err
   if (typeof err === 'object' && err !== null && 'message' in err) {
-    return String((err as { message: unknown }).message)
+    return String(err.message)
   }
   try { return JSON.stringify(err) } catch { return String(err) }
 }
@@ -104,7 +104,7 @@ export async function migrateLegacyAuthorsAndBooks(params: {
         title: orig.title || '(sans titre)',
         author: [orig.firstName, orig.lastName].filter(Boolean).join(' '),
         error: typeof result.error === 'object' && result.error !== null && 'message' in result.error
-          ? String((result.error as { message: string }).message)
+          ? String(result.error.message)
           : JSON.stringify(result.error),
       })
     } else {

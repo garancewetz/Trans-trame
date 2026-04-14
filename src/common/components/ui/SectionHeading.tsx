@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import type { ReactNode } from 'react'
 
 type SectionHeadingProps = {
@@ -10,13 +11,11 @@ type SectionHeadingProps = {
 export function SectionHeading({ children, className, accent }: SectionHeadingProps) {
   return (
     <h3
-      className={[
+      className={clsx(
         'mb-4 flex items-center gap-2.5 text-micro font-semibold uppercase tracking-[0.22em]',
-        accent ? '' : 'text-white/42',
+        !accent && 'text-white/42',
         className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      )}
       style={accent ? { color: accent } : undefined}
     >
       {accent && (

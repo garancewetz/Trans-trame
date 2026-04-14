@@ -35,9 +35,10 @@ const FilterActionsContext = createContext<FilterActions | null>(null)
 
 function highlightEquals(a: Highlight, b: Highlight): boolean {
   if (a.kind !== b.kind) return false
-  if (a.kind === 'decade') return a.decade === (b as { kind: 'decade'; decade: number }).decade
-  if (a.kind === 'book') return a.bookId === (b as { kind: 'book'; bookId: string }).bookId
-  return a.authorId === (b as { kind: 'author'; authorId: string }).authorId
+  if (a.kind === 'decade' && b.kind === 'decade') return a.decade === b.decade
+  if (a.kind === 'book' && b.kind === 'book') return a.bookId === b.bookId
+  if (a.kind === 'author' && b.kind === 'author') return a.authorId === b.authorId
+  return false
 }
 
 export function FilterProvider({ children }: { children: ReactNode }) {

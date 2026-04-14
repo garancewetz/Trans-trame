@@ -14,6 +14,7 @@ type Args = {
   selectedIds: Set<BookId>
   authors: Author[]
   axisFilter?: Axis | null
+  todoOnly?: boolean
 }
 
 export function useBooksTabTableDerived({
@@ -25,6 +26,7 @@ export function useBooksTabTableDerived({
   selectedIds,
   authors,
   axisFilter,
+  todoOnly,
 }: Args) {
   const authorsMap = useMemo(() => {
     const m = new Map<string, Author>()
@@ -46,12 +48,13 @@ export function useBooksTabTableDerived({
   const filteredNodes = useMemo(() => {
     const q = String(search || '').trim()
     let list = nodes || []
+    if (todoOnly) list = list.filter((n) => !!n.todo)
     if (axisFilter) list = list.filter((n) => n.axes?.includes(axisFilter))
     if (q) list = list.filter((n) =>
       matchAllWords(q, [n.title || '', bookAuthorDisplay(n, authorsMap), String(n.year || '')].join(' '))
     )
     return list
-  }, [nodes, search, authorsMap, axisFilter])
+  }, [nodes, search, authorsMap, axisFilter, todoOnly])
 
   const sortedNodes = useMemo(() => {
     const list = [...filteredNodes]

@@ -1,10 +1,11 @@
-import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
-import { LayoutGrid, BookOpen, PenLine, Users, FlaskConical, LogOut, LogIn } from 'lucide-react'
+import { type RefObject, useCallback } from 'react'
+import { PenLine } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
-import { Tooltip } from '@/common/components/ui/Tooltip'
 import { Logo } from '@/common/components/Logo'
 import { ViewSelector } from './ViewSelector'
+import { NavbarCatalogueMenu } from './NavbarCatalogueMenu'
+import { NavbarAuthButtons } from './NavbarAuthButtons'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { axesGradient } from '@/common/utils/categories'
 import { Badge } from '@/common/components/ui/Badge'
@@ -66,9 +67,6 @@ export function Navbar({ analysisPanelRef, viewMode, onViewChange }: NavbarProps
     onSelectAuthor,
   })
 
-  const groupsRef = useRef<HTMLDivElement | null>(null)
-  const [openGroup, setOpenGroup] = useState<'catalogue' | null>(null)
-
   const onToggleTableMode = useCallback(
     () => {
       if (tableUi.tableMode) { tableUi.setTableMode(false); return }
@@ -82,28 +80,6 @@ export function Navbar({ analysisPanelRef, viewMode, onViewChange }: NavbarProps
     () => analysisPanelRef.current?.openPanel(),
     [analysisPanelRef],
   )
-
-  const onOpenTextsPanel = useCallback(
-    () => { openTextsPanel(); setOpenGroup(null) },
-    [openTextsPanel],
-  )
-
-  const onOpenAuthorsPanel = useCallback(
-    () => { openAuthorsPanel(); setOpenGroup(null) },
-    [openAuthorsPanel],
-  )
-
-  useEffect(() => {
-    function onPointerDown(e: PointerEvent) {
-      const el = groupsRef.current
-      const t = e.target
-      if (!el || !(t instanceof Node) || !el.contains(t)) {
-        setOpenGroup(null)
-      }
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    return () => document.removeEventListener('pointerdown', onPointerDown)
-  }, [])
 
   return (
     <>
@@ -229,100 +205,21 @@ export function Navbar({ analysisPanelRef, viewMode, onViewChange }: NavbarProps
             )}
           </div>
 
-        <div className="relative flex items-center gap-2" ref={groupsRef}>
-          <Button
-            variant="outline"
-            frosted
-            tone="cyan"
-            active={openGroup === 'catalogue'}
-            icon={<LayoutGrid size={14} />}
-            onClick={() => {
-              setOpenGroup((prev) => (prev === 'catalogue' ? null : 'catalogue'))
-            }}
-            type="button"
-          >
-            Catalogue
-          </Button>
-          {openGroup === 'catalogue' && (
-            <div className="absolute right-0 top-[calc(100%+6px)] z-50 flex min-w-[280px] flex-col gap-1 rounded-xl border border-white/10 bg-bg-overlay/95 p-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
-              <Button
-                variant="outline"
-                frosted
-                tone="cyan"
-                className="w-full justify-start"
-                onClick={onOpenTextsPanel}
-                type="button"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <BookOpen size={14} />
-                  Textes
-                  <Badge
-                    variant="count"
-                    count={graphData.nodes.length}
-                    className="bg-white/15 px-[7px] py-px text-caption font-bold text-white/90"
-                  />
-                </span>
-              </Button>
-              <Button
-                variant="outline"
-                frosted
-                tone="amber"
-                active={Boolean(selectedAuthorId)}
-                className="w-full justify-start"
-                onClick={onOpenAuthorsPanel}
-                type="button"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <Users size={14} />
-                  Auteur·ices
-                  <span className="rounded-full bg-white/15 px-[7px] py-px text-caption font-bold tabular-nums text-white/90">
-                    {authorCount}
-                  </span>
-                </span>
-              </Button>
-            </div>
-          )}
-
-          <Tooltip content="Analyse">
-            <Button
-              variant="outline"
-              frosted
-              onClick={onOpenAnalysisPanel}
-              type="button"
-              aria-label="Analyse"
-              className="h-[34px] w-[34px] justify-center px-0!"
-            >
-              <FlaskConical size={15} />
-            </Button>
-          </Tooltip>
-
-          {user ? (
-            <Tooltip content={profile ? `${profile.firstName} ${profile.lastName}`.trim() || user.email || 'Déconnexion' : user.email ?? 'Déconnexion'}>
-              <Button
-                variant="outline"
-                frosted
-                onClick={signOut}
-                type="button"
-                aria-label="Déconnexion"
-                className="h-[34px] w-[34px] justify-center px-0!"
-              >
-                <LogOut size={14} />
-              </Button>
-            </Tooltip>
-          ) : (
-            <Tooltip content="Se connecter">
-              <Button
-                variant="outline"
-                frosted
-                onClick={requireAuth}
-                type="button"
-                aria-label="Se connecter"
-                className="h-[34px] w-[34px] justify-center px-0!"
-              >
-                <LogIn size={14} />
-              </Button>
-            </Tooltip>
-          )}
+        <div className="flex items-center gap-2">
+          <NavbarCatalogueMenu
+            nodeCount={graphData.nodes.length}
+            authorCount={authorCount}
+            selectedAuthorId={selectedAuthorId}
+            onOpenTextsPanel={openTextsPanel}
+            onOpenAuthorsPanel={openAuthorsPanel}
+            onOpenAnalysisPanel={onOpenAnalysisPanel}
+          />
+          <NavbarAuthButtons
+            user={user}
+            profile={profile}
+            onSignOut={signOut}
+            onRequireAuth={requireAuth}
+          />
         </div>
       </div>
 

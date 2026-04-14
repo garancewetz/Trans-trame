@@ -5,7 +5,7 @@ import { X } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { FormField } from '@/common/components/ui/FormField'
-import { AuthorPicker } from '../../table/components/TableSubcomponents'
+import { AuthorPicker } from '../../table/components/AuthorPicker'
 import { AxisSelector } from './AxisSelector'
 import { DuplicateWarning } from './DuplicateWarning'
 

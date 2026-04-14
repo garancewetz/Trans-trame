@@ -6,6 +6,7 @@ import type { TableViewProps } from '../tableViewTypes'
 import { useTableViewDuplicateDerived } from './useTableViewDuplicateDerived'
 import { useTableViewLinkDerived } from './useTableViewLinkDerived'
 import { useTableViewVisibility } from './useTableViewVisibility'
+import { useTableViewActions } from './useTableViewActions'
 
 export function useTableViewController({
   nodes,
@@ -27,7 +28,7 @@ export function useTableViewController({
   const [focusAuthorId, setFocusAuthorId] = useState<AuthorId | null>(null)
   const [booksPrefill, setBooksPrefill] = useState<null | { nonce: string; authorId: AuthorId }>(null)
 
-  /** Évite de réappliquer un auteur prérempli à chaque retour sur l'onglet Ouvrages. */
+  /** Avoid reapplying a prefilled author each time we return to the Books tab. */
   const [prevTab, setPrevTab] = useState(tab)
   if (tab !== prevTab) {
     setPrevTab(tab)
@@ -41,8 +42,6 @@ export function useTableViewController({
     () => (initialLinkSourceId ? nodes.find((n) => n.id === initialLinkSourceId) ?? null : null),
   )
 
-  /** Même logique que depuis l'onglet Ouvrages : titre dans la recherche liens (barre du haut).
-   *  Prérempli une seule fois dès que `nodes` contient la source initiale. */
   const [hasPrefilledLinkSearch, setHasPrefilledLinkSearch] = useState(false)
   if (!hasPrefilledLinkSearch && initialLinkSourceId) {
     const n = nodes.find((b) => b.id === initialLinkSourceId)
@@ -67,34 +66,6 @@ export function useTableViewController({
   const [editingLinkValue, setEditingLinkValue] = useState('')
   const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null)
 
-  const [orphanModal, setOrphanModal] = useState(false)
-  const [orphanConfirm, setOrphanConfirm] = useState(false)
-
-  const [dedupeModal, setDedupeModal] = useState(false)
-  const [dedupeConfirm, setDedupeConfirm] = useState(false)
-
-  const [authorDedupeModal, setAuthorDedupeModal] = useState(false)
-  const [authorDedupeConfirm, setAuthorDedupeConfirm] = useState(false)
-
-  const [authorReconcileModal, setAuthorReconcileModal] = useState(false)
-
-  const [aiOrphanReconcileModal, setAiOrphanReconcileModal] = useState(false)
-
-  const [smartImportModal, setSmartImportModal] = useState(false)
-  const [smartImportPrefilledBook, setSmartImportPrefilledBook] = useState<Book | null>(null)
-
-
-
-  const openSmartImportForBook = (node: Book) => {
-    setSmartImportPrefilledBook(node)
-    setSmartImportModal(true)
-  }
-
-  const closeSmartImport = () => {
-    setSmartImportModal(false)
-    setSmartImportPrefilledBook(null)
-  }
-
   const authorsMap = useMemo(() => buildAuthorsMap(authors), [authors])
 
   const {
@@ -113,29 +84,18 @@ export function useTableViewController({
     linkCheckedIds,
   })
 
-  const { orphans, duplicateGroups, authorDuplicateGroups, orphanedAuthors, booksWithoutAuthors, todoCount } = useTableViewDuplicateDerived(
+  const derived = useTableViewDuplicateDerived(nodes, links, authors, authorsMap)
+
+  const actions = useTableViewActions({
     nodes,
-    links,
-    authors,
-    authorsMap,
-  )
-
-  const linkAuthorToBook = (authorId: AuthorId, book: Book) => {
-    const currentIds = book.authorIds || []
-    if (currentIds.includes(authorId)) return
-    onUpdateBook?.({ ...book, authorIds: [...currentIds, authorId] })
-  }
-
-  const mergeAuthors = (fromAuthorId: AuthorId, keepAuthorId: AuthorId) => {
-    if (!fromAuthorId || !keepAuthorId || fromAuthorId === keepAuthorId) return
-    ;(nodes || []).forEach((b) => {
-      const ids = b.authorIds || []
-      if (!ids.includes(fromAuthorId)) return
-      const next = Array.from(new Set(ids.map((id) => (id === fromAuthorId ? keepAuthorId : id))))
-      onUpdateBook?.({ ...b, authorIds: next })
-    })
-    onDeleteAuthor?.(fromAuthorId)
-  }
+    onUpdateBook,
+    onDeleteBook,
+    onMergeBooks,
+    onDeleteAuthor,
+    orphans: derived.orphans,
+    duplicateGroups: derived.duplicateGroups,
+    authorDuplicateGroups: derived.authorDuplicateGroups,
+  })
 
   const openLinksForBook = (node: Book) => {
     if (!node) return
@@ -178,44 +138,6 @@ export function useTableViewController({
     setEditingLink({ id: linkId, field: '_expand' })
   }
 
-  const handleCleanOrphans = () => {
-    if (!orphanConfirm) { setOrphanConfirm(true); return }
-    orphans.forEach((n) => onDeleteBook?.(n.id))
-    setOrphanModal(false)
-    setOrphanConfirm(false)
-  }
-
-  const handleCleanDupes = () => {
-    if (!dedupeConfirm) { setDedupeConfirm(true); return }
-    const richness = (n: Book) => [n.firstName, n.lastName, n.year, n.description].filter(Boolean).length
-    duplicateGroups.forEach((group) => {
-      const sorted = [...group.books].sort((a, b) => richness(b) - richness(a))
-      const keep = sorted[0]
-      sorted.slice(1).forEach((from) => onMergeBooks?.(from.id, keep.id))
-    })
-    setDedupeModal(false)
-    setDedupeConfirm(false)
-  }
-
-  const handleMergeAuthorDupes = (
-    choices: Map<number, AuthorId>,
-    excluded: Map<number, Set<AuthorId>>,
-  ) => {
-    if (!authorDedupeConfirm) { setAuthorDedupeConfirm(true); return }
-    authorDuplicateGroups.forEach((group, i) => {
-      const keepId = choices.get(i) || group[0]?.id
-      if (!keepId) return
-      const excludedSet = excluded.get(i)
-      group.forEach((a) => {
-        if (a.id === keepId) return
-        if (excludedSet && excludedSet.has(a.id)) return
-        mergeAuthors(a.id, keepId)
-      })
-    })
-    setAuthorDedupeModal(false)
-    setAuthorDedupeConfirm(false)
-  }
-
   return {
     visible,
     tab,
@@ -244,48 +166,24 @@ export function useTableViewController({
     setEditingLinkValue,
     deletingLinkId,
     setDeletingLinkId,
-    orphanModal,
-    setOrphanModal,
-    orphanConfirm,
-    setOrphanConfirm,
-    dedupeModal,
-    setDedupeModal,
-    dedupeConfirm,
-    setDedupeConfirm,
-    authorDedupeModal,
-    setAuthorDedupeModal,
-    authorDedupeConfirm,
-    setAuthorDedupeConfirm,
-    authorReconcileModal,
-    setAuthorReconcileModal,
-    aiOrphanReconcileModal,
-    setAiOrphanReconcileModal,
-    smartImportModal,
-    setSmartImportModal,
-    smartImportPrefilledBook,
-    openSmartImportForBook,
-    closeSmartImport,
+
+    ...actions,
 
     authorsMap,
-    orphans,
-    duplicateGroups,
-    authorDuplicateGroups,
-    orphanedAuthors,
-    booksWithoutAuthors,
-    todoCount,
-    linkAuthorToBook,
+    orphans: derived.orphans,
+    duplicateGroups: derived.duplicateGroups,
+    authorDuplicateGroups: derived.authorDuplicateGroups,
+    orphanedAuthors: derived.orphanedAuthors,
+    booksWithoutAuthors: derived.booksWithoutAuthors,
+    todoCount: derived.todoCount,
     existingTargetIds,
     checklistNodes,
     newLinksCount,
     groupedLinks,
-    mergeAuthors,
     openLinksForBook,
     toggleChecklist,
     handleTisser,
     commitLinkEdit,
-    handleCleanOrphans,
-    handleCleanDupes,
-    handleMergeAuthorDupes,
     initialFocusBookId,
   }
 }

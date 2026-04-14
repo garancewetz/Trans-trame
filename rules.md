@@ -32,7 +32,7 @@ git commit -m "feat: add feature"
 
 - **App:** Vite, React 19, TypeScript, Tailwind CSS 4.
 - **Data:** Supabase (`@supabase/supabase-js`); graph state and mutations live mainly in `src/features/graph/hooks/useGraphData.ts` and related modules. **There is no Apollo Client** in this repository — ignore any GraphQL-cache guidance meant for other codebases.
-- **Layout:** `src/app/` (shell, providers, app-level hooks), `src/features/<feature>/`, `src/components/` (shared UI), `src/domain/` (shared types).
+- **Layout:** `src/core/` (Supabase client, QueryClient provider), `src/common/` (shared UI, global hooks, global utils), `src/features/<feature>/` (api/, hooks/, components/, types.ts), `src/pages/` (route containers), `src/types/` (global types incl. generated Supabase types).
 
 Do **not** reference files that do not exist here (e.g. `use-cache-view.ts`, `useAddEtiology.ts`, `use-update-condition-status.tsx`).
 
@@ -49,13 +49,18 @@ Do **not** reference files that do not exist here (e.g. `use-cache-view.ts`, `us
 
 1. **Type assertions (`as`) — avoid.** Do not use `as` (including `as unknown as …`) to silence errors without fixing the model. Prefer type guards, generics, or small helper modules. **Documented exceptions:** (a) `as const` on literal config objects (e.g. keyword maps); (b) import aliases (`import { x as y }`) and `type X as Y` renames are not type assertions. **Remaining debt:** occasional `as const` for discriminated unions (`useGlobalSearch.ts`); keep new `as` out of feature code.
 
-2. **`src/features/graph/Graph.tsx`** uses `// @ts-nocheck` at the top: `react-force-graph-2d`’s recursive `LinkObject` / `NodeObject` generics are incompatible with our domain `Link` / `Book` without duplicating a huge prop surface or scattering assertions. Behaviour is validated via build and manual QA. Prefer extending this file only with small extractions into typed helpers (e.g. `useGraphDerivedLinkState.ts`) rather than re-enabling full strict checking until upstream types improve.
+2. **`@ts-nocheck` in graph modules** — `react-force-graph-2d`’s recursive `LinkObject` / `NodeObject` generics are incompatible with our domain `Link` / `Book` without duplicating a huge prop surface or scattering assertions. The following files use `// @ts-nocheck` for this reason; behaviour is validated via build and manual QA. Prefer extracting into typed helpers rather than re-enabling full strict checking until upstream types improve.
+   - `Graph.tsx` — core graph canvas (upstream type conflict)
+   - `nodeObject.ts` — custom node renderer (d3 runtime `x`/`y`)
+   - `Minimap.tsx` — minimap canvas (same upstream types)
+   - `nodeVisualState.ts`, `nodeVisibility.ts`, `nodeRadius.ts` — node style helpers (d3 runtime `x`/`y`)
+   - `nodeCache.ts`, `canvasUtils.ts` — canvas utilities (shared with `nodeObject.ts`)
+   - `useAdjacencyIndex.ts` — adjacency index (shared with `Graph.tsx`)
+   - `useGraphLayout.ts` — d3-force internals not exposed in upstream types
 
-3. **Files over 250 lines** must be split when touched; new code must stay under the limit. **Current outliers (approx.):** `Graph.tsx` (~635, `@ts-nocheck`), `AuthorsTab.tsx`, `LinksTab.tsx`, `TableSubcomponents.tsx`, `LinkDetails.tsx`, `Navbar.tsx`, `nodeObject.ts`, `Timeline.tsx`, `SmartImportPreviewRow.tsx`. Core table/graph hooks (`useGraphData`, `useTableViewController`, `parseSmartInput.logic`, import modal shell) are now under 250 when split across modules (`graphDataLoad`, `graphDataMigration`, `useGraphDataEntityCallbacks`, etc.).
+3. **Files over 250 lines** must be split when touched; new code must stay under the limit. **Current outliers (approx.):** `parseSmartInput.logic.ts` (~626), `SmartImportPreviewRow.tsx` (~487), `SmartImportInputPhase.tsx` (~462), `AuthorsTab.tsx` (~459), `BooksTab.tsx` (~432), `Graph.tsx` (~430, `@ts-nocheck`), `LinksTab.tsx` (~420), `AIOrphanReconcileModal.tsx` (~366), `HistoryTab.tsx` (~361), `TableView.tsx` (~327), `AuthorOrphanReconcileModal.tsx` (~326), `AIEnrichModal.tsx` (~322), `BooksTabBookRow.tsx` (~320), `LinkDetails.tsx` (~318), `SvgDefs.tsx` (~304), `nodeObject.ts` (~302, `@ts-nocheck`), `CircularDendrogramView.tsx` (~298), `useTableViewController.ts` (~291), `HistCiteView.tsx` (~280), `LinkRow.tsx` (~276), `useGraphData.ts` (~276), `cameraControls.ts` (~274), `SmartImportPreviewPhase.tsx` (~257). `supabase.ts` (~391) is auto-generated — exempt.
 
-4. **Apollo / `refetch()`** — Not applicable. Use Supabase and local React state following existing hooks.
-
-5. **Heavy `await` in UI handlers** — Prefer patterns already used in the feature: encapsulate async work in hooks or small functions, keep presentational components thin.
+4. **Heavy `await` in UI handlers** — Prefer patterns already used in the feature: encapsulate async work in hooks or small functions, keep presentational components thin.
 
 ---
 
@@ -88,6 +93,7 @@ Do **not** reference files that do not exist here (e.g. `use-cache-view.ts`, `us
 
 - Do not commit blocks of **commented-out** code — remove or restore.
 - Comment **why** non-obvious choices were made, not what the next line literally does.
+- Comments, file names, and constant names must always be in English.
 
 ### File layout
 
@@ -184,18 +190,3 @@ fix stuff
 
 - **This file (`rules.md`)** is the human-readable rule set for the Trans-Trame codebase.
 - **`.cursor/rules/*.mdc`** may add tool-specific instructions (e.g. when agents may run `git commit`). If both exist, follow Cursor rules for agent behavior and this file for code style unless you intentionally align them.
-
-If there is some comments in code, they should always be in english, as file names or constants names should be in english
-
-
-### 1. Folder Structure & Organization
-Reorganize the `src/` directory as follows:
-- `src/core/`: Central config (Supabase client, QueryClient provider).
-- `src/common/`: Shared UI (components), global hooks, global utils.
-- `src/features/`: For each feature (e.g., 'auth', 'tasks', 'profile'):
-    - `api/`: Pure Supabase fetch functions (returning Promises).
-    - `hooks/`: TanStack Query hooks (useQuery, useMutation) that call functions from `api/`.
-    - `components/`: UI specific to this feature.
-    - `types.ts`: Specific interfaces.
-- `src/pages/`: Route containers.
-- `src/types/`: Global types, including generated Supabase types.

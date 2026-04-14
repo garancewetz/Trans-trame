@@ -25,9 +25,9 @@ import { useGraphLayout } from '../hooks/useGraphLayout'
 
 import type { GraphData, Link, Book, Author, AuthorId } from '@/types/domain'
 import type { Highlight } from '@/core/FilterContext'
-import { normalizeEndpointId } from '../domain/graphDataModel'
 import { useGraphDerivedLinkState } from '../hooks/useGraphDerivedLinkState'
-import { linkKeyOf } from '../domain/linkStyle'
+import { useAdjacencyIndex } from '../hooks/useAdjacencyIndex'
+import { isNodeVisibleForFilters } from '../domain/nodeVisibility'
 import { useGraphLinkCallbacks } from '../hooks/useGraphLinkCallbacks'
 import { Minimap } from './Minimap'
 
@@ -155,26 +155,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     return animateCameraToNode(fg, camRef, velRef, px, py)
   }, [selectedNode, peekNodeId, viewMode, graphData.nodes])
 
-  // Pre-computed adjacency index: O(degree) hover lookups instead of O(links)
-  const linksByNodeId = useMemo(() => {
-    const map = new Map<string, { linkKeys: string[]; neighborIds: string[] }>()
-    const ensure = (id: string) => {
-      let entry = map.get(id)
-      if (!entry) { entry = { linkKeys: [], neighborIds: [] }; map.set(id, entry) }
-      return entry
-    }
-    graphData.links.forEach((link) => {
-      const srcId = normalizeEndpointId(link.source)
-      const tgtId = normalizeEndpointId(link.target)
-      if (!srcId || !tgtId) return
-      const key = linkKeyOf(srcId, tgtId)
-      ensure(srcId).linkKeys.push(key)
-      ensure(srcId).neighborIds.push(tgtId)
-      ensure(tgtId).linkKeys.push(key)
-      ensure(tgtId).neighborIds.push(srcId)
-    })
-    return map
-  }, [graphData.links])
+  const linksByNodeId = useAdjacencyIndex(graphData.links)
 
   // Links and neighbor nodes connected to hovered node (refs for perf — no re-render)
   const hoveredLinksRef = useRef(new Set<string>())
@@ -267,29 +248,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   }, [degreeByNodeId, citationsByNodeId, bookCountByAuthorId, externalCitationsByBookId])
 
   const isNodeVisible = useCallback(
-    (node) => {
-      if (activeHighlight) {
-        switch (activeHighlight.kind) {
-          case 'decade': {
-            if (node.type === 'author') return true
-            const y = node.year
-            return y != null && Math.floor(y / 10) * 10 === activeHighlight.decade
-          }
-          case 'book': {
-            if (node.id === activeHighlight.bookId) return true
-            const entry = linksByNodeId.get(activeHighlight.bookId)
-            return entry?.neighborIds.includes(node.id) ?? false
-          }
-          case 'author': {
-            if (node.type === 'author') return node.id === activeHighlight.authorId
-            return (node.authorIds || []).includes(activeHighlight.authorId)
-          }
-        }
-      }
-      if (!activeFilter) return true
-      if (node.type === 'author') return true
-      return (node.axes || []).includes(activeFilter)
-    },
+    (node) => isNodeVisibleForFilters(node, activeFilter, activeHighlight, linksByNodeId),
     [activeFilter, activeHighlight, linksByNodeId]
   )
 

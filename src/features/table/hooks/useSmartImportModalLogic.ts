@@ -1,12 +1,13 @@
-import { useMemo, useRef, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { toggleSetItem } from '@/common/utils/setUtils'
-import type { Book } from '@/types/domain'
+import { useFakeProgress } from '@/common/hooks/useFakeProgress'
 import { parseSmartInput, parseSmartInputHybrid, parseSmartInputFromImages, type ParsedBook } from '../parseSmartInput'
-import type { ParsedAuthor } from '../parseSmartInput.types'
 import { runSmartImportBatchInsert } from '../smartImportModal.batchInsert'
 import type { SmartImportModalProps } from '../smartImportModal.types'
-import { detectAuthorInitialMatches, normStr, type AuthorMergeSuggestion } from '../smartImportModal.utils'
 import { useKnownAuthors, useKnownEditions } from './useKnownData'
+import { useSmartImportPhase } from './useSmartImportPhase'
+import { useSmartImportEditing } from './useSmartImportEditing'
+import { useSmartImportMerge } from './useSmartImportMerge'
 
 export function useSmartImportModalLogic({
   onClose,
@@ -20,124 +21,60 @@ export function useSmartImportModalLogic({
   onImportComplete,
   initialMasterNode,
 }: SmartImportModalProps) {
-  const [phase, setPhase] = useState<'input' | 'preview'>('input')
-  const [inputMode, setInputMode] = useState<'text' | 'image'>('text')
-  const [rawText, setRawText] = useState('')
-  const [imageFiles, setImageFiles] = useState<File[]>([])
-  const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const phaseState = useSmartImportPhase(initialMasterNode)
+  const { phase, setPhase, inputMode, imageFiles, rawText, masterNode, linkDirection, masterContext, resetPhase, goBack: goBackPhase } = phaseState
+
   const [parsed, setParsed] = useState<ParsedBook[]>([])
   const [checked, setChecked] = useState<Set<string>>(new Set())
   const [injected, setInjected] = useState(false)
   const [inserting, setInserting] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
-  const [analyzeProgress, setAnalyzeProgress] = useState(0)
-  const fakeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const [masterNode, setMasterNode] = useState<Book | null>(null)
-  const [masterContext, setMasterContext] = useState('')
-  const [linkDirection, setLinkDirection] = useState('master-cites-imported')
-  const [editingCell, setEditingCell] = useState<null | { id: string; field: string }>(null)
-  const [editingValue, setEditingValue] = useState('')
-  const [editingAuthor, setEditingAuthor] = useState<
-    null | { id: string; authorIndex: number | null; firstName: string; lastName: string }
-  >(null)
-  const [mergedIds, setMergedIds] = useState<Set<string>>(new Set())
-  const [preMergeBooks, setPreMergeBooks] = useState<Map<string, Book>>(new Map())
+  const { progress: fakeAnalyzeProgress, reset: resetAnalyzeProgress, complete: completeAnalyzeProgress } = useFakeProgress({ active: analyzing, rate: 0.08, interval: 400 })
+  const [realAnalyzeProgress, setRealAnalyzeProgress] = useState<number | null>(null)
+  const analyzeProgress = realAnalyzeProgress ?? fakeAnalyzeProgress
+
+  const editing = useSmartImportEditing(setParsed)
+  const merge = useSmartImportMerge(existingNodes, existingAuthors, parsed, setParsed, setChecked, masterNode, onUpdateBook)
+
   const { data: knownAuthors = [] } = useKnownAuthors()
   const { data: knownEditions = [] } = useKnownEditions()
-  const [dismissedAuthorMerges, setDismissedAuthorMerges] = useState<Set<string>>(new Set())
-  const [dismissedDuplicates, setDismissedDuplicates] = useState<Set<string>>(new Set())
-
-  // Sync masterNode when the prop changes (React "adjust state during render" pattern).
-  const [prevInitialMasterNode, setPrevInitialMasterNode] = useState(initialMasterNode)
-  if (initialMasterNode !== prevInitialMasterNode) {
-    setPrevInitialMasterNode(initialMasterNode)
-    if (initialMasterNode) setMasterNode(initialMasterNode)
-  }
-
-  const effectiveParsed = useMemo(
-    () => parsed.map((item) =>
-      dismissedDuplicates.has(item.id)
-        ? { ...item, isDuplicate: false, isFuzzyDuplicate: false, existingNode: null }
-        : item
-    ),
-    [parsed, dismissedDuplicates]
-  )
-
-  const authorMergeSuggestions = useMemo(
-    () => detectAuthorInitialMatches(parsed, existingAuthors || [])
-      .filter((s) => !dismissedAuthorMerges.has(s.id)),
-    [parsed, existingAuthors, dismissedAuthorMerges]
-  )
-
-  const addImages = (files: File[]) => {
-    const valid = files.filter((f) =>
-      ['image/jpeg', 'image/png', 'image/webp'].includes(f.type) && f.size <= 4 * 1024 * 1024,
-    )
-    const remaining = 5 - imageFiles.length
-    const toAdd = valid.slice(0, remaining)
-    if (toAdd.length === 0) return
-    setImageFiles((prev) => [...prev, ...toAdd])
-    for (const file of toAdd) {
-      const reader = new FileReader()
-      reader.onload = () => {
-        setImagePreviews((prev) => [...prev, reader.result as string])
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const removeImage = (index: number) => {
-    setImageFiles((prev) => prev.filter((_, i) => i !== index))
-    setImagePreviews((prev) => prev.filter((_, i) => i !== index))
-  }
 
   const resetAll = () => {
-    setPhase('input')
-    setInputMode('text')
-    setRawText('')
-    setImageFiles([])
-    setImagePreviews([])
+    resetPhase()
     setParsed([])
     setChecked(new Set())
-    setEditingCell(null)
-    setEditingAuthor(null)
-    setMergedIds(new Set())
-    setPreMergeBooks(new Map())
-    setDismissedAuthorMerges(new Set())
-    setDismissedDuplicates(new Set())
     setInjected(false)
     setInserting(false)
     setAnalyzing(false)
-    setAnalyzeProgress(0)
-    if (fakeTimerRef.current) { clearInterval(fakeTimerRef.current); fakeTimerRef.current = null }
-    setLinkDirection('master-cites-imported')
+    resetAnalyzeProgress()
+    setRealAnalyzeProgress(null)
+    editing.resetEditing()
+    merge.resetMerge()
   }
 
-  const startFakeProgress = () => {
-    if (fakeTimerRef.current) clearInterval(fakeTimerRef.current)
-    fakeTimerRef.current = setInterval(() => {
-      setAnalyzeProgress((p) => {
-        if (p >= 85) { clearInterval(fakeTimerRef.current!); fakeTimerRef.current = null; return p }
-        return p + (85 - p) * 0.08
-      })
-    }, 400)
+  const startAnalyzeProgress = () => {
+    resetAnalyzeProgress()
+    setRealAnalyzeProgress(null)
   }
 
-  const stopFakeProgress = () => {
-    if (fakeTimerRef.current) { clearInterval(fakeTimerRef.current); fakeTimerRef.current = null }
+  const onRealProgress = (done: number, total: number) => {
+    const real = Math.round((done / total) * 100)
+    setRealAnalyzeProgress((p) => Math.max(p ?? 0, real))
+  }
+
+  const setResultsAndCheck = (results: ParsedBook[]) => {
+    setParsed(results)
+    setChecked(new Set(results.filter((r) => !r.isDuplicate).map((r) => r.id)))
   }
 
   const handleAnalyzeImages = async () => {
-    setEditingCell(null)
-    setEditingAuthor(null)
-    setMergedIds(new Set())
+    editing.resetEditing()
+    merge.resetMerge()
     setInjected(false)
     setAnalyzing(true)
-    setAnalyzeProgress(0)
-    startFakeProgress()
+    startAnalyzeProgress()
 
     try {
-      // Convert files to base64
       const images = await Promise.all(
         imageFiles.map(
           (file) =>
@@ -145,29 +82,20 @@ export function useSmartImportModalLogic({
               const reader = new FileReader()
               reader.onload = () => {
                 const dataUrl = reader.result as string
-                const base64 = dataUrl.split(',')[1]
-                resolve({ base64, mimeType: file.type })
+                resolve({ base64: dataUrl.split(',')[1], mimeType: file.type })
               }
               reader.onerror = reject
               reader.readAsDataURL(file)
             }),
         ),
       )
-
-      const results = await parseSmartInputFromImages(images, existingNodes, (done, total) => {
-        const real = Math.round((done / total) * 100)
-        setAnalyzeProgress((p) => Math.max(p, real))
-      })
-      stopFakeProgress()
-      setAnalyzeProgress(100)
-      setParsed(results)
-      setChecked(new Set(results.filter((r) => !r.isDuplicate).map((r) => r.id)))
+      const results = await parseSmartInputFromImages(images, existingNodes, onRealProgress)
+      completeAnalyzeProgress()
+      setResultsAndCheck(results)
     } catch (err) {
       if (import.meta.env.DEV) console.warn('[SmartImport] Image analysis failed:', err)
-      stopFakeProgress()
-      setAnalyzeProgress(100)
-      setParsed([])
-      setChecked(new Set())
+      completeAnalyzeProgress()
+      setResultsAndCheck([])
     }
 
     setAnalyzing(false)
@@ -178,283 +106,42 @@ export function useSmartImportModalLogic({
     if (inputMode === 'image') return handleAnalyzeImages()
 
     const localResults = parseSmartInput(rawText, existingNodes, knownAuthors, knownEditions)
-    setEditingCell(null)
-    setEditingAuthor(null)
-    setMergedIds(new Set())
+    editing.resetEditing()
+    merge.resetMerge()
     setInjected(false)
     setAnalyzing(true)
-    setAnalyzeProgress(0)
-    startFakeProgress()
+    startAnalyzeProgress()
 
     try {
-      const enriched = await parseSmartInputHybrid(localResults, existingNodes, (done, total) => {
-        // Real chunk progress overrides fake progress
-        const real = Math.round((done / total) * 100)
-        setAnalyzeProgress((p) => Math.max(p, real))
-      })
-      stopFakeProgress()
-      setAnalyzeProgress(100)
-      if (enriched.some((r) => r.parsedByLLM)) {
-        setParsed(enriched)
-        setChecked(new Set(enriched.filter((r) => !r.isDuplicate).map((r) => r.id)))
-      } else {
-        setParsed(localResults)
-        setChecked(new Set(localResults.filter((r) => !r.isDuplicate).map((r) => r.id)))
-      }
+      const enriched = await parseSmartInputHybrid(localResults, existingNodes, onRealProgress)
+      completeAnalyzeProgress()
+      setResultsAndCheck(enriched.some((r) => r.parsedByLLM) ? enriched : localResults)
     } catch (err) {
       if (import.meta.env.DEV) console.warn('[SmartImport] LLM enrichment failed, using local results:', err)
-      stopFakeProgress()
-      setAnalyzeProgress(100)
-      setParsed(localResults)
-      setChecked(new Set(localResults.filter((r) => !r.isDuplicate).map((r) => r.id)))
+      completeAnalyzeProgress()
+      setResultsAndCheck(localResults)
     }
 
     setAnalyzing(false)
     setPhase('preview')
   }
 
-  const handleMerge = (item: ParsedBook) => {
-    if (!item.existingNode || !onUpdateBook) return
-    const existing = item.existingNode
-    if (!existing.id) return
-    const baseBook = existingNodes.find((n) => n.id === existing.id)
-    if (!baseBook) return
-
-    // Save original state for undo
-    setPreMergeBooks((prev) => new Map([...prev, [item.id, { ...baseBook }]]))
-
-    // Merge book data only (no link creation — that happens during inject)
-    const merged: Book = { ...baseBook }
-    if (!existing.firstName && item.firstName) merged.firstName = item.firstName
-    if (!existing.lastName && item.lastName) merged.lastName = item.lastName
-    const existingYear = existing.year
-    if (
-      (existingYear === undefined || existingYear === null || existingYear === new Date().getFullYear()) &&
-      item.year &&
-      !item.yearMissing
-    ) {
-      merged.year = item.year
-    }
-    onUpdateBook(merged)
-    setMergedIds((prev) => new Set([...prev, item.id]))
-
-    // Auto-check so the link gets created during inject (if masterNode exists)
-    if (masterNode) {
-      setChecked((prev) => new Set([...prev, item.id]))
-    }
-  }
-
-  const handleUnmerge = (item: ParsedBook) => {
-    const original = preMergeBooks.get(item.id)
-    if (original && onUpdateBook) {
-      onUpdateBook(original)
-    }
-    setMergedIds((prev) => {
-      const next = new Set(prev)
-      next.delete(item.id)
-      return next
-    })
-    setPreMergeBooks((prev) => {
-      const next = new Map(prev)
-      next.delete(item.id)
-      return next
-    })
-    // Uncheck — it's back to being a duplicate
-    setChecked((prev) => {
-      const next = new Set(prev)
-      next.delete(item.id)
-      return next
-    })
-  }
-
-  const handleAuthorMerge = (suggestion: AuthorMergeSuggestion) => {
-    const { initialAuthor, fullAuthor, affectedItemIds } = suggestion
-    setParsed((prev) =>
-      prev.map((item) => {
-        if (!affectedItemIds.includes(item.id)) return item
-        const authors = item.authors?.length > 0
-          ? item.authors
-          : [{ firstName: item.firstName || '', lastName: item.lastName || '' }]
-        const updatedAuthors = authors.map((a) => {
-          if (normStr(a.firstName) === normStr(initialAuthor.firstName) && normStr(a.lastName) === normStr(initialAuthor.lastName)) {
-            return { firstName: fullAuthor.firstName, lastName: fullAuthor.lastName }
-          }
-          return a
-        })
-        const first = updatedAuthors[0] || {}
-        return { ...item, authors: updatedAuthors, firstName: first.firstName || '', lastName: first.lastName || '' }
-      })
-    )
-    setDismissedAuthorMerges((prev) => new Set([...prev, suggestion.id]))
-  }
-
-  const dismissAuthorMerge = (suggestionId: string) => {
-    setDismissedAuthorMerges((prev) => new Set([...prev, suggestionId]))
-  }
-
-  const dismissDuplicate = (itemId: string) => {
-    setDismissedDuplicates((prev) => new Set([...prev, itemId]))
-    // Auto-check the item since the user treats it as a new entry
-    setChecked((prev) => new Set([...prev, itemId]))
-  }
-
   const toggleItem = (id: string) => setChecked((prev) => toggleSetItem(prev, id))
 
-  const commitCellEdit = (override?: string) => {
-    if (!editingCell) return
-    const { id, field } = editingCell
-    let val = (override ?? editingValue).trim()
-    if (field === 'year') {
-      const p = parseInt(val, 10)
-      val = Number.isNaN(p) ? val : String(p)
-    }
-    setParsed((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item
-        const updated = { ...item, [field]: val }
-        if (field === 'year') updated.yearMissing = false
-        return updated
-      })
-    )
-    setEditingCell(null)
-  }
-
-  const commitAuthorEdit = () => {
-    if (!editingAuthor) return
-    const { id, authorIndex, firstName, lastName } = editingAuthor
-    const fn = (firstName || '').trim()
-    const ln = (lastName || '').trim()
-    setParsed((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item
-        // Always work from a non-empty authors list so item.authors stays the
-        // single source of truth (and the batch insert can resolve them).
-        const baseAuthors = item.authors?.length > 0
-          ? item.authors
-          : [{ firstName: item.firstName || '', lastName: item.lastName || '' }]
-        const idx = authorIndex ?? 0
-        let updatedAuthors: ParsedAuthor[]
-        if (!fn && !ln) {
-          updatedAuthors = baseAuthors.filter((_, i) => i !== idx)
-          if (updatedAuthors.length === 0) updatedAuthors = [{ firstName: '', lastName: '' }]
-        } else if (idx >= baseAuthors.length) {
-          updatedAuthors = [...baseAuthors, { firstName: fn, lastName: ln }]
-        } else {
-          updatedAuthors = baseAuthors.map((a, i) =>
-            i === idx ? { firstName: fn, lastName: ln } : a
-          )
-        }
-        const first = updatedAuthors[0] || { firstName: '', lastName: '' }
-        return {
-          ...item,
-          authors: updatedAuthors,
-          firstName: first.firstName || '',
-          lastName: first.lastName || '',
-        }
-      })
-    )
-    setEditingAuthor(null)
-  }
-
-  const handleUpdateAxes = (itemId: string, newAxes: ParsedBook['axes']) => {
-    setParsed((prev) =>
-      prev.map((item) => (item.id === itemId ? { ...item, axes: newAxes } : item))
-    )
-  }
-
-  const handleRemoveTheme = (itemId: string, theme: string) => {
-    setParsed((prev) =>
-      prev.map((item) =>
-        item.id === itemId
-          ? { ...item, suggestedThemes: (item.suggestedThemes || []).filter((t) => t !== theme) }
-          : item
-      )
-    )
-  }
-
-  const handleUpdateField = (itemId: string, field: string, value: string) => {
-    setParsed((prev) =>
-      prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item))
-    )
-  }
-
-  const handleSwapFields = (itemId: string, swapWith: 'title' | 'edition') => {
-    setParsed((prev) =>
-      prev.map((item) => {
-        if (item.id !== itemId) return item
-        const authors = item.authors?.length > 0
-          ? item.authors
-          : [{ firstName: item.firstName || '', lastName: item.lastName || '' }]
-        const authorStr = [authors[0]?.firstName, authors[0]?.lastName].filter(Boolean).join(' ')
-        const otherVal = swapWith === 'title' ? item.title : (item.edition || '')
-
-        // Parse the other value into firstName/lastName (last word = lastName)
-        const parts = otherVal.trim().split(/\s+/)
-        let newFirst = '', newLast = ''
-        if (parts.length >= 2) {
-          newLast = parts.pop()!
-          newFirst = parts.join(' ')
-        } else {
-          newLast = otherVal.trim()
-        }
-
-        const newAuthors = [...authors]
-        newAuthors[0] = { firstName: newFirst, lastName: newLast }
-
-        return {
-          ...item,
-          [swapWith]: authorStr,
-          authors: newAuthors,
-          firstName: newFirst,
-          lastName: newLast,
-        }
-      })
-    )
-  }
-
-  const handleAddCoAuthor = (itemId: string) => {
-    const item = parsed.find((row) => row.id === itemId)
-    if (!item) return
-    const currentAuthors = item.authors?.length > 0
-      ? item.authors
-      : [{ firstName: item.firstName || '', lastName: item.lastName || '' }]
-    const newIndex = currentAuthors.length
-    setParsed((prev) =>
-      prev.map((it) => {
-        if (it.id !== itemId) return it
-        return { ...it, authors: [...currentAuthors, { firstName: '', lastName: '' }] }
-      })
-    )
-    setEditingAuthor({ id: itemId, authorIndex: newIndex, firstName: '', lastName: '' })
-  }
+  const handleAddCoAuthor = (itemId: string) => editing.handleAddCoAuthor(itemId, parsed)
 
   const handleInject = async () => {
     setInserting(true)
     await runSmartImportBatchInsert({
-      parsed,
-      checked,
-      mergedIds,
-      existingAuthors,
-      onAddAuthor,
-      onAddBook,
-      onAddLink,
-      masterNode,
-      linkDirection,
-      masterContext,
-      onQueued,
-      onImportComplete,
+      parsed, checked, mergedIds: merge.mergedIds, existingAuthors,
+      onAddAuthor, onAddBook, onAddLink, masterNode, linkDirection, masterContext,
+      onQueued, onImportComplete,
     })
     setInjected(true)
-    setTimeout(() => {
-      resetAll()
-      onClose()
-    }, 1100)
+    setTimeout(() => { resetAll(); onClose() }, 1100)
   }
 
-  const handleClose = () => {
-    resetAll()
-    onClose()
-  }
+  const handleClose = () => { resetAll(); onClose() }
 
   const handleReparseChecked = async () => {
     const selected = parsed.filter((r) => checked.has(r.id))
@@ -462,22 +149,15 @@ export function useSmartImportModalLogic({
     setAnalyzing(true)
     try {
       const enriched = await parseSmartInputHybrid(selected, existingNodes)
-      // Merge enriched items back into the full list
       const enrichedMap = new Map(enriched.map((r) => [r.id, r]))
-      setParsed((prev) =>
-        prev.map((item) => enrichedMap.get(item.id) ?? item),
-      )
+      setParsed((prev) => prev.map((item) => enrichedMap.get(item.id) ?? item))
     } catch (err) {
       if (import.meta.env.DEV) console.warn('[SmartImport] LLM re-parse failed:', err)
     }
     setAnalyzing(false)
   }
 
-  const goBack = () => {
-    setPhase('input')
-    setEditingCell(null)
-    setEditingAuthor(null)
-  }
+  const goBack = () => { goBackPhase(); editing.resetEditing() }
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -489,49 +169,49 @@ export function useSmartImportModalLogic({
   return {
     phase,
     inputMode,
-    setInputMode,
+    setInputMode: phaseState.setInputMode,
     rawText,
-    setRawText,
+    setRawText: phaseState.setRawText,
     imageFiles,
-    imagePreviews,
-    addImages,
-    removeImage,
-    parsed: effectiveParsed,
+    imagePreviews: phaseState.imagePreviews,
+    addImages: phaseState.addImages,
+    removeImage: phaseState.removeImage,
+    parsed: merge.effectiveParsed,
     checked,
     injected,
     inserting,
     analyzing,
     analyzeProgress,
     masterNode,
-    setMasterNode,
+    setMasterNode: phaseState.setMasterNode,
     masterContext,
-    setMasterContext,
+    setMasterContext: phaseState.setMasterContext,
     linkDirection,
-    setLinkDirection,
-    editingCell,
-    setEditingCell,
-    editingValue,
-    setEditingValue,
-    editingAuthor,
-    setEditingAuthor,
-    mergedIds,
-    authorMergeSuggestions,
-    handleAuthorMerge,
-    dismissAuthorMerge,
+    setLinkDirection: phaseState.setLinkDirection,
+    editingCell: editing.editingCell,
+    setEditingCell: editing.setEditingCell,
+    editingValue: editing.editingValue,
+    setEditingValue: editing.setEditingValue,
+    editingAuthor: editing.editingAuthor,
+    setEditingAuthor: editing.setEditingAuthor,
+    mergedIds: merge.mergedIds,
+    authorMergeSuggestions: merge.authorMergeSuggestions,
+    handleAuthorMerge: merge.handleAuthorMerge,
+    dismissAuthorMerge: merge.dismissAuthorMerge,
     handleClose,
     goBack,
     handleSubmit,
     toggleItem,
-    commitCellEdit,
-    commitAuthorEdit,
-    handleMerge,
-    handleUnmerge,
-    dismissDuplicate,
+    commitCellEdit: editing.commitCellEdit,
+    commitAuthorEdit: editing.commitAuthorEdit,
+    handleMerge: merge.handleMerge,
+    handleUnmerge: merge.handleUnmerge,
+    dismissDuplicate: merge.dismissDuplicate,
     handleAddCoAuthor,
-    handleUpdateAxes,
-    handleRemoveTheme,
-    handleUpdateField,
-    handleSwapFields,
+    handleUpdateAxes: editing.handleUpdateAxes,
+    handleRemoveTheme: editing.handleRemoveTheme,
+    handleUpdateField: editing.handleUpdateField,
+    handleSwapFields: editing.handleSwapFields,
     handleReparseChecked,
     knownEditions,
   }

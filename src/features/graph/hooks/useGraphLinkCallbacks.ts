@@ -47,7 +47,7 @@ export function useGraphLinkCallbacks({
         hoveredLinks: hoveredLinksRef.current,
         linkWeights,
       }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hoveredNodeRef/hoveredLinksRef are stable refs read live each frame; listing them would only add churn.
     [hasSelection, activeFilter, activeHighlight, connectedLinks, linkWeights],
   )
 

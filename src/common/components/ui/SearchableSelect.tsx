@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import { Search, X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Button } from './Button'
@@ -52,10 +53,10 @@ export function SearchableSelect<T>({
 
       {query.trim() && (
         <div
-          className={[
+          className={clsx(
             'mt-1.5 overflow-y-auto rounded-lg border border-white/10 bg-white/5 p-1',
             maxHeight,
-          ].join(' ')}
+          )}
         >
           {results.length === 0 ? (
             <p className="p-2 text-center text-[0.88rem] text-white/30">{emptyMessage}</p>

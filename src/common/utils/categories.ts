@@ -16,6 +16,16 @@ export const AXES_LABELS = Object.fromEntries(
 
 const AXIS_KEY_SET = new Set<string>(AXES)
 
+/** Safe lookup — returns `undefined` when `key` is not a known Axis. */
+export function axisColor(key: string): string | undefined {
+  return AXIS_KEY_SET.has(key) ? AXES_COLORS[key as Axis] : undefined
+}
+
+/** Safe lookup — returns `undefined` when `key` is not a known Axis. */
+export function axisLabel(key: string): string | undefined {
+  return AXIS_KEY_SET.has(key) ? AXES_LABELS[key as Axis] : undefined
+}
+
 /** Ne garde que les axes reconnus (données livre / table / import). */
 export function narrowAxes(axes: readonly string[] | undefined | null): Axis[] {
   if (!axes?.length) return []

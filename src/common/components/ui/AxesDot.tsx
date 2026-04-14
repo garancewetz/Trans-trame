@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import type { CSSProperties, HTMLAttributes } from 'react'
 import { axesGradient } from '@/common/utils/categories'
 
@@ -16,7 +17,7 @@ const SIZE_CLASS: Record<NonNullable<Props['size']>, string> = {
 export function AxesDot({ axes, size = 'default', className = '', style, ...props }: Props) {
   return (
     <span
-      className={['shrink-0 rounded-full', SIZE_CLASS[size], className].filter(Boolean).join(' ')}
+      className={clsx('shrink-0 rounded-full', SIZE_CLASS[size], className)}
       style={{ background: axesGradient(axes || []), ...style }}
       {...props}
     />

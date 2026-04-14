@@ -1,15 +1,13 @@
 import {
-  useCallback,
-  useEffect,
   useMemo,
   useRef,
-  useState,
   type Dispatch,
-  type PointerEvent as ReactPointerEvent,
   type SetStateAction,
 } from 'react'
 import type { Book, GraphData, TimelineRange } from '@/types/domain'
 import { Button } from '@/common/components/ui/Button'
+import { useTimelinePlayback } from '@/features/timeline/hooks/useTimelinePlayback'
+import { useTimelineDrag } from '@/features/timeline/hooks/useTimelineDrag'
 
 type TimelineProps = {
   graphData: GraphData
@@ -18,12 +16,7 @@ type TimelineProps = {
 }
 
 export function Timeline({ graphData, timelineRange, onRangeChange }: TimelineProps) {
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
-  const playRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const trackRef = useRef<HTMLDivElement | null>(null)
-  const dragTargetRef = useRef<'start' | 'end'>('end')
-  const targetLockedRef = useRef(false)
 
   const { minYear, maxYear, booksByYear } = useMemo(() => {
     const years = graphData.nodes
@@ -42,35 +35,20 @@ export function Timeline({ graphData, timelineRange, onRangeChange }: TimelinePr
     return { minYear: min, maxYear: max, booksByYear: byYear }
   }, [graphData.nodes])
 
-  // Play/pause animation
-  useEffect(() => {
-    if (!isPlaying) {
-      if (playRef.current) clearInterval(playRef.current)
-      return
-    }
-    playRef.current = setInterval(() => {
-      onRangeChange((prev) => {
-        const base = prev ?? { start: minYear, end: minYear }
-        if (base.end >= maxYear) {
-          setIsPlaying(false)
-          return { start: base.start, end: maxYear }
-        }
-        return { start: base.start, end: Math.min(maxYear, base.end + 1) }
-      })
-    }, 120)
-    return () => {
-      if (playRef.current) clearInterval(playRef.current)
-    }
-  }, [isPlaying, maxYear, minYear, onRangeChange])
+  const { isPlaying, togglePlay } = useTimelinePlayback({
+    minYear,
+    maxYear,
+    timelineRange,
+    onRangeChange,
+  })
 
-  const togglePlay = useCallback(() => {
-    setIsPlaying((prev) => {
-      if (!prev && timelineRange.end >= maxYear) {
-        onRangeChange({ start: minYear, end: minYear })
-      }
-      return !prev
-    })
-  }, [timelineRange.end, maxYear, minYear, onRangeChange])
+  const { isDragging, handlePointerDown, handlePointerMove, handlePointerUp } = useTimelineDrag({
+    minYear,
+    maxYear,
+    timelineRange,
+    trackRef,
+    onRangeChange,
+  })
 
   // Tick marks for years that have books
   const ticks = useMemo(() => {
@@ -81,73 +59,6 @@ export function Timeline({ graphData, timelineRange, onRangeChange }: TimelinePr
       count: booksByYear[Number(y)].length,
     }))
   }, [booksByYear, minYear, maxYear])
-
-  const handlePointerDown = useCallback(
-    (e: ReactPointerEvent<HTMLDivElement>) => {
-      setIsDragging(true)
-      e.currentTarget.setPointerCapture(e.pointerId)
-      // If the pointerdown originated on a specific thumb, lock to it so we
-      // don't misattribute the drag to the nearer thumb in "year" space.
-      const origin = e.target as HTMLElement | null
-      const thumbHit = origin?.dataset?.thumb as 'start' | 'end' | undefined
-      if (thumbHit) {
-        dragTargetRef.current = thumbHit
-        targetLockedRef.current = true
-      } else {
-        targetLockedRef.current = false
-      }
-      updateFromPointer(e)
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `updateFromPointer` reads latest range from refs/state each event; listing it would recreate the handler every render.
-    [minYear, maxYear]
-  )
-
-  const handlePointerMove = useCallback(
-    (e: ReactPointerEvent<HTMLDivElement>) => {
-      if (!isDragging) return
-      updateFromPointer(e)
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- same as handlePointerDown: stable closure over `updateFromPointer` would churn dependencies without benefit.
-    [isDragging, minYear, maxYear]
-  )
-
-  const handlePointerUp = useCallback(() => {
-    setIsDragging(false)
-    targetLockedRef.current = false
-  }, [])
-
-  function updateFromPointer(e: ReactPointerEvent<HTMLDivElement>) {
-    const rect = trackRef.current?.getBoundingClientRect()
-    if (!rect) return
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-    const year = Math.round(minYear + ratio * (maxYear - minYear))
-
-    const start = timelineRange?.start ?? minYear
-    const end = timelineRange?.end ?? maxYear
-
-    if (!isDragging && !targetLockedRef.current) {
-      const distStart = Math.abs(year - start)
-      const distEnd = Math.abs(year - end)
-      // Tie-break towards `end` so a click equidistant from both thumbs
-      // extends the range rather than collapsing it onto the start.
-      dragTargetRef.current = distStart < distEnd ? 'start' : 'end'
-    }
-
-    const target = dragTargetRef.current
-    if (target === 'start') {
-      const nextStart = Math.min(year, end)
-      onRangeChange((prev) => {
-        const prevEnd = prev?.end ?? end
-        return { start: Math.min(nextStart, prevEnd), end: prevEnd }
-      })
-    } else {
-      const nextEnd = Math.max(year, start)
-      onRangeChange((prev) => {
-        const prevStart = prev?.start ?? start
-        return { start: prevStart, end: Math.max(nextEnd, prevStart) }
-      })
-    }
-  }
 
   const startYear = timelineRange?.start ?? minYear
   const endYear = timelineRange?.end ?? maxYear

@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import { Eye, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Virtuoso } from 'react-virtuoso'
@@ -88,10 +89,10 @@ export function TextsPanel({
 
   return (
     <aside
-      className={[
+      className={clsx(
         `fixed left-0 top-0 z-50 h-screen ${PANEL_WIDTH.default} overflow-hidden border-r border-white/10 bg-bg-overlay/92 backdrop-blur-2xl transition-transform duration-300 ease-in-out`,
         open ? 'translate-x-0' : '-translate-x-[420px]',
-      ].join(' ')}
+      )}
     >
       <div className="flex h-full flex-col px-4 pt-4">
         <div className="mb-4 flex shrink-0 items-center justify-between gap-3">
@@ -129,12 +130,12 @@ export function TextsPanel({
               const isPeeked = peekNodeId === n.id
               return (
                 <div
-                  className={[
+                  className={clsx(
                     'mb-2 flex w-full items-stretch gap-1 rounded-lg border backdrop-blur-xl transition-all',
                     isPeeked
                       ? 'border-violet/45 bg-violet/10'
                       : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/8',
-                  ].join(' ')}
+                  )}
                 >
                   <Button
                     type="button"

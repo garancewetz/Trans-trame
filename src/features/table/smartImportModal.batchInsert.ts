@@ -74,6 +74,7 @@ export async function runSmartImportBatchInsert(params: {
       year: r.year,
       axes: allAxes,
       description: '',
+      importSourceId: masterNode?.id ?? null,
     })
     if (isThenable(pending)) insertPromises.push(Promise.resolve(pending))
     newIds.push(r.id)

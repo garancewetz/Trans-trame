@@ -55,11 +55,19 @@ Response format — strict JSON, no markdown:
 }
 
 ABOUT "hints":
-For books or authors you CANNOT match with confidence, provide a research hint instead — a concrete suggestion to help the user find the answer manually. Examples:
-- "Cet ouvrage a été importé en même temps que des titres de la bibliographie de X. Cherche dans la bibliographie complète de X."
+For books or authors you CANNOT match with confidence, provide a research hint instead — a concrete suggestion to help the user find the answer manually.
+
+CRITICAL: The hints are for a non-technical user (a researcher, not a developer). NEVER mention batchKey, timestamps, IDs, or any technical term. Instead, refer to books and authors BY NAME. Say "importé·e en même temps que [Titre du livre] de [Auteur]" instead of "importé avec le batchKey 2026-04-05T20:25". Use the titles and author names from batchSiblings to make the hint human-readable.
+
+Good hint examples:
+- "Importé·e en même temps que « Sister Outsider » d'Audre Lorde et « Ain't I a Woman » de bell hooks. Cherche dans la bibliographie de l'ouvrage source."
+- "Spécialiste de [thématique]. Peut-être auteur·ice de [titre d'un ouvrage sans auteur du même import]."
 - "Le titre ressemble à un ouvrage de [auteur·ice connu·e], mais iel n'est pas dans la liste des auteur·ices orphelin·es. Vérifie si iel existe déjà dans la base."
-- "Cet·te auteur·ice travaille sur [thématique]. Cherche parmi les ouvrages sans auteur sur ce sujet."
-The "bookId" in hints refers to an orphanedBook id OR an orphanedAuthor id. The "hint" is a concrete, actionable suggestion in French.
+Bad hint examples (NEVER DO THIS):
+- "Cherchez des ouvrages importés avec le batchKey 2026-04-05T20:25" ← FORBIDDEN, too technical
+- "bookId: abc-123" ← FORBIDDEN
+
+The "bookId" field in hints refers to an orphanedBook id OR an orphanedAuthor id (this is for the system, NOT shown to the user).
 ALWAYS provide hints for items you cannot match. Do NOT leave items with no match AND no hint.
 
 Rules:

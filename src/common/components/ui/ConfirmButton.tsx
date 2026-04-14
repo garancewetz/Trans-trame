@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
 type ConfirmButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick' | 'type'> & {
@@ -39,7 +40,7 @@ export function ConfirmButton({
   return (
     <button
       type={type}
-      className={[base, toneClass, className].filter(Boolean).join(' ')}
+      className={clsx(base, toneClass, className)}
       onClick={onClick}
       disabled={disabled}
       {...props}

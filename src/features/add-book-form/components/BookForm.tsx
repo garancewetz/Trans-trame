@@ -2,6 +2,7 @@ import type { FormEvent } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type { Author, Book } from '@/types/domain'
 import type { AuthorNode } from '@/common/utils/authorUtils'
+import clsx from 'clsx'
 import { Controller } from 'react-hook-form'
 import { Pin } from 'lucide-react'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
@@ -10,7 +11,7 @@ import { TextInput } from '@/common/components/ui/TextInput'
 import { Textarea } from '@/common/components/ui/Textarea'
 import { FormField } from '@/common/components/ui/FormField'
 import { Badge } from '@/common/components/ui/Badge'
-import { AuthorPicker } from '../../table/components/TableSubcomponents'
+import { AuthorPicker } from '../../table/components/AuthorPicker'
 import { AxisSelector } from './AxisSelector'
 import { DuplicateWarning } from './DuplicateWarning'
 import { BookFormEditDangerZone } from './BookFormEditDangerZone'
@@ -114,20 +115,20 @@ export function BookForm({
               <Button
                 type="button"
                 onClick={() => onChange(!value)}
-                className={[
+                className={clsx(
                   'relative h-5 w-9 shrink-0 rounded-full border transition-all duration-200',
                   value
                     ? 'border-green/60 bg-green/25'
                     : 'border-white/15 bg-white/5',
-                ].join(' ')}
+                )}
                 aria-checked={value}
                 role="switch"
               >
                 <span
-                  className={[
+                  className={clsx(
                     'absolute top-0.5 h-3.5 w-3.5 rounded-full transition-all duration-200',
                     value ? 'left-[18px] bg-green' : 'left-0.5 bg-white/30',
-                  ].join(' ')}
+                  )}
                 />
               </Button>
               <span className="inline-flex items-center gap-1.5 text-ui text-white/50 transition-colors">

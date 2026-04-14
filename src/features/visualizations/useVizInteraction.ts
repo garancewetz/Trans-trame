@@ -35,7 +35,7 @@ export function useVizInteraction({ graphData, selectedId, activeFilter, hovered
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   const books = useMemo(
-    () => graphData.nodes.filter((n) => n.type === 'book') as Book[],
+    () => graphData.nodes.filter((n): n is Book => n.type === 'book'),
     [graphData.nodes],
   )
 

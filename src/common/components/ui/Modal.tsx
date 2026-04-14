@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import { ChevronLeft, X } from 'lucide-react'
 import type { FormEvent, ReactNode } from 'react'
 import { Button } from './Button'
@@ -63,13 +64,11 @@ export function Modal({
     </>
   )
 
-  const containerCls = [
+  const containerCls = clsx(
     'w-full max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl border border-white/10 bg-bg-overlay/98 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.65)]',
     maxWidth,
     containerClassName,
-  ]
-    .filter(Boolean)
-    .join(' ')
+  )
 
   return (
     <div

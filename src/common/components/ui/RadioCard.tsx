@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import type { ReactNode } from 'react'
 
 type RadioCardProps = {
@@ -9,18 +10,18 @@ type RadioCardProps = {
 export function RadioCard({ checked, onChange, children }: RadioCardProps) {
   return (
     <label
-      className={[
+      className={clsx(
         'flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-all',
         checked
           ? 'border-green/40 bg-green/6'
           : 'border-white/8 bg-white/3 hover:border-white/15',
-      ].join(' ')}
+      )}
     >
       <span
-        className={[
+        className={clsx(
           'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-all',
           checked ? 'border-green bg-green/20' : 'border-white/25',
-        ].join(' ')}
+        )}
       >
         {checked && <span className="h-1.5 w-1.5 rounded-full bg-green" />}
       </span>

@@ -1,6 +1,5 @@
 import { X, Calendar, BookOpen, Users } from 'lucide-react'
-import { AXES_COLORS, AXES_LABELS } from '@/common/utils/categories'
-import type { Axis } from '@/common/utils/categories.constants'
+import { axisColor, axisLabel } from '@/common/utils/categories'
 import type { Highlight } from '@/core/FilterContext'
 
 type ActiveFilterBarProps = {
@@ -47,10 +46,10 @@ export function ActiveFilterBar({
           >
             <span
               className="h-2 w-2 shrink-0 rounded-full"
-              style={{ background: AXES_COLORS[activeFilter as Axis] ?? '#fff' }}
+              style={{ background: axisColor(activeFilter) ?? '#fff' }}
             />
             <span className="truncate">
-              {AXES_LABELS[activeFilter as Axis] ?? activeFilter}
+              {axisLabel(activeFilter) ?? activeFilter}
             </span>
             <X
               size={12}

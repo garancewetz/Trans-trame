@@ -7,7 +7,7 @@ import { axesGradient } from '@/common/utils/categories'
 import { Button } from '@/common/components/ui/Button'
 import { Modal } from '@/common/components/ui/Modal'
 import { ConfirmButton } from '@/common/components/ui/ConfirmButton'
-import { NodeSearch } from './TableSubcomponents'
+import { NodeSearch } from './NodeSearch'
 
 type Props = {
   orphanModal: boolean

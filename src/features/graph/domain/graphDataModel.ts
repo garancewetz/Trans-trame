@@ -15,6 +15,7 @@ type DbBookRow = {
   year?: number | null
   description?: string
   todo?: string | null
+  import_source_id?: string | null
   axes?: string[]
   original_title?: string | null
   created_at?: string | null
@@ -88,6 +89,7 @@ export function dbBookToNode(row: DbBookRow, authorIds?: string[]): Book {
     year: row.year ?? null,
     description: row.description || '',
     todo: row.todo ?? null,
+    importSourceId: row.import_source_id ?? null,
     axes: row.axes || [],
     originalTitle: row.original_title ?? null,
     created_at: row.created_at ?? null,
