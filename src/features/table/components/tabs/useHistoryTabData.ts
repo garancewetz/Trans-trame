@@ -114,37 +114,49 @@ export function useHistoryTabData() {
   const [rollingBackId, setRollingBackId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
 
-  const { data: logData, isLoading: logLoading } = useQuery({
+  const { data: logData, isLoading: logLoading, error: logError } = useQuery({
     queryKey: ['activity_log', page],
     queryFn: () => loadActivityLog(PAGE_SIZE, page * PAGE_SIZE),
   })
 
-  const { data: profilesData } = useQuery({
+  const { data: profilesData, error: profilesError } = useQuery({
     queryKey: ['profiles_all'],
     queryFn: loadProfiles,
     staleTime: 5 * 60 * 1000,
   })
 
-  const { data: entityNamesData } = useQuery({
+  const { data: entityNamesData, error: entityNamesError } = useQuery({
     queryKey: ['entity_names_for_log'],
     queryFn: loadEntityNamesForLog,
     staleTime: 5 * 60 * 1000,
   })
 
+  // Surface query failures to the user. Each `toast.error` is keyed by its
+  // message so retries don't spam duplicate toasts.
   useEffect(() => {
-    if (!logData?.data) return
+    if (logError) toast.error(`Impossible de charger l'historique : ${logError.message}`, { id: 'history-log-error' })
+  }, [logError])
+  useEffect(() => {
+    if (profilesError) toast.error('Impossible de charger les profils', { id: 'history-profiles-error' })
+  }, [profilesError])
+  useEffect(() => {
+    if (entityNamesError) toast.error('Impossible de charger les noms des entités', { id: 'history-entity-names-error' })
+  }, [entityNamesError])
+
+  useEffect(() => {
+    if (!logData) return
     setAllEntries((prev) => {
       const existingIds = new Set(prev.map((e) => e.id))
-      const newEntries = logData.data.filter((e) => !existingIds.has(e.id))
+      const newEntries = logData.filter((e) => !existingIds.has(e.id))
       return [...prev, ...newEntries]
     })
-    if (logData.data.length < PAGE_SIZE) setHasMore(false)
+    if (logData.length < PAGE_SIZE) setHasMore(false)
   }, [logData])
 
   const profilesMap = useMemo(() => {
     const map = new Map<string, Profile>()
-    if (profilesData?.data) {
-      for (const p of profilesData.data) map.set(p.id, p)
+    if (profilesData) {
+      for (const p of profilesData) map.set(p.id, p)
     }
     return map
   }, [profilesData])

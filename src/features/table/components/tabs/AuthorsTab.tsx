@@ -70,6 +70,7 @@ export function AuthorsTab({
     legacyCount,
     legacyBooks,
     bookCountByAuthor,
+    booksByAuthor,
     mergeAuthorsList,
     filteredAuthors,
     allSelected, someSelected,
@@ -420,6 +421,7 @@ export function AuthorsTab({
                   isSelected={selectedIds.has(author.id)}
                   focusAuthorId={focusAuthorId}
                   bookCount={bookCountByAuthor.get(author.id) || 0}
+                  books={booksByAuthor.get(author.id)}
                   editingCell={editingCell}
                   editingValue={editingValue}
                   setEditingValue={setEditingValue}
@@ -427,6 +429,7 @@ export function AuthorsTab({
                   commitEdit={commitEdit}
                   toggleRow={toggleRow}
                   onAddBookForAuthor={onAddBookForAuthor}
+                  onUpdateAuthor={onUpdateAuthor}
                 />
               ))}
             </tbody>

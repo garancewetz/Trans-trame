@@ -4,6 +4,7 @@ import { isThenable, resolveOrCreateAuthors } from './smartImportModal.utils'
 
 type OnAddBook = (book: Partial<Book> & Pick<Book, 'id' | 'title'>) => void | PromiseLike<unknown>
 type OnAddLink = (link: Partial<Link> & Pick<Link, 'source' | 'target'>) => void
+type OnAddLinks = (links: Array<Partial<Link> & Pick<Link, 'source' | 'target'>>) => void
 
 export async function runSmartImportBatchInsert(params: {
   parsed: ParsedBook[]
@@ -13,6 +14,7 @@ export async function runSmartImportBatchInsert(params: {
   onAddAuthor?: (author: Author) => unknown
   onAddBook?: OnAddBook
   onAddLink?: OnAddLink
+  onAddLinks?: OnAddLinks
   masterNode: Book | null
   linkDirection: string
   masterContext: string
@@ -27,6 +29,7 @@ export async function runSmartImportBatchInsert(params: {
     onAddAuthor,
     onAddBook,
     onAddLink,
+    onAddLinks,
     masterNode,
     linkDirection,
     masterContext,
@@ -88,22 +91,28 @@ export async function runSmartImportBatchInsert(params: {
     }
   }
 
-  // Phase 3: create links for ALL checked items (new + merged)
+  // Phase 3: batch-create links for ALL checked items (new + merged).
+  // Previously a per-item forEach of onAddLink lost rows on large imports
+  // (bibliographies of 30+ refs). onAddLinks does chunked bulk insert.
   if (masterNode) {
-    toAdd.forEach((r) => {
+    const linksToAdd = toAdd.map((r) => {
       const isMerged = mergedIds.has(r.id)
       const bookId = isMerged ? r.existingNode?.id || r.id : r.id
       const source = linkDirection === 'imported-cites-master' ? bookId : masterNode.id
       const target = linkDirection === 'imported-cites-master' ? masterNode.id : bookId
-      onAddLink?.({
+      return {
         source,
         target,
         citation_text: r.citation?.trim() || masterContext.trim(),
         edition: r.edition || '',
         page: r.page || '',
         context: '',
-      })
+      }
     })
+    if (linksToAdd.length > 0) {
+      if (onAddLinks) onAddLinks(linksToAdd)
+      else linksToAdd.forEach((l) => onAddLink?.(l))
+    }
   }
 
   onQueued?.(toAdd.map((r) => r.title))

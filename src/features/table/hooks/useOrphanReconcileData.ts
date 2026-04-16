@@ -100,6 +100,18 @@ export function useOrphanReconcileData(
 
       const hasAuthors = (ob.authorIds || []).length > 0
 
+      // Explicit bibliography origin — set at smart import time. Much stronger
+      // signal than batchSiblings (which is inferred from timestamp proximity).
+      const importSource = ob.importSourceId ? bookById.get(ob.importSourceId) : undefined
+      const importedFor = importSource
+        ? {
+            id: importSource.id,
+            title: importSource.title || '',
+            authors: authorDisplay(importSource, authorsMap),
+            year: importSource.year ?? null,
+          }
+        : null
+
       return {
         id: ob.id,
         title: ob.title || '',
@@ -108,6 +120,7 @@ export function useOrphanReconcileData(
         hasLinks: linkedBookIds.has(ob.id),
         year: ob.year ?? null,
         batchKey,
+        importedFor,
         batchSiblings,
       }
     })

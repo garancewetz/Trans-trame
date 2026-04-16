@@ -1,11 +1,13 @@
 import clsx from 'clsx'
-import { AlertTriangle, BookPlus, Check, ClipboardList } from 'lucide-react'
+import { BookPlus, Check } from 'lucide-react'
 import { authorName } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
-import { Tooltip } from '@/common/components/ui/Tooltip'
+import { StatusFlag } from '@/common/components/StatusFlag'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { INPUT, TD } from '../tableConstants'
-import type { Author, AuthorId } from '@/types/domain'
+import { AuthorBooksBadge } from './AuthorBooksBadge'
+import { TodoNotePopover } from './TodoNotePopover'
+import type { Author, AuthorId, Book, EntityStatus } from '@/types/domain'
 
 type Props = {
   author: Author
@@ -14,6 +16,7 @@ type Props = {
   isSelected: boolean
   focusAuthorId?: AuthorId | null
   bookCount: number
+  books?: Book[]
   editingCell: { authorId: AuthorId; field: 'firstName' | 'lastName' } | null
   editingValue: string
   setEditingValue: (v: string) => void
@@ -21,6 +24,7 @@ type Props = {
   commitEdit: () => void
   toggleRow: (id: AuthorId) => void
   onAddBookForAuthor?: (author: Author) => unknown
+  onUpdateAuthor?: (author: Author) => unknown
 }
 
 export function AuthorTableRow({
@@ -30,6 +34,7 @@ export function AuthorTableRow({
   isSelected,
   focusAuthorId,
   bookCount,
+  books,
   editingCell,
   editingValue,
   setEditingValue,
@@ -37,6 +42,7 @@ export function AuthorTableRow({
   commitEdit,
   toggleRow,
   onAddBookForAuthor,
+  onUpdateAuthor,
 }: Props) {
   const isEditFirst = editingCell?.authorId === author.id && editingCell?.field === 'firstName'
   const isEditLast = editingCell?.authorId === author.id && editingCell?.field === 'lastName'
@@ -100,9 +106,17 @@ export function AuthorTableRow({
               {author.lastName ? author.lastName.toUpperCase() : <span className="text-white/18">—</span>}
             </span>
             {author.todo && (
-              <Tooltip content={author.todo}>
-                <ClipboardList size={11} className="ml-1.5 shrink-0 text-amber/50" />
-              </Tooltip>
+              <TodoNotePopover
+                note={author.todo}
+                iconClassName="ml-1.5 text-amber/50"
+                onClear={onUpdateAuthor ? () => onUpdateAuthor({ ...author, todo: null }) : undefined}
+              />
+            )}
+            {onUpdateAuthor && (
+              <StatusFlag
+                status={author.status}
+                onChange={(next: EntityStatus) => onUpdateAuthor({ ...author, status: next })}
+              />
             )}
           </span>
         )}
@@ -139,16 +153,7 @@ export function AuthorTableRow({
 
       {/* Compte ouvrages */}
       <td className="px-3 py-2">
-        <span className="inline-flex items-center gap-1.5 font-mono text-ui tabular-nums text-white/35">
-          {bookCount > 0 ? (
-            bookCount
-          ) : (
-            <>
-              <AlertTriangle size={12} className="text-amber/70" />
-              <span className="text-amber/60">0</span>
-            </>
-          )}
-        </span>
+        <AuthorBooksBadge bookCount={bookCount} books={books} />
       </td>
 
       {/* Date d'ajout */}

@@ -15,6 +15,7 @@ type DbBookRow = {
   year?: number | null
   description?: string
   todo?: string | null
+  status?: string | null
   import_source_id?: string | null
   axes?: string[]
   original_title?: string | null
@@ -26,6 +27,7 @@ type DbAuthorRow = {
   first_name?: string
   last_name?: string
   todo?: string | null
+  status?: string | null
   axes?: string[]
   created_at?: string | null
 }
@@ -89,6 +91,7 @@ export function dbBookToNode(row: DbBookRow, authorIds?: string[]): Book {
     year: row.year ?? null,
     description: row.description || '',
     todo: row.todo ?? null,
+    status: row.status === 'warning' ? 'warning' : null,
     importSourceId: row.import_source_id ?? null,
     axes: row.axes || [],
     originalTitle: row.original_title ?? null,
@@ -103,6 +106,7 @@ export function dbAuthorToNode(row: DbAuthorRow): Author {
     firstName: row.first_name,
     lastName: row.last_name,
     todo: row.todo ?? null,
+    status: row.status === 'warning' ? 'warning' : null,
     axes: row.axes || [],
     created_at: row.created_at ?? null,
   }
@@ -129,6 +133,7 @@ export function bookToDbRow(node: BookRowInput) {
     year: node.year != null ? node.year : null,
     description: node.description || '',
     todo: node.todo ?? null,
+    status: node.status ?? null,
     axes: node.axes || [],
     original_title: node.originalTitle ?? null,
   }
@@ -140,6 +145,7 @@ export function authorToDbRow(author: AuthorRowInput) {
     first_name: author.firstName || '',
     last_name: author.lastName || '',
     todo: author.todo ?? null,
+    status: author.status ?? null,
     axes: author.axes || [],
   }
 }

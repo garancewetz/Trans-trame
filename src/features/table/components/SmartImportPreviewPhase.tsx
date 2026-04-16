@@ -218,6 +218,22 @@ export function SmartImportPreviewPhase({
         </div>
       </div>
 
+      {/* No-masterNode warning: importing without a source creates orphans.
+          Common root cause of "38 orphelins" après import — show it loud. */}
+      {!masterNode && selectedCount > 0 && !injected && !inserting && (
+        <div className="mb-3 flex items-start gap-2.5 rounded-xl border border-amber/30 bg-amber/6 p-3 text-label">
+          <AlertTriangle size={13} className="mt-px shrink-0 text-amber/80" />
+          <div className="flex-1">
+            <p className="font-semibold text-amber/90">
+              Aucun ouvrage-source sélectionné
+            </p>
+            <p className="mt-0.5 text-caption text-white/55">
+              Les {selectedCount} ouvrage{selectedCount > 1 ? 's' : ''} importé{selectedCount > 1 ? 's' : ''} {selectedCount > 1 ? 'arriveront' : 'arrivera'} sans aucun lien — {selectedCount > 1 ? 'iels apparaîtront' : 'iel apparaîtra'} en orphelin{selectedCount > 1 ? 's' : ''} dans la galaxie. Reviens à l'étape précédente pour relier cette bibliographie à l'ouvrage dont elle provient, ou confirme ci-dessous si c'est intentionnel (import catalogue).
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex gap-2">
         <Button
@@ -234,18 +250,25 @@ export function SmartImportPreviewPhase({
             'inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-ui font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-30',
             injected
               ? 'border-green/50 bg-green/10 text-green'
-              : 'border-green/30 bg-green/6 text-green/75 hover:bg-green/12',
+              : !masterNode
+                ? 'border-amber/40 bg-amber/8 text-amber/85 hover:bg-amber/15'
+                : 'border-green/30 bg-green/6 text-green/75 hover:bg-green/12',
           ].join(' ')}
         >
           {injected ? (
             <><Check size={13} /> Injecté !</>
           ) : inserting ? (
             <><Loader2 size={13} className="animate-spin" /> Insertion en cours…</>
+          ) : !masterNode ? (
+            <>
+              <AlertTriangle size={13} />
+              Injecter comme orphelins ({selectedCount})
+            </>
           ) : (
             <>
               <Zap size={13} />
               Injecter dans la Trame ({selectedCount})
-              {masterNode && selectedCount > 0 && (
+              {selectedCount > 0 && (
                 <span className="opacity-65"> + {selectedCount} lien{selectedCount > 1 ? 's' : ''}</span>
               )}
             </>

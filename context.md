@@ -11,9 +11,9 @@ les continuités, les transmissions et les ruptures.
 - `books` : ouvrages (titre, année, axes, authorIds)
 - `authors` : entités séparées (prénom, nom, axes) — relation many-to-many avec les livres via `book_authors`
 - `links` : citations / références entre ouvrages (avec citation_text, edition, page, context)
-- 10 axes thématiques : Antiracism, Afrofeminism, Queer Studies, Health & Trauma,
-  History & Archives, Institutional & Labor, Childhood & Family, Crip Theory,
-  Ecology, Body & Sexology
+- 11 axes thématiques : Antiracism & Decolonial, Afrofeminism, Queer Studies,
+  Health & Trauma, History & Archives, Institutional & Labor, Childhood & Family,
+  Crip Theory, Body & Sexology, Feminist Theory, Sans catégorie (fallback)
 
 ## Expérience actuelle
 
@@ -36,15 +36,19 @@ les continuités, les transmissions et les ruptures.
 
 ## Vue table (Contribuer)
 
-Trois onglets :
+Quatre onglets :
 - **Textes** : CRUD ouvrages, détection doublons, détection orphelins, merge
-- **Auteur·ices** : CRUD auteurs, dédoublonnage, merge
+- **Auteur·ices** : CRUD auteurs·ices, dédoublonnage, merge
 - **Liens** : CRUD liens entre ouvrages
+- **Historique** : consultation des batches d'import passés (stats, détails via BatchInfoModal),
+  point d'entrée vers l'import intelligent
 
 Fonctionnalités transversales :
 - recherche / filtre par onglet
 - export JSON filtré par onglet
-- import intelligent (batch, détection similarité, parsing auteurs/axes)
+- import intelligent (batch, détection similarité, parsing auteur·ices/axes)
+- traçabilité des imports : chaque livre porte un `importSourceId` qui le rattache
+  à un batch (table `import_sources`), permettant audit et retour en arrière
 
 ## Logique de filtres
 

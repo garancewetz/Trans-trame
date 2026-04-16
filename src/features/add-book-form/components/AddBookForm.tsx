@@ -22,6 +22,7 @@ type AddBookFormProps = {
   onAddAuthor?: (author: Author) => void
   onAddBook?: (book: Partial<Book> & Pick<Book, 'id' | 'title'>) => void | PromiseLike<unknown>
   onAddLink?: (link: Partial<Link> & Pick<Link, 'source' | 'target'>) => void
+  onAddLinks?: (links: Array<Partial<Link> & Pick<Link, 'source' | 'target'>>) => void
   onUpdateBook?: (book: Book) => void
   onDeleteBook?: (nodeId: BookId) => void
   onMergeBooks?: (fromNodeId: BookId, intoNodeId: BookId) => void
@@ -40,6 +41,7 @@ export function AddBookForm({
   onAddAuthor,
   onAddBook,
   onAddLink,
+  onAddLinks,
   onUpdateBook,
   onDeleteBook,
   onMergeBooks,
@@ -142,6 +144,7 @@ export function AddBookForm({
     onAddBook,
     onUpdateBook,
     onAddLink,
+    onAddLinks,
     sourceId,
     targetIds,
     setTargetIds,

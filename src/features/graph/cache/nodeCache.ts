@@ -5,11 +5,23 @@ import { AXES_COLORS } from '@/common/utils/categories'
 
 const hoverAnimById = new Map<string, number>()
 
+// En dessous de ce seuil, on considère le hover comme "éteint" : on libère
+// l'entrée plutôt que de garder une valeur qui décroît asymptotiquement vers 0.
+// Évite que la map accumule une entrée par nœud jamais survolé sur la session.
+const HOVER_EPSILON = 0.001
+
 export function clearHoverAnim(): void { hoverAnimById.clear() }
 
 /** Smoothly interpolate hover state for a node (0 = idle, 1 = hovered) */
 export function computeHover(nodeId: string, isHovered: boolean): number {
   const prev = hoverAnimById.get(nodeId) ?? 0
+  // Fast path : nœud non survolé et déjà au repos. Représente 99 % des appels
+  // (N nœuds × 60 fps), donc éviter Map.set ici fait disparaître ~99 % des
+  // mutations. Garbage-collecte aussi les résidus de transitions terminées.
+  if (!isHovered && prev < HOVER_EPSILON) {
+    if (prev !== 0) hoverAnimById.delete(nodeId)
+    return 0
+  }
   const hover = prev + ((isHovered ? 1 : 0) - prev) * 0.22
   hoverAnimById.set(nodeId, hover)
   return hover

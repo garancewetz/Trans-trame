@@ -8,6 +8,7 @@ import { BooksTab as TableBooksTab } from './tabs/BooksTab'
 import { AuthorsTab as TableAuthorsTab } from './tabs/AuthorsTab'
 import { LinksTab as TableLinksTab } from './tabs/links/LinksTab'
 import { HistoryTab as TableHistoryTab } from './tabs/HistoryTab'
+import { ReviewTab as TableReviewTab } from './tabs/ReviewTab'
 import { TableViewModals } from './TableViewModals'
 
 import type { TableViewProps } from '../tableViewTypes'
@@ -15,7 +16,7 @@ import { useTableViewController } from '../hooks/useTableViewController'
 import { useTableViewCallbacks } from '../hooks/useTableViewCallbacks'
 
 function tableInitialTabFromState(tab: string): NonNullable<TableViewProps['initialTab']> {
-  if (tab === 'authors' || tab === 'links' || tab === 'history') return tab
+  if (tab === 'authors' || tab === 'links' || tab === 'history' || tab === 'review') return tab
   return 'books'
 }
 
@@ -30,6 +31,7 @@ export function TableView() {
     links,
     authors,
     onAddLink: mutations.handleAddLink,
+    onAddLinks: mutations.handleAddLinks,
     onUpdateBook: mutations.handleUpdateBook,
     onDeleteBook: mutations.handleDeleteBook,
     onUpdateLink: mutations.handleUpdateLink,
@@ -69,7 +71,7 @@ export function TableView() {
         onSmartImport={() => c.setSmartImportModal(true)}
       />
 
-      {c.tab !== 'history' && (
+      {c.tab !== 'history' && c.tab !== 'review' && (
         <TableFilterBar
           tab={c.tab}
           search={c.search}
@@ -135,6 +137,18 @@ export function TableView() {
       )}
 
       {c.tab === 'history' && <TableHistoryTab />}
+
+      {c.tab === 'review' && (
+        <TableReviewTab
+          books={books}
+          authors={authors}
+          authorsMap={c.authorsMap}
+          onUpdateBook={cb.onUpdateBookWithTracking}
+          onUpdateAuthor={(a) => mutations.handleUpdateAuthor?.(a)}
+          onOpenWorkDetail={cb.openBookInSidePanel}
+          onFocusAuthorInAuthorsTab={c.focusAuthorInAuthorsTab}
+        />
+      )}
 
       {c.tab === 'links' && (
         <TableLinksTab

@@ -4,6 +4,9 @@ export type BookId = string
 export type AuthorId = string
 export type LinkId = string
 
+/** Statut de revue d'une entité. NULL = neutre, 'warning' = à vérifier. */
+export type EntityStatus = 'warning' | null
+
 export type Book = {
   id: BookId
   type: 'book'
@@ -12,6 +15,7 @@ export type Book = {
   year?: number | null
   description?: string
   todo?: string | null
+  status?: EntityStatus
   importSourceId?: string | null
   axes?: AxisId[]
   authorIds?: AuthorId[]
@@ -35,6 +39,7 @@ export type Author = {
   firstName?: string
   lastName?: string
   todo?: string | null
+  status?: EntityStatus
   axes?: AxisId[]
 } & Record<string, unknown>
 

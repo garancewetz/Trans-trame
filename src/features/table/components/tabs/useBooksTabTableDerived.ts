@@ -45,6 +45,26 @@ export function useBooksTabTableDerived({
     return counts
   }, [links])
 
+  const linkedBooksByNode = useMemo(() => {
+    const nodesMap = new Map<BookId, Book>()
+    ;(nodes || []).forEach((n) => nodesMap.set(n.id, n))
+    const result = new Map<BookId, Book[]>()
+    ;(links || []).forEach((l) => {
+      const srcId = maybeNodeId(l.source) as BookId | null
+      const tgtId = maybeNodeId(l.target) as BookId | null
+      if (!srcId || !tgtId) return
+      const srcBook = nodesMap.get(srcId)
+      const tgtBook = nodesMap.get(tgtId)
+      if (srcBook && tgtBook) {
+        if (!result.has(srcId)) result.set(srcId, [])
+        result.get(srcId)!.push(tgtBook)
+        if (!result.has(tgtId)) result.set(tgtId, [])
+        result.get(tgtId)!.push(srcBook)
+      }
+    })
+    return result
+  }, [links, nodes])
+
   const filteredNodes = useMemo(() => {
     const q = String(search || '').trim()
     let list = nodes || []
@@ -82,5 +102,5 @@ export function useBooksTabTableDerived({
     return (nodes || []).filter((n) => ids.has(n.id))
   }, [nodes, selectedIds])
 
-  return { authorsMap, linkCountByNode, sortedNodes, mergeNodes }
+  return { authorsMap, linkCountByNode, linkedBooksByNode, sortedNodes, mergeNodes }
 }

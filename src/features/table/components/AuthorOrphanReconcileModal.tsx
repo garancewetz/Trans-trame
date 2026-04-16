@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link2 } from 'lucide-react'
+import { toast } from 'sonner'
 import type { Author, AuthorId, Book, BookId } from '@/types/domain'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
 import { Modal } from '@/common/components/ui/Modal'
-import { ConfirmButton } from '@/common/components/ui/ConfirmButton'
 import { findMatches } from '../authorOrphanMatching'
 import type { OrphanEntry } from '../authorOrphanMatching'
 import { AuthorOrphanReviewList } from './AuthorOrphanReviewList'
@@ -27,7 +27,6 @@ export function AuthorOrphanReconcileModal({
   onClose,
 }: Props) {
   const [selections, setSelections] = useState<Map<AuthorId, Set<BookId>>>(new Map())
-  const [confirm, setConfirm] = useState(false)
 
   const entries = useMemo<OrphanEntry[]>(() => {
     return orphanedAuthors.map((author) => ({
@@ -48,7 +47,6 @@ export function AuthorOrphanReconcileModal({
       }
     }
     setSelections(init)
-    setConfirm(false)
   } else if (!open && prevKey) {
     setPrevKey(null)
   }
@@ -67,26 +65,23 @@ export function AuthorOrphanReconcileModal({
       else next.set(authorId, set)
       return next
     })
-    setConfirm(false)
   }
 
   const handleApply = () => {
     if (totalSelected === 0) return
-    if (!confirm) { setConfirm(true); return }
     for (const [authorId, bookIds] of selections) {
       for (const bookId of bookIds) {
         const book = books.find((b) => b.id === bookId)
         if (book) onLinkAuthorToBook(authorId, book)
       }
     }
+    toast.success(`${totalSelected} liaison${totalSelected > 1 ? 's' : ''} appliquée${totalSelected > 1 ? 's' : ''}.`)
     setSelections(new Map())
-    setConfirm(false)
     onClose()
   }
 
   const handleClose = () => {
     setSelections(new Map())
-    setConfirm(false)
     onClose()
   }
 
@@ -110,15 +105,18 @@ export function AuthorOrphanReconcileModal({
           <Button type="button" onClick={handleClose} variant="surface">
             Annuler
           </Button>
-          <ConfirmButton
-            confirmed={confirm}
+          <Button
+            type="button"
             onClick={handleApply}
             disabled={totalSelected === 0}
-            label={`Relier (${totalSelected})`}
-            confirmLabel={`Confirmer (${totalSelected})`}
+            variant="outline"
+            outlineWeight="strong"
             tone="merge"
+            active={totalSelected > 0}
             icon={<Link2 size={13} />}
-          />
+          >
+            Relier ({totalSelected})
+          </Button>
         </>
       }
     >

@@ -1,4 +1,5 @@
 import { supabase } from '@/core/supabase'
+import { devWarn } from '@/common/utils/logger'
 
 // ─── Types (shared with edge function) ──────────────────────────────────────
 
@@ -10,6 +11,13 @@ export interface OrphanedBookInput {
   hasLinks: boolean
   year?: number | null
   batchKey: string
+  /** Book whose bibliography this orphan was imported for (explicit origin). */
+  importedFor: {
+    id: string
+    title: string
+    authors: string
+    year?: number | null
+  } | null
   batchSiblings: {
     title: string
     authors: string
@@ -144,8 +152,8 @@ export async function reconcileOrphansWithLLM(
   })
 
   if (error) {
-    console.warn('[reconcile-orphans] Edge function error:', error.message)
-    throw new Error(error.message)
+    devWarn('[reconcile-orphans] Edge function error', error.message)
+    throw new Error(error.message ?? 'Erreur lors de la réconciliation')
   }
 
   return validateResult(data, payload)

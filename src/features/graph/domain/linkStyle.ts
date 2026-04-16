@@ -99,10 +99,21 @@ const ARROW = {
   anchorFocus: 7,
 } as const
 
-/** Particules animées (nombre) sur un lien focal. */
+/** Particules animées (nombre) sur un lien focal.
+ *
+ * Désactivées (0/0) : `linkDirectionalParticles` de react-force-graph repaint
+ * en continu sur tous les liens focaux. Sur un hub très connecté (50+ voisins)
+ * cumulé sur le temps, le repaint perpétuel saturait le pipeline raster et
+ * freezait la main thread. Test confirmé : 1/2 = freeze rapide, 0 = freeze
+ * beaucoup plus tardif (cause résiduelle indépendante traitée séparément).
+ *
+ * Le sens des citations reste lisible via les flèches directionnelles + le
+ * dégradé cyan→jaune. `width` conservé pour si on réintroduit un effet plus
+ * tard (ex. flash périodique au lieu de particules continues).
+ */
 const PARTICLES = {
-  hoverFocus: 3,
-  anchorFocus: 5,
+  hoverFocus: 0,
+  anchorFocus: 0,
   width: 2,
 } as const
 
@@ -115,29 +126,41 @@ const GRADIENT_WIDTH = {
 
 // ── State derivation ─────────────────────────────────────────────────────────
 
+// Scratch object réutilisé entre appels — voir note plus bas.
+const SCRATCH_LINK_STATE: LinkVisualState = {
+  mode: 'idle',
+  kind: 'citation',
+  isAnchored: false,
+  isHovered: false,
+  isStrong: false,
+  isFiltered: false,
+}
+
+/**
+ * IMPORTANT — perf : retourne un objet **scratch partagé**, jamais une nouvelle
+ * allocation. Sur un graphe à ~500 liens, react-force-graph appelle 7-8 accessors
+ * (color/width/arrow/particles…) × 60 fps = 240 000 appels/s. Un objet alloc à
+ * chaque appel saturait la young-gen JS (~15 MB/s) et provoquait des pauses GC
+ * majeures visibles en dent-de-scie sur la heap.
+ *
+ * Conséquence : ne JAMAIS conserver la référence retournée. Lire les champs
+ * immédiatement, ou copier explicitement si on en a besoin plus tard.
+ */
 export function computeLinkVisualState(link: LinkLike, ctx: LinkVisualContext): LinkVisualState {
-  const kind: LinkKind = link.type === 'author-book' ? 'authorBook' : 'citation'
   const srcId = normalizeEndpointId(link.source)
   const tgtId = normalizeEndpointId(link.target)
   const key = srcId && tgtId ? linkKeyOf(srcId, tgtId) : null
 
-  const mode: LinkMode = ctx.hasSelection ? 'selected' : ctx.hasHover ? 'browsing' : 'idle'
-
+  SCRATCH_LINK_STATE.mode = ctx.hasSelection ? 'selected' : ctx.hasHover ? 'browsing' : 'idle'
+  SCRATCH_LINK_STATE.kind = link.type === 'author-book' ? 'authorBook' : 'citation'
   // Les deux signaux de focus sont indépendants et peuvent coexister.
   // `connectedLinks` est vide hors selected mode ; `hoveredLinks` est vide hors hover.
-  const isAnchored = key ? ctx.connectedLinks.has(key) : false
-  const isHovered = key ? ctx.hoveredLinks.has(key) : false
+  SCRATCH_LINK_STATE.isAnchored = key ? ctx.connectedLinks.has(key) : false
+  SCRATCH_LINK_STATE.isHovered = key ? ctx.hoveredLinks.has(key) : false
+  SCRATCH_LINK_STATE.isStrong = key ? (ctx.linkWeights.get(key) || 1) > 1 : false
+  SCRATCH_LINK_STATE.isFiltered = ctx.isFiltered
 
-  const isStrong = key ? (ctx.linkWeights.get(key) || 1) > 1 : false
-
-  return {
-    mode,
-    kind,
-    isAnchored,
-    isHovered,
-    isStrong,
-    isFiltered: ctx.isFiltered,
-  }
+  return SCRATCH_LINK_STATE
 }
 
 /** Citation mise en avant — anchor OU hover déclenchent le dégradé. */

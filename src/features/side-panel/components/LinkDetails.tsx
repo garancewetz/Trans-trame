@@ -1,4 +1,4 @@
-import { ArrowRight, ArrowLeft, LinkIcon, BookCopy, ExternalLink, Trash2, Pencil, MoreHorizontal, Eye } from 'lucide-react'
+import { ArrowRight, ArrowLeft, LinkIcon, BookCopy, ExternalLink, Trash2, Pencil, MoreHorizontal, Eye, Check, X as XIcon } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { Button } from '@/common/components/ui/Button'
 import { AuthorLinks } from '@/common/components/AuthorLinks'
@@ -269,30 +269,59 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
           className="rounded-md border-l-4 bg-white/5 px-4 py-3 font-serif text-lead italic leading-relaxed text-white/85 backdrop-blur-md"
         >
           {editingField === 'citation_text' ? (
-            <TextareaInline
-              autoFocus
-              rows={3}
-              value={draftCitation}
-              onChange={(e) => setDraftCitation(e.target.value)}
-              onBlur={() => { commitField('citation_text'); setEditingField(null) }}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') cancelEdit()
-              }}
-              placeholder="Ajouter une citation…"
-            />
+            <>
+              <TextareaInline
+                autoFocus
+                rows={3}
+                value={draftCitation}
+                onChange={(e) => setDraftCitation(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    cancelEdit()
+                  }
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault()
+                    commitField('citation_text')
+                    setEditingField(null)
+                  }
+                }}
+                placeholder="Ajouter une citation…"
+              />
+              <div className="mt-2 flex items-center justify-end gap-1.5 border-t border-white/10 pt-2 font-sans not-italic">
+                <Button
+                  type="button"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-caption font-semibold text-white/60 transition-all hover:border-white/20 hover:text-white"
+                  onClick={cancelEdit}
+                  title="Annuler (Échap)"
+                >
+                  <XIcon size={12} />
+                  Annuler
+                </Button>
+                <Button
+                  type="button"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-cyan/30 bg-cyan/10 px-2.5 py-1 text-caption font-semibold text-cyan/90 transition-all hover:border-cyan/50 hover:bg-cyan/20 hover:text-white"
+                  onClick={() => { commitField('citation_text'); setEditingField(null) }}
+                  title="Enregistrer (⌘/Ctrl + Entrée)"
+                >
+                  <Check size={12} />
+                  Enregistrer
+                </Button>
+              </div>
+            </>
           ) : (
-            excerpt || '—'
+            <>
+              {excerpt || '—'}
+              <div className="mt-2 border-t border-white/10 pt-2 font-sans text-caption not-italic text-white/40">
+                {[
+                  selectedLink.page ? selectedLink.page : null,
+                  citationMetaYear ? String(citationMetaYear) : null,
+                  selectedLink.edition ? selectedLink.edition : null,
+                ]
+                  .filter(Boolean)
+                  .join(' • ') || ' '}
+              </div>
+            </>
           )}
-
-          <div className="mt-2 border-t border-white/10 pt-2 font-sans text-caption not-italic text-white/40">
-            {[
-              selectedLink.page ? selectedLink.page : null,
-              citationMetaYear ? String(citationMetaYear) : null,
-              selectedLink.edition ? selectedLink.edition : null,
-            ]
-              .filter(Boolean)
-              .join(' • ') || ' '}
-          </div>
         </blockquote>
       </div>
 

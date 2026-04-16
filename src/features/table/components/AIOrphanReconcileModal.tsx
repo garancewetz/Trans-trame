@@ -16,6 +16,7 @@ type Props = {
   authorsMap: Map<AuthorId, Author>
   onUpdateBook?: (book: Book) => unknown
   onAddLink?: (link: { source: string; target: string; citation_text: string; edition: string; page: string; context: string }) => unknown
+  onAddLinks?: (links: Array<{ source: string; target: string; citation_text: string; edition: string; page: string; context: string }>) => unknown
   onClose: () => void
 }
 
@@ -29,10 +30,11 @@ export function AIOrphanReconcileModal({
   authorsMap,
   onUpdateBook,
   onAddLink,
+  onAddLinks,
   onClose,
 }: Props) {
   const state = useReconcileState({
-    orphanBooks, booksWithoutAuthors, orphanedAuthors, allBooks, links, authorsMap, onUpdateBook, onAddLink,
+    orphanBooks, booksWithoutAuthors, orphanedAuthors, allBooks, links, authorsMap, onUpdateBook, onAddLink, onAddLinks,
   })
 
   const handleClose = () => { state.resetState(); onClose() }

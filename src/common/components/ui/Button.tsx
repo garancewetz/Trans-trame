@@ -235,7 +235,7 @@ export function Button({
   const focusRing =
     v === 'unstyled'
       ? ''
-      : 'focus:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-0'
+      : 'focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan/40 focus-visible:ring-offset-0'
 
   return (
     <button type={type} className={clsx(classes, focusRing, className)} style={style} {...props}>

@@ -22,11 +22,6 @@ const VALID_AXES = [
   'INSTITUTIONAL', 'CHILDHOOD', 'CRIP', 'BODY', 'FEMINIST', 'UNCATEGORIZED',
 ] as const
 
-const ALLOWED_THEMES = new Set([
-  'philosophy', 'psychoanalysis', 'literature', 'science', 'art',
-  'religion', 'education', 'media', 'geography', 'technology', 'ecology',
-])
-
 const SYSTEM_PROMPT = `You are a bibliographic reference parser. You receive a list of numbered lines. For EACH line, extract bibliographic fields and classify the work thematically. Return a JSON array.
 
 Context: this is an intersectional corpus mapping intellectual filiations across feminism, afrofeminism, queer studies, disability, race, body politics, and social justice.
@@ -239,7 +234,7 @@ function validateParsedItem(item: Record<string, unknown>): ParsedResult {
       return []
     })
     .map((t) => t.toLowerCase().replace(/_/g, ' ').trim())
-    .filter((t) => ALLOWED_THEMES.has(t))
+    .filter(Boolean)
     .filter((v, idx, arr) => arr.indexOf(v) === idx)
 
   const rawAuthors = Array.isArray(item.authors) ? item.authors : []

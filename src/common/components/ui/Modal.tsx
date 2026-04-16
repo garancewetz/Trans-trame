@@ -17,6 +17,10 @@ type ModalProps = {
   as?: 'div' | 'form'
   onSubmit?: (e: FormEvent<HTMLFormElement>) => void
   containerClassName?: string
+  /** Optional step indicator shown next to the title (e.g. step 1 of 2). */
+  step?: { current: number; total: number }
+  /** If provided and truthy, clicking the close button will prompt for confirmation before calling onClose. */
+  dirtyConfirmMessage?: string | null
 }
 
 export function Modal({
@@ -33,8 +37,19 @@ export function Modal({
   as: Tag = 'div',
   onSubmit,
   containerClassName,
+  step,
+  dirtyConfirmMessage,
 }: ModalProps) {
   if (!open) return null
+
+  const handleCloseRequest = () => {
+    if (!onClose) return
+    if (dirtyConfirmMessage) {
+      const ok = window.confirm(dirtyConfirmMessage)
+      if (!ok) return
+    }
+    onClose()
+  }
 
   const titleRow = (
     <div className={`${subtitle ? 'mb-1' : 'mb-4'} flex items-center justify-between`}>
@@ -46,9 +61,14 @@ export function Modal({
         )}
         {titleIcon}
         <h3 className="font-semibold text-white">{title}</h3>
+        {step && step.total > 1 && (
+          <span className="ml-2 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-caption font-semibold text-white/50 tabular-nums">
+            Étape {step.current}/{step.total}
+          </span>
+        )}
       </div>
       {onClose && (
-        <Button type="button" onClick={onClose} variant="icon">
+        <Button type="button" onClick={handleCloseRequest} variant="icon" aria-label="Fermer">
           <X size={15} />
         </Button>
       )}

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useIsMutating, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import type { Author, Book, BookId, Link } from '@/types/domain'
 import { devWarn } from '@/common/utils/logger'
+import { formatSupabaseError } from '@/core/supabaseErrors'
 import {
   deleteAllBooks,
   deleteBookRowById,
@@ -48,8 +50,16 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
   linksRef.current = links
 
   // ── TanStack Query: initial load ─────────────────────────────────────────────
-  const { data: datasetData, isLoading, isError } = useGraphDataset(axesColors)
+  const { data: datasetData, isLoading, isError, isFetching, dataUpdatedAt } = useGraphDataset(axesColors)
   const isMutating = useIsMutating()
+
+  // Timestamp of last mutation settled. We REFUSE to apply any cached dataset
+  // fetched before this moment — it's stale by definition. This is the only
+  // reliable guard: isFetching transitions asynchronously after invalidate(),
+  // so relying on it alone lets a stale cache sneak in between mutation end
+  // and refetch start, wiping the optimistic adds and making the user see
+  // orphans reappear despite a successful INSERT.
+  const lastMutationSettledAt = useRef(0)
 
   // Buffer dataset from server while mutations are in-flight to avoid overwriting
   // optimistic state (e.g. authorIds set by addBookMutation) with stale DB data.
@@ -57,20 +67,28 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
 
   useLayoutEffect(() => {
     if (!datasetData) return
-    if (isMutating > 0) {
+    if (isMutating > 0 || isFetching) {
       pendingDataset.current = datasetData
+      return
+    }
+    // If the dataset was fetched BEFORE the last mutation settled, it's stale —
+    // wait for the refetch to bring fresh data. Without this check, the effect
+    // would apply the pre-mutation cache right after isMutating drops to 0,
+    // wiping optimistic state before refetch finishes.
+    if (dataUpdatedAt > 0 && dataUpdatedAt < lastMutationSettledAt.current) {
       return
     }
     pendingDataset.current = undefined
     setBooks(datasetData.books)
     setAuthors(datasetData.authors)
     setLinks(datasetData.links)
-  }, [datasetData, isMutating])
+  }, [datasetData, isMutating, isFetching, dataUpdatedAt])
 
   // When all mutations settle, discard any stale buffered data and refetch fresh
   const prevMutating = useRef(0)
   useEffect(() => {
     if (prevMutating.current > 0 && isMutating === 0) {
+      lastMutationSettledAt.current = Date.now()
       pendingDataset.current = undefined
       invalidate()
     }
@@ -155,6 +173,7 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
     handleUpdateAuthor,
     handleDeleteAuthor,
     handleAddLink,
+    handleAddLinks,
     handleDeleteLink,
     handleUpdateLink,
   } = useGraphDataEntityCallbacks({
@@ -207,7 +226,10 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
       ...(newAuthorIds.length > 0 ? [insertBookAuthors(intoNodeId, newAuthorIds)] : []),
     ]).then((linkResults) => {
       const linkErrors = linkResults.filter((r) => r.error)
-      if (linkErrors.length > 0) devWarn('Erreurs lors de la fusion (liens)', linkErrors)
+      if (linkErrors.length > 0) {
+        devWarn('Erreurs lors de la fusion (liens)', linkErrors)
+        toast.error(`Fusion : ${linkErrors.length} lien(s) non remappé(s)`)
+      }
 
       // Only delete book after links are safely remapped
       return Promise.all([
@@ -215,10 +237,19 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
         deleteBookRowById(fromNodeId),
       ]).then((delResults) => {
         const delErrors = delResults.filter((r) => r.error)
-        if (delErrors.length > 0) devWarn('Erreurs lors de la fusion (suppression)', delErrors)
+        if (delErrors.length > 0) {
+          devWarn('Erreurs lors de la fusion (suppression)', delErrors)
+          toast.error('Fusion : suppression du livre source échouée')
+        } else if (linkErrors.length === 0) {
+          toast.success('Livres fusionnés')
+        }
         invalidate()
       })
-    }).catch((err) => devWarn('Erreur inattendue lors de la fusion de livres', err))
+    }).catch((err) => {
+      devWarn('Erreur inattendue lors de la fusion de livres', err)
+      toast.error(`Fusion échouée : ${formatSupabaseError(err, 'erreur inconnue')}`)
+      invalidate()
+    })
 
     return true
   }, [books, links, invalidate])
@@ -247,10 +278,16 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
     setLinks([])
     Promise.resolve(deleteAllBooks())
       .then(({ error }) => {
-        if (error) devWarn('Erreur reset', error)
+        if (error) {
+          devWarn('Erreur reset', error)
+          toast.error(`Réinitialisation échouée : ${formatSupabaseError(error)}`)
+        }
         invalidate()
       })
-      .catch((err) => devWarn('Erreur inattendue lors du reset', err))
+      .catch((err) => {
+        devWarn('Erreur inattendue lors du reset', err)
+        toast.error(`Réinitialisation échouée : ${formatSupabaseError(err)}`)
+      })
   }, [invalidate])
 
   return {
@@ -268,6 +305,7 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
     handleDeleteAuthor,
     handleMigrateData,
     handleAddLink,
+    handleAddLinks,
     handleDeleteLink,
     handleUpdateLink,
     handleMergeBooks,

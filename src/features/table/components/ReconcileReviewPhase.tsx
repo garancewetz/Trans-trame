@@ -6,6 +6,19 @@ import type { ReconcileMatch, ReconcileResult, SourceMatch } from '../reconcileO
 import { matchKey, sourceKey } from '../hooks/useReconcileState'
 import { MatchTable, MatchCheckbox, ConfidenceBadge, HintsPanel } from './ReconcileMatchWidgets'
 
+function ImportSourceHint({ book, bookById }: { book: Book | undefined; bookById: Map<string, Book> }) {
+  if (!book?.importSourceId) return null
+  const source = bookById.get(book.importSourceId)
+  if (!source) return null
+  const sourceTitle = source.title || '(sans titre)'
+  return (
+    <div className="mt-0.5 text-caption text-white/35">
+      Importé·e pour la biblio. de <span className="text-white/55">{sourceTitle}</span>
+      {source.year && <span className="text-white/25"> ({source.year})</span>}
+    </div>
+  )
+}
+
 type ReviewPhaseProps = {
   result: ReconcileResult
   authorsMap: Map<AuthorId, Author>
@@ -55,11 +68,14 @@ export function ReviewPhase({
               const accepted = acceptedAuthorMatches.has(matchKey(m))
               return (
                 <tr key={matchKey(m)} className={clsx('border-b border-white/4 transition-colors', accepted ? 'bg-cyan/3' : 'opacity-40')}>
-                  <td className="px-3 py-2"><MatchCheckbox accepted={accepted} onClick={() => onToggleAuthor(m)} /></td>
-                  <td className="px-2 py-2 font-medium text-white/75">{author ? [author.firstName, author.lastName].filter(Boolean).join(' ') : m.authorId}</td>
-                  <td className="px-2 py-2 text-white/65">{book?.title || m.bookId}{book?.year && <span className="ml-1 text-white/30">({book.year})</span>}</td>
-                  <td className="px-2 py-2"><ConfidenceBadge confidence={m.confidence} /></td>
-                  <td className="px-2 py-2 text-caption text-white/40">{m.reason}</td>
+                  <td className="px-3 py-2 align-top"><MatchCheckbox accepted={accepted} onClick={() => onToggleAuthor(m)} /></td>
+                  <td className="px-2 py-2 align-top font-medium text-white/75">{author ? [author.firstName, author.lastName].filter(Boolean).join(' ') : m.authorId}</td>
+                  <td className="px-2 py-2 align-top text-white/65">
+                    <div>{book?.title || m.bookId}{book?.year && <span className="ml-1 text-white/30">({book.year})</span>}</div>
+                    <ImportSourceHint book={book} bookById={bookById} />
+                  </td>
+                  <td className="px-2 py-2 align-top"><ConfidenceBadge confidence={m.confidence} /></td>
+                  <td className="px-2 py-2 align-top text-caption text-white/40">{m.reason}</td>
                 </tr>
               )
             }}
@@ -77,11 +93,14 @@ export function ReviewPhase({
               const accepted = acceptedSourceMatches.has(sourceKey(m))
               return (
                 <tr key={sourceKey(m)} className={clsx('border-b border-white/4 transition-colors', accepted ? 'bg-cyan/3' : 'opacity-40')}>
-                  <td className="px-3 py-2"><MatchCheckbox accepted={accepted} onClick={() => onToggleSource(m)} /></td>
-                  <td className="px-2 py-2 text-white/65">{orphanBook?.title || m.orphanBookId}</td>
-                  <td className="px-2 py-2 font-medium text-white/75">{sourceBook?.title || m.sourceBookId}</td>
-                  <td className="px-2 py-2"><ConfidenceBadge confidence={m.confidence} /></td>
-                  <td className="px-2 py-2 text-caption text-white/40">{m.reason}</td>
+                  <td className="px-3 py-2 align-top"><MatchCheckbox accepted={accepted} onClick={() => onToggleSource(m)} /></td>
+                  <td className="px-2 py-2 align-top text-white/65">
+                    <div>{orphanBook?.title || m.orphanBookId}</div>
+                    <ImportSourceHint book={orphanBook} bookById={bookById} />
+                  </td>
+                  <td className="px-2 py-2 align-top font-medium text-white/75">{sourceBook?.title || m.sourceBookId}</td>
+                  <td className="px-2 py-2 align-top"><ConfidenceBadge confidence={m.confidence} /></td>
+                  <td className="px-2 py-2 align-top text-caption text-white/40">{m.reason}</td>
                 </tr>
               )
             }}

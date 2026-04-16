@@ -112,17 +112,27 @@ export async function migrateLegacyAuthorsAndBooks(params: {
     }
   }
 
-  // 3. Vérifier que les écritures ont persisté en base
+  // 3. Vérifier que les écritures ont persisté en base.
+  // Chunked at 1000 IDs per request: PostgREST caps responses at 1000 rows
+  // AND `.in(arr)` with a huge array can blow the URL length limit.
   if (succeededIds.size > 0) {
-    const { data: persistedRows, error: verifyError } = await supabase
-      .from('book_authors')
-      .select('book_id')
-      .in('book_id', [...succeededIds])
+    const ids = [...succeededIds]
+    const persistedBookIds = new Set<string>()
+    let verifyError: { message?: string | null } | null = null
+    const CHUNK = 1000
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const slice = ids.slice(i, i + CHUNK)
+      const { data: persistedRows, error } = await supabase
+        .from('book_authors')
+        .select('book_id')
+        .in('book_id', slice)
+      if (error) { verifyError = error; break }
+      for (const r of persistedRows ?? []) persistedBookIds.add(r.book_id)
+    }
 
     if (verifyError) {
       devWarn('Migration: impossible de vérifier les écritures book_authors', verifyError)
     } else {
-      const persistedBookIds = new Set(persistedRows.map((r) => r.book_id))
       const notPersisted = [...succeededIds].filter((id) => !persistedBookIds.has(id))
 
       if (notPersisted.length > 0) {

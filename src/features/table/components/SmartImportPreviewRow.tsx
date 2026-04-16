@@ -416,9 +416,9 @@ export function SmartImportPreviewRow({
               {isExact ? 'Doublon exact' : 'Doublon possible'} —
             </span>
             <span className="truncate font-mono text-caption italic text-white/38">
-              {[item.existingNode?.firstName, item.existingNode?.lastName].filter(Boolean).join(' ')}
-              {item.existingNode?.firstName || item.existingNode?.lastName ? ', ' : ''}
               {item.existingNode?.title}
+              {item.existingNode?.title && (item.existingNode?.firstName || item.existingNode?.lastName) ? ' — ' : ''}
+              {[item.existingNode?.firstName, item.existingNode?.lastName].filter(Boolean).join(' ')}
             </span>
           </div>
 

@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
+import { useEffect } from 'react'
 import { BarChart3, Network, AlertCircle, Waves } from 'lucide-react'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
@@ -7,6 +7,7 @@ import { Panel } from '@/common/components/ui/Panel'
 import { PanelHeader } from '@/common/components/ui/PanelHeader'
 import { PANEL_WIDTH } from '@/common/constants/panels'
 import type { Highlight } from '@/core/FilterContext'
+import { usePanelVisibility } from '@/core/PanelVisibilityContext'
 import { useAnalysisMetrics } from '../hooks/useAnalysisMetrics'
 import { AnalysisPanorama } from './AnalysisPanorama'
 import { AnalysisDecades } from './AnalysisDecades'
@@ -26,19 +27,11 @@ type AnalysisPanelProps = {
   authorsMap: Map<string, AuthorNode>
 }
 
-export type AnalysisPanelImperativeHandle = {
-  openPanel: () => void
-  closePanel: () => void
-}
-
 type AnyBook = { id: string; title?: string; year?: number | null; axes?: string[]; authorIds?: string[] }
 type AnyLink = { source: unknown; target: unknown }
 
-const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelProps>(function AnalysisPanel(
-  { graphData, activeFilter, activeHighlight, onFilterChange, onHighlightChange, showTrigger = true, authorsMap }: AnalysisPanelProps,
-  ref,
-) {
-  const [open, setOpen] = useState(false)
+function AnalysisPanel({ graphData, activeFilter, activeHighlight, onFilterChange, onHighlightChange, showTrigger = true, authorsMap }: AnalysisPanelProps) {
+  const { analysisPanelOpen: open, setAnalysisPanelOpen } = usePanelVisibility()
   const bookNodes = graphData.nodes as AnyBook[]
   const links = graphData.links as AnyLink[]
 
@@ -47,23 +40,18 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') setAnalysisPanelOpen(false)
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [])
-
-  useImperativeHandle(ref, () => ({
-    openPanel() { setOpen(true) },
-    closePanel() { setOpen(false) },
-  }))
+  }, [setAnalysisPanelOpen])
 
   return (
     <>
       {showTrigger && (
         <Button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setAnalysisPanelOpen(!open)}
           className="fixed right-3 top-[92px] z-30 cursor-pointer rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-ui font-semibold text-white/70 backdrop-blur-lg transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
         >
           <span className="inline-flex items-center gap-2">
@@ -84,7 +72,7 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
           <PanelHeader
             title="Analyse"
             subtitle="Radiographie de la trame"
-            onClose={() => setOpen(false)}
+            onClose={() => setAnalysisPanelOpen(false)}
             className="mb-5"
           />
 
@@ -212,7 +200,6 @@ const AnalysisPanel = forwardRef<AnalysisPanelImperativeHandle, AnalysisPanelPro
       </Panel>
     </>
   )
-})
+}
 
-const MemoAnalysisPanel = AnalysisPanel
-export { MemoAnalysisPanel as AnalysisPanel }
+export { AnalysisPanel }

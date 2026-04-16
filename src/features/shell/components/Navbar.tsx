@@ -1,4 +1,4 @@
-import { type RefObject, useCallback } from 'react'
+import { useCallback } from 'react'
 import { PenLine } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
@@ -16,15 +16,19 @@ import { usePanelVisibility } from '@/core/PanelVisibilityContext'
 import { useSelection } from '@/core/SelectionContext'
 import { useAuthActions, useAuthState } from '@/core/AuthContext'
 import { useGlobalSearch } from '@/features/shell/hooks/useGlobalSearch'
-import type { AnalysisPanelImperativeHandle } from '@/features/analysis-panel/components/AnalysisPanel'
 
 type NavbarProps = {
-  analysisPanelRef: RefObject<AnalysisPanelImperativeHandle | null>
   viewMode: string
   onViewChange: (mode: string) => void
 }
 
-export function Navbar({ analysisPanelRef, viewMode, onViewChange }: NavbarProps) {
+const VIEW_MODE_LABELS: Record<string, string> = {
+  constellation: 'Constellation',
+  histcite: 'HistCite',
+  dendrogram: 'Dendrogramme',
+}
+
+export function Navbar({ viewMode, onViewChange }: NavbarProps) {
   const { user, profile } = useAuthState()
   const { signOut, requireAuth } = useAuthActions()
   const appData = useAppData()
@@ -33,7 +37,7 @@ export function Navbar({ analysisPanelRef, viewMode, onViewChange }: NavbarProps
   const selectedAuthorId = filter.selectedAuthor
   const tableUi = useTableUi()
   const { tableMode, openTable } = tableUi
-  const { openTextsPanel, openAuthorsPanel } = usePanelVisibility()
+  const { openTextsPanel, openAuthorsPanel, openAnalysisPanel } = usePanelVisibility()
   const selection = useSelection()
 
   const onSelectNode = useCallback(
@@ -77,8 +81,11 @@ export function Navbar({ analysisPanelRef, viewMode, onViewChange }: NavbarProps
   )
 
   const onOpenAnalysisPanel = useCallback(
-    () => analysisPanelRef.current?.openPanel(),
-    [analysisPanelRef],
+    () => {
+      selection.closePanel()
+      openAnalysisPanel()
+    },
+    [selection, openAnalysisPanel],
   )
 
   return (
@@ -97,8 +104,8 @@ export function Navbar({ analysisPanelRef, viewMode, onViewChange }: NavbarProps
                   className="bg-white/10 px-[7px] py-px text-caption font-bold text-white/50"
                 />
               </span>
-              <span className="text-label font-semibold text-white/50">
-                Cartographie de l'Intersectionnalité
+              <span className="text-label font-semibold text-white/45">
+                {VIEW_MODE_LABELS[viewMode] ?? 'Constellation'}
               </span>
             </span>
           </h1>

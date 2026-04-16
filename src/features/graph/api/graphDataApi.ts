@@ -1,11 +1,76 @@
 import { supabase } from '@/core/supabase'
+import { ensureOk } from '@/core/supabaseErrors'
+import { devWarn } from '@/common/utils/logger'
 import type { Tables, TablesInsert, TablesUpdate } from '@/types/supabase'
+
+/**
+ * Fetches ALL rows from a Supabase query, paginated via .range() to bypass
+ * PostgREST's 1000-row cap. `.limit(N)` is silently clamped to that cap by the
+ * server, so any unbounded SELECT silently truncates beyond 1000 rows.
+ *
+ * Symptom that surfaced this bug: importing a 19-row bibliography succeeded in
+ * DB but the new links never appeared in refetches — they sat past row 1000,
+ * the UI showed permanent orphans, and the toast still said "success".
+ *
+ * `buildPage(from, to)` must return a Supabase query builder set up with the
+ * correct filters/ordering plus `.range(from, to)`. We loop until a page
+ * returns fewer than PAGE_SIZE rows. Capped at 100k rows as a safety net
+ * against a misbehaving server returning the same page forever.
+ */
+const PAGE_SIZE = 1000
+const PAGINATION_SAFETY_CAP = 100_000
+
+type PageResult<Row> = { data: Row[] | null; error: { message: string } | null }
+
+export async function fetchAllPaginated<Row>(
+  buildPage: (from: number, to: number) => PromiseLike<PageResult<Row>>,
+  label: string,
+): Promise<PageResult<Row>> {
+  const all: Row[] = []
+  let offset = 0
+  while (true) {
+    const { data, error } = await buildPage(offset, offset + PAGE_SIZE - 1)
+    if (error) return { data: null, error }
+    if (!data || data.length === 0) break
+    all.push(...data)
+    if (data.length < PAGE_SIZE) break
+    offset += PAGE_SIZE
+    if (offset >= PAGINATION_SAFETY_CAP) {
+      devWarn(`[fetchAllPaginated:${label}] hit ${PAGINATION_SAFETY_CAP} safety cap — dataset truncated`)
+      break
+    }
+  }
+  return { data: all, error: null }
+}
 
 export async function loadGraphDataFromSupabase() {
   const [booksRes, authorsRes, linksRes] = await Promise.all([
-    supabase.from('books').select('*, book_authors(author_id)').is('deleted_at', null).order('created_at', { ascending: true }).limit(10000),
-    supabase.from('authors').select('*').is('deleted_at', null).order('created_at', { ascending: true }).limit(10000),
-    supabase.from('links').select('*').is('deleted_at', null).limit(10000),
+    fetchAllPaginated(
+      (from, to) => supabase
+        .from('books')
+        .select('*, book_authors(author_id)')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true })
+        .range(from, to),
+      'books',
+    ),
+    fetchAllPaginated(
+      (from, to) => supabase
+        .from('authors')
+        .select('*')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true })
+        .range(from, to),
+      'authors',
+    ),
+    fetchAllPaginated(
+      (from, to) => supabase
+        .from('links')
+        .select('*')
+        .is('deleted_at', null)
+        .range(from, to),
+      'links',
+    ),
   ])
 
   return { booksRes, authorsRes, linksRes }
@@ -43,6 +108,14 @@ export function insertLinkRow(row: TablesInsert<'links'>) {
   return supabase.from('links').insert(row)
 }
 
+export function insertLinkRows(rows: TablesInsert<'links'>[]) {
+  // .select('id') forces PostgREST to return the persisted rows. Without it,
+  // a successful HTTP response doesn't guarantee the rows were actually written
+  // (silent drops, partial inserts). Count-matching the response IDs against
+  // what we sent is the only reliable confirmation from the client side.
+  return supabase.from('links').insert(rows).select('id')
+}
+
 export function updateLinkRowById(id: string, fields: TablesUpdate<'links'>) {
   return supabase.from('links').update(fields).eq('id', id)
 }
@@ -60,19 +133,18 @@ export function deleteAllBooks() {
 export async function setBookAuthors(bookId: string, authorIds: string[]) {
   const delResult = await supabase.from('book_authors').delete().eq('book_id', bookId).select()
   if (delResult.error) {
-    console.warn('[setBookAuthors] delete failed for', bookId, delResult.error)
+    devWarn('[setBookAuthors] delete failed', { bookId, error: delResult.error })
     return { error: delResult.error }
   }
   if (authorIds.length === 0) return { error: null }
   const rows = authorIds.map((author_id) => ({ book_id: bookId, author_id }))
   const insResult = await supabase.from('book_authors').insert(rows).select()
-  console.info(
-    `[setBookAuthors] book=${bookId} sent=${rows.length} returned=${insResult.data?.length ?? 'null'} error=${insResult.error?.message ?? 'none'}`,
-  )
   if (insResult.error) {
-    console.warn('[setBookAuthors] insert failed for', bookId, insResult.error)
-  } else if (!insResult.data?.length) {
-    console.warn('[setBookAuthors] insert returned no data — RLS may be silently blocking', bookId)
+    devWarn('[setBookAuthors] insert failed', { bookId, error: insResult.error })
+    return { error: insResult.error }
+  }
+  if (!insResult.data?.length) {
+    devWarn('[setBookAuthors] insert returned no data — RLS may be silently blocking', { bookId })
     return { error: { message: 'Insert silencieux : aucune donnée retournée (vérifier RLS)' } }
   }
   return insResult
@@ -110,15 +182,14 @@ export function exportFilename(suffix: string) {
 export async function exportFullDatabase() {
   const { booksRes, authorsRes, linksRes } = await loadGraphDataFromSupabase()
 
-  const errors = [booksRes, authorsRes, linksRes]
-    .map((r) => r.error)
-    .filter(Boolean)
-  if (errors.length > 0) {
-    console.error('[export] Certaines données n\'ont pas pu être chargées :', errors)
-  }
+  // Refuse to export a partial backup — silently dropping rows would lead users
+  // to trust an incomplete snapshot.
+  const books = ensureOk(booksRes, 'export: books')
+  const authors = ensureOk(authorsRes, 'export: authors')
+  const links = ensureOk(linksRes, 'export: links')
 
   // Extraire book_authors depuis la relation embarquée
-  const bookAuthors = (booksRes.data ?? []).flatMap((b) =>
+  const bookAuthors = (books ?? []).flatMap((b) =>
     ((b.book_authors as { author_id: string }[] | null) ?? []).map((ba) => ({
       book_id: b.id,
       author_id: ba.author_id,
@@ -128,9 +199,9 @@ export async function exportFullDatabase() {
   downloadJson(
     {
       exportedAt: new Date().toISOString(),
-      books: booksRes.data ?? [],
-      authors: authorsRes.data ?? [],
-      links: linksRes.data ?? [],
+      books: books ?? [],
+      authors: authors ?? [],
+      links: links ?? [],
       bookAuthors,
     },
     exportFilename('backup'),
@@ -138,32 +209,50 @@ export async function exportFullDatabase() {
 }
 
 // ── Entity name lookup (for human-readable activity log) ───────────────────
+// Paginated: above 1000 entities the history tab would otherwise show "[unknown]"
+// for the most recent items (whose IDs landed past the truncated page).
 
 export async function loadEntityNamesForLog() {
-  const [books, authors, bookAuthors] = await Promise.all([
-    supabase.from('books').select('id, title'),
-    supabase.from('authors').select('id, first_name, last_name'),
-    supabase.from('book_authors').select('book_id, author_id'),
+  const [booksRes, authorsRes, bookAuthorsRes] = await Promise.all([
+    fetchAllPaginated(
+      (from, to) => supabase.from('books').select('id, title').range(from, to),
+      'entityNames:books',
+    ),
+    fetchAllPaginated(
+      (from, to) => supabase.from('authors').select('id, first_name, last_name').range(from, to),
+      'entityNames:authors',
+    ),
+    fetchAllPaginated(
+      (from, to) => supabase.from('book_authors').select('book_id, author_id').range(from, to),
+      'entityNames:bookAuthors',
+    ),
   ])
   return {
-    books: books.data ?? [],
-    authors: authors.data ?? [],
-    bookAuthors: bookAuthors.data ?? [],
+    books: ensureOk(booksRes, 'loadEntityNamesForLog: books') ?? [],
+    authors: ensureOk(authorsRes, 'loadEntityNamesForLog: authors') ?? [],
+    bookAuthors: ensureOk(bookAuthorsRes, 'loadEntityNamesForLog: bookAuthors') ?? [],
   }
 }
 
 // ── Activity log ────────────────────────────────────────────────────────────
 
-export async function loadActivityLog(limit = 50, offset = 0) {
-  return supabase
+export async function loadActivityLog(limit = 50, offset = 0): Promise<ActivityLogEntry[]> {
+  const res = await supabase
     .from('activity_log')
     .select('*')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
+  return ensureOk(res, 'loadActivityLog') ?? []
 }
 
 export async function loadProfiles() {
-  return supabase.from('profiles').select('id, first_name, last_name, email')
+  // Whitelisted-users table — typically tiny, but paginated for consistency
+  // and to survive the day someone opens the platform to a real user base.
+  const res = await fetchAllPaginated(
+    (from, to) => supabase.from('profiles').select('id, first_name, last_name, email').range(from, to),
+    'profiles',
+  )
+  return ensureOk(res, 'loadProfiles') ?? []
 }
 
 const META_FIELDS = ['created_at', 'created_by', 'updated_by', 'deleted_at']

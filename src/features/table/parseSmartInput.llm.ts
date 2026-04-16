@@ -1,6 +1,8 @@
 import type { Axis } from '@/common/utils/categories.constants'
 import type { ParsedAuthor } from './parseSmartInput.types'
 import { supabase } from '@/core/supabase'
+import { devWarn } from '@/common/utils/logger'
+import { formatSupabaseError } from '@/core/supabaseErrors'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -28,11 +30,6 @@ const VALID_AXES = [
   'INSTITUTIONAL', 'CHILDHOOD', 'CRIP', 'BODY', 'FEMINIST', 'UNCATEGORIZED',
 ] as const
 
-const ALLOWED_THEMES = new Set([
-  'philosophy', 'psychoanalysis', 'literature', 'science', 'art',
-  'religion', 'education', 'media', 'geography', 'technology', 'ecology',
-])
-
 // ─── Shared result validation ─────────────────────────────────────────────
 
 function validateLLMItem(item: Record<string, unknown>): LLMParsedResult {
@@ -52,6 +49,9 @@ function validateLLMItem(item: Record<string, unknown>): LLMParsedResult {
       a !== 'UNCATEGORIZED',
   ))]
 
+  // Preserve every UNCATEGORIZED:label and any unrecognized axis as a theme
+  // so the front-end can surface them in the preview (AxisDots) and persist
+  // them on the book — instead of silently dropping labels the LLM returned.
   const suggestedThemes = rawAxes
     .flatMap((a) => {
       if (a.startsWith('UNCATEGORIZED:'))
@@ -60,7 +60,7 @@ function validateLLMItem(item: Record<string, unknown>): LLMParsedResult {
       return []
     })
     .map((t) => t.toLowerCase().replace(/_/g, ' ').trim())
-    .filter((t) => ALLOWED_THEMES.has(t))
+    .filter(Boolean)
     .filter((v, idx, arr) => arr.indexOf(v) === idx)
 
   const rawAuthors = Array.isArray(item.authors) ? item.authors : []
@@ -130,11 +130,16 @@ export async function parseWithLLMBatch(
   if (lines.length === 0) return results
 
   let done = 0
+  let chunkCount = 0
+  let chunkFailures = 0
+  let lastError: string | null = null
+
   for (let i = 0; i < lines.length; i += LLM_CHUNK_SIZE) {
     if (i > 0) await new Promise((r) => setTimeout(r, LLM_CHUNK_PAUSE_MS))
 
     const chunk = lines.slice(i, i + LLM_CHUNK_SIZE)
     const chunkNum = Math.floor(i / LLM_CHUNK_SIZE) + 1
+    chunkCount += 1
 
     try {
       const { data, error } = await supabase.functions.invoke('parse-references', {
@@ -142,17 +147,27 @@ export async function parseWithLLMBatch(
       })
 
       if (error) {
-        console.warn(`[LLM] Chunk ${chunkNum} failed:`, error.message)
+        devWarn(`[LLM] Chunk ${chunkNum} failed`, error.message)
+        chunkFailures += 1
+        lastError = error.message
       } else {
         const parsed = processRawResults(data?.results)
         for (const [k, v] of parsed) results.set(k, v)
       }
     } catch (err) {
-      console.warn(`[LLM] Chunk ${chunkNum} threw:`, err)
+      devWarn(`[LLM] Chunk ${chunkNum} threw`, err)
+      chunkFailures += 1
+      lastError = formatSupabaseError(err, 'Erreur lors de l\'appel à Gemini')
     }
 
     done += chunk.length
     onProgress?.(done, lines.length)
+  }
+
+  // If every chunk failed the caller would otherwise see an empty result with
+  // no signal — surface the failure so the UI can show a toast / error state.
+  if (chunkCount > 0 && chunkFailures === chunkCount) {
+    throw new Error(lastError ?? 'Toutes les requêtes Gemini ont échoué')
   }
 
   return results
@@ -160,7 +175,8 @@ export async function parseWithLLMBatch(
 
 /**
  * Sends images to the parse-references Edge Function for multimodal OCR parsing.
- * Falls back to an empty Map if the function is unavailable.
+ * Throws on failure so the caller can surface the error to the UI (a silent
+ * empty result would leave users staring at a spinner that never reports why).
  */
 export async function parseWithLLMImages(
   images: { base64: string; mimeType: string }[],
@@ -169,25 +185,20 @@ export async function parseWithLLMImages(
   const results = new Map<number, LLMParsedResult>()
   if (images.length === 0) return results
 
-  try {
-    onProgress?.(0, 1)
+  onProgress?.(0, 1)
 
-    const { data, error } = await supabase.functions.invoke('parse-references', {
-      body: { images },
-    })
+  const { data, error } = await supabase.functions.invoke('parse-references', {
+    body: { images },
+  })
 
-    if (error) {
-      console.warn('[LLM] Edge function error (images):', error.message)
-      return results
-    }
-
-    const parsed = processRawResults(data?.results)
-    for (const [k, v] of parsed) results.set(k, v)
-
-    onProgress?.(1, 1)
-  } catch (err) {
-    console.warn('[LLM] Failed to invoke edge function (images):', err)
+  if (error) {
+    devWarn('[LLM] Edge function error (images)', error.message)
+    throw new Error(error.message ?? 'Erreur Gemini (images)')
   }
 
+  const parsed = processRawResults(data?.results)
+  for (const [k, v] of parsed) results.set(k, v)
+
+  onProgress?.(1, 1)
   return results
 }

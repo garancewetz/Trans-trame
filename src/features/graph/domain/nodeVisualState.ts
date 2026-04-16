@@ -29,6 +29,26 @@ export interface DrawNodeOpts {
 
 // ── Node state computation ───────────────────────────────────────────────────
 
+// Scratch object réutilisé : voir note dans `computeNodeState` ci-dessous.
+const SCRATCH_NODE_STATE = {
+  hover: 0,
+  opacity: 1,
+  isActive: false,
+  isHighlighted: false,
+  matchesHover: false,
+  blendedColor: '#ffffff',
+  hasHoverFocus: false,
+  isHoverNeighbor: false,
+}
+
+/**
+ * IMPORTANT — perf : retourne un objet **scratch partagé** réutilisé entre
+ * appels. Sur ~200 nœuds × 60 fps, allouer un objet par appel saturait la
+ * young-gen (~2 MB/s) et contribuait au pattern dent-de-scie de la heap.
+ *
+ * Conséquence : ne JAMAIS conserver la référence retournée. Lire les champs
+ * immédiatement (c'est ce que fait `drawNode`).
+ */
 export function computeNodeState(node: D3Node, opts: DrawNodeOpts) {
   const {
     selectedNode, selectedAuthorId, peekNodeId, hoveredNode, hoveredNeighborIds,
@@ -70,7 +90,15 @@ export function computeNodeState(node: D3Node, opts: DrawNodeOpts) {
     ? (nodeAxes.length ? blendAxesColors(nodeAxes) : '#b0b8d0')
     : blendAxesColors(nodeAxes)
 
-  return { hover, opacity, isActive, isHighlighted, matchesHover, blendedColor, hasHoverFocus, isHoverNeighbor }
+  SCRATCH_NODE_STATE.hover = hover
+  SCRATCH_NODE_STATE.opacity = opacity
+  SCRATCH_NODE_STATE.isActive = isActive
+  SCRATCH_NODE_STATE.isHighlighted = isHighlighted
+  SCRATCH_NODE_STATE.matchesHover = matchesHover
+  SCRATCH_NODE_STATE.blendedColor = blendedColor
+  SCRATCH_NODE_STATE.hasHoverFocus = hasHoverFocus
+  SCRATCH_NODE_STATE.isHoverNeighbor = isHoverNeighbor
+  return SCRATCH_NODE_STATE
 }
 
 // ── Landmark label thresholds ────────────────────────────────────────────────

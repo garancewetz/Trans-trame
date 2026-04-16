@@ -1,6 +1,9 @@
 import { useState, type FormEvent } from 'react'
+import { toast } from 'sonner'
 import { toggleSetItem } from '@/common/utils/setUtils'
 import { useFakeProgress } from '@/common/hooks/useFakeProgress'
+import { devWarn } from '@/common/utils/logger'
+import { formatSupabaseError } from '@/core/supabaseErrors'
 import { parseSmartInput, parseSmartInputHybrid, parseSmartInputFromImages, type ParsedBook } from '../parseSmartInput'
 import { runSmartImportBatchInsert } from '../smartImportModal.batchInsert'
 import type { SmartImportModalProps } from '../smartImportModal.types'
@@ -16,6 +19,7 @@ export function useSmartImportModalLogic({
   onAddBook,
   onAddAuthor,
   onAddLink,
+  onAddLinks,
   onUpdateBook,
   onQueued,
   onImportComplete,
@@ -93,7 +97,8 @@ export function useSmartImportModalLogic({
       completeAnalyzeProgress()
       setResultsAndCheck(results)
     } catch (err) {
-      if (import.meta.env.DEV) console.warn('[SmartImport] Image analysis failed:', err)
+      devWarn('[SmartImport] Image analysis failed', err)
+      toast.error(`Analyse des images échouée : ${formatSupabaseError(err, 'erreur Gemini')}`)
       completeAnalyzeProgress()
       setResultsAndCheck([])
     }
@@ -117,7 +122,8 @@ export function useSmartImportModalLogic({
       completeAnalyzeProgress()
       setResultsAndCheck(enriched.some((r) => r.parsedByLLM) ? enriched : localResults)
     } catch (err) {
-      if (import.meta.env.DEV) console.warn('[SmartImport] LLM enrichment failed, using local results:', err)
+      devWarn('[SmartImport] LLM enrichment failed, using local results', err)
+      toast.warning(`Enrichissement Gemini indisponible : ${formatSupabaseError(err, 'analyse locale utilisée')}`)
       completeAnalyzeProgress()
       setResultsAndCheck(localResults)
     }
@@ -134,7 +140,7 @@ export function useSmartImportModalLogic({
     setInserting(true)
     await runSmartImportBatchInsert({
       parsed, checked, mergedIds: merge.mergedIds, existingAuthors,
-      onAddAuthor, onAddBook, onAddLink, masterNode, linkDirection, masterContext,
+      onAddAuthor, onAddBook, onAddLink, onAddLinks, masterNode, linkDirection, masterContext,
       onQueued, onImportComplete,
     })
     setInjected(true)
@@ -152,7 +158,8 @@ export function useSmartImportModalLogic({
       const enrichedMap = new Map(enriched.map((r) => [r.id, r]))
       setParsed((prev) => prev.map((item) => enrichedMap.get(item.id) ?? item))
     } catch (err) {
-      if (import.meta.env.DEV) console.warn('[SmartImport] LLM re-parse failed:', err)
+      devWarn('[SmartImport] LLM re-parse failed', err)
+      toast.error(`Ré-analyse échouée : ${formatSupabaseError(err, 'erreur Gemini')}`)
     }
     setAnalyzing(false)
   }

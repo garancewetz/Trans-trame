@@ -6,12 +6,13 @@ export type TableViewProps = {
   links: Link[]
   authors: Author[]
   onAddLink?: (link: Partial<Link> & Pick<Link, 'source' | 'target'>) => unknown
+  onAddLinks?: (links: Array<Partial<Link> & Pick<Link, 'source' | 'target'>>) => unknown
   onUpdateBook?: (book: Book) => unknown
   onDeleteBook?: (bookId: BookId) => unknown
   onUpdateLink?: (linkId: string, updatedFields: TablesUpdate<'links'>) => unknown
   onMergeBooks?: (fromNodeId: BookId, intoNodeId: BookId) => unknown
   onDeleteAuthor?: (authorId: AuthorId) => unknown
-  initialTab?: 'books' | 'authors' | 'links' | 'history'
+  initialTab?: 'books' | 'authors' | 'links' | 'history' | 'review'
   initialLinkSourceId?: BookId | null
   initialFocusBookId?: BookId | null
 }

@@ -59,7 +59,7 @@ export function useBooksTabState({
   const [aiEnrichBooks, setAiEnrichBooks] = useState<Book[]>([])
   const [batchInfoModal, setBatchInfoModal] = useState(false)
 
-  const { authorsMap, linkCountByNode, sortedNodes, mergeNodes } = useBooksTabTableDerived({
+  const { authorsMap, linkCountByNode, linkedBooksByNode, sortedNodes, mergeNodes } = useBooksTabTableDerived({
     nodes, links, search, sortCol, sortDir, selectedIds, authors, axisFilter, todoOnly,
   })
 
@@ -230,7 +230,7 @@ export function useBooksTabState({
     titleInputRef, justAddedBookId,
     aiEnrichModal, setAiEnrichModal, aiEnrichBooks, setAiEnrichBooks,
     batchInfoModal, setBatchInfoModal, sortCol, sortDir,
-    authorsMap, linkCountByNode, sortedNodes, mergeNodes, workSiblingsMap,
+    authorsMap, linkCountByNode, linkedBooksByNode, sortedNodes, mergeNodes, workSiblingsMap,
     allSelected, someSelected,
     handleNodeSort, toggleRow, toggleAll, clearSelection,
     commitNodeEdit, handleBulkDelete, handleAddBookRow,

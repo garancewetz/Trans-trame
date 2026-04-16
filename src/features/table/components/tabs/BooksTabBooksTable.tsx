@@ -15,6 +15,7 @@ type BooksTabBooksTableProps = {
   authors: Author[]
   authorsMap: Map<string, Author>
   linkCountByNode: Map<string, number>
+  linkedBooksByNode: Map<BookId, Book[]>
   workSiblingsMap: Map<BookId, Book[]>
   sortCol: string
   sortDir: 'asc' | 'desc'
@@ -58,6 +59,7 @@ export function BooksTabBooksTable({
   authors,
   authorsMap,
   linkCountByNode,
+  linkedBooksByNode,
   workSiblingsMap,
   sortCol,
   sortDir,
@@ -167,6 +169,7 @@ export function BooksTabBooksTable({
               authors={authors}
               authorsMap={authorsMap}
               linkCount={linkCountByNode.get(node.id) ?? 0}
+              linkedBooks={linkedBooksByNode.get(node.id)}
               workSiblings={workSiblingsMap.get(node.id)}
               toggleRow={toggleRow}
               commitNodeEdit={commitNodeEdit}

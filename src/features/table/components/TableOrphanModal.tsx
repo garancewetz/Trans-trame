@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link2, Trash2 } from 'lucide-react'
+import { Check, Link2, Trash2 } from 'lucide-react'
 import type { Book, BookId, Link } from '@/types/domain'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
@@ -8,6 +8,24 @@ import { Button } from '@/common/components/ui/Button'
 import { Modal } from '@/common/components/ui/Modal'
 import { ConfirmButton } from '@/common/components/ui/ConfirmButton'
 import { NodeSearch } from './NodeSearch'
+
+/**
+ * Design-system checkbox: hidden native input + styled span + Check icon.
+ * Matches the pattern used in LinksTab's checklist rows.
+ */
+function CheckboxBox({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className={[
+        'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-all',
+        checked ? 'border-green bg-green/18 text-green' : 'border-white/15 text-transparent',
+      ].join(' ')}
+      aria-hidden="true"
+    >
+      <Check size={9} />
+    </span>
+  )
+}
 
 type Props = {
   orphanModal: boolean
@@ -18,7 +36,7 @@ type Props = {
   orphanConfirm: boolean
   setOrphanModal: (v: boolean) => void
   setOrphanConfirm: (v: boolean) => void
-  onAddLink?: (link: Partial<Link> & Pick<Link, 'source' | 'target'>) => unknown
+  onAddLinks?: (links: Array<Partial<Link> & Pick<Link, 'source' | 'target'>>) => unknown
 }
 
 export function TableOrphanModal({
@@ -30,7 +48,7 @@ export function TableOrphanModal({
   orphanConfirm,
   setOrphanModal,
   setOrphanConfirm,
-  onAddLink,
+  onAddLinks,
 }: Props) {
   const [linkTarget, setLinkTarget] = useState<Book | null>(null)
   const [checkedIds, setCheckedIds] = useState<Set<BookId>>(new Set())
@@ -68,16 +86,17 @@ export function TableOrphanModal({
   const handleLink = () => {
     if (!linkTarget || checkedIds.size === 0) return
     if (!linkConfirm) { setLinkConfirm(true); return }
-    checkedIds.forEach((id) => {
-      onAddLink?.({
-        source: linkTarget.id,
-        target: id,
-        citation_text: '',
-        edition: '',
-        page: '',
-        context: '',
-      })
-    })
+    // Single batch insert: 38 rows → 1 HTTP request, atomic at DB level.
+    // Calling the singular onAddLink in a loop lost rows (race / connection cap).
+    const linksToAdd = Array.from(checkedIds).map((id) => ({
+      source: linkTarget.id,
+      target: id,
+      citation_text: '',
+      edition: '',
+      page: '',
+      context: '',
+    }))
+    onAddLinks?.(linksToAdd)
     setCheckedIds(new Set())
     setLinkTarget(null)
     setLinkConfirm(false)
@@ -135,39 +154,47 @@ export function TableOrphanModal({
         )}
       </div>
 
-      {/* Orphan list with checkboxes */}
-      <div className="mb-4 max-h-[min(50vh,360px)] overflow-y-auto rounded-xl border border-white/8 bg-white/2.5 p-2">
+      {/* Orphan list with design-system checkboxes */}
+      <div className="mb-4 max-h-[min(50vh,360px)] overflow-y-auto rounded-xl border border-white/8 bg-white/2.5 p-1.5">
         {/* Select all */}
-        <label className="mb-1 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-micro text-white/35 hover:bg-white/4">
+        <label className="mb-0.5 flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 font-mono text-micro text-white/40 transition-colors hover:bg-white/4">
           <input
             type="checkbox"
+            className="sr-only"
             checked={allChecked}
             onChange={toggleAll}
-            className="accent-cyan"
           />
+          <CheckboxBox checked={allChecked} />
           Tout sélectionner
         </label>
 
-        {orphans.map((n) => (
-          <label
-            key={n.id}
-            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/4"
-          >
-            <input
-              type="checkbox"
-              checked={checkedIds.has(n.id)}
-              onChange={() => toggleChecked(n.id)}
-              className="accent-cyan"
-            />
-            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: axesGradient(n.axes) }} />
-            <span>
-              <strong className="block font-mono text-[0.88rem] text-white">{n.title}</strong>
-              <span className="font-mono text-caption text-white/32">
-                {bookAuthorDisplay(n, authorsMap)}{n.year ? `, ${n.year}` : ''}
+        {orphans.map((n) => {
+          const isChecked = checkedIds.has(n.id)
+          return (
+            <label
+              key={n.id}
+              className={[
+                'flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 transition-colors hover:bg-white/4',
+                isChecked ? 'bg-green/4' : '',
+              ].join(' ')}
+            >
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={isChecked}
+                onChange={() => toggleChecked(n.id)}
+              />
+              <CheckboxBox checked={isChecked} />
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: axesGradient(n.axes) }} />
+              <span className="min-w-0">
+                <span className="block truncate font-mono text-label text-white/75">{n.title}</span>
+                <span className="block font-mono text-micro text-white/30">
+                  {bookAuthorDisplay(n, authorsMap)}{n.year ? `, ${n.year}` : ''}
+                </span>
               </span>
-            </span>
-          </label>
-        ))}
+            </label>
+          )
+        })}
       </div>
     </Modal>
   )

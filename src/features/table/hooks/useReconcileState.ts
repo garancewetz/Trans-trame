@@ -28,6 +28,7 @@ export function useReconcileState({
   authorsMap,
   onUpdateBook,
   onAddLink,
+  onAddLinks,
 }: {
   orphanBooks: Book[]
   booksWithoutAuthors: Book[]
@@ -37,6 +38,7 @@ export function useReconcileState({
   authorsMap: Map<AuthorId, Author>
   onUpdateBook?: (book: Book) => unknown
   onAddLink?: (link: { source: string; target: string; citation_text: string; edition: string; page: string; context: string }) => unknown
+  onAddLinks?: (links: Array<{ source: string; target: string; citation_text: string; edition: string; page: string; context: string }>) => unknown
 }) {
   const [phase, setPhase] = useState<ReconcilePhase>('idle')
   const [error, setError] = useState<string | null>(null)
@@ -119,9 +121,12 @@ export function useReconcileState({
       onUpdateBook?.({ ...book, authorIds: [...currentIds, m.authorId] })
     }
 
+    // Batch all accepted source matches into a single bulk insert.
+    // Prevents per-row mutate() races that lost rows on large reconciliations.
+    const linksToAdd: Array<{ source: string; target: string; citation_text: string; edition: string; page: string; context: string }> = []
     for (const m of result.bookToSource) {
       if (!acceptedSourceMatches.has(sourceKey(m))) continue
-      onAddLink?.({
+      linksToAdd.push({
         source: m.sourceBookId,
         target: m.orphanBookId,
         citation_text: '',
@@ -129,6 +134,10 @@ export function useReconcileState({
         page: '',
         context: '',
       })
+    }
+    if (linksToAdd.length > 0) {
+      if (onAddLinks) onAddLinks(linksToAdd)
+      else linksToAdd.forEach((l) => onAddLink?.(l))
     }
 
     setPhase('done')

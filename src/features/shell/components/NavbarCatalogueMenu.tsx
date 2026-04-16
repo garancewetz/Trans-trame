@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { LayoutGrid, BookOpen, Users, FlaskConical } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
-import { Tooltip } from '@/common/components/ui/Tooltip'
 import { Badge } from '@/common/components/ui/Badge'
 
 type NavbarCatalogueMenuProps = {
@@ -32,6 +31,11 @@ export function NavbarCatalogueMenu({
   const handleOpenAuthors = useCallback(
     () => { onOpenAuthorsPanel(); setOpenGroup(null) },
     [onOpenAuthorsPanel],
+  )
+
+  const handleOpenAnalysis = useCallback(
+    () => { onOpenAnalysisPanel(); setOpenGroup(null) },
+    [onOpenAnalysisPanel],
   )
 
   useEffect(() => {
@@ -98,21 +102,20 @@ export function NavbarCatalogueMenu({
               </span>
             </span>
           </Button>
+          <Button
+            variant="outline"
+            frosted
+            className="w-full justify-start"
+            onClick={handleOpenAnalysis}
+            type="button"
+          >
+            <span className="inline-flex items-center gap-2">
+              <FlaskConical size={14} />
+              Analyse
+            </span>
+          </Button>
         </div>
       )}
-
-      <Tooltip content="Analyse">
-        <Button
-          variant="outline"
-          frosted
-          onClick={onOpenAnalysisPanel}
-          type="button"
-          aria-label="Analyse"
-          className="h-[34px] w-[34px] justify-center px-0!"
-        >
-          <FlaskConical size={15} />
-        </Button>
-      </Tooltip>
     </div>
   )
 }

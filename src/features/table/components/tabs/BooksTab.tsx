@@ -111,6 +111,7 @@ export function BooksTab({
         authors={authors}
         authorsMap={s.authorsMap}
         linkCountByNode={s.linkCountByNode}
+        linkedBooksByNode={s.linkedBooksByNode}
         workSiblingsMap={s.workSiblingsMap}
         sortCol={s.sortCol}
         sortDir={s.sortDir}

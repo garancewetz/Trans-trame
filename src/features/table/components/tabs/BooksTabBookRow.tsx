@@ -1,18 +1,20 @@
 import { Link } from 'react-router-dom'
 import clsx from 'clsx'
-import { Check, ClipboardList, Eye, Link2 } from 'lucide-react'
+import { Check, Eye } from 'lucide-react'
 import { mapBookUrlSearch } from '@/common/utils/bookSlug'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
-import { Tooltip } from '@/common/components/ui/Tooltip'
+import { StatusFlag } from '@/common/components/StatusFlag'
+import { TodoNotePopover } from '../TodoNotePopover'
 import { Badge } from '@/common/components/ui/Badge'
 import { TextInput } from '@/common/components/ui/TextInput'
 import { INPUT, TD } from '../../tableConstants'
 import { AxisDots } from '../AxisDots'
 import { AuthorPicker } from '../AuthorPicker'
+import { BookLinksBadge } from './BookLinksBadge'
 import { WorkSiblingsBadge } from './WorkSiblingsBadge'
 import { splitBookAxes } from '@/common/utils/categories'
-import type { Author, AuthorId, Book, BookId } from '@/types/domain'
+import type { Author, AuthorId, Book, BookId, EntityStatus } from '@/types/domain'
 
 const GRAPH_BTN = 'inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-2 py-0.5 text-caption font-semibold text-white/45 transition-all hover:border-violet/40 hover:bg-violet/10 hover:text-violet/95'
 
@@ -31,6 +33,7 @@ type Props = {
   authors: Author[]
   authorsMap: Map<string, Author>
   linkCount: number
+  linkedBooks?: Book[]
   workSiblings?: Book[]
   toggleRow: (id: BookId) => void
   commitNodeEdit: () => void
@@ -57,6 +60,7 @@ export function BooksTabBookRow({
   authors,
   authorsMap,
   linkCount,
+  linkedBooks,
   workSiblings,
   toggleRow,
   commitNodeEdit,
@@ -116,9 +120,14 @@ export function BooksTabBookRow({
               {node.title}
             </span>
             {node.todo && (
-              <Tooltip content={node.todo}>
-                <ClipboardList size={11} className="ml-1.5 shrink-0 text-amber/50" />
-              </Tooltip>
+              <TodoNotePopover note={node.todo} iconClassName="ml-1.5 text-amber/50"
+                onClear={onUpdateBook && (() => onUpdateBook({ ...node, todo: null }))} />
+            )}
+            {onUpdateBook && (
+              <StatusFlag
+                status={node.status}
+                onChange={(next: EntityStatus) => onUpdateBook({ ...node, status: next })}
+              />
             )}
             {workSiblings && workSiblings.length > 0 && (
               <WorkSiblingsBadge siblings={workSiblings} authorsMap={authorsMap} />
@@ -215,14 +224,12 @@ export function BooksTabBookRow({
         })()}
       </td>
       <td className="px-3 py-2">
-        <Button
-          type="button"
+        <BookLinksBadge
+          linkCount={linkCount}
+          linkedBooks={linkedBooks}
+          authorsMap={authorsMap}
           onClick={() => { onOpenLinksForBook?.(node) }}
-          className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-1.5 py-0.5 font-mono text-[0.8rem] text-white/45 transition-all hover:border-cyan/35 hover:bg-cyan/[0.07] hover:text-cyan/80"
-        >
-          {linkCount}
-          <Link2 size={10} className="shrink-0" />
-        </Button>
+        />
       </td>
       <td className="px-3 py-2">
         <span className="font-mono text-[0.78rem] tabular-nums text-white/30">

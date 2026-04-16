@@ -4,10 +4,13 @@ import type { ReactNode } from 'react'
 type PanelVisibilityContextValue = {
   textsPanelOpen: boolean
   authorsPanelOpen: boolean
+  analysisPanelOpen: boolean
   setTextsPanelOpen: (v: boolean) => void
   setAuthorsPanelOpen: (v: boolean) => void
+  setAnalysisPanelOpen: (v: boolean) => void
   openTextsPanel: () => void
   openAuthorsPanel: () => void
+  openAnalysisPanel: () => void
 }
 
 const PanelVisibilityContext = createContext<PanelVisibilityContextValue | null>(null)
@@ -15,7 +18,11 @@ const PanelVisibilityContext = createContext<PanelVisibilityContextValue | null>
 export function PanelVisibilityProvider({ children }: { children: ReactNode }) {
   const [textsPanelOpen, setTextsPanelOpen] = useState(false)
   const [authorsPanelOpen, setAuthorsPanelOpen] = useState(false)
+  const [analysisPanelOpen, setAnalysisPanelOpen] = useState(false)
 
+  // Left-side panels are mutex with each other (Textes XOR Auteur·ices).
+  // Right-side AnalysisPanel mutex with SidePanel is enforced at callsite
+  // (it needs access to SelectionContext).
   const openTextsPanel = useCallback(() => {
     setAuthorsPanelOpen(false)
     setTextsPanelOpen(true)
@@ -26,12 +33,16 @@ export function PanelVisibilityProvider({ children }: { children: ReactNode }) {
     setAuthorsPanelOpen(true)
   }, [])
 
+  const openAnalysisPanel = useCallback(() => {
+    setAnalysisPanelOpen(true)
+  }, [])
+
   return (
     <PanelVisibilityContext.Provider
       value={{
-        textsPanelOpen, authorsPanelOpen,
-        setTextsPanelOpen, setAuthorsPanelOpen,
-        openTextsPanel, openAuthorsPanel,
+        textsPanelOpen, authorsPanelOpen, analysisPanelOpen,
+        setTextsPanelOpen, setAuthorsPanelOpen, setAnalysisPanelOpen,
+        openTextsPanel, openAuthorsPanel, openAnalysisPanel,
       }}
     >
       {children}

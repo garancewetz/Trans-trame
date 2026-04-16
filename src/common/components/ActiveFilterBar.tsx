@@ -9,6 +9,8 @@ type ActiveFilterBarProps = {
   selectedAuthor: string | null
   selectedAuthorName: string | null
   selectedBookTitle: string | null
+  visibleCount?: number
+  totalCount?: number
   onClearAxis: () => void
   onClearHighlight: () => void
   onClearAuthor: () => void
@@ -24,6 +26,8 @@ export function ActiveFilterBar({
   selectedAuthor,
   selectedAuthorName,
   selectedBookTitle,
+  visibleCount,
+  totalCount,
   onClearAxis,
   onClearHighlight,
   onClearAuthor,
@@ -32,11 +36,21 @@ export function ActiveFilterBar({
   if (!activeFilter && !activeHighlight && !selectedAuthor && !selectedBookTitle) return null
 
   const HighlightIcon = activeHighlight ? HIGHLIGHT_ICON[activeHighlight.kind] : null
+  const showCount = typeof visibleCount === 'number' && typeof totalCount === 'number'
 
   return (
     <div className="pointer-events-none fixed left-1/2 top-[60px] z-30 -translate-x-1/2">
       <div className="pointer-events-auto flex items-center gap-2 rounded-xl border border-white/10 bg-bg-overlay/85 px-2.5 py-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl">
-        <span className="text-[0.78rem] font-medium text-white/35">Filtres</span>
+        {showCount ? (
+          <span className="inline-flex items-center gap-1 text-[0.78rem] font-medium text-white/50 tabular-nums">
+            <span className="text-white/80">{visibleCount}</span>
+            <span className="text-white/25">/</span>
+            <span>{totalCount}</span>
+            <span className="ml-0.5 text-white/35">ouvrages</span>
+          </span>
+        ) : (
+          <span className="text-[0.78rem] font-medium text-white/35">Filtres</span>
+        )}
 
         {activeFilter && (
           <button

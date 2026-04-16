@@ -99,6 +99,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   const animFrameRef = useRef<number | null>(null)
   const wakeRef = useRef<(() => void) | null>(null)
   const selectedNodeRef = useRef(selectedNode)
+  const draggingRef = useRef(false)
 
   const { flashNodeIdsRef, flashAlphaRef } = useFlashAnimation({ flashNodeIds, fgRef })
 
@@ -377,6 +378,10 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         nodeCanvasObject={nodeCanvasObject}
         nodePointerAreaPaint={nodePointerAreaPaint}
         onNodeHover={(node) => {
+          // Pendant un drag, on verrouille le highlight sur le nœud draggé :
+          // le curseur peut déraper hors du nœud et déclencher onNodeHover(null),
+          // ce qui éteindrait les liens — pas le comportement voulu.
+          if (draggingRef.current) return
           // Suppress hover while navigating with keyboard — the cursor stays
           // in place and nodes drift under it, causing unwanted hover triggers
           const navigating = isNavigationActive(keysRef.current)
@@ -384,6 +389,18 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
           hoveredNodeRef.current = effective
           updateHoveredLinks(effective)
           graphInstanceRefresh(fgRef.current)
+        }}
+        onNodeDrag={(node) => {
+          if (!isBookOrAuthor(node)) return
+          // Évite le travail répété : `onNodeDrag` est appelé à chaque frame.
+          if (draggingRef.current && hoveredNodeRef.current?.id === node.id) return
+          draggingRef.current = true
+          hoveredNodeRef.current = node
+          updateHoveredLinks(node)
+          graphInstanceRefresh(fgRef.current)
+        }}
+        onNodeDragEnd={() => {
+          draggingRef.current = false
         }}
         onNodeClick={(node) => {
           if (isBookOrAuthor(node)) onNodeClick(node)

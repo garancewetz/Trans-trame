@@ -1,10 +1,14 @@
 import { useState } from 'react'
-import { ArrowLeft, Clock, Download, Zap } from 'lucide-react'
+import { ArrowLeft, Clock, Download, Flag, Zap } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/common/components/ui/Button'
 import { exportFullDatabase } from '@/features/graph/api/graphDataApi'
+import { formatSupabaseError } from '@/core/supabaseErrors'
+import { devWarn } from '@/common/utils/logger'
+import { countReviewItems } from './tabs/ReviewTab'
 import type { Author, Book, Link } from '@/types/domain'
 
-type TabId = 'books' | 'authors' | 'links' | 'history'
+type TabId = 'books' | 'authors' | 'links' | 'history' | 'review'
 
 type Props = {
   onClose: () => void
@@ -80,6 +84,33 @@ export function TableTopbar({
         Historique
       </Button>
 
+      {(() => {
+        const reviewCount = countReviewItems(nodes, authors)
+        return (
+          <Button
+            type="button"
+            variant="chip"
+            className="flex items-center gap-1.5"
+            selected={tab === 'review'}
+            onClick={() => { setTab('review'); setSearch(''); setLinkSearch(''); setAuthorSearch('') }}
+            title={reviewCount > 0 ? `${reviewCount} élément${reviewCount > 1 ? 's' : ''} à relire` : 'Aucun élément à relire'}
+          >
+            <Flag size={12} className={reviewCount > 0 ? 'text-amber/70' : undefined} />
+            À relire
+            {reviewCount > 0 && (
+              <span
+                className={[
+                  'ml-0.5 rounded-full px-1.5 py-px text-micro tabular-nums',
+                  tab === 'review' ? 'bg-amber/25 text-amber' : 'bg-amber/12 text-amber/70',
+                ].join(' ')}
+              >
+                {reviewCount}
+              </span>
+            )}
+          </Button>
+        )
+      })()}
+
       <div className="ml-auto flex items-center gap-2">
         <ExportButton />
         <Button
@@ -104,6 +135,10 @@ function ExportButton() {
     setBusy(true)
     try {
       await exportFullDatabase()
+      toast.success('Export JSON téléchargé')
+    } catch (err) {
+      devWarn('[export] Failed to export database', err)
+      toast.error(`Export échoué : ${formatSupabaseError(err, 'erreur inconnue')}`)
     } finally {
       setBusy(false)
     }

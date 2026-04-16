@@ -16,6 +16,11 @@ export function SmartImportModal(props: SmartImportModalProps) {
 
   if (!open) return null
 
+  const hasUnsavedWork =
+    !c.injected &&
+    ((c.phase === 'input' && (c.rawText.trim().length > 0 || c.imageFiles.length > 0)) ||
+      (c.phase === 'preview' && c.parsed.length > 0))
+
   return (
     <Modal
       open={open}
@@ -23,6 +28,8 @@ export function SmartImportModal(props: SmartImportModalProps) {
       titleIcon={<Zap size={14} className="text-cyan/70" />}
       onClose={c.handleClose}
       onBack={c.phase === 'preview' ? c.goBack : undefined}
+      step={{ current: c.phase === 'input' ? 1 : 2, total: 2 }}
+      dirtyConfirmMessage={hasUnsavedWork ? 'Abandonner les modifications en cours ?' : null}
       as="form"
       onSubmit={c.handleSubmit}
       containerClassName="transition-all duration-200"

@@ -80,6 +80,17 @@ export function useAuthorsTabState({
     return map
   }, [books])
 
+  const booksByAuthor = useMemo(() => {
+    const map = new Map<AuthorId, Book[]>()
+    books.forEach((b) => {
+      ;(b.authorIds || []).forEach((aid) => {
+        if (!map.has(aid)) map.set(aid, [])
+        map.get(aid)!.push(b)
+      })
+    })
+    return map
+  }, [books])
+
   const mergeAuthorsList = useMemo(() => {
     if (selectedIds.size !== 2) return []
     const ids = new Set(selectedIds)
@@ -211,6 +222,7 @@ export function useAuthorsTabState({
     legacyCount,
     legacyBooks,
     bookCountByAuthor,
+    booksByAuthor,
     mergeAuthorsList,
     filteredAuthors,
     allSelected,

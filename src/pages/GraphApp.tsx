@@ -1,5 +1,4 @@
-import { useCallback, useRef } from 'react'
-import type { AnalysisPanelImperativeHandle } from '@/features/analysis-panel/components/AnalysisPanel'
+import { useCallback, useEffect, useRef } from 'react'
 import { AnalysisPanel } from '@/features/analysis-panel/components/AnalysisPanel'
 import { Graph, type GraphImperativeHandle } from '@/features/graph/components/Graph'
 import { Legend } from '@/features/graph/components/Legend'
@@ -51,9 +50,24 @@ function GraphAppContent() {
   const panels = usePanelVisibility()
 
   const graphRef = useRef<GraphImperativeHandle | null>(null)
-  const analysisPanelRef = useRef<AnalysisPanelImperativeHandle | null>(null)
   const timeline = useAppTimelineAndLayout(graphData)
   useMapUrlSync()
+
+  // Right-side mutex: opening AnalysisPanel closes the selection SidePanel,
+  // and selecting a node/link closes the AnalysisPanel.
+  useEffect(() => {
+    if (panels.analysisPanelOpen && (selection.selectedNode || selection.selectedLink)) {
+      selection.closePanel()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panels.analysisPanelOpen])
+
+  useEffect(() => {
+    if ((selection.selectedNode || selection.selectedLink) && panels.analysisPanelOpen) {
+      panels.setAnalysisPanelOpen(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selection.selectedNode, selection.selectedLink])
 
   // Compute display label for active highlight
   const highlightLabel = (() => {
@@ -124,7 +138,6 @@ function GraphAppContent() {
 
       <KeyboardHints />
       <Navbar
-        analysisPanelRef={analysisPanelRef}
         viewMode={timeline.viewMode}
         onViewChange={timeline.handleViewChange}
       />
@@ -136,6 +149,8 @@ function GraphAppContent() {
         selectedAuthor={filter.selectedAuthor}
         selectedAuthorName={filter.selectedAuthor ? authorName(authorsMap.get(filter.selectedAuthor) ?? {}) || null : null}
         selectedBookTitle={selection.selectedNode?.title ?? null}
+        visibleCount={timeline.filteredGraphData.nodes.length}
+        totalCount={graphData.nodes.length}
         onClearAxis={filter.clearActiveFilter}
         onClearHighlight={filter.clearHighlight}
         onClearAuthor={() => filter.setSelectedAuthor(null)}
@@ -161,7 +176,6 @@ function GraphAppContent() {
       />
 
       <AnalysisPanel
-        ref={analysisPanelRef}
         graphData={timeline.filteredGraphData}
         activeFilter={filter.activeFilter}
         activeHighlight={filter.activeHighlight}

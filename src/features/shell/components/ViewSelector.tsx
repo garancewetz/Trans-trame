@@ -41,7 +41,7 @@ export function ViewSelector({ currentView, onViewChange, inline = false, discre
                     : 'px-3 py-1.5 text-caption font-semibold uppercase tracking-[1px]',
                   active
                     ? inline && discreet
-                      ? 'bg-white/12 text-white/85'
+                      ? 'bg-violet/30 text-white ring-1 ring-violet/50'
                       : 'bg-[rgba(109,95,255,0.6)] text-white'
                     : 'text-white/50 hover:text-white/80 hover:bg-white/5',
                 ].join(' ')}

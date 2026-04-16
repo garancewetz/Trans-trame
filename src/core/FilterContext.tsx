@@ -45,19 +45,26 @@ export function FilterProvider({ children }: { children: ReactNode }) {
   const [activeFilter, setActiveFilterRaw] = useState<string | null>(null)
   const [activeHighlight, setActiveHighlightRaw] = useState<Highlight | null>(null)
   const [hoveredFilter, setHoveredFilter] = useState<string | null>(null)
-  const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null)
+  const [selectedAuthor, setSelectedAuthorRaw] = useState<string | null>(null)
 
-  // Mutual exclusion: setting axis filter clears highlight and vice-versa
+  // Mutual exclusion: a single filter dimension at a time.
+  // Setting any of axis / highlight / author clears the other two.
   const setActiveFilter = useCallback((v: string | null) => {
     setActiveFilterRaw(v)
-    if (v) setActiveHighlightRaw(null)
+    if (v) {
+      setActiveHighlightRaw(null)
+      setSelectedAuthorRaw(null)
+    }
   }, [])
 
   const toggleFilter = useCallback(
     (axis: string) => {
       setActiveFilterRaw((prev) => {
         const next = prev === axis ? null : axis
-        if (next) setActiveHighlightRaw(null)
+        if (next) {
+          setActiveHighlightRaw(null)
+          setSelectedAuthorRaw(null)
+        }
         return next
       })
     },
@@ -69,7 +76,10 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     (h: Highlight) => {
       setActiveHighlightRaw((prev) => {
         const next = prev && highlightEquals(prev, h) ? null : h
-        if (next) setActiveFilterRaw(null)
+        if (next) {
+          setActiveFilterRaw(null)
+          setSelectedAuthorRaw(null)
+        }
         return next
       })
     },
@@ -77,8 +87,25 @@ export function FilterProvider({ children }: { children: ReactNode }) {
   )
   const clearHighlight = useCallback(() => setActiveHighlightRaw(null), [])
 
+  const setSelectedAuthor = useCallback((v: string | null) => {
+    setSelectedAuthorRaw(v)
+    if (v) {
+      setActiveFilterRaw(null)
+      setActiveHighlightRaw(null)
+    }
+  }, [])
+
   const toggleSelectedAuthor = useCallback(
-    (authorId: string) => setSelectedAuthor((prev) => (prev === authorId ? null : authorId)),
+    (authorId: string) => {
+      setSelectedAuthorRaw((prev) => {
+        const next = prev === authorId ? null : authorId
+        if (next) {
+          setActiveFilterRaw(null)
+          setActiveHighlightRaw(null)
+        }
+        return next
+      })
+    },
     [],
   )
 
@@ -90,7 +117,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     setActiveFilter, setHoveredFilter, setSelectedAuthor,
     toggleFilter, clearActiveFilter, toggleSelectedAuthor,
     toggleHighlight, clearHighlight,
-  }), [setActiveFilter, toggleFilter, clearActiveFilter, toggleSelectedAuthor, toggleHighlight, clearHighlight])
+  }), [setActiveFilter, setSelectedAuthor, toggleFilter, clearActiveFilter, toggleSelectedAuthor, toggleHighlight, clearHighlight])
 
   return (
     <FilterActionsContext.Provider value={actions}>

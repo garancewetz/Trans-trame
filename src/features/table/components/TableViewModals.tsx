@@ -39,7 +39,7 @@ export function TableViewModals({
         orphanConfirm={c.orphanConfirm}
         setOrphanModal={c.setOrphanModal}
         setOrphanConfirm={c.setOrphanConfirm}
-        onAddLink={mutations.handleAddLink}
+        onAddLinks={mutations.handleAddLinks}
       />
 
       <TableDedupeModal
@@ -81,6 +81,7 @@ export function TableViewModals({
         authorsMap={authorsMap}
         onUpdateBook={mutations.handleUpdateBook}
         onAddLink={mutations.handleAddLink}
+        onAddLinks={mutations.handleAddLinks}
         onClose={() => c.setAiOrphanReconcileModal(false)}
       />
 
@@ -93,6 +94,7 @@ export function TableViewModals({
         onAddBook={mutations.handleAddBook}
         onAddAuthor={mutations.handleAddAuthor}
         onAddLink={mutations.handleAddLink}
+        onAddLinks={mutations.handleAddLinks}
         onUpdateBook={mutations.handleUpdateBook}
         onImportComplete={onImportComplete}
         initialMasterNode={c.smartImportPrefilledBook}

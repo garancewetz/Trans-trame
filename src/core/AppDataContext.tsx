@@ -30,6 +30,7 @@ type AppMutationsValue = {
   handleUpdateAuthor: GraphData['handleUpdateAuthor']
   handleDeleteAuthor: GraphData['handleDeleteAuthor']
   handleAddLink: GraphData['handleAddLink']
+  handleAddLinks: GraphData['handleAddLinks']
   handleDeleteLink: GraphData['handleDeleteLink']
   handleUpdateLink: GraphData['handleUpdateLink']
   handleMergeBooks: GraphData['handleMergeBooks']
@@ -94,6 +95,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       handleUpdateAuthor: data.handleUpdateAuthor,
       handleDeleteAuthor: data.handleDeleteAuthor,
       handleAddLink: data.handleAddLink,
+      handleAddLinks: data.handleAddLinks,
       handleDeleteLink: data.handleDeleteLink,
       handleUpdateLink: data.handleUpdateLink,
       handleMergeBooks: data.handleMergeBooks,
@@ -108,6 +110,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       data.handleUpdateAuthor,
       data.handleDeleteAuthor,
       data.handleAddLink,
+      data.handleAddLinks,
       data.handleDeleteLink,
       data.handleUpdateLink,
       data.handleMergeBooks,

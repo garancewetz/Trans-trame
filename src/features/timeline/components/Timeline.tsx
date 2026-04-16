@@ -92,7 +92,9 @@ export function Timeline({ graphData, timelineRange, onRangeChange }: TimelinePr
             background: 'rgba(255, 255, 255, 0.06)',
             color: 'rgba(255, 255, 255, 0.5)',
           }}
-          title={isPlaying ? 'Pause' : 'Play'}
+          title={isPlaying ? 'Pause la progression temporelle' : 'Anime la progression temporelle'}
+          aria-label={isPlaying ? 'Pause la progression temporelle' : 'Anime la progression temporelle'}
+          aria-pressed={isPlaying}
         >
           {isPlaying ? (
             <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">

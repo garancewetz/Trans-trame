@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { X, PanelRightClose, ChevronRight, ChevronLeft, ArrowLeft } from 'lucide-react'
+import { X, PanelRightClose, PanelRightOpen, ChevronLeft, ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/common/components/ui/Button'
 import { PANEL_WIDTH } from '@/common/constants/panels'
@@ -53,33 +53,50 @@ export function SidePanel() {
 
   return (
     <aside className={asideClass}>
-      {/* Bande collapse — colonne fixe a gauche, fond distinct */}
-      {panelOpen && (
-        <div
-          className="absolute left-0 top-0 z-30 flex h-full w-7 cursor-pointer items-center justify-center bg-white/4 text-white/40 transition-colors hover:bg-white/8 hover:text-white/80"
-          title={panelCollapsed ? 'Agrandir le panneau' : 'Reduire le panneau'}
-          onClick={() => setPanelCollapsed((c) => !c)}
+      {/* Collapsed state: explicit expand handle sticking out from the left edge */}
+      {panelOpen && panelCollapsed && (
+        <button
+          type="button"
+          className="absolute left-0 top-0 z-30 flex h-full w-10 cursor-pointer items-center justify-center border-r border-white/15 bg-white/8 text-white/70 transition-colors hover:bg-white/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan/40"
+          title="Agrandir le panneau"
+          aria-label="Agrandir le panneau"
+          onClick={() => setPanelCollapsed(false)}
         >
-          {panelCollapsed ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-        </div>
+          <ChevronLeft size={18} />
+        </button>
       )}
 
       {panelOpen && panelCollapsed ? null : isDualPanelMode ? (
-        <div className="grid h-full w-full min-w-0 grid-cols-2 overflow-hidden pl-7">
+        <div className="grid h-full w-full min-w-0 grid-cols-2 overflow-hidden">
           <div className="relative min-w-0 overflow-y-auto border-r border-white/10">
-            <Button
-              type="button"
-              className="absolute right-3 top-3 z-20 cursor-pointer bg-transparent text-white/40 transition-colors hover:text-white"
-              onClick={closePanel}
-            >
-              <X size={20} />
-            </Button>
+            <div className="absolute right-3 top-3 z-20 flex items-center gap-1">
+              <Button
+                type="button"
+                title="Réduire le panneau"
+                aria-label="Réduire le panneau"
+                className="cursor-pointer bg-transparent text-white/45 transition-colors hover:text-white"
+                onClick={() => setPanelCollapsed(true)}
+              >
+                <PanelRightOpen size={18} />
+              </Button>
+              <Button
+                type="button"
+                title="Fermer"
+                aria-label="Fermer"
+                className="cursor-pointer bg-transparent text-white/45 transition-colors hover:text-white"
+                onClick={closePanel}
+              >
+                <X size={20} />
+              </Button>
+            </div>
             {panelTab === 'details' && selectedNode && <NodeDetails />}
           </div>
           <div className="relative min-w-0 overflow-y-auto">
             <Button
               type="button"
-              className="absolute right-3 top-3 z-20 cursor-pointer bg-transparent text-white/40 transition-colors hover:text-white"
+              title="Fermer le détail du lien"
+              aria-label="Fermer le détail du lien"
+              className="absolute right-3 top-3 z-20 cursor-pointer bg-transparent text-white/45 transition-colors hover:text-white"
               onClick={handleCollapseDualPanel}
             >
               <PanelRightClose size={20} />
@@ -91,13 +108,14 @@ export function SidePanel() {
           </div>
         </div>
       ) : (
-        <div className="relative h-full w-full overflow-y-auto pl-7">
+        <div className="relative h-full w-full overflow-y-auto">
           <div className="absolute right-3 top-3 z-20 flex items-center gap-1">
             {isAdminTab && (
               <Button
                 type="button"
                 title="Retour sans enregistrer"
-                className="cursor-pointer bg-transparent text-white/40 transition-colors hover:text-white"
+                aria-label="Retour sans enregistrer"
+                className="cursor-pointer bg-transparent text-white/45 transition-colors hover:text-white"
                 onClick={() => setPanelTab('details')}
               >
                 <ArrowLeft size={18} />
@@ -105,7 +123,18 @@ export function SidePanel() {
             )}
             <Button
               type="button"
-              className="cursor-pointer bg-transparent text-white/40 transition-colors hover:text-white"
+              title="Réduire le panneau"
+              aria-label="Réduire le panneau"
+              className="cursor-pointer bg-transparent text-white/45 transition-colors hover:text-white"
+              onClick={() => setPanelCollapsed(true)}
+            >
+              <PanelRightOpen size={18} />
+            </Button>
+            <Button
+              type="button"
+              title="Fermer"
+              aria-label="Fermer"
+              className="cursor-pointer bg-transparent text-white/45 transition-colors hover:text-white"
               onClick={closePanel}
             >
               <X size={20} />

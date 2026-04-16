@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import { devWarn } from '@/common/utils/logger'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -39,20 +40,29 @@ const AuthActionsContext = createContext<AuthActions | null>(null)
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function checkWhitelist(email: string): Promise<boolean> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('allowed_emails')
     .select('email')
     .eq('email', email)
     .maybeSingle()
+  // Fail closed: an unknown whitelist state must not grant write access.
+  if (error) {
+    devWarn('[auth] checkWhitelist failed', error)
+    return false
+  }
   return data !== null
 }
 
 async function loadProfile(userId: string): Promise<Profile | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .select('id, first_name, last_name')
     .eq('id', userId)
     .maybeSingle()
+  if (error) {
+    devWarn('[auth] loadProfile failed', error)
+    return null
+  }
   if (!data) return null
   return { id: data.id, firstName: data.first_name, lastName: data.last_name }
 }
@@ -88,7 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
     }
 
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
+    supabase.auth.getSession().then(({ data: { session: s }, error }) => {
+      if (error) devWarn('[auth] getSession failed', error)
       setSession(s)
       resolve(s)
     })
@@ -127,7 +138,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut()
+    if (error) devWarn('[auth] signOut failed', error)
   }, [])
 
   const closeLoginModal = useCallback(() => setLoginModalOpen(false), [])

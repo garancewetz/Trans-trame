@@ -17,6 +17,7 @@ type Args = {
   onAddBook?: (book: Partial<Book> & Pick<Book, 'id' | 'title'>) => void | PromiseLike<unknown>
   onUpdateBook?: (book: Book) => void
   onAddLink?: (link: Partial<Link> & Pick<Link, 'source' | 'target'>) => void
+  onAddLinks?: (links: Array<Partial<Link> & Pick<Link, 'source' | 'target'>>) => void
   sourceId: string
   targetIds: string[]
   setTargetIds: (ids: string[]) => void
@@ -31,6 +32,7 @@ export function useAddBookFormActions({
   onAddBook,
   onUpdateBook,
   onAddLink,
+  onAddLinks,
   sourceId,
   targetIds,
   setTargetIds,
@@ -85,16 +87,17 @@ export function useAddBookFormActions({
     if (!sourceId || targetIds.length === 0) return
     const validTargets = targetIds.filter((tid) => tid !== sourceId)
     if (validTargets.length === 0) return
-    validTargets.forEach((tid) => {
-      onAddLink?.({
-        source: sourceId,
-        target: tid,
-        citation_text: (data.citationText || '').trim(),
-        edition: (data.edition || '').trim(),
-        page: (data.page || '').trim(),
-        context: (data.context || '').trim(),
-      })
-    })
+    const linksToAdd = validTargets.map((tid) => ({
+      source: sourceId,
+      target: tid,
+      citation_text: (data.citationText || '').trim(),
+      edition: (data.edition || '').trim(),
+      page: (data.page || '').trim(),
+      context: (data.context || '').trim(),
+    }))
+    // Bulk-insert when available to avoid per-row race (see useLinkMutations).
+    if (onAddLinks) onAddLinks(linksToAdd)
+    else linksToAdd.forEach((l) => onAddLink?.(l))
     setTargetIds([])
     setTargetSearch('')
     linkForm.reset({ citationText: '', edition: '', page: '', context: '' })

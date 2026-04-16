@@ -28,6 +28,7 @@ DATA YOU RECEIVE:
    - "missingAuthor": true if no author is assigned (THIS IS THE PRIMARY PROBLEM TO SOLVE)
    - "hasLinks": whether the book has citation links in the graph
    - "currentAuthors": existing authors if any (empty string if missing)
+   - "importedFor": the EXPLICIT parent bibliography — the book whose references were being imported when this orphan was created. When present, this is the DEFINITIVE origin, not an inference. Format: { id, title, authors, year } or null.
    - "batchSiblings": other books imported at the same time, with THEIR authors and links
 2. "orphanedAuthors" — authors not linked to any book, with their import timestamp
 
@@ -39,7 +40,9 @@ For each book where "missingAuthor" is true, determine which orphaned author mos
 - An orphaned author CAN be matched to MULTIPLE books (co-authorship or multiple works)
 
 SECONDARY TASK — CITATION LINKS (PRIORITY 2):
-For books where "hasLinks" is false, suggest which existing book's bibliography it came from (based on what batch siblings link to).
+For books where "hasLinks" is false, suggest which existing book's bibliography it came from.
+- If "importedFor" is set, that is the answer. Emit a "bookToSource" match with sourceBookId = importedFor.id and confidence "high" — the origin is recorded, not inferred.
+- Otherwise, fall back to what batch siblings link to.
 
 Response format — strict JSON, no markdown:
 {
@@ -59,13 +62,16 @@ For books or authors you CANNOT match with confidence, provide a research hint i
 
 CRITICAL: The hints are for a non-technical user (a researcher, not a developer). NEVER mention batchKey, timestamps, IDs, or any technical term. Instead, refer to books and authors BY NAME. Say "importé·e en même temps que [Titre du livre] de [Auteur]" instead of "importé avec le batchKey 2026-04-05T20:25". Use the titles and author names from batchSiblings to make the hint human-readable.
 
+MANDATORY: When "importedFor" is set on an orphanedBook, the hint MUST start by stating that this book is part of the bibliography of "[importedFor.title]" de [importedFor.authors]. This is the single most useful piece of information for the researcher — never omit it. Only then add complementary clues (batch siblings, title recognition, etc.).
+
 Good hint examples:
-- "Importé·e en même temps que « Sister Outsider » d'Audre Lorde et « Ain't I a Woman » de bell hooks. Cherche dans la bibliographie de l'ouvrage source."
+- "Fait partie de la bibliographie de « Sister Outsider » d'Audre Lorde. Importé·e en même temps que « Ain't I a Woman » de bell hooks. Cherche dans les notes et l'index de « Sister Outsider »."
 - "Spécialiste de [thématique]. Peut-être auteur·ice de [titre d'un ouvrage sans auteur du même import]."
 - "Le titre ressemble à un ouvrage de [auteur·ice connu·e], mais iel n'est pas dans la liste des auteur·ices orphelin·es. Vérifie si iel existe déjà dans la base."
 Bad hint examples (NEVER DO THIS):
 - "Cherchez des ouvrages importés avec le batchKey 2026-04-05T20:25" ← FORBIDDEN, too technical
 - "bookId: abc-123" ← FORBIDDEN
+- Omitting the importedFor bibliography when it is set ← FORBIDDEN
 
 The "bookId" field in hints refers to an orphanedBook id OR an orphanedAuthor id (this is for the system, NOT shown to the user).
 ALWAYS provide hints for items you cannot match. Do NOT leave items with no match AND no hint.
@@ -89,6 +95,12 @@ interface OrphanedBookInput {
   hasLinks: boolean
   year?: number | null
   batchKey: string
+  importedFor: {
+    id: string
+    title: string
+    authors: string
+    year?: number | null
+  } | null
   batchSiblings: {
     title: string
     authors: string

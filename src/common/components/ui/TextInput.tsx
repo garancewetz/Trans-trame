@@ -16,7 +16,7 @@ const FOCUS_VISIBLE =
 
 const VARIANT: Record<Variant, string> = {
   default:
-    `w-full rounded-[10px] border border-white/10 bg-white/5 px-4 py-3 text-[0.95rem] text-white outline-none transition-all placeholder:text-white/35 focus:border-cyan/40 focus:bg-white/10 focus:shadow-[0_0_0_3px_rgba(140,220,255,0.06)] ${FOCUS_VISIBLE}`,
+    `w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[0.95rem] text-white outline-none transition-all placeholder:text-white/35 focus:border-cyan/40 focus:bg-white/10 focus:shadow-[0_0_0_3px_rgba(140,220,255,0.06)] ${FOCUS_VISIBLE}`,
   table:
     `bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-[0.88rem] font-mono text-white outline-none placeholder:text-white/30 focus:border-cyan/35 focus:bg-white/8 transition-all w-full ${FOCUS_VISIBLE}`,
   picker:

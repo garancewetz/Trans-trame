@@ -13,6 +13,7 @@ export function useTableViewController({
   links,
   authors,
   onAddLink,
+  onAddLinks,
   onUpdateBook,
   onDeleteBook,
   onUpdateLink,
@@ -113,11 +114,14 @@ export function useTableViewController({
 
   const handleTisser = () => {
     if (!linkSourceNode || newLinksCount === 0) return
+    // Batch insert (chunked + awaited in useLinkMutations). Firing N parallel
+    // single-row mutations lost rows on large selections — see useLinkMutations.
+    const linksToAdd: Array<{ source: BookId; target: BookId; citation_text: string; edition: string; page: string; context: string }> = []
     linkCheckedIds.forEach((id) => {
       if (existingTargetIds.has(id) || id === linkSourceNode.id) return
       const src = linkDirection === 'source' ? linkSourceNode.id : id
       const tgt = linkDirection === 'source' ? id : linkSourceNode.id
-      onAddLink?.({
+      linksToAdd.push({
         source: src,
         target: tgt,
         citation_text: '',
@@ -126,6 +130,9 @@ export function useTableViewController({
         context: '',
       })
     })
+    if (linksToAdd.length === 0) return
+    if (onAddLinks) onAddLinks(linksToAdd)
+    else linksToAdd.forEach((l) => onAddLink?.(l))
     setLinkCheckedIds(new Set<BookId>())
   }
 

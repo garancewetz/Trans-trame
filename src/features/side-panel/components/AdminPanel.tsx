@@ -17,6 +17,7 @@ export function AdminPanel() {
   const {
     handleAddBook,
     handleAddLink,
+    handleAddLinks,
     handleAddAuthor,
     handleUpdateBook,
     handleDeleteBook,
@@ -32,6 +33,7 @@ export function AdminPanel() {
         onAddAuthor={handleAddAuthor}
         onAddBook={handleAddBook}
         onAddLink={handleAddLink}
+        onAddLinks={handleAddLinks}
         onUpdateBook={handleUpdateBook}
         onDeleteBook={handleDeleteBook}
         onMergeBooks={handleMergeBooks}
