@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Author, Book } from '@/types/domain'
 import { devWarn } from '@/common/utils/logger'
+import { ensureOk } from '@/core/supabaseErrors'
 import {
   deleteAuthorRowById,
   insertAuthorRow,
@@ -34,8 +35,7 @@ export function useAuthorMutations({
   const addAuthorMutation = useMutation({
     mutationFn: async (author: Author) => {
       const sanitized = sanitizeAuthor({ ...author, type: 'author' as const }, axesColorsRef.current!)
-      const { error } = await insertAuthorRow(authorToDbRow(sanitized))
-      if (error) throw new Error(error.message)
+      ensureOk(await insertAuthorRow(authorToDbRow(sanitized)), 'ajout auteur·ice')
     },
     onMutate: (author) => {
       const sanitized = sanitizeAuthor({ ...author, type: 'author' as const }, axesColorsRef.current!)
@@ -48,8 +48,7 @@ export function useAuthorMutations({
     mutationFn: async (updatedAuthor: Author) => {
       const sanitized = sanitizeAuthor({ ...updatedAuthor, type: 'author' as const }, axesColorsRef.current!)
       const { id, ...fields } = authorToDbRow(sanitized)
-      const { error } = await updateAuthorRowById(id, fields)
-      if (error) throw new Error(error.message)
+      ensureOk(await updateAuthorRowById(id, fields), 'mise à jour auteur·ice')
     },
     onMutate: (updatedAuthor) => {
       const sanitized = sanitizeAuthor({ ...updatedAuthor, type: 'author' as const }, axesColorsRef.current!)
@@ -60,8 +59,7 @@ export function useAuthorMutations({
 
   const deleteAuthorMutation = useMutation({
     mutationFn: async (authorId: string) => {
-      const { error } = await deleteAuthorRowById(authorId)
-      if (error) throw new Error(error.message)
+      ensureOk(await deleteAuthorRowById(authorId), 'suppression auteur·ice')
     },
     onMutate: (authorId) => {
       setAuthors((prev) => prev.filter((a) => a.id !== authorId))

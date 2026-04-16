@@ -161,7 +161,9 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   // Links and neighbor nodes connected to hovered node (refs for perf — no re-render)
   const hoveredLinksRef = useRef(new Set<string>())
   const hoveredNeighborIdsRef = useRef(new Set<string>())
+  const hoverGenRef = useRef(0)
   const updateHoveredLinks = useCallback((node) => {
+    hoverGenRef.current++
     hoveredLinksRef.current.clear()
     hoveredNeighborIdsRef.current.clear()
     if (!node) return
@@ -335,6 +337,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     linkWeights,
     hoveredNodeRef,
     hoveredLinksRef,
+    hoverGenRef,
   })
 
   // Auto-recadrage supprimé : seul `handleInit` déclenche un fit initial à

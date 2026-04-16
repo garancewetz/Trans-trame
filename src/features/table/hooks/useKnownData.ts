@@ -16,7 +16,7 @@ export function useKnownAuthors() {
     queryKey: ['known-authors'],
     queryFn: async () => {
       const { data, error } = await fetchAllPaginated<{ first_name: string | null; last_name: string | null }>(
-        (from, to) => supabase.from('authors').select('first_name, last_name').range(from, to),
+        (from, to) => supabase.from('authors').select('first_name, last_name').is('deleted_at', null).range(from, to),
         'knownAuthors',
       )
 
@@ -48,7 +48,7 @@ export function useKnownEditions() {
     queryKey: ['known-editions'],
     queryFn: async () => {
       const { data, error } = await fetchAllPaginated<{ edition: string | null }>(
-        (from, to) => supabase.from('links').select('edition').range(from, to),
+        (from, to) => supabase.from('links').select('edition').is('deleted_at', null).range(from, to),
         'knownEditions',
       )
 

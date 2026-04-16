@@ -31,12 +31,14 @@ export type LinkLike = {
   target: unknown
   type?: string
   __controlPoints?: number[]
+  /** Pré-calculé par useGraphDerivedLinkState : linkKeyOf(srcId, tgtId). */
+  __key?: string | null
 }
 
 type LinkKind = 'citation' | 'authorBook'
 type LinkMode = 'idle' | 'browsing' | 'selected'
 
-type LinkVisualState = {
+export type LinkVisualState = {
   mode: LinkMode
   kind: LinkKind
   isAnchored: boolean
@@ -147,9 +149,14 @@ const SCRATCH_LINK_STATE: LinkVisualState = {
  * immédiatement, ou copier explicitement si on en a besoin plus tard.
  */
 export function computeLinkVisualState(link: LinkLike, ctx: LinkVisualContext): LinkVisualState {
-  const srcId = normalizeEndpointId(link.source)
-  const tgtId = normalizeEndpointId(link.target)
-  const key = srcId && tgtId ? linkKeyOf(srcId, tgtId) : null
+  // __key pré-calculé dans useGraphDerivedLinkState — élimine normalizeEndpointId
+  // du hot path (420k appels/s économisés). Fallback pour les liens non pré-traités.
+  let key = link.__key
+  if (key === undefined) {
+    const srcId = normalizeEndpointId(link.source)
+    const tgtId = normalizeEndpointId(link.target)
+    key = srcId && tgtId ? linkKeyOf(srcId, tgtId) : null
+  }
 
   SCRATCH_LINK_STATE.mode = ctx.hasSelection ? 'selected' : ctx.hasHover ? 'browsing' : 'idle'
   SCRATCH_LINK_STATE.kind = link.type === 'author-book' ? 'authorBook' : 'citation'
@@ -241,14 +248,26 @@ export function getParticleColor(s: LinkVisualState): string {
   return linkCitesRgba(ALPHA.particleIdle)
 }
 
-/** Stops du dégradé directionnel (cyan source → jaune cible). */
+/** Stops du dégradé directionnel (cyan source → jaune cible).
+ *
+ * Pré-calculés en module-scope : évite d'allouer 5 tableaux ([outer, [stop,color]×4])
+ * par lien accentué par frame. Seules deux variantes existent (strong / normal).
+ */
+const GRADIENT_STOPS_NORMAL: Array<[number, string]> = [
+  [0, linkCitesRgba(0.9)],
+  [0.3, linkCitesRgba(0.7)],
+  [0.6, linkCitedByRgba(0.6)],
+  [1, linkCitedByRgba(0.8)],
+]
+const GRADIENT_STOPS_STRONG: Array<[number, string]> = [
+  [0, linkCitesRgba(1.0)],
+  [0.3, linkCitesRgba(0.7)],
+  [0.6, linkCitedByRgba(0.6)],
+  [1, linkCitedByRgba(0.95)],
+]
+
 export function getDirectionalGradientStops(s: LinkVisualState): Array<[number, string]> {
-  return [
-    [0, linkCitesRgba(s.isStrong ? 1.0 : 0.9)],
-    [0.3, linkCitesRgba(0.7)],
-    [0.6, linkCitedByRgba(0.6)],
-    [1, linkCitedByRgba(s.isStrong ? 0.95 : 0.8)],
-  ]
+  return s.isStrong ? GRADIENT_STOPS_STRONG : GRADIENT_STOPS_NORMAL
 }
 
 export function getDirectionalGradientLineWidth(s: LinkVisualState): number {

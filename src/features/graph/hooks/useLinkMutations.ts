@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import type { Link } from '@/types/domain'
 import type { TablesUpdate } from '@/types/supabase'
 import { devWarn } from '@/common/utils/logger'
+import { ensureOk } from '@/core/supabaseErrors'
 import {
   deleteLinkRowById,
   insertLinkRow,
@@ -37,7 +38,7 @@ export function useLinkMutations({
 
   const addLinkMutation = useMutation({
     mutationFn: async (newLink: NewLink) => {
-      const { error } = await insertLinkRow({
+      ensureOk(await insertLinkRow({
         id: newLink.id,
         source_id: newLink.source,
         target_id: newLink.target,
@@ -45,8 +46,7 @@ export function useLinkMutations({
         edition: newLink.edition,
         page: newLink.page,
         context: newLink.context,
-      })
-      if (error) throw new Error(error.message)
+      }), 'ajout lien')
     },
     onMutate: (newLink) => {
       setLinks((prev) => [...prev, newLink])
@@ -137,8 +137,7 @@ export function useLinkMutations({
 
   const deleteLinkMutation = useMutation({
     mutationFn: async (linkId: string) => {
-      const { error } = await deleteLinkRowById(linkId)
-      if (error) throw new Error(error.message)
+      ensureOk(await deleteLinkRowById(linkId), 'suppression lien')
     },
     onMutate: (linkId) => {
       setLinks((prev) => prev.filter((l) => l.id !== linkId))
@@ -148,8 +147,7 @@ export function useLinkMutations({
 
   const updateLinkMutation = useMutation({
     mutationFn: async ({ linkId, updatedFields }: { linkId: string; updatedFields: TablesUpdate<'links'> }) => {
-      const { error } = await updateLinkRowById(linkId, updatedFields)
-      if (error) throw new Error(error.message)
+      ensureOk(await updateLinkRowById(linkId, updatedFields), 'mise à jour lien')
     },
     onMutate: ({ linkId, updatedFields }) => {
       setLinks((prev) => prev.map((l) => (l.id === linkId ? { ...l, ...updatedFields } : l)))

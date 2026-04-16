@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Book, Link } from '@/types/domain'
 import { devWarn } from '@/common/utils/logger'
+import { ensureOk } from '@/core/supabaseErrors'
 import {
   deleteBookRowById,
   insertBookRow,
@@ -39,14 +40,10 @@ export function useBookMutations({
       const sanitized = sanitizeBook({ ...book, type: 'book' as const }, axesColorsRef.current!)
       const row = bookToDbRow(sanitized)
       if (sanitized.importSourceId) (row as Record<string, unknown>).import_source_id = sanitized.importSourceId
-      const { error } = await insertBookRow(row)
-      if (error) throw new Error(error.message)
+      ensureOk(await insertBookRow(row), 'ajout livre')
       const authorIds = sanitized.authorIds ?? []
       if (authorIds.length > 0) {
-        const result = await insertBookAuthors(sanitized.id, authorIds)
-        if (result && 'error' in result && result.error) {
-          throw new Error(result.error.message || 'Erreur jointure auteur·ices')
-        }
+        ensureOk(await insertBookAuthors(sanitized.id, authorIds), 'jointure auteur·ices')
       }
     },
     onMutate: (book) => {
@@ -60,8 +57,7 @@ export function useBookMutations({
     mutationFn: async (updatedNode: Book) => {
       const sanitized = sanitizeBook({ ...updatedNode, type: 'book' as const }, axesColorsRef.current!)
       const { id, ...fields } = bookToDbRow(sanitized)
-      const { error } = await updateBookRowById(id, fields)
-      if (error) throw new Error(error.message)
+      ensureOk(await updateBookRowById(id, fields), 'mise à jour livre')
       // Only touch the join table if authorIds was explicitly provided.
       // Without this guard, an update missing the field would wipe the
       // book↔author associations and re-create the legacy state.
@@ -75,11 +71,7 @@ export function useBookMutations({
     onMutate: (updatedNode) => {
       const sanitized = sanitizeBook({ ...updatedNode, type: 'book' as const }, axesColorsRef.current!)
       setBooks((prev) =>
-        prev.map((n) => {
-          if (n.id !== sanitized.id) return n
-          Object.assign(n, sanitized)
-          return n
-        })
+        prev.map((n) => (n.id === sanitized.id ? { ...n, ...sanitized } : n))
       )
     },
     onError: (err) => { devWarn('Erreur mise à jour livre', err); toast.error('Impossible de modifier le livre'); invalidate() },
@@ -87,8 +79,7 @@ export function useBookMutations({
 
   const deleteBookMutation = useMutation({
     mutationFn: async (nodeId: string) => {
-      const { error } = await deleteBookRowById(nodeId)
-      if (error) throw new Error(error.message)
+      ensureOk(await deleteBookRowById(nodeId), 'suppression livre')
     },
     onMutate: (nodeId) => {
       setBooks((prev) => prev.filter((n) => n.id !== nodeId))

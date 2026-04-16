@@ -2,7 +2,7 @@
 import { bookAuthorDisplay, authorName } from '@/common/utils/authorUtils'
 import type { Book, Author } from '@/types/domain'
 
-import { withAlpha, roundRect, drawGlow, wrapText } from './canvas/canvasUtils'
+import { withAlpha, roundRect, drawGlow, wrapText, type WrappedText } from './canvas/canvasUtils'
 import { getGradientCanvas, getHoverValue } from './cache/nodeCache'
 import { computeNodeState, shouldShowLabel, landmarkLabelAlpha, type D3Node, type DrawNodeOpts } from './domain/nodeVisualState'
 import { getNodeRadius, hoveredRadius } from './domain/nodeRadius'
@@ -10,6 +10,26 @@ import { getNodeRadius, hoveredRadius } from './domain/nodeRadius'
 // Re-export public API
 export { clearHoverAnim } from './cache/nodeCache'
 export { getNodeRadius, getNodePointerHitRadius } from './domain/nodeRadius'
+export type { DrawNodeOpts } from './domain/nodeVisualState'
+
+// ── Cached display strings ──────────────────────────────────────────────────
+// bookAuthorDisplay + toUpperCase sont appelés par nœud par frame et produisent
+// les mêmes strings tant que les données ne changent pas. Le cache est indexé
+// par (nodeId, authorsRef) : authorsRef change quand l'array React est recréée
+// (refetch, mutation), ce qui invalide le cache automatiquement.
+const displayCache = new Map<string, { authorsRef: unknown; name: string; title: string }>()
+const DISPLAY_CACHE_MAX = 600
+
+function cachedDisplayStrings(node: D3Node, authors: Author[]): { name: string; title: string } {
+  const entry = displayCache.get(node.id)
+  if (entry && entry.authorsRef === authors) return entry
+  const name = (bookAuthorDisplay(node, authors) || '').toUpperCase()
+  const title = node.title || ''
+  const result = { authorsRef: authors, name, title }
+  if (displayCache.size >= DISPLAY_CACHE_MAX) displayCache.clear()
+  displayCache.set(node.id, result)
+  return result
+}
 
 // ── Label card design tokens ─────────────────────────────────────────────────
 
@@ -30,6 +50,20 @@ function drawAuthorNode(node: D3Node, ctx: CanvasRenderingContext2D, globalScale
   const state = computeNodeState(node, opts)
   const { hover, opacity, isActive, isHighlighted, matchesHover, blendedColor } = state
   const BASE_R = 9
+
+  // Fast path : nœud quasi-invisible (dimmed par hover-focus sur un autre nœud).
+  // Dessine un simple disque — skip glow, anneaux, label. Couvre ~90 % des nœuds
+  // auteur pendant un hover et élimine la majeure partie du travail canvas.
+  if (opacity < 0.08) {
+    ctx.globalAlpha = opacity
+    ctx.beginPath()
+    ctx.arc(node.x, node.y, BASE_R, 0, Math.PI * 2)
+    ctx.fillStyle = blendedColor
+    ctx.fill()
+    ctx.globalAlpha = 1
+    return
+  }
+
   const ringR = BASE_R + 2
 
   ctx.save()
@@ -81,11 +115,12 @@ function drawAuthorLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScal
   ctx.textAlign = 'center'
   ctx.textBaseline = 'top'
 
-  const nameLines = wrapText(ctx, rawName, maxW)
+  const nameWrap = wrapText(ctx, rawName, maxW)
+  const nameLines = nameWrap.lines
+  const nameW = nameWrap.maxLineWidth
   const lineHeight = fontSize * 1.25
 
   if (showCard) {
-    const nameW = Math.max(...nameLines.map((l) => ctx.measureText(l).width))
     const padX = fontSize * 0.8
     const padY = fontSize * 0.5
     const borderR = fontSize * 0.6
@@ -99,15 +134,11 @@ function drawAuthorLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScal
     ctx.fill()
     ctx.strokeStyle = LABEL_BORDER
     ctx.lineWidth = 1 / Math.max(globalScale, 0.1)
-    roundRect(ctx, boxX, boxY, boxW, boxH, borderR)
-    ctx.stroke()
+    ctx.stroke() // réutilise le path du roundRect précédent
 
     ctx.fillStyle = LABEL_TEXT
-    nameLines.forEach((line, i) => {
-      ctx.fillText(line, node.x, boxY + padY + lineHeight * i)
-    })
+    for (let i = 0; i < nameLines.length; i++) ctx.fillText(nameLines[i], node.x, boxY + padY + lineHeight * i)
   } else {
-    const nameW = Math.max(...nameLines.map((l) => ctx.measureText(l).width))
     const padX = fontSize * 0.5
     const padY = fontSize * 0.3
     const borderR = fontSize * 0.4
@@ -121,15 +152,16 @@ function drawAuthorLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScal
     ctx.fill()
 
     ctx.fillStyle = LABEL_TEXT_IDLE
-    nameLines.forEach((line, i) => {
-      ctx.fillText(line, node.x, boxY + padY + lineHeight * i)
-    })
+    for (let i = 0; i < nameLines.length; i++) ctx.fillText(nameLines[i], node.x, boxY + padY + lineHeight * i)
   }
 
   ctx.restore()
 }
 
 // ── Book node ─────────────────────────────────────────────────────────────────
+
+// Scratch réutilisé pour le chemin labelOnly (évite un objet par appel)
+const SCRATCH_LABEL_STATE = { hover: 0, isActive: true, isHighlighted: true, matchesHover: false, blendedColor: '#fff', hasHoverFocus: false, isHoverNeighbor: false, opacity: 1 }
 
 export function drawNode(node: Book | Author, ctx: CanvasRenderingContext2D, globalScale: number, opts: DrawNodeOpts): void {
   if (node.type === 'author') return drawAuthorNode(node, ctx, globalScale, opts)
@@ -142,8 +174,8 @@ export function drawNode(node: Book | Author, ctx: CanvasRenderingContext2D, glo
   if (labelOnly) {
     const hover = getHoverValue(node.id)
     const r = hoveredRadius(baseR, hover, globalScale)
-    const syntheticState = { hover, isActive: true, isHighlighted: true, matchesHover: false, hasHoverFocus: false, isHoverNeighbor: false }
-    drawBookLabel(node, ctx, globalScale, syntheticState, opts, r)
+    SCRATCH_LABEL_STATE.hover = hover
+    drawBookLabel(node, ctx, globalScale, SCRATCH_LABEL_STATE, opts, r)
     return
   }
 
@@ -152,6 +184,20 @@ export function drawNode(node: Book | Author, ctx: CanvasRenderingContext2D, glo
   const nodeRadius = hoveredRadius(baseR, hover, globalScale)
   const glowRadius = nodeRadius + (matchesHover ? 4.5 : 2.5)
   if (nodeRadius <= 0 || glowRadius <= 0) return
+
+  // Fast path : nœud quasi-invisible (dimmed par hover-focus sur un autre nœud).
+  // Simple disque coloré — skip glow, clip+gradient, label. Couvre ~90 % des
+  // nœuds livre pendant un hover, éliminant les opérations canvas les plus
+  // coûteuses (drawGlow, getGradientCanvas+drawImage, wrapText+measureText).
+  if (opacity < 0.08) {
+    ctx.globalAlpha = opacity
+    ctx.beginPath()
+    ctx.arc(node.x, node.y, nodeRadius, 0, Math.PI * 2)
+    ctx.fillStyle = blendedColor
+    ctx.fill()
+    ctx.globalAlpha = 1
+    return
+  }
 
   const nodeAxes = node.axes || []
 
@@ -195,8 +241,9 @@ function drawBookLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScale:
   const fontSize = Math.max(baseSize * (1 + hover * 0.3), minHovered, idleFloor)
   const idleWeight = safeCitations >= 5 ? 700 : safeCitations >= 3 ? 600 : 500
 
-  const rawName = (bookAuthorDisplay(node, opts.authors || []) || '').toUpperCase()
-  const rawTitle = node.title || ''
+  const display = cachedDisplayStrings(node, opts.authors || [])
+  const rawName = display.name
+  const rawTitle = display.title
   const lineHeight = fontSize * 1.25
   const maxW = fontSize * LABEL_MAX_W_FACTOR
   const showCard = hover > 0.01 || isHighlighted || matchesHover
@@ -209,12 +256,14 @@ function drawBookLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScale:
 
   if (showCard) {
     ctx.font = `600 ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
-    const nameLines = wrapText(ctx, rawName, maxW)
-    const nameW = Math.max(...nameLines.map((l) => ctx.measureText(l).width))
+    const nameWrap = wrapText(ctx, rawName, maxW)
+    const nameLines = nameWrap.lines
+    const nameW = nameWrap.maxLineWidth
 
     ctx.font = `400 ${fontSize * 0.9}px 'Space Grotesk', system-ui, sans-serif`
-    const titleLines = wrapText(ctx, rawTitle, maxW)
-    const titleW = Math.max(...titleLines.map((l) => ctx.measureText(l).width))
+    const titleWrap = wrapText(ctx, rawTitle, maxW)
+    const titleLines = titleWrap.lines
+    const titleW = titleWrap.maxLineWidth
 
     const padX = fontSize * 0.8
     const padY = fontSize * 0.5
@@ -232,21 +281,16 @@ function drawBookLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScale:
     ctx.fill()
     ctx.strokeStyle = LABEL_BORDER
     ctx.lineWidth = 1 / Math.max(globalScale, 0.1)
-    roundRect(ctx, boxX, boxY, boxW, boxH, borderR)
-    ctx.stroke()
+    ctx.stroke() // réutilise le path du roundRect précédent
 
     ctx.font = `600 ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
     ctx.fillStyle = LABEL_TEXT
-    nameLines.forEach((line, i) => {
-      ctx.fillText(line, node.x, boxY + padY + lineHeight * i)
-    })
+    for (let i = 0; i < nameLines.length; i++) ctx.fillText(nameLines[i], node.x, boxY + padY + lineHeight * i)
 
     ctx.font = `400 ${fontSize * 0.9}px 'Space Grotesk', system-ui, sans-serif`
     ctx.fillStyle = LABEL_TEXT_DIM
     const titleStartY = boxY + padY + nameBlockH
-    titleLines.forEach((line, i) => {
-      ctx.fillText(line, node.x, titleStartY + titleLineHeight * i)
-    })
+    for (let i = 0; i < titleLines.length; i++) ctx.fillText(titleLines[i], node.x, titleStartY + titleLineHeight * i)
   } else {
     const baseRForFade = getNodeRadius(node, safeCitations)
     const topForced = opts.topDegreeNodeIds?.has(node.id)
@@ -262,12 +306,14 @@ function drawBookLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScale:
     ctx.globalAlpha = idleAlpha
 
     ctx.font = `${idleWeight} ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
-    const nameLines = wrapText(ctx, rawName, maxW)
-    const nameW = Math.max(...nameLines.map((l) => ctx.measureText(l).width))
+    const nameWrap = wrapText(ctx, rawName, maxW)
+    const nameLines = nameWrap.lines
+    const nameW = nameWrap.maxLineWidth
 
     ctx.font = `400 ${fontSize * 0.9}px 'Space Grotesk', system-ui, sans-serif`
-    const titleLines = wrapText(ctx, rawTitle, maxW)
-    const titleW = Math.max(...titleLines.map((l) => ctx.measureText(l).width))
+    const titleWrap = wrapText(ctx, rawTitle, maxW)
+    const titleLines = titleWrap.lines
+    const titleW = titleWrap.maxLineWidth
 
     const padX = fontSize * 0.5
     const padY = fontSize * 0.3
@@ -286,16 +332,12 @@ function drawBookLabel(node: D3Node, ctx: CanvasRenderingContext2D, globalScale:
 
     ctx.font = `${idleWeight} ${fontSize}px 'Space Grotesk', system-ui, sans-serif`
     ctx.fillStyle = LABEL_TEXT_IDLE
-    nameLines.forEach((line, i) => {
-      ctx.fillText(line, node.x, boxY + padY + lineHeight * i)
-    })
+    for (let i = 0; i < nameLines.length; i++) ctx.fillText(nameLines[i], node.x, boxY + padY + lineHeight * i)
 
     ctx.font = `400 ${fontSize * 0.9}px 'Space Grotesk', system-ui, sans-serif`
     ctx.fillStyle = LABEL_TEXT_IDLE_DIM
     const titleStartY = boxY + padY + nameBlockH
-    titleLines.forEach((line, i) => {
-      ctx.fillText(line, node.x, titleStartY + titleLineHeight * i)
-    })
+    for (let i = 0; i < titleLines.length; i++) ctx.fillText(titleLines[i], node.x, titleStartY + titleLineHeight * i)
   }
 
   ctx.restore()

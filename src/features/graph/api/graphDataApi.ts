@@ -77,7 +77,7 @@ export async function loadGraphDataFromSupabase() {
 }
 
 export function insertBookRow(row: TablesInsert<'books'>) {
-  return supabase.from('books').insert(row)
+  return supabase.from('books').insert(row).select('id')
 }
 
 export function updateBookRowById(id: string, fields: TablesUpdate<'books'>) {
@@ -89,11 +89,11 @@ export function deleteBookRowById(id: string) {
 }
 
 export function insertAuthorRow(row: TablesInsert<'authors'>) {
-  return supabase.from('authors').insert(row)
+  return supabase.from('authors').insert(row).select('id')
 }
 
 export function insertAuthorRows(rows: TablesInsert<'authors'>[]) {
-  return supabase.from('authors').insert(rows)
+  return supabase.from('authors').insert(rows).select('id')
 }
 
 export function updateAuthorRowById(id: string, fields: TablesUpdate<'authors'>) {
@@ -105,7 +105,7 @@ export function deleteAuthorRowById(id: string) {
 }
 
 export function insertLinkRow(row: TablesInsert<'links'>) {
-  return supabase.from('links').insert(row)
+  return supabase.from('links').insert(row).select('id')
 }
 
 export function insertLinkRows(rows: TablesInsert<'links'>[]) {
@@ -124,6 +124,8 @@ export function deleteLinkRowById(id: string) {
   return supabase.from('links').update({ deleted_at: new Date().toISOString() }).eq('id', id)
 }
 
+/** Soft-deletes all books. Does NOT touch links or authors — callers must
+ *  handle those separately or rely on the UI clearing local state. */
 export function deleteAllBooks() {
   return supabase.from('books').update({ deleted_at: new Date().toISOString() }).not('id', 'is', null)
 }
@@ -151,10 +153,10 @@ export async function setBookAuthors(bookId: string, authorIds: string[]) {
 }
 
 export function insertBookAuthors(bookId: string, authorIds: string[]) {
-  if (authorIds.length === 0) return Promise.resolve({ error: null })
+  if (authorIds.length === 0) return Promise.resolve({ data: null, error: null })
   return supabase.from('book_authors').insert(
     authorIds.map((author_id) => ({ book_id: bookId, author_id }))
-  )
+  ).select()
 }
 
 export function deleteBookAuthorsByBookId(bookId: string) {
@@ -211,6 +213,10 @@ export async function exportFullDatabase() {
 // ── Entity name lookup (for human-readable activity log) ───────────────────
 // Paginated: above 1000 entities the history tab would otherwise show "[unknown]"
 // for the most recent items (whose IDs landed past the truncated page).
+//
+// No explicit deleted_at filter: the RLS SELECT policy already hides soft-deleted
+// rows. For deleted entities, the activity log falls back to old_values/new_values
+// JSONB stored in the log entry itself.
 
 export async function loadEntityNamesForLog() {
   const [booksRes, authorsRes, bookAuthorsRes] = await Promise.all([

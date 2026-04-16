@@ -4,6 +4,23 @@ import type { Book, Author } from '@/types/domain'
 import { computeHover } from '../cache/nodeCache'
 import { getNodeRadius } from './nodeRadius'
 
+// Cache blendAxesColors : les axes d'un nœud ne changent pas entre les frames,
+// donc le hit rate est ~100 %. Évite Set + spread + calcul de couleur par nœud
+// par frame (~200 nœuds × 60 fps = 12 000 appels/s éliminés).
+const blendedColorCache = new Map<string, string>()
+const BLEND_CACHE_MAX = 300
+
+function cachedBlendColor(axes: readonly string[] | undefined | null): string {
+  if (!axes?.length) return '#ffffff'
+  const key = axes.join('|')
+  const cached = blendedColorCache.get(key)
+  if (cached) return cached
+  const result = blendAxesColors(axes)
+  if (blendedColorCache.size >= BLEND_CACHE_MAX) blendedColorCache.clear()
+  blendedColorCache.set(key, result)
+  return result
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type D3Node = (Book | Author) & { x?: number; y?: number; fx?: number; fy?: number }
@@ -77,7 +94,7 @@ export function computeNodeState(node: D3Node, opts: DrawNodeOpts) {
 
   const isIsolatedLeaf = node.type !== 'author' && !!opts.isIsolated
   let opacity: number
-  if (hasHoverFocus && !isHovered && !isHoverNeighbor) opacity = 0.05
+  if (hasHoverFocus && !isHovered && !isHoverNeighbor) opacity = 0.18
   else if (hover > 0.01) opacity = 1
   else if (dimmedByHover) opacity = 0.01
   else if (node.type === 'author') opacity = (isHighlighted || isActive) ? 0.85 : 0.25
@@ -87,8 +104,8 @@ export function computeNodeState(node: D3Node, opts: DrawNodeOpts) {
   else opacity = 1
 
   const blendedColor = node.type === 'author'
-    ? (nodeAxes.length ? blendAxesColors(nodeAxes) : '#b0b8d0')
-    : blendAxesColors(nodeAxes)
+    ? (nodeAxes.length ? cachedBlendColor(nodeAxes) : '#b0b8d0')
+    : cachedBlendColor(nodeAxes)
 
   SCRATCH_NODE_STATE.hover = hover
   SCRATCH_NODE_STATE.opacity = opacity
