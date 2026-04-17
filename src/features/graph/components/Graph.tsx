@@ -465,6 +465,11 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         }}
         onNodeDrag={(node) => {
           if (!isBookOrAuthor(node)) return
+          // Maintient la simu d3 vivante pendant le drag : sinon `d3AlphaMin=0.02`
+          // + `cooldownTime=3000` la gèlent trop vite, et les voisins du nœud
+          // draggé ne suivent pas son déplacement (charge/link ne propagent plus).
+          // Chaque appel à d3ReheatSimulation reset alpha=1 et le timer de cooldown.
+          fgRef.current?.d3ReheatSimulation?.()
           // Évite le travail répété : `onNodeDrag` est appelé à chaque frame.
           if (draggingRef.current && hoveredNodeRef.current?.id === node.id) return
           draggingRef.current = true
@@ -474,6 +479,8 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         }}
         onNodeDragEnd={() => {
           draggingRef.current = false
+          // Pas de reheat ici : on laisse la simu décanter naturellement (alpha
+          // tombera sous d3AlphaMin en ~1-2 s) → retour à l'état statique.
         }}
         onNodeClick={(node) => {
           if (isBookOrAuthor(node)) onNodeClick(node)
