@@ -37,6 +37,8 @@ function graphInstanceRefresh(fg: ForceGraphMethods | null | undefined) {
   if (typeof fn === 'function') fn.call(fg)
 }
 
+const LINK_CANVAS_OBJECT_MODE = () => 'after' as const
+
 function isBookOrAuthor(node: object | null | undefined): node is Book | Author {
   if (node == null || typeof node !== 'object') return false
   const t = Reflect.get(node, 'type')
@@ -100,6 +102,18 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   const wakeRef = useRef<(() => void) | null>(null)
   const selectedNodeRef = useRef(selectedNode)
   const draggingRef = useRef(false)
+
+  // Viewport world-space bounds, recomputed once par frame dans `onRenderFramePre`.
+  // Permet de culler les nœuds hors écran dans `nodeCanvasObject` et `nodePointerAreaPaint`.
+  // `margin` couvre la taille max d'un nœud + overflow de label (~200 units world).
+  const viewportRef = useRef({ minX: -Infinity, minY: -Infinity, maxX: Infinity, maxY: Infinity })
+
+  // NB : historiquement on a tenté un pointer-driven refresh loop + autoPauseRedraw=true
+  // pour économiser le CPU au repos. Mais le hover freezait après N interactions
+  // (cause non identifiée, probablement une saturation interne de react-force-graph
+  // quand `refresh()` est appelé très fréquemment). On est revenu à autoPauseRedraw=false
+  // — le viewport culling (ajouté en parallèle) rend le coût du render 60 fps bien
+  // plus faible : ~20 nœuds visibles × drawNode caché → négligeable.
 
   const { flashNodeIdsRef, flashAlphaRef } = useFlashAnimation({ flashNodeIds, fgRef })
 
@@ -205,6 +219,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     return () => el.removeEventListener('pointerleave', onLeave)
   }, [updateHoveredLinks])
 
+
   // Resynchronise `hoveredNodeRef` avec les données courantes : si le nœud a
   // disparu → on le libère ; si c'est un autre objet (nouveau refetch avec
   // mêmes IDs), on re-pointe sur la référence live pour garder les bonnes x/y.
@@ -268,8 +283,35 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     return { ...graphData, nodes: nextNodes }
   }, [graphData, selectedNode, peekNodeId])
 
+  // Recalcule les bounds visibles en world-space une fois par frame.
+  // `ctx.getTransform()` donne la matrice pan+zoom appliquée par ForceGraph2D ;
+  // on inverse pour retrouver les coords world des 4 coins du canvas.
+  const onRenderFramePre = useCallback((ctx, globalScale) => {
+    const canvas = ctx.canvas
+    const t = ctx.getTransform()
+    const invA = 1 / t.a
+    const invD = 1 / t.d
+    const worldLeft = -t.e * invA
+    const worldTop = -t.f * invD
+    const worldRight = (canvas.width - t.e) * invA
+    const worldBottom = (canvas.height - t.f) * invD
+    // Marge = rayon max d'un nœud (~46) + overflow de label. 200 world units =
+    // assez pour éviter les pop-ins sur les bords pendant un pan rapide.
+    const margin = 200 / Math.max(globalScale, 0.1)
+    viewportRef.current = {
+      minX: worldLeft - margin,
+      minY: worldTop - margin,
+      maxX: worldRight + margin,
+      maxY: worldBottom + margin,
+    }
+  }, [])
+
   const nodeCanvasObject = useCallback(
     (node, ctx, globalScale) => {
+      const vp = viewportRef.current
+      const x = node?.x, y = node?.y
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return
+      if (x < vp.minX || x > vp.maxX || y < vp.minY || y > vp.maxY) return
       drawNode(node, ctx, globalScale, {
         selectedNode,
         selectedAuthorId,
@@ -310,6 +352,10 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         globalScale,
       )
       if (!Number.isFinite(node?.x) || !Number.isFinite(node?.y) || !Number.isFinite(r) || r <= 0) return
+      // Cull : pas besoin de peindre la hit-zone des nœuds hors viewport —
+      // la souris ne peut pas les atteindre de toute façon.
+      const vp = viewportRef.current
+      if (node.x < vp.minX || node.x > vp.maxX || node.y < vp.minY || node.y > vp.maxY) return
       ctx.fillStyle = color
       ctx.beginPath()
       ctx.arc(node.x, node.y, r, 0, Math.PI * 2)
@@ -371,8 +417,32 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     [selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, degreeByNodeId, topDegreeNodeIds]
   )
 
+  const graphA11yLabel = `Constellation interactive : ${graphData.nodes.length} œuvres reliées par ${graphData.links.length} citations. Une alternative tabulaire est disponible dans l'onglet Ouvrages.`
+
+  const backgroundColor = useMemo(
+    () => getComputedStyle(document.documentElement).getPropertyValue('--color-bg-base').trim(),
+    [],
+  )
+
+  // Stabilisé pour que <Minimap memo()> ne re-render pas à chaque parent render.
+  const handleMinimapEnter = useCallback(() => {
+    // When the pointer enters the minimap, release any hover state on
+    // the main graph — otherwise the last hovered node keeps its label
+    // and highlight because pointerleave on the container never fires
+    // (the minimap is a child of containerRef).
+    if (!hoveredNodeRef.current) return
+    hoveredNodeRef.current = null
+    updateHoveredLinks(null)
+    graphInstanceRefresh(fgRef.current)
+  }, [updateHoveredLinks])
+
   return (
-    <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div
+      ref={containerRef}
+      role="img"
+      aria-label={graphA11yLabel}
+      style={{ position: 'relative', width: '100%', height: '100%' }}
+    >
       <ForceGraph2D
         ref={fgRef}
         graphData={orderedGraphData}
@@ -409,7 +479,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
           if (isBookOrAuthor(node)) onNodeClick(node)
         }}
         onLinkClick={onLinkClick}
-        linkCanvasObjectMode={() => 'after'}
+        linkCanvasObjectMode={LINK_CANVAS_OBJECT_MODE}
         linkCanvasObject={linkCanvasObject}
         linkColor={linkColor}
         linkWidth={linkWidth}
@@ -421,8 +491,14 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         linkDirectionalParticleWidth={linkDirectionalParticleWidth}
         linkDirectionalParticleSpeed={0.004}
         linkDirectionalParticleColor={linkDirectionalParticleColor}
-        backgroundColor={getComputedStyle(document.documentElement).getPropertyValue('--color-bg-base').trim()}
+        backgroundColor={backgroundColor}
+        cooldownTime={3000}
+        warmupTicks={30}
+        d3AlphaMin={0.02}
+        autoPauseRedraw={false}
+        onEngineStop={() => { if (import.meta.env.DEV) console.debug('[graph] d3 engine stopped') }}
         onEngineInit={handleInit}
+        onRenderFramePre={onRenderFramePre}
         onRenderFramePost={onRenderFramePost}
       />
       <Minimap
@@ -430,16 +506,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
         fgRef={fgRef}
         camRef={camRef}
         containerRef={containerRef}
-        onEnter={() => {
-          // When the pointer enters the minimap, release any hover state on
-          // the main graph — otherwise the last hovered node keeps its label
-          // and highlight because pointerleave on the container never fires
-          // (the minimap is a child of containerRef).
-          if (!hoveredNodeRef.current) return
-          hoveredNodeRef.current = null
-          updateHoveredLinks(null)
-          graphInstanceRefresh(fgRef.current)
-        }}
+        onEnter={handleMinimapEnter}
       />
     </div>
   )

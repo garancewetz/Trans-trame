@@ -100,6 +100,10 @@ function GraphAppContent() {
     [selection, filter],
   )
 
+  // Noop mémoïsé : une closure inline recrée la prop à chaque render parent et
+  // casse la memoization de <Graph> (qui propage à <ForceGraph2D>).
+  const handleLinkClickNoop = useCallback(() => {}, [])
+
   const isGraphView = timeline.viewMode === 'constellation'
 
   return (
@@ -118,7 +122,7 @@ function GraphAppContent() {
               activeHighlight={filter.activeHighlight}
               hoveredFilter={filter.hoveredFilter}
               onNodeClick={handleNodeClick}
-              onLinkClick={() => {}}
+              onLinkClick={handleLinkClickNoop}
               viewMode={timeline.viewMode}
               flashNodeIds={tableUi.flashNodeIds}
             />

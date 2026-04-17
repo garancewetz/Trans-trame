@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 import { Check, Eye } from 'lucide-react'
@@ -45,7 +46,7 @@ type Props = {
   onOpenWorkDetail?: (bookId: BookId) => unknown
 }
 
-export function BooksTabBookRow({
+function BooksTabBookRowImpl({
   node,
   rowIndex,
   justAdded,
@@ -252,3 +253,5 @@ export function BooksTabBookRow({
     </tr>
   )
 }
+
+export const BooksTabBookRow = memo(BooksTabBookRowImpl)

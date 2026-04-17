@@ -78,7 +78,7 @@ export function SmartImportInputPhase({
     <>
       <p className="mb-3 text-label text-white/40">
         Colle une bibliographie ou importe une photo de page de bibliographie.
-        L&apos;app détectera auteur·ices, titres et années.
+        L'app détectera auteur·ices, titres et années.
       </p>
 
       {/* ── Mode toggle ───────────────────────────────────────── */}

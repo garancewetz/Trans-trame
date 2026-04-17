@@ -88,7 +88,7 @@ export function BookForm({
           name="authorIds"
           control={control}
           rules={{
-            validate: (v) => (Array.isArray(v) && v.length > 0) || 'Au moins un auteur·ice',
+            validate: (v) => (Array.isArray(v) && v.length > 0) || 'Ajoute au moins un·e auteur·ice',
           }}
           render={({ field, fieldState }) => (
             <>
@@ -173,7 +173,7 @@ export function BookForm({
       {mode === 'book' && recentQueue && recentQueue.length > 0 && (
         <div className="flex flex-col gap-2">
           <span className="text-caption font-semibold uppercase tracking-[1.5px] text-white/25">
-            Ajout&eacute;s cette session
+            Ajouté·es cette session
           </span>
           <div className="flex flex-wrap gap-1.5">
             {recentQueue.map((item, i) => (

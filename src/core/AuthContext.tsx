@@ -40,17 +40,15 @@ const AuthActionsContext = createContext<AuthActions | null>(null)
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function checkWhitelist(email: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('allowed_emails')
-    .select('email')
-    .eq('email', email)
-    .maybeSingle()
+  const { data, error } = await supabase.rpc('is_email_whitelisted', {
+    check_email: email,
+  })
   // Fail closed: an unknown whitelist state must not grant write access.
   if (error) {
     devWarn('[auth] checkWhitelist failed', error)
     return false
   }
-  return data !== null
+  return data === true
 }
 
 async function loadProfile(userId: string): Promise<Profile | null> {

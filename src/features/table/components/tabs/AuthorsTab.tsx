@@ -285,7 +285,7 @@ export function AuthorsTab({
       {selectedIds.size > 0 && (
         <div className="flex shrink-0 items-center gap-3 border-b border-white/6 bg-white/1.5 px-5 py-2">
           <span className="font-mono text-label text-white/45">
-            {selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}
+            {selectedIds.size} sélectionné·e{selectedIds.size > 1 ? 's' : ''}
           </span>
           <Button
             type="button"

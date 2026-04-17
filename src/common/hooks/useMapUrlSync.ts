@@ -26,6 +26,7 @@ export function useMapUrlSync() {
   const [searchParams, setSearchParams] = useSearchParams()
   const skipStateToUrl = useRef(false)
   const prevBookInUrl = useRef<string | null>(null)
+  const isInitialSync = useRef(true)
 
   useEffect(() => {
     if (isLoading) return
@@ -90,8 +91,13 @@ export function useMapUrlSync() {
       }
     }
 
-    if (next.toString() === searchParams.toString()) return
-    setSearchParams(next, { replace: true })
+    if (next.toString() === searchParams.toString()) {
+      isInitialSync.current = false
+      return
+    }
+
+    setSearchParams(next, { replace: isInitialSync.current })
+    isInitialSync.current = false
   }, [
     selectedNode?.id,
     selectedLink?.id,

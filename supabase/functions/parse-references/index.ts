@@ -4,11 +4,29 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const CORS_HEADERS: Record<string, string> = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+// Allowed origins come from the ALLOWED_ORIGINS secret (comma-separated).
+// When unset (local dev), we fall back to reflecting the request origin so
+// `supabase functions serve` keeps working across ports.
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean)
+
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') ?? ''
+  const allowOrigin =
+    ALLOWED_ORIGINS.length === 0
+      ? origin || '*'
+      : ALLOWED_ORIGINS.includes(origin)
+        ? origin
+        : ALLOWED_ORIGINS[0]
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Vary': 'Origin',
+    'Access-Control-Allow-Headers':
+      'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  }
 }
 
 // ─── Configuration ──────────────────────────────────────────────────────────
@@ -353,6 +371,7 @@ async function callGeminiWithImages(
 // ─── Main handler ───────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
+  const CORS_HEADERS = corsHeaders(req)
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS_HEADERS })

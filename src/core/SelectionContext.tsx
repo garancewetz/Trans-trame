@@ -125,7 +125,11 @@ function useSelectionActions() {
   return ctx
 }
 
-/** Combined hook (backward compatible) — returns state + actions merged. */
+/** Combined hook (backward compatible) — returns state + actions merged.
+ * Memoized : sans le useMemo, le merge produit un nouvel objet à chaque render,
+ * invalidant tous les useCallback des consommateurs qui listent `selection` en dep. */
 export function useSelection() {
-  return { ...useSelectionState(), ...useSelectionActions() }
+  const state = useSelectionState()
+  const actions = useSelectionActions()
+  return useMemo(() => ({ ...state, ...actions }), [state, actions])
 }

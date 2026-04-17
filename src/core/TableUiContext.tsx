@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 
 type TableUiContextValue = {
@@ -37,16 +37,16 @@ export function TableUiProvider({ children }: { children: ReactNode }) {
     [],
   )
 
+  const value = useMemo<TableUiContextValue>(() => ({
+    tableMode, tableInitialTab, tableLinkSourceId, tableFocusBookId,
+    lastEditedNodeId, flashNodeIds,
+    setTableMode, setTableInitialTab, setTableLinkSourceId, setTableFocusBookId,
+    setLastEditedNodeId, setFlashNodeIds,
+    openTable,
+  }), [tableMode, tableInitialTab, tableLinkSourceId, tableFocusBookId, lastEditedNodeId, flashNodeIds, openTable])
+
   return (
-    <TableUiContext.Provider
-      value={{
-        tableMode, tableInitialTab, tableLinkSourceId, tableFocusBookId,
-        lastEditedNodeId, flashNodeIds,
-        setTableMode, setTableInitialTab, setTableLinkSourceId, setTableFocusBookId,
-        setLastEditedNodeId, setFlashNodeIds,
-        openTable,
-      }}
-    >
+    <TableUiContext.Provider value={value}>
       {children}
     </TableUiContext.Provider>
   )

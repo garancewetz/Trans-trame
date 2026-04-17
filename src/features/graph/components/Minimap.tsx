@@ -1,5 +1,5 @@
 // @ts-nocheck — react-force-graph types vs domain types (see Graph.tsx for context)
-import { useEffect, useRef, type RefObject } from 'react'
+import { memo, useEffect, useRef, type RefObject } from 'react'
 import type { ForceGraphMethods } from 'react-force-graph-2d'
 import type { GraphData } from '@/types/domain'
 
@@ -28,7 +28,7 @@ function readCssVar(name: string, fallback: string): string {
   return v || fallback
 }
 
-export function Minimap({ graphData, fgRef, camRef, containerRef, onEnter }: MinimapProps) {
+function MinimapImpl({ graphData, fgRef, camRef, containerRef, onEnter }: MinimapProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const wrapperRef = useRef<HTMLDivElement | null>(null)
   const bboxRef = useRef<Bbox | null>(null)
@@ -191,3 +191,5 @@ export function Minimap({ graphData, fgRef, camRef, containerRef, onEnter }: Min
     </div>
   )
 }
+
+export const Minimap = memo(MinimapImpl)

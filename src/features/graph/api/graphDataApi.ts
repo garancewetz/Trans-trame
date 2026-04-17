@@ -124,6 +124,12 @@ export function deleteLinkRowById(id: string) {
   return supabase.from('links').update({ deleted_at: new Date().toISOString() }).eq('id', id)
 }
 
+/** Soft-deletes many links in a single request. */
+export function deleteLinkRowsByIds(ids: string[]) {
+  if (ids.length === 0) return Promise.resolve({ data: null, error: null })
+  return supabase.from('links').update({ deleted_at: new Date().toISOString() }).in('id', ids)
+}
+
 /** Soft-deletes all books. Does NOT touch links or authors — callers must
  *  handle those separately or rely on the UI clearing local state. */
 export function deleteAllBooks() {

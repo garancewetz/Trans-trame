@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 
 type PanelVisibilityContextValue = {
@@ -37,14 +37,14 @@ export function PanelVisibilityProvider({ children }: { children: ReactNode }) {
     setAnalysisPanelOpen(true)
   }, [])
 
+  const value = useMemo<PanelVisibilityContextValue>(() => ({
+    textsPanelOpen, authorsPanelOpen, analysisPanelOpen,
+    setTextsPanelOpen, setAuthorsPanelOpen, setAnalysisPanelOpen,
+    openTextsPanel, openAuthorsPanel, openAnalysisPanel,
+  }), [textsPanelOpen, authorsPanelOpen, analysisPanelOpen, openTextsPanel, openAuthorsPanel, openAnalysisPanel])
+
   return (
-    <PanelVisibilityContext.Provider
-      value={{
-        textsPanelOpen, authorsPanelOpen, analysisPanelOpen,
-        setTextsPanelOpen, setAuthorsPanelOpen, setAnalysisPanelOpen,
-        openTextsPanel, openAuthorsPanel, openAnalysisPanel,
-      }}
-    >
+    <PanelVisibilityContext.Provider value={value}>
       {children}
     </PanelVisibilityContext.Provider>
   )

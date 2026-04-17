@@ -9,6 +9,7 @@ import {
   deleteBookRowById,
   deleteBookAuthorsByBookId,
   deleteLinkRowById,
+  deleteLinkRowsByIds,
   insertBookAuthors,
   updateLinkRowById,
 } from '../api/graphDataApi'
@@ -218,11 +219,13 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
 
     // Sequence: update/delete links first, THEN delete the book
     // (avoids ON DELETE CASCADE wiping links before they are remapped)
+    // Link deletes are batched into a single IN-query; updates stay per-row
+    // because each carries distinct source/target values.
     Promise.all([
       ...linksToUpdate.map(({ id, source_id, target_id }) =>
         updateLinkRowById(id, { source_id, target_id })
       ),
-      ...linkIdsToDelete.map((id) => deleteLinkRowById(id)),
+      deleteLinkRowsByIds(linkIdsToDelete),
       ...(newAuthorIds.length > 0 ? [insertBookAuthors(intoNodeId, newAuthorIds)] : []),
     ]).then((linkResults) => {
       const linkErrors = linkResults.filter((r) => r.error)

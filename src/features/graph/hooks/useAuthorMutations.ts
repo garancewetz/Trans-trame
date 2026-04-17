@@ -41,6 +41,7 @@ export function useAuthorMutations({
       const sanitized = sanitizeAuthor({ ...author, type: 'author' as const }, axesColorsRef.current!)
       setAuthors((prev) => (prev.some((a) => a.id === sanitized.id) ? prev : [...prev, sanitized]))
     },
+    onSuccess: () => { toast.success('Auteur·ice ajouté·e') },
     onError: (err) => { devWarn('Erreur ajout auteur', err); toast.error("Impossible d'ajouter l'auteur·ice"); invalidate() },
   })
 
@@ -54,6 +55,7 @@ export function useAuthorMutations({
       const sanitized = sanitizeAuthor({ ...updatedAuthor, type: 'author' as const }, axesColorsRef.current!)
       setAuthors((prev) => prev.map((a) => (a.id === sanitized.id ? sanitized : a)))
     },
+    onSuccess: () => { toast.success('Auteur·ice modifié·e') },
     onError: (err) => { devWarn('Erreur mise à jour auteur', err); toast.error("Impossible de modifier l'auteur·ice"); invalidate() },
   })
 
@@ -71,6 +73,7 @@ export function useAuthorMutations({
         )
       )
     },
+    onSuccess: () => { toast.success('Auteur·ice supprimé·e') },
     onError: (err) => { devWarn('Erreur suppression auteur', err); toast.error("Impossible de supprimer l'auteur·ice"); invalidate() },
   })
 

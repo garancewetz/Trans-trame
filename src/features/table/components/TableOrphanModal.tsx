@@ -139,7 +139,7 @@ export function TableOrphanModal({
         {linkTarget && (
           <div className="mt-2 flex items-center justify-between">
             <p className="text-caption text-white/35">
-              {checkedIds.size} orphelin{checkedIds.size > 1 ? 's' : ''} sélectionné{checkedIds.size > 1 ? 's' : ''}
+              {checkedIds.size} orphelin·e{checkedIds.size > 1 ? 's' : ''} sélectionné·e{checkedIds.size > 1 ? 's' : ''}
             </p>
             <ConfirmButton
               confirmed={linkConfirm}

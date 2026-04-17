@@ -144,7 +144,10 @@ function useFilterActions() {
   return ctx
 }
 
-/** Combined hook (backward compatible). */
+/** Combined hook (backward compatible).
+ * Memoized : voir commentaire équivalent dans SelectionContext. */
 export function useFilter() {
-  return { ...useFilterState(), ...useFilterActions() }
+  const state = useFilterState()
+  const actions = useFilterActions()
+  return useMemo(() => ({ ...state, ...actions }), [state, actions])
 }

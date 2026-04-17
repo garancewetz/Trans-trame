@@ -145,7 +145,7 @@ export function Navbar({ viewMode, onViewChange }: NavbarProps) {
                 {searchResults.length === 0 ? (
                   <div className="p-2">
                     <p className="px-2 py-2 text-center text-[0.9rem] text-white/30">
-                      Aucun r&eacute;sultat trouv&eacute;
+                      Aucun résultat trouvé
                     </p>
                     <Button
                       variant="ghost"

@@ -257,6 +257,7 @@ export type Database = {
     }
     Functions: {
       is_whitelisted: { Args: never; Returns: boolean }
+      is_email_whitelisted: { Args: { check_email: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
