@@ -5,12 +5,12 @@ import type { Author, Book, BookId, Link } from '@/types/domain'
 import { devWarn } from '@/common/utils/logger'
 import { formatSupabaseError } from '@/core/supabaseErrors'
 import {
-  deleteAllBooks,
-  deleteBookRowById,
-  deleteBookAuthorsByBookId,
+  deleteAllResources,
+  deleteResourceRowById,
+  deleteResourceAuthorsByResourceId,
   deleteLinkRowById,
   deleteLinkRowsByIds,
-  insertBookAuthors,
+  insertResourceAuthors,
   updateLinkRowById,
 } from '../api/graphDataApi'
 import { type AxesColorMap, normalizeEndpointId } from '../domain/graphDataModel'
@@ -156,7 +156,7 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
         target = bookIdToRepId.get(target) ?? target
         if (source === target) return null
         const [lo, hi] = source < target ? [source, target] : [target, source]
-        const dedupKey = `${lo}|${hi}|${l.citation_text || ''}`
+        const dedupKey = `${lo}|${hi}`
         if (seen.has(dedupKey)) return null
         seen.add(dedupKey)
         return linkWithStringEndpoints(l, source, target)
@@ -177,6 +177,9 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
     handleAddLinks,
     handleDeleteLink,
     handleUpdateLink,
+    handleAddCitation,
+    handleUpdateCitation,
+    handleDeleteCitation,
   } = useGraphDataEntityCallbacks({
     axesColorsRef,
     booksRef,
@@ -226,7 +229,7 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
         updateLinkRowById(id, { source_id, target_id })
       ),
       deleteLinkRowsByIds(linkIdsToDelete),
-      ...(newAuthorIds.length > 0 ? [insertBookAuthors(intoNodeId, newAuthorIds)] : []),
+      ...(newAuthorIds.length > 0 ? [insertResourceAuthors(intoNodeId, newAuthorIds)] : []),
     ]).then((linkResults) => {
       const linkErrors = linkResults.filter((r) => r.error)
       if (linkErrors.length > 0) {
@@ -234,10 +237,10 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
         toast.error(`Fusion : ${linkErrors.length} lien(s) non remappé(s)`)
       }
 
-      // Only delete book after links are safely remapped
+      // Only delete resource after links are safely remapped
       return Promise.all([
-        deleteBookAuthorsByBookId(fromNodeId),
-        deleteBookRowById(fromNodeId),
+        deleteResourceAuthorsByResourceId(fromNodeId),
+        deleteResourceRowById(fromNodeId),
       ]).then((delResults) => {
         const delErrors = delResults.filter((r) => r.error)
         if (delErrors.length > 0) {
@@ -279,7 +282,7 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
     setBooks([])
     setAuthors([])
     setLinks([])
-    Promise.resolve(deleteAllBooks())
+    Promise.resolve(deleteAllResources())
       .then(({ error }) => {
         if (error) {
           devWarn('Erreur reset', error)
@@ -311,6 +314,9 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
     handleAddLinks,
     handleDeleteLink,
     handleUpdateLink,
+    handleAddCitation,
+    handleUpdateCitation,
+    handleDeleteCitation,
     handleMergeBooks,
     resetToDefault,
   }

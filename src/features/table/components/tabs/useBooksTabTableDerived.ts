@@ -69,7 +69,11 @@ export function useBooksTabTableDerived({
     const q = String(search || '').trim()
     let list = nodes || []
     if (todoOnly) list = list.filter((n) => !!n.todo)
-    if (axisFilter) list = list.filter((n) => n.axes?.includes(axisFilter))
+    if (axisFilter === 'UNCATEGORIZED') {
+      list = list.filter((n) => !n.axes?.length || n.axes.includes('UNCATEGORIZED'))
+    } else if (axisFilter) {
+      list = list.filter((n) => n.axes?.includes(axisFilter))
+    }
     if (q) list = list.filter((n) =>
       matchAllWords(q, [n.title || '', bookAuthorDisplay(n, authorsMap), String(n.year || '')].join(' '))
     )

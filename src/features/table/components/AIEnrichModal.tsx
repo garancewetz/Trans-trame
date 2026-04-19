@@ -50,7 +50,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
             </p>
           )}
           <p className="text-[0.9rem] text-white/60">
-            Analyser {books.length} ouvrage{books.length > 1 ? 's' : ''} avec Gemini pour
+            Analyser {books.length} ressource{books.length > 1 ? 's' : ''} avec Gemini pour
             enrichir les catégories et les champs manquants.
           </p>
           <Button
@@ -83,7 +83,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
               </div>
             </div>
             <p className="text-[0.78rem] text-white/30">
-              {books.length} ouvrage{books.length > 1 ? 's' : ''} — estimation {estimate}
+              {books.length} ressource{books.length > 1 ? 's' : ''} — estimation {estimate}
             </p>
           </div>
         )
@@ -102,7 +102,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
             <p className="text-label text-white/45">
               {enrichments.length} enrichissement{enrichments.length > 1 ? 's' : ''}
               {unchangedCount > 0 && (
-                <span className="text-white/25"> · {unchangedCount} ouvrage{unchangedCount > 1 ? 's' : ''} déjà complet{unchangedCount > 1 ? 's' : ''}</span>
+                <span className="text-white/25"> · {unchangedCount} ressource{unchangedCount > 1 ? 's' : ''} déjà complet{unchangedCount > 1 ? 's' : ''}</span>
               )}
             </p>
             <button
@@ -133,7 +133,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
               <thead className="sticky top-0 z-10 bg-[#1a1a2e]">
                 <tr className="border-b border-white/8 text-left text-white/35">
                   <th className="w-8 px-3 py-2" />
-                  <th className="px-2 py-2">Ouvrage</th>
+                  <th className="px-2 py-2">Ressource</th>
                   <th className="px-2 py-2">Propositions AI</th>
                 </tr>
               </thead>
@@ -175,12 +175,12 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
             <p className="text-[0.9rem] text-white/50">
               {books.some((b) => !b.authorIds || b.authorIds.length === 0)
                 ? 'Aucun enrichissement trouvé — l\'IA n\'a pas pu identifier les auteur·ices manquant·es.'
-                : 'Aucun enrichissement trouvé — les ouvrages sont déjà complets.'}
+                : 'Aucun enrichissement trouvé — les ressources sont déjà complets.'}
             </p>
           ) : (
             <p className="text-[0.9rem] text-green/70">
               <Check size={14} className="mr-1 inline" />
-              {checkedCount} ouvrage{checkedCount > 1 ? 's' : ''} enrichi{checkedCount > 1 ? 's' : ''}.
+              {checkedCount} ressource{checkedCount > 1 ? 's' : ''} enrichi{checkedCount > 1 ? 's' : ''}.
             </p>
           )}
           <Button type="button" variant="surface" onClick={handleClose}>Fermer</Button>

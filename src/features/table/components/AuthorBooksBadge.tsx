@@ -62,7 +62,7 @@ export function AuthorBooksBadge({ bookCount, books }: Props) {
           onMouseLeave={hide}
         >
           <p className="mb-1.5 text-[0.68rem] font-semibold uppercase tracking-widest text-white/35">
-            Ouvrages ({sortedBooks.length})
+            Ressources ({sortedBooks.length})
           </p>
           <ul className="flex flex-col gap-1">
             {sortedBooks.map((b) => (

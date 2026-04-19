@@ -58,7 +58,7 @@ export function AIOrphanReconcileModal({
           )}
           <p className="text-center text-[0.9rem] text-white/60">
             Analyser le contexte d'import de{' '}
-            <span className="font-semibold text-white/80">{state.reconcileBooks.length} ouvrage{state.reconcileBooks.length > 1 ? 's' : ''} à réconcilier</span>
+            <span className="font-semibold text-white/80">{state.reconcileBooks.length} ressource{state.reconcileBooks.length > 1 ? 's' : ''} à réconcilier</span>
             {orphanedAuthors.length > 0 && (
               <> et <span className="font-semibold text-white/80">{orphanedAuthors.length} auteur·ice{orphanedAuthors.length > 1 ? 's' : ''} orphelin·e{orphanedAuthors.length > 1 ? 's' : ''}</span></>
             )}
@@ -126,15 +126,36 @@ export function AIOrphanReconcileModal({
 
       {state.phase === 'done' && (
         <div className="flex flex-col items-center gap-3 py-6">
-          {state.result && (state.result.authorToBook.length > 0 || state.result.bookToSource.length > 0) ? (
-            <p className="text-[0.9rem] text-green/70">
-              <Check size={14} className="mr-1 inline" />
-              {state.totalAccepted} association{state.totalAccepted > 1 ? 's' : ''} appliquée{state.totalAccepted > 1 ? 's' : ''}.
+          {state.applyOutcome && state.applyOutcome.attempted > 0 ? (
+            <>
+              <p className="text-[0.9rem] text-green/70">
+                <Check size={14} className="mr-1 inline" />
+                {state.applyOutcome.attempted} écriture{state.applyOutcome.attempted > 1 ? 's' : ''} envoyée{state.applyOutcome.attempted > 1 ? 's' : ''}.
+              </p>
+              <p className="max-w-md text-center text-caption text-white/40">
+                Si les mêmes suggestions reviennent au prochain lancement, regarde les toasts : certaines lignes ont pu être refusées silencieusement (RLS, conflit, réseau). Le log d'audit garde une trace de ce qui a effectivement été écrit.
+              </p>
+            </>
+          ) : state.result && (state.result.authorToBook.length > 0 || state.result.bookToSource.length > 0) ? (
+            <p className="text-[0.9rem] text-white/50">
+              Aucune suggestion n'a été acceptée.
             </p>
           ) : (
             <p className="text-[0.9rem] text-white/50">
               Aucune correspondance trouvée — le contexte d'import ne permet pas d'identifier les associations.
             </p>
+          )}
+          {state.applyOutcome && state.applyOutcome.skipped > 0 && (
+            <details className="w-full max-w-lg rounded-lg border border-amber/20 bg-amber/5 p-3">
+              <summary className="cursor-pointer text-ui text-amber/80">
+                {state.applyOutcome.skipped} match{state.applyOutcome.skipped > 1 ? 's' : ''} ignoré{state.applyOutcome.skipped > 1 ? 's' : ''}
+              </summary>
+              <ul className="mt-2 flex flex-col gap-1 text-caption text-white/55">
+                {state.applyOutcome.skippedReasons.map((r, i) => (
+                  <li key={i}>• {r}</li>
+                ))}
+              </ul>
+            </details>
           )}
           {state.result && state.result.hints.length > 0 && (
             <HintsPanel result={state.result} bookById={state.bookById} authorsMap={authorsMap} hintsSaved={state.hintsSaved} onSave={state.saveHints} className="w-full max-w-lg" />

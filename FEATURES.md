@@ -40,20 +40,14 @@ Main view: a 2D force-directed graph where **nodes = works** and **edges = citat
 
 Selectable via the view mode toggle in the navbar.
 
-### HistCite (Chronological Genealogy)
+### Cosmograph (GPU force-directed, experimental)
 
-- X-axis: year (decade bins), Y-axis: position within decade
-- Bezier arcs representing citations
-- Hover highlights connected arcs
-- Independent pan/zoom
-
-### Dendrogramme (Circular Dendrogram)
-
-- Radial layout: books arranged by axis, then year
-- Bezier chords representing citations
-- Colored ring segments showing thematic groups
-- Hover highlights connected chords + labels
-- Independent pan/zoom
+- cosmos.gl / WebGL renderer — same work/citation graph as Constellation but GPU-accelerated
+- Axis + highlight filters wired identically to Constellation (click an axis, author, decade → same visibility rules)
+- Node drag reheats the simulation so neighbors follow (mirror of Constellation)
+- Keyboard pan (arrow keys) and zoom (Z / S / + / -) — arrow-up pans up, arrow-down pans down
+- Landmark labels (top-degree) always visible; hovered node shows full label + glow
+- Labeled "COSMOGRAPH (SPIKE)" in-view while the mode is still experimental
 
 ---
 
@@ -313,6 +307,8 @@ Two-phase batch import workflow with AI-assisted parsing.
 | Space | Center camera / fit to view |
 | Escape | Close panel / clear selection / dismiss analysis |
 | Arrow keys | Pan camera |
+| Z / + / = | Zoom in |
+| S / - | Zoom out |
 
 ---
 

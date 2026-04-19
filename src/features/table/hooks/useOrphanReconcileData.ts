@@ -102,8 +102,19 @@ export function useOrphanReconcileData(
 
       // Explicit bibliography origin — set at smart import time. Much stronger
       // signal than batchSiblings (which is inferred from timestamp proximity).
+      //
+      // Guard: suppress `importedFor` when the citation link already exists
+      // (ob → importSource in either direction). Without this, Gemini keeps
+      // proposing the source match it sees in the payload, the user applies
+      // it, buildAndDedup silently skips (link already there), but `importedFor`
+      // stays set on the book forever → infinite loop of "the LLM proposes
+      // the same match again." Not passing the signal at all is cleaner than
+      // filtering after the LLM response.
       const importSource = ob.importSourceId ? bookById.get(ob.importSourceId) : undefined
-      const importedFor = importSource
+      const sourceLinkAlreadyExists = importSource
+        ? (linksByBook.get(ob.id)?.has(importSource.id) ?? false)
+        : false
+      const importedFor = importSource && !sourceLinkAlreadyExists
         ? {
             id: importSource.id,
             title: importSource.title || '',

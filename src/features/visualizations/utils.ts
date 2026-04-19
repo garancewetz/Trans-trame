@@ -12,8 +12,3 @@ export function getCitationEdges(links: Link[]): CitationEdge[] {
       return src && tgt ? [{ sourceId: src, targetId: tgt }] : []
     })
 }
-
-export function shortTitle(title: string, maxLen = 28): string {
-  return title.length > maxLen ? title.slice(0, maxLen - 1) + '…' : title
-}
-

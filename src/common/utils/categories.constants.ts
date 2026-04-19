@@ -20,6 +20,23 @@ export const CATEGORY_THEME = {
   UNCATEGORIZED: { color: '#999999', label: 'Sans catégorie' },
 } as const
 
-
 export type Axis = keyof typeof CATEGORY_THEME
+
+/**
+ * Ordre narratif des pôles sur l'anneau (vue Territoires / Cosmograph).
+ * Distinct de l'ordre des clés de `CATEGORY_THEME` et exclut `UNCATEGORIZED`
+ * (masse centrale).
+ */
+export const CLUSTER_RING_AXES = [
+  'ANTIRACISM',
+  'AFROFEMINIST',
+  'QUEER',
+  'FEMINIST',
+  'BODY',
+  'HEALTH',
+  'CRIP',
+  'CHILDHOOD',
+  'INSTITUTIONAL',
+  'HISTORY',
+] as const satisfies readonly Axis[]
 

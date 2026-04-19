@@ -16,7 +16,7 @@ type Props<T extends ResultItem> = {
   onPick: (item: T) => void
   /** Shown when results is empty */
   emptyLabel?: string
-  /** Optional action shown when empty (e.g. "Ajouter un ouvrage") */
+  /** Optional action shown when empty (e.g. "Ajouter une ressource") */
   emptyAction?: ReactNode
   /** Button tone for row hover — default neutral */
   tone?: 'neutral' | 'violet'

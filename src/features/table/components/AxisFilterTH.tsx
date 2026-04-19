@@ -23,9 +23,10 @@ export function AxisFilterTH({
   const { getReferenceProps, getFloatingProps } = useInteractions([click, dismiss])
 
   const filtered = AXES.filter((a) => a !== 'UNCATEGORIZED')
+  const uncategorized = AXES.find((a) => a === 'UNCATEGORIZED')!
 
   return (
-    <th className="w-40 px-3 py-2.5 text-left text-micro font-semibold uppercase tracking-[1.5px] text-white/32">
+    <div className="px-3 py-2.5 text-left text-micro font-semibold uppercase tracking-[1.5px] text-white/32">
       <button
         ref={refs.setReference}
         {...getReferenceProps()}
@@ -75,8 +76,20 @@ export function AxisFilterTH({
               {AXES_LABELS[axis]}
             </button>
           ))}
+          <div className="my-1 border-t border-white/10" />
+          <button
+            type="button"
+            className={[
+              'flex items-center gap-2 rounded px-2.5 py-1.5 text-left text-[0.78rem] transition-colors hover:bg-white/8',
+              activeAxis === uncategorized ? 'bg-white/10 text-white' : 'text-white/40',
+            ].join(' ')}
+            onClick={() => { onSelect(activeAxis === uncategorized ? null : uncategorized); setOpen(false) }}
+          >
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: AXES_COLORS[uncategorized] }} />
+            {AXES_LABELS[uncategorized]}
+          </button>
         </div>
       )}
-    </th>
+    </div>
   )
 }

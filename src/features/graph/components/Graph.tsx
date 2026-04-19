@@ -266,8 +266,8 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
   }, [degreeByNodeId, citationsByNodeId, bookCountByAuthorId, externalCitationsByBookId])
 
   const isNodeVisible = useCallback(
-    (node) => isNodeVisibleForFilters(node, activeFilter, activeHighlight, linksByNodeId),
-    [activeFilter, activeHighlight, linksByNodeId]
+    (node) => isNodeVisibleForFilters(node, activeFilter, activeHighlight, linksByNodeId, citationsByNodeId),
+    [activeFilter, activeHighlight, linksByNodeId, citationsByNodeId]
   )
 
   const orderedGraphData = useMemo(() => {
@@ -417,7 +417,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
     [selectedAuthorId, peekNodeId, authors, connectedNodes, isNodeVisible, hoveredFilter, citationsByNodeId, degreeByNodeId, topDegreeNodeIds]
   )
 
-  const graphA11yLabel = `Constellation interactive : ${graphData.nodes.length} œuvres reliées par ${graphData.links.length} citations. Une alternative tabulaire est disponible dans l'onglet Ouvrages.`
+  const graphA11yLabel = `Constellation interactive : ${graphData.nodes.length} œuvres reliées par ${graphData.links.length} citations. Une alternative tabulaire est disponible dans l'onglet Ressources.`
 
   const backgroundColor = useMemo(
     () => getComputedStyle(document.documentElement).getPropertyValue('--color-bg-base').trim(),

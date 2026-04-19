@@ -85,7 +85,7 @@ export function AnalysisRankedLists({ mostCited, topAuthors, authorsMap, activeH
                 <div className="min-w-0 flex-1">
                   <p className={`truncate text-ui font-semibold ${isActive ? 'text-white' : 'text-white/85'}`}>{a.name}</p>
                   <p className="text-caption text-white/35">
-                    {a.bookCount} ouvrage{a.bookCount > 1 ? 's' : ''}
+                    {a.bookCount} ressource{a.bookCount > 1 ? 's' : ''}
                   </p>
                 </div>
               </button>

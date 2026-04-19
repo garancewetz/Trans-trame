@@ -12,6 +12,7 @@ export function isNodeVisibleForFilters(
   activeFilter: string | null,
   activeHighlight: Highlight | null,
   linksByNodeId: Map<string, AdjacencyEntry>,
+  citationsByNodeId?: Map<string, number> | null,
 ): boolean {
   if (activeHighlight) {
     switch (activeHighlight.kind) {
@@ -28,6 +29,11 @@ export function isNodeVisibleForFilters(
       case 'author': {
         if (node.type === 'author') return node.id === activeHighlight.authorId
         return (node.authorIds || []).includes(activeHighlight.authorId)
+      }
+      case 'citedMin': {
+        if (node.type === 'author') return true
+        const c = citationsByNodeId?.get(node.id) ?? 0
+        return c >= activeHighlight.min
       }
     }
   }

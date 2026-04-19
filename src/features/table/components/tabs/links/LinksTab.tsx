@@ -379,11 +379,11 @@ function LinkCreateMode({ nodes, authorsMap, linkSourceNode, setLinkSourceNode, 
               />
             ) : !inlineOpen ? (
               <div className="px-5 py-4">
-                <p className="font-mono text-label text-white/22">{checklistSearch ? 'Aucun résultat' : 'Aucun autre ouvrage'}</p>
+                <p className="font-mono text-label text-white/22">{checklistSearch ? 'Aucun résultat' : 'Aucun autre ressource'}</p>
                 {checklistSearch && canInline && (
                   <button type="button" onClick={() => setInlineOpen(true)}
                     className="mt-2 font-mono text-[0.78rem] text-cyan/60 transition-colors hover:text-cyan/90">
-                    + Ajouter un ouvrage ?
+                    + Ajouter une ressource ?
                   </button>
                 )}
               </div>

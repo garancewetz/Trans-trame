@@ -5,11 +5,12 @@ import type { Book, Link } from '@/types/domain'
 import { devWarn } from '@/common/utils/logger'
 import { ensureOk } from '@/core/supabaseErrors'
 import {
-  deleteBookRowById,
-  insertBookRow,
-  insertBookAuthors,
-  setBookAuthors,
-  updateBookRowById,
+  deleteResourceRowById,
+  deleteLinkRowsByIds,
+  insertResourceRow,
+  insertResourceAuthors,
+  setResourceAuthors,
+  updateResourceRowById,
 } from '../api/graphDataApi'
 import {
   bookToDbRow,
@@ -22,6 +23,7 @@ import { DATASET_QUERY_KEY } from '../api/queryKeys'
 type BookMutationsParams = {
   axesColorsRef: RefObject<AxesColorMap>
   booksRef: RefObject<Book[]>
+  linksRef: RefObject<Link[]>
   setBooks: Dispatch<SetStateAction<Book[]>>
   setLinks: Dispatch<SetStateAction<Link[]>>
 }
@@ -29,6 +31,7 @@ type BookMutationsParams = {
 export function useBookMutations({
   axesColorsRef,
   booksRef,
+  linksRef,
   setBooks,
   setLinks,
 }: BookMutationsParams) {
@@ -40,10 +43,10 @@ export function useBookMutations({
       const sanitized = sanitizeBook({ ...book, type: 'book' as const }, axesColorsRef.current!)
       const row = bookToDbRow(sanitized)
       if (sanitized.importSourceId) (row as Record<string, unknown>).import_source_id = sanitized.importSourceId
-      ensureOk(await insertBookRow(row), 'ajout livre')
+      ensureOk(await insertResourceRow(row), 'ajout ressource')
       const authorIds = sanitized.authorIds ?? []
       if (authorIds.length > 0) {
-        ensureOk(await insertBookAuthors(sanitized.id, authorIds), 'jointure auteur·ices')
+        ensureOk(await insertResourceAuthors(sanitized.id, authorIds), 'jointure auteur·ices')
       }
     },
     onMutate: (book) => {
@@ -57,12 +60,12 @@ export function useBookMutations({
     mutationFn: async (updatedNode: Book) => {
       const sanitized = sanitizeBook({ ...updatedNode, type: 'book' as const }, axesColorsRef.current!)
       const { id, ...fields } = bookToDbRow(sanitized)
-      ensureOk(await updateBookRowById(id, fields), 'mise à jour livre')
+      ensureOk(await updateResourceRowById(id, fields), 'mise à jour ressource')
       // Only touch the join table if authorIds was explicitly provided.
       // Without this guard, an update missing the field would wipe the
-      // book↔author associations and re-create the legacy state.
+      // resource↔author associations and re-create the legacy state.
       if (Object.prototype.hasOwnProperty.call(updatedNode, 'authorIds')) {
-        const result = await setBookAuthors(id, updatedNode.authorIds ?? [])
+        const result = await setResourceAuthors(id, updatedNode.authorIds ?? [])
         if (result && 'error' in result && result.error) {
           throw new Error(result.error.message || 'Erreur jointure auteur·ices')
         }
@@ -79,7 +82,24 @@ export function useBookMutations({
 
   const deleteBookMutation = useMutation({
     mutationFn: async (nodeId: string) => {
-      ensureOk(await deleteBookRowById(nodeId), 'suppression livre')
+      // Cascade: soft-delete incoming/outgoing citation links first, then the
+      // book itself. Without this the book row is soft-deleted but the links
+      // remain active in the DB — they come back on the next refetch and the
+      // anomaly detector flags them as "link pointing to a disappeared work".
+      // Links first (not book first) so that a partial failure leaves the
+      // book still visible + retryable rather than an invisible book with
+      // dangling citations.
+      const linkIdsToRemove = (linksRef.current ?? [])
+        .filter((l) => {
+          const s = normalizeId(l.source)
+          const t = normalizeId(l.target)
+          return s === nodeId || t === nodeId
+        })
+        .map((l) => l.id)
+      if (linkIdsToRemove.length > 0) {
+        ensureOk(await deleteLinkRowsByIds(linkIdsToRemove), 'suppression liens du livre')
+      }
+      ensureOk(await deleteResourceRowById(nodeId), 'suppression ressource')
     },
     onMutate: (nodeId) => {
       setBooks((prev) => prev.filter((n) => n.id !== nodeId))

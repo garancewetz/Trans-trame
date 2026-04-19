@@ -73,9 +73,6 @@ export function bookAuthorSortKey(book: Partial<BookNode>, authors: Map<string, 
     const a = authors.get(ids[0])
     if (a) return authorSortKey(a)
   }
-  // Fallback legacy
-  if (book.lastName) return book.lastName.toLowerCase()
-  // Last resort: last word of firstName field or empty
   return ''
 }
 

@@ -49,7 +49,7 @@ export function BooksTabSelectionBar({
         {selectedCount} sélectionné{selectedCount > 1 ? 's' : ''}
       </span>
       {showSameWork && (
-        <Tooltip content="Regrouper des traductions ou éditions d'une même œuvre (les ouvrages restent séparés en base)">
+        <Tooltip content="Regrouper des traductions ou éditions d'une même œuvre (les ressources restent séparés en base)">
           <Button
             type="button"
             onClick={onOpenSameWorkModal}
@@ -60,7 +60,7 @@ export function BooksTabSelectionBar({
         </Tooltip>
       )}
       {showMerge && (
-        <Tooltip content="Supprimer un doublon en transférant ses liens vers l'ouvrage conservé (irréversible)">
+        <Tooltip content="Supprimer un doublon en transférant ses liens vers la ressource conservée (irréversible)">
           <Button
             type="button"
             onClick={onOpenMergeModal}
@@ -90,7 +90,7 @@ export function BooksTabSelectionBar({
         </Tooltip>
       )}
       {onAIEnrich && (
-        <Tooltip content="Enrichir les ouvrages sélectionnés via Gemini (catégories, édition, année…)">
+        <Tooltip content="Enrichir les ressources sélectionnées via Gemini (catégories, édition, année…)">
           <Button
             type="button"
             onClick={() => onAIEnrich()}

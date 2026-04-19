@@ -116,7 +116,7 @@ export function BatchInfoModal({
               {/* Item header */}
               <div className="mb-2 flex items-baseline gap-2">
                 <span className="rounded bg-white/8 px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wider text-white/30">
-                  {item.type === 'book' ? 'Ouvrage' : 'Auteur·ice'}
+                  {item.type === 'book' ? 'Ressource' : 'Auteur·ice'}
                 </span>
                 <span className="font-medium text-white/80">
                   {item.type === 'book'

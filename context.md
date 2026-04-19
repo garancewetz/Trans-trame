@@ -19,10 +19,10 @@ les continuités, les transmissions et les ruptures.
 
 - Graphe 2D interactif (react-force-graph-2d)
 - Timeline en bas de l’écran avec filtre de période et contrôles play/pause
-- Trois modes de vue :
-  - `Constellation` (exploration libre)
-  - `HistCite` (généalogie chronologique)
-  - `Dendrogramme` (arborescence circulaire)
+- Modes de vue :
+  - `Constellation` (exploration libre, react-force-graph-2d)
+  - `Cosmograph` (spike expérimental, renderer cosmos.gl GPU — filtres,
+    drag et nav clavier alignés sur Constellation)
 - Navbar compacte et centralisée :
   - switch de vue discret près du logo
   - bouton `Contribuer` (mint) — bascule vers la vue table d’édition

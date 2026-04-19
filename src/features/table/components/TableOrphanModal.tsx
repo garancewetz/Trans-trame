@@ -107,8 +107,8 @@ export function TableOrphanModal({
   return (
     <Modal
       open={orphanModal}
-      title="Ouvrages orphelins"
-      subtitle={`${orphans.length} ouvrage${orphans.length > 1 ? 's' : ''} sans aucun lien dans la galaxie.`}
+      title="Ressources orphelins"
+      subtitle={`${orphans.length} ressource${orphans.length > 1 ? 's' : ''} sans aucun lien dans la galaxie.`}
       footer={
         <>
           <Button type="button" onClick={handleClose} variant="surface">
@@ -133,7 +133,7 @@ export function TableOrphanModal({
           authorsMap={authorsMap}
           value={linkTarget}
           onSelect={(n) => { setLinkTarget(n); setLinkConfirm(false) }}
-          placeholder="Chercher l'ouvrage source…"
+          placeholder="Chercher la ressource source…"
           exclude={orphans.map((n) => n.id)}
         />
         {linkTarget && (

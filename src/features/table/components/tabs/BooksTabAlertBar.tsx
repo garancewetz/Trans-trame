@@ -9,10 +9,8 @@ type Props = {
   todoCount: number
   todoOnly: boolean
   onToggleTodoOnly: () => void
-  showAIReconcile: boolean
   onOpenDedupeModal?: () => void
   onOpenOrphanModal?: () => void
-  onOpenAIOrphanReconcile?: () => void
 }
 
 export function BooksTabAlertBar({
@@ -21,12 +19,10 @@ export function BooksTabAlertBar({
   todoCount,
   todoOnly,
   onToggleTodoOnly,
-  showAIReconcile,
   onOpenDedupeModal,
   onOpenOrphanModal,
-  onOpenAIOrphanReconcile,
 }: Props) {
-  if (duplicateGroups.length === 0 && orphans.length === 0 && !showAIReconcile && todoCount === 0) {
+  if (duplicateGroups.length === 0 && orphans.length === 0 && todoCount === 0) {
     return null
   }
 
@@ -71,24 +67,10 @@ export function BooksTabAlertBar({
           icon={<Sparkles size={11} />}
           onClick={onOpenOrphanModal}
           type="button"
-          title={`${orphans.length} ouvrage${orphans.length > 1 ? 's' : ''} sans lien`}
+          title={`${orphans.length} ressource${orphans.length > 1 ? 's' : ''} sans lien`}
         >
           Orphelins
           <span className="tabular-nums">({orphans.length})</span>
-        </Button>
-      )}
-      {showAIReconcile && onOpenAIOrphanReconcile && (
-        <Button
-          variant="outline"
-          outlineWeight="faint"
-          tone="magic"
-          emphasis
-          icon={<Sparkles size={11} />}
-          onClick={onOpenAIOrphanReconcile}
-          type="button"
-          title="Réconcilier auteur·ices et ouvrages via Gemini (contexte de batch + graphe)"
-        >
-          AI Réconcilier
         </Button>
       )}
     </div>

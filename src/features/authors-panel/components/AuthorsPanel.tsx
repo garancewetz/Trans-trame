@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import { Plus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Virtuoso } from 'react-virtuoso'
 import { authorName, authorSortKey } from '@/common/utils/authorUtils'
 import { axesGradient } from '@/common/utils/categories'
@@ -8,10 +9,10 @@ import { Button } from '@/common/components/ui/Button'
 import { PanelHeader } from '@/common/components/ui/PanelHeader'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
 import { PANEL_WIDTH } from '@/common/constants/panels'
+import { ADMIN_ROUTE } from '@/common/utils/adminUrl'
 import { useAppData } from '@/core/AppDataContext'
 import { useSelection } from '@/core/SelectionContext'
 import { useFilter } from '@/core/FilterContext'
-import { useTableUi } from '@/core/TableUiContext'
 import { usePanelVisibility } from '@/core/PanelVisibilityContext'
 
 type Props = {
@@ -26,8 +27,8 @@ export function AuthorsPanel({
   const { authors = [], books = [] } = useAppData()
   const selection = useSelection()
   const filter = useFilter()
-  const tableUi = useTableUi()
   const panels = usePanelVisibility()
+  const navigate = useNavigate()
 
   const selectedAuthorId = filter.selectedAuthor
 
@@ -44,14 +45,14 @@ export function AuthorsPanel({
   }, [selection, filter])
 
   const handleAddWorkForAuthor = useCallback(() => {
-    tableUi.openTable('books')
+    navigate(ADMIN_ROUTE)
     panels.setAuthorsPanelOpen(false)
-  }, [tableUi, panels])
+  }, [navigate, panels])
 
   const handleOpenAddBookFromSearch = useCallback(() => {
-    tableUi.openTable('books')
+    navigate(ADMIN_ROUTE)
     panels.setAuthorsPanelOpen(false)
-  }, [tableUi, panels])
+  }, [navigate, panels])
 
   // Build sorted list of authors with their books (via authorIds)
   const authorEntries = useMemo(() => {
@@ -152,8 +153,8 @@ export function AuthorsPanel({
                     <Button
                       type="button"
                       className="shrink-0 cursor-pointer rounded-md border border-white/10 bg-white/5 p-2 text-peach/80 transition-colors hover:border-peach/40 hover:bg-peach/12 hover:text-white"
-                      aria-label={`Ajouter un ouvrage pour ${a.name}`}
-                      title="Ajouter un ouvrage pour cet·te auteur·ice"
+                      aria-label={`Ajouter une ressource pour ${a.name}`}
+                      title="Ajouter une ressource pour cet·te auteur·ice"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleAddWorkForAuthor()
@@ -197,7 +198,7 @@ export function AuthorsPanel({
                     className="w-full cursor-pointer rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-left text-body font-semibold text-white/70 transition-colors hover:border-violet/45 hover:bg-violet/15 hover:text-white"
                     onClick={() => handleOpenAddBookFromSearch()}
                   >
-                    Ajouter un·e auteur·ice (nouvel ouvrage)
+                    Ajouter un·e auteur·ice (nouvel ressource)
                   </Button>
                 </div>
               ),

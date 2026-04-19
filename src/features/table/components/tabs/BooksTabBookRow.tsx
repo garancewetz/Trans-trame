@@ -9,12 +9,14 @@ import { StatusFlag } from '@/common/components/StatusFlag'
 import { TodoNotePopover } from '../TodoNotePopover'
 import { Badge } from '@/common/components/ui/Badge'
 import { TextInput } from '@/common/components/ui/TextInput'
-import { INPUT, TD } from '../../tableConstants'
+import { BOOKS_GRID_STYLE, INPUT, TD } from '../../tableConstants'
 import { AxisDots } from '../AxisDots'
 import { AuthorPicker } from '../AuthorPicker'
 import { BookLinksBadge } from './BookLinksBadge'
 import { WorkSiblingsBadge } from './WorkSiblingsBadge'
 import { splitBookAxes } from '@/common/utils/categories'
+import { getResourceType } from '@/common/constants/resourceTypes'
+import { Tooltip } from '@/common/components/ui/Tooltip'
 import type { Author, AuthorId, Book, BookId, EntityStatus } from '@/types/domain'
 
 const GRAPH_BTN = 'inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-2 py-0.5 text-caption font-semibold text-white/45 transition-all hover:border-violet/40 hover:bg-violet/10 hover:text-violet/95'
@@ -73,21 +75,20 @@ function BooksTabBookRowImpl({
   onOpenWorkDetail,
 }: Props) {
   return (
-    <tr
+    <div
       data-book-row-id={node.id}
-      style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 44px' }}
+      style={BOOKS_GRID_STYLE}
       className={clsx(
-        'group cursor-pointer border-b border-white/4 transition-colors',
+        'group grid cursor-pointer items-center border-b border-white/4 transition-colors hover:bg-white/2.5',
         justAdded && 'animate-flash-row',
-        isSelected ? 'bg-green/[0.025]' : rowIndex % 2 === 0 ? 'bg-white/[0.003]' : '',
-        'hover:bg-white/2.5',
+        isSelected ? 'bg-green/2.5' : rowIndex % 2 === 0 ? 'bg-white/[0.003]' : '',
       )}
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('button, input, a, [data-editable]')) return
         toggleRow(node.id)
       }}
     >
-      <td className="px-3 py-2">
+      <div className="flex items-center justify-center px-3 py-2">
         <Button
           onClick={() => toggleRow(node.id)}
           type="button"
@@ -100,8 +101,20 @@ function BooksTabBookRowImpl({
         >
           <Check size={9} />
         </Button>
-      </td>
-      <td className={clsx(TD, 'min-w-0')}>
+      </div>
+      <div className="flex items-center justify-center px-2 py-2">
+        {(() => {
+          const rt = getResourceType(node.resourceType)
+          return (
+            <Tooltip content={rt.label}>
+              <span className="flex items-center text-white/35">
+                <rt.icon size={12} />
+              </span>
+            </Tooltip>
+          )
+        })()}
+      </div>
+      <div className={clsx(TD, 'min-w-0')}>
         {isEditTitle ? (
           <TextInput
             variant="table"
@@ -135,8 +148,8 @@ function BooksTabBookRowImpl({
             )}
           </span>
         )}
-      </td>
-      <td className={TD}>
+      </div>
+      <div className={TD}>
         {editingAuthorsNodeId === node.id ? (
           <div
             onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setEditingAuthorsNodeId(null) }}
@@ -182,8 +195,8 @@ function BooksTabBookRowImpl({
             {bookAuthorDisplay(node, authorsMap) || <span className="text-white/18">—</span>}
           </span>
         )}
-      </td>
-      <td className={TD}>
+      </div>
+      <div className={TD}>
         {isEditYear ? (
           <TextInput
             variant="table"
@@ -201,8 +214,8 @@ function BooksTabBookRowImpl({
             {node.year || <span className="text-white/18">—</span>}
           </span>
         )}
-      </td>
-      <td className="px-3 py-2">
+      </div>
+      <div className="px-3 py-2">
         {(() => {
           const { axes: bookAxes, themes: bookThemes } = splitBookAxes(node.axes)
           return (
@@ -223,34 +236,34 @@ function BooksTabBookRowImpl({
             />
           )
         })()}
-      </td>
-      <td className="px-3 py-2">
+      </div>
+      <div className="px-3 py-2">
         <BookLinksBadge
           linkCount={linkCount}
           linkedBooks={linkedBooks}
           authorsMap={authorsMap}
           onClick={() => { onOpenLinksForBook?.(node) }}
         />
-      </td>
-      <td className="px-3 py-2">
+      </div>
+      <div className="px-3 py-2">
         <span className="font-mono text-[0.78rem] tabular-nums text-white/30">
           {node.created_at
             ? new Date(node.created_at as string).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })
             : '—'}
         </span>
-      </td>
-      <td className="px-2 py-2">
+      </div>
+      <div className="px-2 py-2">
         {onOpenWorkDetail ? (
-          <Button type="button" title="Ouvrir la grande fiche ouvrage" onClick={() => onOpenWorkDetail(node.id)} className={GRAPH_BTN}>
+          <Button type="button" title="Ouvrir la grande fiche ressource" onClick={() => onOpenWorkDetail(node.id)} className={GRAPH_BTN}>
             <Eye size={12} className="shrink-0" />Graphe
           </Button>
         ) : (
-          <Link to={{ pathname: '/', search: mapBookUrlSearch(node.id) }} target="_blank" rel="noopener noreferrer" title="Ouvrir la carte sur cet ouvrage (nouvel onglet, ?book=…)" className={GRAPH_BTN}>
+          <Link to={{ pathname: '/', search: mapBookUrlSearch(node.id) }} target="_blank" rel="noopener noreferrer" title="Ouvrir la carte sur cette ressource (nouvel onglet, ?book=…)" className={GRAPH_BTN}>
             <Eye size={12} className="shrink-0" />Graphe
           </Link>
         )}
-      </td>
-    </tr>
+      </div>
+    </div>
   )
 }
 

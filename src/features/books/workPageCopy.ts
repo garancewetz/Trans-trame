@@ -1,21 +1,32 @@
 import { bookAuthorDisplay, type AuthorNode } from '@/common/utils/authorUtils'
-import type { Book, Link as GraphLink } from '@/types/domain'
+import type { Book } from '@/types/domain'
 
-export function linkExcerpt(link: GraphLink) {
+type CitationFieldsReader = {
+  citation_text?: string
+  context?: string
+  page?: string
+  edition?: string
+}
+
+export function linkExcerpt(link: CitationFieldsReader) {
   return (link.citation_text || link.context || '').trim()
 }
 
-export function refMetaLine(
+export function citationMetaLine(src: CitationFieldsReader) {
+  const parts: string[] = []
+  if (src.page) parts.push(src.page)
+  if (src.edition) parts.push(src.edition)
+  return parts.join(' · ')
+}
+
+export function refWorkMetaLine(
   other: Book | null | undefined,
-  link: GraphLink,
   authorsMap: Map<string, AuthorNode>,
 ) {
+  if (!other) return ''
   const parts: string[] = []
-  if (other) {
-    const a = bookAuthorDisplay(other, authorsMap)
-    if (a) parts.push(a)
-    if (other.year != null) parts.push(String(other.year))
-  }
-  if (link.page) parts.push(link.page)
+  const a = bookAuthorDisplay(other, authorsMap)
+  if (a) parts.push(a)
+  if (other.year != null) parts.push(String(other.year))
   return parts.join(' · ')
 }

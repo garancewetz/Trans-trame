@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { useMatch, useNavigate } from 'react-router-dom'
 import { PenLine } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
@@ -9,9 +10,9 @@ import { NavbarAuthButtons } from './NavbarAuthButtons'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { axesGradient } from '@/common/utils/categories'
 import { Badge } from '@/common/components/ui/Badge'
+import { ADMIN_ROUTE } from '@/common/utils/adminUrl'
 import { useAppData } from '@/core/AppDataContext'
 import { useFilter } from '@/core/FilterContext'
-import { useTableUi } from '@/core/TableUiContext'
 import { usePanelVisibility } from '@/core/PanelVisibilityContext'
 import { useSelection } from '@/core/SelectionContext'
 import { useAuthActions, useAuthState } from '@/core/AuthContext'
@@ -24,8 +25,6 @@ type NavbarProps = {
 
 const VIEW_MODE_LABELS: Record<string, string> = {
   constellation: 'Constellation',
-  histcite: 'HistCite',
-  dendrogram: 'Dendrogramme',
 }
 
 export function Navbar({ viewMode, onViewChange }: NavbarProps) {
@@ -35,10 +34,10 @@ export function Navbar({ viewMode, onViewChange }: NavbarProps) {
   const { graphData, authorsMap, authorCount } = appData
   const filter = useFilter()
   const selectedAuthorId = filter.selectedAuthor
-  const tableUi = useTableUi()
-  const { tableMode, openTable } = tableUi
   const { openTextsPanel, openAuthorsPanel, openAnalysisPanel } = usePanelVisibility()
   const selection = useSelection()
+  const navigate = useNavigate()
+  const isAdminRoute = Boolean(useMatch('/admin/*'))
 
   const onSelectNode = useCallback(
     (node: Parameters<typeof selection.selectNode>[0]) => {
@@ -73,11 +72,11 @@ export function Navbar({ viewMode, onViewChange }: NavbarProps) {
 
   const onToggleTableMode = useCallback(
     () => {
-      if (tableUi.tableMode) { tableUi.setTableMode(false); return }
+      if (isAdminRoute) { navigate('/'); return }
       if (!requireAuth()) return
-      tableUi.setTableMode(true)
+      navigate(ADMIN_ROUTE)
     },
-    [tableUi, requireAuth],
+    [isAdminRoute, navigate, requireAuth],
   )
 
   const onOpenAnalysisPanel = useCallback(
@@ -115,11 +114,11 @@ export function Navbar({ viewMode, onViewChange }: NavbarProps) {
             frosted
             size="sm"
             tone="mint"
-            active={tableMode}
+            active={isAdminRoute}
             icon={<PenLine size={13} />}
             onClick={onToggleTableMode}
             type="button"
-            title={tableMode ? 'Retour au graphe' : 'Contribuer — Ajouter et tisser des liens'}
+            title={isAdminRoute ? 'Retour au graphe' : 'Contribuer — Ajouter et tisser des liens'}
           >
             Contribuer
           </Button>
@@ -128,7 +127,7 @@ export function Navbar({ viewMode, onViewChange }: NavbarProps) {
           {/* Global search */}
           <div className="relative w-80 shrink-0 md:w-[420px]" ref={searchRef}>
             <SearchInputWithClear
-              placeholder="Rechercher un ouvrage ou un·e auteur·ice…"
+              placeholder="Rechercher une ressource ou un·e auteur·ice…"
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
               onClear={() => {
@@ -151,13 +150,14 @@ export function Navbar({ viewMode, onViewChange }: NavbarProps) {
                       variant="ghost"
                       layout="banner"
                       onClick={() => {
-                        openTable?.('books')
+                        if (!requireAuth()) return
+                        navigate(ADMIN_ROUTE)
                         setGlobalSearch('')
                         setSearchFocused(false)
                       }}
                       type="button"
                     >
-                      Ajouter un ouvrage ?
+                      Ajouter une ressource ?
                     </Button>
                   </div>
                 ) : (

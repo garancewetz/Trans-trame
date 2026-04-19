@@ -1,16 +1,20 @@
 import { useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Pencil } from 'lucide-react'
 import { LINK_CITED_BY_COLOR_STRONG, LINK_CITES_COLOR_STRONG } from '@/common/constants/linkRelationColors'
+import { getResourceType } from '@/common/constants/resourceTypes'
 import { splitBookAxes, axisColor } from '@/common/utils/categories'
 import { Badge } from '@/common/components/ui/Badge'
 import { Button } from '@/common/components/ui/Button'
 import { SectionHeading } from '@/common/components/ui/SectionHeading'
+import { ThemePill } from '@/common/components/ui/ThemePill'
 import { AuthorLinks } from '@/common/components/AuthorLinks'
-import { linkExcerpt, refMetaLine } from '@/features/books/workPageCopy'
+import { ADMIN_QUERY_KEYS, ADMIN_ROUTE } from '@/common/utils/adminUrl'
+import { refWorkMetaLine } from '@/features/books/workPageCopy'
 import { getOutgoingRefs, getIncomingRefs, computeSameAuthorBooks } from '@/features/graph/graphRelations'
 import { useSelection } from '@/core/SelectionContext'
 import { useAppData } from '@/core/AppDataContext'
-import { useTableUi } from '@/core/TableUiContext'
+import { useAuthActions } from '@/core/AuthContext'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 import type { Book } from '@/types/domain'
 import { PanelRefRow, CollapsibleRefList } from './PanelRefRow'
@@ -24,7 +28,8 @@ export function NodeDetails() {
     selectNode,
   } = useSelection()
   const { graphData, books, authorsMap } = useAppData()
-  const { openTable } = useTableUi()
+  const navigate = useNavigate()
+  const { requireAuth } = useAuthActions()
 
   const node = useMemo(() => {
     if (!selectedNode) return null
@@ -48,33 +53,45 @@ export function NodeDetails() {
   if (!node) return null
   const map = authorsMap || new Map<string, AuthorNode>()
   const { axes, themes } = splitBookAxes(node.axes)
+  const resourceType = getResourceType(node.resourceType)
 
   return (
     <div className="px-6 pb-10 pt-12 text-text-main">
       <header className="mb-9 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           {(axes.length > 0 || themes.length > 0) && (
-            <div className="mb-5 flex flex-wrap items-center gap-1.5">
-              {axes.map((axis) => (
-                <Badge
-                  key={axis}
-                  variant="axis"
-                  color={axisColor(axis) ?? '#94a3b8'}
-                >
-                  {axis}
-                </Badge>
-              ))}
-              {themes.map((theme) => (
-                <span
-                  key={`theme-${theme}`}
-                  className="inline-flex items-center rounded-full border border-white/12 bg-white/4 px-2 py-0.5 text-[0.7rem] font-medium lowercase tracking-wide text-white/55"
-                  title={`Thème secondaire : UNCATEGORIZED:${theme}`}
-                >
-                  {theme}
-                </span>
-              ))}
+            <div className="mb-5 flex flex-col gap-2">
+              {axes.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {axes.map((axis) => (
+                    <Badge
+                      key={axis}
+                      variant="axis"
+                      color={axisColor(axis) ?? '#94a3b8'}
+                    >
+                      {axis}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              {themes.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-micro font-medium uppercase tracking-[0.14em] text-white/35">
+                    Sous-catégorie proposée
+                  </span>
+                  {themes.map((theme) => (
+                    <ThemePill key={`theme-${theme}`} theme={theme} />
+                  ))}
+                </div>
+              )}
             </div>
           )}
+          <div className="mb-2 flex items-center gap-1.5">
+            <resourceType.icon size={12} className="text-white/35" />
+            <span className="font-mono text-caption uppercase tracking-[0.12em] text-white/35">
+              {resourceType.label}
+            </span>
+          </div>
           <h2 className="flex items-start gap-1.5 text-[1.5rem] font-semibold leading-[1.18] tracking-tight text-white md:text-[1.7rem]">
             <span className="min-w-0">{node.title}</span>
             {workEditions.length > 0 && (
@@ -92,7 +109,10 @@ export function NodeDetails() {
           variant="icon"
           iconDensity="soft"
           className="shrink-0"
-          onClick={() => openTable('books', null, node.id)}
+          onClick={() => {
+            if (!requireAuth()) return
+            navigate(`${ADMIN_ROUTE}?${ADMIN_QUERY_KEYS.focus}=${encodeURIComponent(node.id)}`)
+          }}
           title="Éditer la fiche"
           aria-label="Éditer la fiche"
         >
@@ -139,16 +159,16 @@ export function NodeDetails() {
             <CollapsibleRefList
               items={incomingRefs}
               variant="citedBy"
-              renderItem={({ link, other }, i) => (
+              renderItem={({ other, link }, i) => (
                 <PanelRefRow
                   key={link.id ?? `i-${i}`}
                   variant="citedBy"
                   title={other?.title}
-                  meta={refMetaLine(other, link, map)}
-                  excerpt={linkExcerpt(link)}
-                  onClick={() => {
+                  meta={refWorkMetaLine(other, map)}
+                  link={link}
+                  onSelectLink={(l) => {
                     setLinkContextNode(node)
-                    setSelectedLink(link)
+                    setSelectedLink(l)
                   }}
                 />
               )}
@@ -165,16 +185,16 @@ export function NodeDetails() {
             <CollapsibleRefList
               items={outgoingRefs}
               variant="cites"
-              renderItem={({ link, other }, i) => (
+              renderItem={({ other, link }, i) => (
                 <PanelRefRow
                   key={link.id ?? `o-${i}`}
                   variant="cites"
                   title={other?.title}
-                  meta={refMetaLine(other, link, map)}
-                  excerpt={linkExcerpt(link)}
-                  onClick={() => {
+                  meta={refWorkMetaLine(other, map)}
+                  link={link}
+                  onSelectLink={(l) => {
                     setLinkContextNode(node)
-                    setSelectedLink(link)
+                    setSelectedLink(l)
                   }}
                 />
               )}

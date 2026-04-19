@@ -16,7 +16,7 @@ export function AnalysisPanorama({ panorama }: AnalysisPanoramaProps) {
   return (
     <section className="mb-5 grid grid-cols-2 gap-2">
       {[
-        { icon: BookOpen, label: 'Ouvrages', value: panorama.books },
+        { icon: BookOpen, label: 'Ressources', value: panorama.books },
         { icon: Users, label: 'Auteur·ices', value: panorama.authors },
         { icon: Link2, label: 'Soudures', value: panorama.links },
         { icon: Calendar, label: 'Période', value: panorama.yearMin && panorama.yearMax ? `${panorama.yearMin}–${panorama.yearMax}` : '—' },

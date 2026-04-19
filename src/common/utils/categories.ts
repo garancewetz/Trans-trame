@@ -2,6 +2,7 @@ import { CATEGORY_THEME as CATEGORY_THEME_CONSTANTS, type Axis } from './categor
 
 export const CATEGORY_THEME = CATEGORY_THEME_CONSTANTS
 export type { Axis }
+export { CLUSTER_RING_AXES } from './categories.constants'
 
 // Dérivés automatiquement de CATEGORY_THEME — rien à maintenir à la main.
 export const AXES = Object.keys(CATEGORY_THEME) as Axis[]

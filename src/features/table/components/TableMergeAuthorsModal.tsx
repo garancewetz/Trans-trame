@@ -1,5 +1,5 @@
 import { Merge } from 'lucide-react'
-import type { Author, AuthorId } from '@/types/domain'
+import type { Author, AuthorId, Book } from '@/types/domain'
 import { Button } from '@/common/components/ui/Button'
 import { Modal } from '@/common/components/ui/Modal'
 import { RadioCard } from '@/common/components/ui/RadioCard'
@@ -16,6 +16,7 @@ type Props = {
   onConfirm: () => void
   onClose?: () => void
   bookCountByAuthor?: Map<AuthorId, number>
+  booksByAuthor?: Map<AuthorId, Book[]>
 }
 
 export function TableMergeAuthorsModal({
@@ -28,6 +29,7 @@ export function TableMergeAuthorsModal({
   onConfirm,
   onClose,
   bookCountByAuthor,
+  booksByAuthor,
 }: Props) {
   if (!open || (authorsToMerge || []).length !== 2) return null
 
@@ -35,7 +37,7 @@ export function TableMergeAuthorsModal({
     <Modal
       open={open}
       title="Fusionner deux auteur·ices"
-      subtitle="L'auteur·ice non conservé·e sera supprimé·e. Ses ouvrages seront transférés vers l'auteur·ice conservé·e."
+      subtitle="L'auteur·ice non conservé·e sera supprimé·e. Ses ressources seront transférées vers l'auteur·ice conservé·e."
       footer={
         <>
           <Button
@@ -59,7 +61,8 @@ export function TableMergeAuthorsModal({
     >
       <div className="mb-4 flex flex-col gap-2">
         {authorsToMerge.map((a) => {
-          const booksCount = bookCountByAuthor?.get?.(a.id) || 0
+          const books = booksByAuthor?.get?.(a.id) || []
+          const booksCount = bookCountByAuthor?.get?.(a.id) ?? books.length
           return (
             <RadioCard
               key={a.id}
@@ -73,8 +76,21 @@ export function TableMergeAuthorsModal({
                 {a.lastName ? a.lastName.toUpperCase() : '—'}{a.firstName ? `, ${a.firstName}` : ''}
               </span>
               <span className="ml-2 font-mono text-caption text-white/28">
-                · {booksCount} ouvrage{booksCount > 1 ? 's' : ''}
+                · {booksCount} ressource{booksCount > 1 ? 's' : ''}
               </span>
+              {books.length > 0 && (
+                <ul className="mt-2 flex flex-col gap-0.5 font-mono text-caption text-white/45">
+                  {books.map((b) => (
+                    <li key={b.id} className="flex items-baseline gap-1.5">
+                      <span className="text-white/30">·</span>
+                      <span className="text-white/70">{b.title || '(sans titre)'}</span>
+                      {b.year != null && (
+                        <span className="text-white/28">({b.year})</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </RadioCard>
           )
         })}

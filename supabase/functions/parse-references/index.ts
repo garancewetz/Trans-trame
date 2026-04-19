@@ -45,7 +45,7 @@ const SYSTEM_PROMPT = `You are a bibliographic reference parser. You receive a l
 Context: this is an intersectional corpus mapping intellectual filiations across feminism, afrofeminism, queer studies, disability, race, body politics, and social justice.
 
 Response format (array, one object per line, in order):
-[{"authors":[{"firstName":"","lastName":""}],"title":"","originalTitle":"","edition":"","city":"","year":null,"page":"","axes":[]}]
+[{"authors":[{"firstName":"","lastName":""}],"title":"","originalTitle":"","edition":"","city":"","year":null,"page":"","axes":[],"resourceType":"book"}]
 
 Bibliographic fields:
 - "authors": ALL authors/co-authors, including (dir.), (eds.), (coord.). Separate first name and last name.
@@ -65,6 +65,13 @@ Bibliographic fields:
 CRITICAL RULE: Ensure that "title" and "authors" are never swapped. For classic authors (e.g., Balzac, Flaubert), extract the person's name even if the source text is ambiguous. If a name like "Le Père Goriot" appears as an author, it is an error; identify "Honoré de Balzac" as the author.
 
 MISSING AUTHOR RULE: When a line contains "[auteur·ice inconnu·e]", the author is missing from the database. You MUST try to identify the author(s) from the title alone using your knowledge. If you recognize the work, return the correct author(s). Only return an empty authors array if you truly cannot identify who wrote the work.
+
+Resource type ("resourceType") — classify the resource as ONE of:
+- "book": monograph, essay collection, book chapter
+- "article": journal article, magazine piece, newspaper article, blog post
+- "podcast": podcast episode or radio broadcast
+- "film": documentary, film, video
+- "other": when none of the above apply
 
 Thematic classification ("axes") — pick 1 to 3 categories from:
 - QUEER: queer studies, trans, gender, LGBT sexualities, drag, homonormativity
@@ -87,22 +94,22 @@ Priority rules for classification:
 
 Examples:
 Input: Didier Eribon (dir.), Les études gay et lesbiennes, Centre Georges-Pompidou, Paris, 1998.
-→ {"authors":[{"firstName":"Didier","lastName":"Eribon"}],"title":"Les études gay et lesbiennes","originalTitle":"","edition":"Centre Georges-Pompidou","city":"Paris","year":1998,"page":"","axes":["QUEER"]}
+→ {"authors":[{"firstName":"Didier","lastName":"Eribon"}],"title":"Les études gay et lesbiennes","originalTitle":"","edition":"Centre Georges-Pompidou","city":"Paris","year":1998,"page":"","axes":["QUEER"],"resourceType":"book"}
 
 Input: Richard Dyer, « Male Gay Porn : Coming to Terms », in Jump Cut, Mars, 1985, p. 27-29.
-→ {"authors":[{"firstName":"Richard","lastName":"Dyer"}],"title":"Male Gay Porn : Coming to Terms","originalTitle":"","edition":"Jump Cut","city":"","year":1985,"page":"p. 27-29","axes":["QUEER","BODY"]}
+→ {"authors":[{"firstName":"Richard","lastName":"Dyer"}],"title":"Male Gay Porn : Coming to Terms","originalTitle":"","edition":"Jump Cut","city":"","year":1985,"page":"p. 27-29","axes":["QUEER","BODY"],"resourceType":"article"}
 
 Input: Audre Lorde, Sister Outsider, Crossing Press, 1984.
-→ {"authors":[{"firstName":"Audre","lastName":"Lorde"}],"title":"Sister Outsider","originalTitle":"Sister Outsider","edition":"Crossing Press","city":"","year":1984,"page":"","axes":["AFROFEMINIST","QUEER","FEMINIST"]}
+→ {"authors":[{"firstName":"Audre","lastName":"Lorde"}],"title":"Sister Outsider","originalTitle":"Sister Outsider","edition":"Crossing Press","city":"","year":1984,"page":"","axes":["AFROFEMINIST","QUEER","FEMINIST"],"resourceType":"book"}
 
 Input: Simone de Beauvoir, The Second Sex, Vintage, New York, 2011.
-→ {"authors":[{"firstName":"Simone","lastName":"de Beauvoir"}],"title":"The Second Sex","originalTitle":"Le Deuxième Sexe","edition":"Vintage","city":"New York","year":2011,"page":"","axes":["FEMINIST"]}
+→ {"authors":[{"firstName":"Simone","lastName":"de Beauvoir"}],"title":"The Second Sex","originalTitle":"Le Deuxième Sexe","edition":"Vintage","city":"New York","year":2011,"page":"","axes":["FEMINIST"],"resourceType":"book"}
 
 Input: Simone de Beauvoir, Le Deuxième Sexe, Gallimard, Paris, 1949.
-→ {"authors":[{"firstName":"Simone","lastName":"de Beauvoir"}],"title":"Le Deuxième Sexe","originalTitle":"Le Deuxième Sexe","edition":"Gallimard","city":"Paris","year":1949,"page":"","axes":["FEMINIST"]}
+→ {"authors":[{"firstName":"Simone","lastName":"de Beauvoir"}],"title":"Le Deuxième Sexe","originalTitle":"Le Deuxième Sexe","edition":"Gallimard","city":"Paris","year":1949,"page":"","axes":["FEMINIST"],"resourceType":"book"}
 
 Input: Jacques Lacan, Écrits, Seuil, Paris, 1966.
-→ {"authors":[{"firstName":"Jacques","lastName":"Lacan"}],"title":"Écrits","originalTitle":"Écrits","edition":"Seuil","city":"Paris","year":1966,"page":"","axes":["UNCATEGORIZED:psychoanalysis"]}`
+→ {"authors":[{"firstName":"Jacques","lastName":"Lacan"}],"title":"Écrits","originalTitle":"Écrits","edition":"Seuil","city":"Paris","year":1966,"page":"","axes":["UNCATEGORIZED:psychoanalysis"],"resourceType":"book"}`
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -133,6 +140,7 @@ interface ParsedResult {
   page: string
   axes: string[]
   suggestedThemes: string[]
+  resourceType: string
 }
 
 // ─── Gemini call with retry ─────────────────────────────────────────────────

@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Author, AuthorId, Book, Link } from '@/types/domain'
+import { devWarn } from '@/common/utils/logger'
+import { normalizeEndpointId } from '@/features/graph/domain/graphDataModel'
 import { useOrphanReconcileData } from './useOrphanReconcileData'
 import {
   reconcileOrphansWithLLM,
@@ -10,6 +12,16 @@ import {
 import { useFakeProgress } from '@/common/hooks/useFakeProgress'
 
 export type ReconcilePhase = 'idle' | 'loading' | 'review' | 'applying' | 'done'
+
+/** Outcome of the synchronous apply loop. `attempted` counts mutations we
+ *  actually dispatched; `skipped` are matches we filtered out before dispatch
+ *  (stale IDs, duplicates already present, …). Surfaced to the user so the
+ *  "why does the modal keep proposing the same thing" loop becomes legible. */
+export type ApplyOutcome = {
+  attempted: number
+  skipped: number
+  skippedReasons: string[]
+}
 
 function matchKey(m: ReconcileMatch): string {
   return `${m.authorId}:${m.bookId}`
@@ -46,6 +58,7 @@ export function useReconcileState({
   const [acceptedAuthorMatches, setAcceptedAuthorMatches] = useState<Set<string>>(new Set())
   const [acceptedSourceMatches, setAcceptedSourceMatches] = useState<Set<string>>(new Set())
   const [hintsSaved, setHintsSaved] = useState(false)
+  const [applyOutcome, setApplyOutcome] = useState<ApplyOutcome | null>(null)
   const { progress, reset: resetProgress, complete: completeProgress } = useFakeProgress({ active: phase === 'loading', rate: 0.06, interval: 600 })
 
   const reconcileBooks = useMemo(() => {
@@ -112,20 +125,70 @@ export function useReconcileState({
     if (!result) return
     setPhase('applying')
 
+    const skippedReasons: string[] = []
+    let attempted = 0
+
+    // Coalesce authorToBook matches by bookId BEFORE dispatching mutations.
+    // Why: if Gemini proposes two authors for the same book and we fire two
+    // separate onUpdateBook calls, each reads the stale pre-mutation
+    // authorIds, and `setBookAuthors` does DELETE+INSERT — the second call
+    // wipes the first author's association. The book ends up with only the
+    // last-seen author, the lost one resurfaces as orphan next run, and the
+    // user sees the modal re-propose the same match (the "circular loop"
+    // report). Coalescing here keeps all authors for a book in one write.
+    const authorsByBook = new Map<string, string[]>()
     for (const m of result.authorToBook) {
       if (!acceptedAuthorMatches.has(matchKey(m))) continue
       const book = bookById.get(m.bookId)
-      if (!book) continue
-      const currentIds = book.authorIds || []
-      if (currentIds.includes(m.authorId)) continue
-      onUpdateBook?.({ ...book, authorIds: [...currentIds, m.authorId] })
+      if (!book) {
+        skippedReasons.push(
+          `Auteur·ice → Ressource : ressource introuvable (${m.bookId.slice(0, 8)}…)`,
+        )
+        continue
+      }
+      const currentIds = book.authorIds ?? []
+      if (currentIds.includes(m.authorId)) {
+        skippedReasons.push(
+          `Auteur·ice → Ressource : déjà associé·e à « ${book.title || m.bookId} »`,
+        )
+        continue
+      }
+      const accumulated = authorsByBook.get(m.bookId) ?? [...currentIds]
+      if (!accumulated.includes(m.authorId)) accumulated.push(m.authorId)
+      authorsByBook.set(m.bookId, accumulated)
     }
 
-    // Batch all accepted source matches into a single bulk insert.
-    // Prevents per-row mutate() races that lost rows on large reconciliations.
+    for (const [bookId, authorIds] of authorsByBook) {
+      const book = bookById.get(bookId)
+      if (!book) continue
+      onUpdateBook?.({ ...book, authorIds })
+      attempted++
+    }
+
+    // Build a quick (source|target) index of existing links so we can skip
+    // source matches where the link already exists. `buildAndDedup` downstream
+    // compares citation_text/page/edition too — but Gemini always proposes
+    // empty citation metadata, so a link created at smart-import time (with a
+    // real citation_text) is NOT seen as a duplicate there, and every apply
+    // would silently create a new row with the same endpoints until the
+    // orphan stops being flagged. Guarding here prevents the loop.
+    const existingPairs = new Set<string>()
+    for (const l of links) {
+      const s = normalizeEndpointId(l.source)
+      const t = normalizeEndpointId(l.target)
+      if (s && t) existingPairs.add(`${s}|${t}`)
+    }
+
     const linksToAdd: Array<{ source: string; target: string; citation_text: string; edition: string; page: string; context: string }> = []
     for (const m of result.bookToSource) {
       if (!acceptedSourceMatches.has(sourceKey(m))) continue
+      if (existingPairs.has(`${m.sourceBookId}|${m.orphanBookId}`)) {
+        const tgt = bookById.get(m.orphanBookId)
+        skippedReasons.push(
+          `Source → Orphelin : lien déjà présent vers « ${tgt?.title || m.orphanBookId} »`,
+        )
+        continue
+      }
       linksToAdd.push({
         source: m.sourceBookId,
         target: m.orphanBookId,
@@ -136,9 +199,18 @@ export function useReconcileState({
       })
     }
     if (linksToAdd.length > 0) {
+      attempted += linksToAdd.length
       if (onAddLinks) onAddLinks(linksToAdd)
       else linksToAdd.forEach((l) => onAddLink?.(l))
     }
+
+    const outcome: ApplyOutcome = {
+      attempted,
+      skipped: skippedReasons.length,
+      skippedReasons,
+    }
+    setApplyOutcome(outcome)
+    devWarn('[reconcile] apply outcome', outcome)
 
     setPhase('done')
   }
@@ -161,6 +233,7 @@ export function useReconcileState({
     setAcceptedAuthorMatches(new Set())
     setAcceptedSourceMatches(new Set())
     setHintsSaved(false)
+    setApplyOutcome(null)
   }
 
   const totalAccepted = acceptedAuthorMatches.size + acceptedSourceMatches.size
@@ -177,6 +250,7 @@ export function useReconcileState({
     acceptedSourceMatches,
     hintsSaved,
     totalAccepted,
+    applyOutcome,
     startAnalysis,
     toggleAuthorMatch,
     toggleSourceMatch,

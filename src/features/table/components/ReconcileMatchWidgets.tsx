@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import clsx from 'clsx'
-import { BookmarkPlus, Check, Lightbulb } from 'lucide-react'
+import { BookmarkPlus, Check, ChevronRight, Lightbulb } from 'lucide-react'
 import type { Author, AuthorId, Book } from '@/types/domain'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -89,15 +90,30 @@ export function HintsPanel({
   onSave: () => void
   className?: string
 }) {
+  const [expanded, setExpanded] = useState(false)
+
   if (result.hints.length === 0) return null
 
   return (
-    <div className={clsx('shrink-0 rounded-lg border border-dashed border-amber/20 bg-amber/3 px-4 py-3', className)}>
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
+    <div className={clsx('shrink-0 rounded-lg border border-dashed border-amber/20 bg-amber/3', className)}>
+      <div className="flex items-center justify-between px-4 py-2.5">
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="flex cursor-pointer items-center gap-1.5 text-left"
+        >
+          <ChevronRight
+            size={12}
+            className={clsx('text-amber/60 transition-transform', expanded && 'rotate-90')}
+          />
           <Lightbulb size={12} className="text-amber/60" />
-          <p className="text-[0.78rem] font-semibold text-amber/60">Pistes de recherche</p>
-        </div>
+          <p className="text-[0.78rem] font-semibold text-amber/60">
+            Pistes de recherche ({result.hints.length})
+          </p>
+          <span className="ml-1 text-caption text-white/25">
+            — hypothèses non vérifiées, à utiliser comme amorces
+          </span>
+        </button>
         <button
           type="button"
           disabled={hintsSaved}
@@ -112,20 +128,32 @@ export function HintsPanel({
           {hintsSaved ? <><Check size={10} /> Sauvegardé</> : <><BookmarkPlus size={10} /> Sauvegarder en todo</>}
         </button>
       </div>
-      <ul className="flex flex-col gap-2">
-        {result.hints.map((h, i) => {
-          const book = bookById.get(h.bookId)
-          const author = authorsMap.get(h.bookId)
-          const label = book?.title || (author ? [author.firstName, author.lastName].filter(Boolean).join(' ') : h.bookId)
-          return (
-            <li key={i} className="text-caption">
-              <span className="font-medium text-white/60">{label}</span>
-              <span className="text-white/30"> — </span>
-              <span className="text-white/45">{h.hint}</span>
-            </li>
-          )
-        })}
-      </ul>
+      {expanded && (
+        <ul className="flex max-h-48 flex-col gap-2 overflow-y-auto border-t border-amber/10 px-4 py-3">
+          {result.hints.map((h, i) => {
+            const book = bookById.get(h.bookId)
+            const author = authorsMap.get(h.bookId)
+            const label = book?.title || (author ? [author.firstName, author.lastName].filter(Boolean).join(' ') : h.bookId)
+            const searchQuery = encodeURIComponent(label)
+            return (
+              <li key={i} className="text-caption">
+                <div className="flex items-baseline gap-2">
+                  <span className="font-medium text-white/60">{label}</span>
+                  <a
+                    href={`https://scholar.google.com/scholar?q=${searchQuery}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[0.7rem] text-cyan/50 hover:text-cyan/70 hover:underline"
+                  >
+                    chercher ↗
+                  </a>
+                </div>
+                <span className="text-white/45">{h.hint}</span>
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </div>
   )
 }

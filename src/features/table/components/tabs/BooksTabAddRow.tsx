@@ -1,93 +1,126 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { TextInput } from '@/common/components/ui/TextInput'
-import { INPUT } from '../../tableConstants'
+import { BOOKS_GRID_STYLE, INPUT } from '../../tableConstants'
 import { AxisDots } from '../AxisDots'
 import { AuthorPicker } from '../AuthorPicker'
-import type { Author, AuthorId } from '@/types/domain'
+import { ResourceTypePicker } from '../ResourceTypePicker'
+import type { Author, AuthorId, Book, BookId } from '@/types/domain'
 import type { Axis } from '@/common/utils/categories'
-import type { RefObject } from 'react'
 
 type Props = {
   authors: Author[]
-  inputTitle: string
-  setInputTitle: (v: string) => void
-  inputAuthorIds: AuthorId[]
-  setInputAuthorIds: (v: AuthorId[]) => void
-  inputYear: string
-  setInputYear: (v: string) => void
-  inputAxes: Axis[]
-  setInputAxes: (v: Axis[]) => void
-  titleInputRef: RefObject<HTMLInputElement | null>
-  onAddBookRow: () => void
+  initialAuthorIds?: AuthorId[]
+  autoFocus?: boolean
+  onAddBook?: (book: Partial<Book> & Pick<Book, 'id' | 'title'>) => unknown
   onAddAuthor?: (author: Author) => unknown
+  onBookAdded?: (bookId: BookId) => void
 }
 
 export function BooksTabAddRow({
   authors,
-  inputTitle,
-  setInputTitle,
-  inputAuthorIds,
-  setInputAuthorIds,
-  inputYear,
-  setInputYear,
-  inputAxes,
-  setInputAxes,
-  titleInputRef,
-  onAddBookRow,
+  initialAuthorIds = [],
+  autoFocus = false,
+  onAddBook,
   onAddAuthor,
+  onBookAdded,
 }: Props) {
+  const [title, setTitle] = useState('')
+  const [authorIds, setAuthorIds] = useState<AuthorId[]>(initialAuthorIds)
+  const [year, setYear] = useState('')
+  const [axes, setAxes] = useState<Axis[]>([])
+  const [resourceType, setResourceType] = useState('book')
+  const titleInputRef = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    if (autoFocus) setTimeout(() => titleInputRef.current?.focus(), 0)
+  }, [autoFocus])
+
+  const handleAdd = useCallback(() => {
+    const t = title.trim()
+    if (!t) return
+    const newId = crypto.randomUUID()
+    onAddBook?.({
+      id: newId,
+      title: t,
+      authorIds,
+      year: parseInt(year, 10) || null,
+      axes,
+      description: '',
+      originalTitle: null,
+      resourceType,
+    })
+    setTitle('')
+    setYear('')
+    setAxes([])
+    setResourceType('book')
+    onBookAdded?.(newId)
+    setTimeout(() => {
+      titleInputRef.current?.focus()
+      const el = document.querySelector(`[data-book-row-id="${newId}"]`)
+      if (el instanceof HTMLElement) {
+        const rect = el.getBoundingClientRect()
+        const fullyVisible = rect.top >= 0 && rect.bottom <= window.innerHeight
+        if (!fullyVisible) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      }
+    }, 50)
+  }, [title, authorIds, year, axes, onAddBook, onBookAdded])
+
   return (
-    <tr className="border-b border-cyan/20 bg-bg-overlay shadow-[0_-1px_0_var(--color-bg-overlay)]">
-      <td className="bg-cyan/6 px-3 py-1.5 align-bottom text-center">
-        <Plus size={11} className="mb-1.5 text-cyan/60" />
-      </td>
-      <td className="bg-cyan/6 min-w-0 max-w-36 px-2 py-1.5 align-bottom">
-        <span className="mb-0.5 block text-[0.65rem] font-semibold uppercase tracking-[1.2px] text-cyan/50">Nouvel ouvrage</span>
+    <div
+      style={BOOKS_GRID_STYLE}
+      className="grid h-11 items-center border-b border-cyan/20 bg-bg-overlay shadow-[0_-1px_0_var(--color-bg-overlay)]"
+    >
+      <div className="flex h-full items-center justify-center bg-cyan/6 px-3">
+        <Plus size={11} className="text-cyan/60" />
+      </div>
+      <div className="flex h-full items-center justify-center bg-cyan/6 px-2">
+        <ResourceTypePicker value={resourceType} onChange={setResourceType} />
+      </div>
+      <div className="flex h-full min-w-0 max-w-full items-center bg-cyan/6 px-2">
         <TextInput
           variant="table"
           ref={titleInputRef}
           className={INPUT}
           placeholder="Saisir un titre…"
-          value={inputTitle}
-          onChange={(e) => setInputTitle(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && onAddBookRow()}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
         />
-      </td>
-      <td className="bg-cyan/6 px-2 py-1.5 align-bottom">
+      </div>
+      <div className="flex h-full items-center bg-cyan/6 px-2">
         <AuthorPicker
           authors={authors}
-          selectedAuthorIds={inputAuthorIds}
-          onChange={setInputAuthorIds}
+          selectedAuthorIds={authorIds}
+          onChange={setAuthorIds}
           onAddAuthor={onAddAuthor}
         />
-      </td>
-      <td className="bg-cyan/6 px-2 py-1.5 align-bottom">
+      </div>
+      <div className="flex h-full items-center bg-cyan/6 px-2">
         <TextInput
           variant="table"
           className={INPUT}
           type="number"
           placeholder="Année"
-          value={inputYear}
-          onChange={(e) => setInputYear(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && onAddBookRow()}
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
         />
-      </td>
-      <td className="bg-cyan/6 px-3 py-1.5 align-bottom">
-        <div className="flex items-center gap-2.5">
-          <AxisDots axes={inputAxes} onChange={setInputAxes} />
-          <Button
-            type="button"
-            onClick={onAddBookRow}
-            disabled={!inputTitle.trim()}
-            className="shrink-0 cursor-pointer rounded-md border border-cyan/35 bg-cyan/12 px-2 py-1 text-caption font-semibold text-cyan/85 transition-all hover:bg-cyan/20 disabled:cursor-not-allowed disabled:opacity-25"
-          >
-            + Ajouter
-          </Button>
-        </div>
-      </td>
-      <td />
-      <td />
-    </tr>
+      </div>
+      <div className="flex h-full items-center bg-cyan/6 px-3">
+        <AxisDots axes={axes} onChange={setAxes} compact />
+      </div>
+      <div className="flex h-full items-center justify-end gap-2 bg-cyan/6 px-3" style={{ gridColumn: 'span 3' }}>
+        <Button
+          type="button"
+          onClick={handleAdd}
+          disabled={!title.trim()}
+          className="shrink-0 cursor-pointer rounded-md border border-cyan/35 bg-cyan/12 px-2 py-1 text-caption font-semibold text-cyan/85 transition-all hover:bg-cyan/20 disabled:cursor-not-allowed disabled:opacity-25"
+        >
+          + Ajouter
+        </Button>
+      </div>
+    </div>
   )
 }

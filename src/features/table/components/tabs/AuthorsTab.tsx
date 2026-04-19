@@ -26,7 +26,6 @@ type AuthorsTabProps = {
   onOpenAuthorDedupeModal?: () => void
   orphanedAuthorCount?: number
   onOpenAuthorReconcileModal?: () => void
-  onOpenAIOrphanReconcile?: () => void
 }
 
 export function AuthorsTab({
@@ -44,7 +43,6 @@ export function AuthorsTab({
   onOpenAuthorDedupeModal,
   orphanedAuthorCount = 0,
   onOpenAuthorReconcileModal,
-  onOpenAIOrphanReconcile,
 }: AuthorsTabProps) {
   const [batchInfoModal, setBatchInfoModal] = useState(false)
 
@@ -98,7 +96,7 @@ export function AuthorsTab({
           <div className="flex items-center gap-2.5">
             <Sparkles size={13} className="shrink-0 text-cyan/65" />
             <p className="text-label text-white/55">
-              <span className="font-semibold text-white/80">{legacyCount} ouvrage{legacyCount > 1 ? 's' : ''}</span>
+              <span className="font-semibold text-white/80">{legacyCount} ressource{legacyCount > 1 ? 's' : ''}</span>
               {' '}utilisent encore l'ancien format (auteur·ice intégré·e au livre).
               Lance la migration pour créer les entités auteur·ices correspondantes.
             </p>
@@ -116,7 +114,7 @@ export function AuthorsTab({
       {legacyCount > 0 && (
         <div className="shrink-0 border-b border-cyan/8 bg-cyan/2 px-5 py-2.5">
           <p className="mb-1.5 font-mono text-[0.7rem] font-semibold uppercase tracking-wider text-white/30">
-            Ouvrages concernés
+            Ressources concernés
           </p>
           <ul className="flex flex-col gap-1">
             {legacyBooks.map((b) => (
@@ -172,7 +170,7 @@ export function AuthorsTab({
               <div className="flex items-center gap-2">
                 <AlertTriangle size={12} className="shrink-0 text-amber/70" />
                 <p className="text-label text-amber/75">
-                  Migration effectuée mais {legacyCount} ouvrage{legacyCount > 1 ? 's' : ''} n'{legacyCount > 1 ? 'ont' : 'a'} pas été mis à jour.
+                  Migration effectuée mais {legacyCount} ressource{legacyCount > 1 ? 's' : ''} n'{legacyCount > 1 ? 'ont' : 'a'} pas été mis à jour.
                 </p>
               </div>
               <Button
@@ -190,7 +188,7 @@ export function AuthorsTab({
               <Check size={12} className="shrink-0 text-green" />
               <p className="text-label text-green/80">
                 Migration terminée — {migrateResult.newAuthors} auteur·ice{migrateResult.newAuthors > 1 ? 's' : ''} créé·e{migrateResult.newAuthors > 1 ? 's' : ''},
-                {' '}{migrateResult.updatedBooks} ouvrage{migrateResult.updatedBooks > 1 ? 's' : ''} mis à jour.
+                {' '}{migrateResult.updatedBooks} ressource{migrateResult.updatedBooks > 1 ? 's' : ''} mis à jour.
               </p>
             </div>
           )}
@@ -200,7 +198,7 @@ export function AuthorsTab({
                 <div className="flex items-center gap-2">
                   <AlertTriangle size={12} className="shrink-0 text-red/70" />
                   <p className="text-label font-semibold text-red/70">
-                    {migrateResult.failures.length} ouvrage{migrateResult.failures.length > 1 ? 's' : ''} en échec
+                    {migrateResult.failures.length} ressource{migrateResult.failures.length > 1 ? 's' : ''} en échec
                   </p>
                 </div>
                 <Button
@@ -257,25 +255,11 @@ export function AuthorsTab({
                 icon={<Link2 size={11} />}
                 onClick={onOpenAuthorReconcileModal}
                 type="button"
-                title={`${orphanedAuthorCount} auteur·ice${orphanedAuthorCount > 1 ? 's' : ''} sans ouvrage`}
+                title={`${orphanedAuthorCount} auteur·ice${orphanedAuthorCount > 1 ? 's' : ''} sans ressource`}
               >
                 Orphelin·es
                 <span className="tabular-nums">({orphanedAuthorCount})</span>
               </Button>
-              {onOpenAIOrphanReconcile && (
-                <Button
-                  variant="outline"
-                  outlineWeight="faint"
-                  tone="magic"
-                  emphasis
-                  icon={<Sparkles size={11} />}
-                  onClick={onOpenAIOrphanReconcile}
-                  type="button"
-                  title="Réconcilier les orphelin·es via Gemini (contexte de batch + graphe)"
-                >
-                  AI Réconcilier
-                </Button>
-              )}
             </>
           )}
         </div>
@@ -364,7 +348,7 @@ export function AuthorsTab({
                 </th>
                 <TH col="lastName" activeCol={sortCol} dir={sortDir} onSort={handleSort} className="min-w-[140px]">Nom</TH>
                 <TH col="firstName" activeCol={sortCol} dir={sortDir} onSort={handleSort} className="min-w-[140px]">Prénom</TH>
-                <TH col="bookCount" activeCol={sortCol} dir={sortDir} onSort={handleSort} className="w-20">Ouvrages</TH>
+                <TH col="bookCount" activeCol={sortCol} dir={sortDir} onSort={handleSort} className="w-20">Ressources</TH>
                 <TH col="createdAt" activeCol={sortCol} dir={sortDir} onSort={handleSort} className="w-28">Ajouté</TH>
                 <th className="w-24 px-3 py-2.5" />
               </tr>
@@ -447,6 +431,7 @@ export function AuthorsTab({
         onConfirm={handleConfirmMerge}
         onClose={() => { setMergeModal(false); setMergeKeepId(null) }}
         bookCountByAuthor={bookCountByAuthor}
+        booksByAuthor={booksByAuthor}
       />
 
       <BatchInfoModal

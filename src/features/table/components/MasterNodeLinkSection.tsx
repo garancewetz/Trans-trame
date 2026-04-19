@@ -40,7 +40,7 @@ export function MasterNodeLinkSection({
             authorsMap={authorsMap}
             value={masterNode}
             onSelect={setMasterNode}
-            placeholder="Rechercher un ouvrage source…"
+            placeholder="Rechercher une ressource source…"
           />
         </div>
         {masterNode && (
@@ -60,8 +60,8 @@ export function MasterNodeLinkSection({
             value={linkDirection}
             onChange={(e) => setLinkDirection(e.target.value)}
           >
-            <option value="master-cites-imported">L'oeuvre source cite chaque ouvrage importé</option>
-            <option value="imported-cites-master">Chaque ouvrage importé cite l'oeuvre source</option>
+            <option value="master-cites-imported">L'oeuvre source cite chaque ressource importé</option>
+            <option value="imported-cites-master">Chaque ressource importé cite l'oeuvre source</option>
           </select>
           <TextInput
             variant="table"

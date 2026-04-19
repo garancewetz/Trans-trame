@@ -3,6 +3,7 @@ import type { Author, Book, Link } from '@/types/domain'
 import type { AxesColorMap } from '../domain/graphDataModel'
 import { useBookMutations } from './useBookMutations'
 import { useAuthorMutations } from './useAuthorMutations'
+import { useCitationMutations } from './useCitationMutations'
 import { useLinkMutations } from './useLinkMutations'
 
 type Params = {
@@ -24,13 +25,15 @@ export function useGraphDataEntityCallbacks({
   setAuthors,
   setLinks,
 }: Params) {
-  const bookMutations = useBookMutations({ axesColorsRef, booksRef, setBooks, setLinks })
+  const bookMutations = useBookMutations({ axesColorsRef, booksRef, linksRef, setBooks, setLinks })
   const authorMutations = useAuthorMutations({ axesColorsRef, authorsRef, setAuthors, setBooks })
   const linkMutations = useLinkMutations({ linksRef, setLinks })
+  const citationMutations = useCitationMutations({ linksRef, setLinks })
 
   return {
     ...bookMutations,
     ...authorMutations,
     ...linkMutations,
+    ...citationMutations,
   }
 }

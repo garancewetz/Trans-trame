@@ -70,7 +70,7 @@ export function useEnrichmentState({
     } catch (err) {
       const isTimeout = err instanceof Error && err.name === 'TimeoutError'
       const msg = isTimeout
-        ? 'Gemini a mis trop de temps à répondre. Réessaie avec moins d\'ouvrages.'
+        ? 'Gemini a mis trop de temps à répondre. Réessaie avec moins d\'ressources.'
         : `Erreur lors de l'appel à Gemini.${err instanceof Error ? ` (${err.message})` : ''}`
       if (import.meta.env.DEV) console.warn('[AIEnrich]', err)
       setError(msg)

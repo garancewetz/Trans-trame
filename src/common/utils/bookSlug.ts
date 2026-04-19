@@ -11,7 +11,7 @@ export const MAP_QUERY_KEYS = {
 } as const
 
 /**
- * Segment `search` pour ouvrir la carte sur un ouvrage : `?book=<uuid>`.
+ * Segment `search` pour ouvrir la carte sur une ressource : `?book=<uuid>`.
  * À utiliser avec `<Link to={{ pathname: '/', search: mapBookUrlSearch(id) }} />`.
  */
 export function mapBookUrlSearch(bookId: BookId): string {

@@ -66,7 +66,7 @@ export function BookFormEditDangerZone({
 
       <div className="mb-4">
         <p className="mb-2 text-ui text-white/40">
-          Fusionner cet ouvrage dans un autre (les liens seront transférés)
+          Fusionner cette ressource dans un autre (les liens seront transférés)
         </p>
         {!mergeTarget ? (
           <SearchableSelect<Book>
@@ -79,8 +79,8 @@ export function BookFormEditDangerZone({
               setMergeSearch('')
               setMergeConfirm(false)
             }}
-            placeholder="Rechercher l'ouvrage cible…"
-            emptyMessage="Aucun ouvrage trouvé"
+            placeholder="Rechercher la ressource cible…"
+            emptyMessage="Aucune ressource trouvée"
             renderItem={(n) => (
               <>
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: axesGradient(n.axes) }} />
@@ -141,7 +141,7 @@ export function BookFormEditDangerZone({
           onClick={handleDelete}
           onBlur={() => setDeleteConfirm(false)}
         >
-          {deleteConfirm ? 'Confirmer la suppression' : 'Supprimer l\u2019ouvrage'}
+          {deleteConfirm ? 'Confirmer la suppression' : 'Supprimer l\u2019ressource'}
         </Button>
       </div>
     </div>

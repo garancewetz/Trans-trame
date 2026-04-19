@@ -45,7 +45,7 @@ export function ReviewTab({
           <Flag size={20} className="text-white/20" />
           <p className="font-mono text-ui">Rien à relire ✓</p>
           <p className="text-caption text-white/25">
-            Les ouvrages et auteur·ices marqué·es ⚑ ou avec une note apparaîtront ici.
+            Les ressources et auteur·ices marqué·es ⚑ ou avec une note apparaîtront ici.
           </p>
         </div>
       </div>
@@ -56,7 +56,7 @@ export function ReviewTab({
     <div className="flex flex-1 flex-col overflow-y-auto px-5 py-5">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
         {reviewBooks.length > 0 && (
-          <Section title="Ouvrages" count={reviewBooks.length}>
+          <Section title="Ressources" count={reviewBooks.length}>
             {reviewBooks.map((b) => (
               <BookReviewRow
                 key={b.id}

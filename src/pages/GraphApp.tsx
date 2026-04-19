@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
+import { useMatch, useNavigate } from 'react-router-dom'
 import { AnalysisPanel } from '@/features/analysis-panel/components/AnalysisPanel'
 import { Graph, type GraphImperativeHandle } from '@/features/graph/components/Graph'
 import { Legend } from '@/features/graph/components/Legend'
@@ -18,6 +19,7 @@ import { authorName } from '@/common/utils/authorUtils'
 import type { Highlight } from '@/core/FilterContext'
 import { ErrorBoundary } from '@/common/components/ErrorBoundary'
 import { useAppData } from '@/core/AppDataContext'
+import { useAuthActions, useAuthState } from '@/core/AuthContext'
 import { useAppTimelineAndLayout } from '@/common/hooks/useAppTimelineAndLayout'
 import { useMapUrlSync } from '@/common/hooks/useMapUrlSync'
 
@@ -48,10 +50,26 @@ function GraphAppContent() {
   const filter = useFilter()
   const tableUi = useTableUi()
   const panels = usePanelVisibility()
+  const navigate = useNavigate()
+  const adminMatch = useMatch('/admin/*')
+  const isAdminRoute = Boolean(adminMatch)
+  const { session, canContribute, loading: authLoading } = useAuthState()
+  const { requireAuth } = useAuthActions()
 
   const graphRef = useRef<GraphImperativeHandle | null>(null)
   const timeline = useAppTimelineAndLayout(graphData)
-  useMapUrlSync()
+  useMapUrlSync({ enabled: !isAdminRoute })
+
+  // Guard: direct entry to /admin without auth → redirect to graph + open modal.
+  // Wait for the initial auth check to finish so F5 on /admin doesn't eject
+  // a logged-in user before their session is restored.
+  useEffect(() => {
+    if (!isAdminRoute) return
+    if (authLoading) return
+    if (session && canContribute) return
+    requireAuth()
+    navigate('/', { replace: true })
+  }, [isAdminRoute, authLoading, session, canContribute, requireAuth, navigate])
 
   // Right-side mutex: opening AnalysisPanel closes the selection SidePanel,
   // and selecting a node/link closes the AnalysisPanel.
@@ -83,6 +101,7 @@ function GraphAppContent() {
         const author = authorsMap.get(h.authorId)
         return author ? authorName(author) : h.authorId
       }
+      case 'citedMin': return `citées ≥ ${h.min}`
     }
   })()
 
@@ -105,9 +124,14 @@ function GraphAppContent() {
   const handleLinkClickNoop = useCallback(() => {}, [])
 
   const isGraphView = timeline.viewMode === 'constellation'
+  const canShowAdmin = isAdminRoute && !authLoading && Boolean(session) && canContribute
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
+      {/* Graph layer stays mounted while in /admin — unmounting d3-force on a
+       *  large graph blocks the main thread. TableView overlays on top with an
+       *  opaque background, so the browser occludes the graph paint on its own —
+       *  no need to toggle `visibility` (which forced a slow style recalc). */}
       <div className="absolute inset-0 z-0">
         <ErrorBoundary>
           {isGraphView ? (
@@ -127,14 +151,22 @@ function GraphAppContent() {
               flashNodeIds={tableUi.flashNodeIds}
             />
           ) : (
+            // Raw graphData + timelineRange (pas filteredGraphData) : éviter
+            // que chaque tick de la timeline (play = 120 ms) ne change
+            // l'identité des nodes/links et ne force CosmographView à
+            // reconstruire ses Float32Arrays / re-randomiser les positions.
+            // La timeline est appliquée en interne via greyout.
             <VisualizationView
               viewMode={timeline.viewMode}
-              graphData={timeline.filteredGraphData}
+              graphData={graphData}
               authors={authors}
               selectedNode={selection.selectedNode}
               onNodeClick={handleNodeClick}
               activeFilter={filter.activeFilter}
               hoveredFilter={filter.hoveredFilter}
+              activeHighlight={filter.activeHighlight}
+              selectedAuthorId={filter.selectedAuthor}
+              timelineRange={timeline.timelineRange}
             />
           )}
         </ErrorBoundary>
@@ -205,7 +237,7 @@ function GraphAppContent() {
         onClose={() => panels.setAuthorsPanelOpen(false)}
       />
 
-      {tableUi.tableMode && (
+      {canShowAdmin && (
         <ErrorBoundary>
           <TableView />
         </ErrorBoundary>

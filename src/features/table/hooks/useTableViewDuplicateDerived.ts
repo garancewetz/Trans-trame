@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import type { Author, Book, Link } from '@/types/domain'
 import { maybeNodeId } from '../maybeNodeId'
@@ -109,62 +109,13 @@ export function useTableViewDuplicateDerived(
     return authors.filter((a) => !linked.has(a.id))
   }, [nodes, authors])
 
-  const authorDuplicateGroups = useMemo(() => {
-    const norm = (s: unknown) =>
-      String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[^a-z0-9\s]/g, '').trim()
-    const fullName = (a: Author) => {
-      const words = `${norm(a.firstName)} ${norm(a.lastName)}`.split(/\s+/).filter(Boolean).sort()
-      return words.join(' ')
-    }
+  // Heavy O(n²) fuzzy match — defer past first paint so TableView mount is not
+  // blocked by it. Mount renders with []; the compute runs on a macrotask,
+  // then a second render shows the real count. Users see ~1s lag on the
+  // "N doublons" counter, never on navigation.
+  const authorDuplicateGroups = useDeferredAuthorDuplicates(authors)
 
-    // Pass 1: exact match on sorted normalized full name
-    const exactMap = new Map<string, Author[]>()
-    ;(authors || []).forEach((a) => {
-      const key = fullName(a)
-      if (!key) return
-      if (!exactMap.has(key)) exactMap.set(key, [])
-      exactMap.get(key)!.push(a)
-    })
-
-    const merged = new Set<string>()
-    const groups: Author[][] = []
-
-    // Collect exact-match groups
-    for (const group of exactMap.values()) {
-      if (group.length > 1) {
-        group.forEach((a) => merged.add(a.id))
-        groups.push(group)
-      }
-    }
-
-    // Pass 2: fuzzy match on remaining authors (catch firstName/lastName swaps and typos)
-    const remaining = (authors || []).filter((a) => !merged.has(a.id) && fullName(a))
-    for (let i = 0; i < remaining.length; i++) {
-      if (merged.has(remaining[i].id)) continue
-      const nameI = fullName(remaining[i])
-      const fuzzyGroup: Author[] = [remaining[i]]
-      for (let j = i + 1; j < remaining.length; j++) {
-        if (merged.has(remaining[j].id)) continue
-        const nameJ = fullName(remaining[j])
-        // One name contains the other, or very close edit distance
-        if (
-          nameI.includes(nameJ) ||
-          nameJ.includes(nameI) ||
-          (nameI.length >= 4 && nameJ.length >= 4 && levenshtein(nameI, nameJ) <= 2)
-        ) {
-          fuzzyGroup.push(remaining[j])
-        }
-      }
-      if (fuzzyGroup.length > 1) {
-        fuzzyGroup.forEach((a) => merged.add(a.id))
-        groups.push(fuzzyGroup)
-      }
-    }
-
-    return groups
-  }, [authors])
-
-  /** Ouvrages sans aucun·e auteur·ice assigné·e (authorIds vide ou absent). */
+  /** Ressources sans aucun·e auteur·ice assigné·e (authorIds vide ou absent). */
   const booksWithoutAuthors = useMemo(
     () => nodes.filter((b) => !b.authorIds || b.authorIds.length === 0),
     [nodes],
@@ -177,4 +128,64 @@ export function useTableViewDuplicateDerived(
   }, [nodes, authors])
 
   return { orphans, duplicateGroups, authorDuplicateGroups, orphanedAuthors, booksWithoutAuthors, todoCount }
+}
+
+function useDeferredAuthorDuplicates(authors: Author[]): Author[][] {
+  const [groups, setGroups] = useState<Author[][]>([])
+  useEffect(() => {
+    const id = setTimeout(() => setGroups(computeAuthorDuplicateGroups(authors)), 0)
+    return () => clearTimeout(id)
+  }, [authors])
+  return groups
+}
+
+function computeAuthorDuplicateGroups(authors: Author[]): Author[][] {
+  const norm = (s: unknown) =>
+    String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[^a-z0-9\s]/g, '').trim()
+  const fullName = (a: Author) => {
+    const words = `${norm(a.firstName)} ${norm(a.lastName)}`.split(/\s+/).filter(Boolean).sort()
+    return words.join(' ')
+  }
+
+  const exactMap = new Map<string, Author[]>()
+  ;(authors || []).forEach((a) => {
+    const key = fullName(a)
+    if (!key) return
+    if (!exactMap.has(key)) exactMap.set(key, [])
+    exactMap.get(key)!.push(a)
+  })
+
+  const merged = new Set<string>()
+  const groups: Author[][] = []
+
+  for (const group of exactMap.values()) {
+    if (group.length > 1) {
+      group.forEach((a) => merged.add(a.id))
+      groups.push(group)
+    }
+  }
+
+  const remaining = (authors || []).filter((a) => !merged.has(a.id) && fullName(a))
+  for (let i = 0; i < remaining.length; i++) {
+    if (merged.has(remaining[i].id)) continue
+    const nameI = fullName(remaining[i])
+    const fuzzyGroup: Author[] = [remaining[i]]
+    for (let j = i + 1; j < remaining.length; j++) {
+      if (merged.has(remaining[j].id)) continue
+      const nameJ = fullName(remaining[j])
+      if (
+        nameI.includes(nameJ) ||
+        nameJ.includes(nameI) ||
+        (nameI.length >= 4 && nameJ.length >= 4 && levenshtein(nameI, nameJ) <= 2)
+      ) {
+        fuzzyGroup.push(remaining[j])
+      }
+    }
+    if (fuzzyGroup.length > 1) {
+      fuzzyGroup.forEach((a) => merged.add(a.id))
+      groups.push(fuzzyGroup)
+    }
+  }
+
+  return groups
 }

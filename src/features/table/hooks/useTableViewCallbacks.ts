@@ -1,6 +1,7 @@
-import type { Author, Book, Link } from '@/types/domain'
-import type { AuthorNode } from '@/common/utils/authorUtils'
+import { useNavigate } from 'react-router-dom'
+import type { Author, Book } from '@/types/domain'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
+import { mapBookUrlSearch } from '@/common/utils/bookSlug'
 import type { useAppMutations } from '@/core/AppDataContext'
 import type { useSelection } from '@/core/SelectionContext'
 import type { useTableUi } from '@/core/TableUiContext'
@@ -12,9 +13,6 @@ type Deps = {
   selection: ReturnType<typeof useSelection>
   tableUi: Pick<
     ReturnType<typeof useTableUi>,
-    | 'setTableMode'
-    | 'setTableInitialTab'
-    | 'setTableLinkSourceId'
     | 'lastEditedNodeId'
     | 'setLastEditedNodeId'
     | 'setFlashNodeIds'
@@ -26,18 +24,16 @@ type Deps = {
 }
 
 export function useTableViewCallbacks({ books, mutations, selection, tableUi, controller }: Deps) {
+  const navigate = useNavigate()
+
   const onClose = () => {
-    tableUi.setTableMode(false)
-    tableUi.setTableInitialTab('books')
-    tableUi.setTableLinkSourceId(null)
-    if (tableUi.lastEditedNodeId) {
-      const node = books.find((n) => n.id === tableUi.lastEditedNodeId)
-      if (node) {
-        selection.setSelectedNode(node)
-        selection.setPanelTab('details')
-      }
-      tableUi.setLastEditedNodeId(null)
+    const editedId = tableUi.lastEditedNodeId
+    tableUi.setLastEditedNodeId(null)
+    if (editedId && books.some((n) => n.id === editedId)) {
+      navigate({ pathname: '/', search: `?${mapBookUrlSearch(editedId)}` })
+      return
     }
+    navigate('/')
   }
 
   const onLastEdited = (nodeId: string) => tableUi.setLastEditedNodeId(nodeId)
@@ -49,12 +45,8 @@ export function useTableViewCallbacks({ books, mutations, selection, tableUi, co
   }
 
   const openBookInSidePanel = (bookId: string) => {
-    const node = books.find((n) => n.id === bookId)
-    if (!node) return
-    selection.setSelectedLink(null)
-    selection.setLinkContextNode(null)
-    selection.selectNode(node)
-    tableUi.setTableMode(false)
+    if (!books.some((n) => n.id === bookId)) return
+    navigate({ pathname: '/', search: `?${mapBookUrlSearch(bookId)}` })
   }
 
   const onUpdateBookWithTracking = (n: Book) => {

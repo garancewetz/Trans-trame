@@ -21,9 +21,13 @@ export interface LLMParsedResult {
   axes: Axis[]
   /** Thematiques emergentes detectees par le LLM (format « UNCATEGORIZED:label ») */
   suggestedThemes: string[]
+  /** Resource type: book, article, podcast, film, other */
+  resourceType: string
 }
 
 // ─── Validation constants (kept client-side for response validation) ────────
+
+const VALID_RESOURCE_TYPES = ['book', 'article', 'podcast', 'film', 'other'] as const
 
 const VALID_AXES = [
   'ANTIRACISM', 'AFROFEMINIST', 'QUEER', 'HEALTH', 'HISTORY',
@@ -82,6 +86,9 @@ function validateLLMItem(item: Record<string, unknown>): LLMParsedResult {
     page: String(item.page ?? '').trim(),
     axes: knownAxes.length > 0 ? knownAxes : ['UNCATEGORIZED' as Axis],
     suggestedThemes,
+    resourceType: VALID_RESOURCE_TYPES.includes(item.resourceType as typeof VALID_RESOURCE_TYPES[number])
+      ? String(item.resourceType)
+      : 'book',
   }
 }
 

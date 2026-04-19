@@ -15,6 +15,7 @@ import { AuthorPicker } from '../../table/components/AuthorPicker'
 import { AxisSelector } from './AxisSelector'
 import { DuplicateWarning } from './DuplicateWarning'
 import { BookFormEditDangerZone } from './BookFormEditDangerZone'
+import { RESOURCE_TYPES } from '@/common/constants/resourceTypes'
 
 export type BookFormValues = {
   title: string
@@ -24,6 +25,7 @@ export type BookFormValues = {
   axes: string[]
   description?: string
   stickyAuthor?: boolean
+  resourceType: string
 }
 
 export type BookRecentDraft = {
@@ -71,8 +73,35 @@ export function BookForm({
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-[18px]">
       <h3 className="border-b border-white/10 pb-2.5 text-body font-bold uppercase tracking-[2px] text-white/50">
-        {mode === 'edit' ? 'Modifier l\u2019ouvrage' : 'Nouvel ouvrage'}
+        {mode === 'edit' ? 'Modifier la ressource' : 'Nouvelle ressource'}
       </h3>
+
+      <FormField label="Type de ressource" as="div">
+        <Controller
+          name="resourceType"
+          control={control}
+          render={({ field }) => (
+            <div className="flex flex-wrap gap-1.5">
+              {RESOURCE_TYPES.map(({ value, label, icon: Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => field.onChange(value)}
+                  className={clsx(
+                    'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.8rem] font-semibold transition-all',
+                    field.value === value
+                      ? 'border-cyan/50 bg-cyan/12 text-cyan/90'
+                      : 'border-white/12 text-white/40 hover:border-white/25 hover:text-white/65',
+                  )}
+                >
+                  <Icon size={11} />
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        />
+      </FormField>
 
       <FormField label="Titre">
         <TextInput
@@ -158,7 +187,7 @@ export function BookForm({
         <Textarea
           className={`${inputClass} resize-none leading-relaxed`}
           rows={3}
-          placeholder="Courte description de l'ouvrage..."
+          placeholder="Courte description de la ressource..."
           {...register('description')}
         />
       </FormField>
@@ -167,7 +196,7 @@ export function BookForm({
         type="submit"
         className="mt-1 w-full cursor-pointer rounded-[10px] bg-linear-to-br from-cyan/70 to-blue/90 px-5 py-3.5 text-[0.95rem] font-semibold text-white shadow-[0_4px_20px_rgba(140,220,255,0.15)] transition-all hover:-translate-y-px hover:from-cyan/90 hover:to-blue/100 hover:shadow-[0_4px_24px_rgba(140,220,255,0.3)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
       >
-        {mode === 'edit' ? 'Enregistrer les modifications' : 'Ajouter l\u2019ouvrage'}
+        {mode === 'edit' ? 'Enregistrer les modifications' : 'Ajouter la ressource'}
       </Button>
 
       {mode === 'book' && recentQueue && recentQueue.length > 0 && (

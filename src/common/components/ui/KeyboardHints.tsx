@@ -83,7 +83,7 @@ export function KeyboardHints() {
         <div className="min-h-0 overflow-hidden">
           <div className="flex flex-col gap-[7px]">
             <HintRow keys={['↑', '↓', '←', '→']} label="Déplacer la caméra" />
-            <HintRow keys={['+', '-', 'Z', 'S']} label="Zoom / dézoom" />
+            <HintRow keys={['Z', 'S']} label="Zoom / dézoom" />
             <div
               role="separator"
               aria-hidden

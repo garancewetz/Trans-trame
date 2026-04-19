@@ -38,7 +38,7 @@ export function TableMergeModal({
     <Modal
       open={mergeModal}
       title="Dédoublonner"
-      subtitle="L'ouvrage non conservé sera définitivement supprimé. Ses citations et liens seront transférés vers l'ouvrage conservé."
+      subtitle="La ressource non conservée sera définitivement supprimée. Ses citations et liens seront transférées vers la ressource conservée."
       footer={
         <>
           <Button
@@ -77,7 +77,7 @@ export function TableMergeModal({
                 {authorDisplay}{n.year ? `, ${n.year}` : ''}
               </span>
               <span className="ml-2 font-mono text-caption text-white/28">
-                · {bookCount} ouvrage{bookCount > 1 ? 's' : ''}
+                · {bookCount} ressource{bookCount > 1 ? 's' : ''}
               </span>
             </RadioCard>
           )

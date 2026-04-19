@@ -49,6 +49,7 @@ export function useAddBookFormActions({
       year: parseInt(String(data.year), 10) || null,
       axes: data.axes || [],
       description: (data.description || '').trim(),
+      resourceType: data.resourceType || 'book',
     }
     onAddBook?.(book)
     setRecentQueue((prev) =>
@@ -68,6 +69,7 @@ export function useAddBookFormActions({
       axes: [],
       description: '',
       stickyAuthor: data.stickyAuthor,
+      resourceType: 'book',
     })
   }
 
@@ -80,6 +82,7 @@ export function useAddBookFormActions({
       year: parseInt(String(data.year), 10) || null,
       axes: data.axes || [],
       description: (data.description || '').trim(),
+      resourceType: data.resourceType || 'book',
     })
   }
 

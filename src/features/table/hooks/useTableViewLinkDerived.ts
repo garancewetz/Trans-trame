@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { bookAuthorDisplay } from '@/common/utils/authorUtils'
+import { bookAuthorDisplay, bookAuthorSortKey } from '@/common/utils/authorUtils'
 import { matchAllWords } from '@/common/utils/searchUtils'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 import type { Book, BookId, Link } from '@/types/domain'
@@ -87,10 +87,25 @@ export function useTableViewLinkDerived({
       }
       groups.get(link._srcId)!.links.push(link)
     })
+    for (const g of groups.values()) {
+      g.links.sort((a, b) => {
+        const ak = a.targetNode ? bookAuthorSortKey(a.targetNode, authorsMap) : ''
+        const bk = b.targetNode ? bookAuthorSortKey(b.targetNode, authorsMap) : ''
+        if (ak !== bk) {
+          if (!ak) return 1
+          if (!bk) return -1
+          return ak.localeCompare(bk, 'fr', { sensitivity: 'base' })
+        }
+        const ay = Number(a.targetNode?.year) || 0
+        const by = Number(b.targetNode?.year) || 0
+        if (ay !== by) return ay - by
+        return (a.targetNode?.title || '').localeCompare(b.targetNode?.title || '', 'fr', { sensitivity: 'base' })
+      })
+    }
     return Array.from(groups.values()).sort((a, b) =>
       (a.sourceNode?.title || '').localeCompare(b.sourceNode?.title || '')
     )
-  }, [filteredLinks])
+  }, [filteredLinks, authorsMap])
 
   return {
     resolvedLinks,

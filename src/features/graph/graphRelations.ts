@@ -8,28 +8,24 @@ function endpointId(v: unknown): string | undefined {
   return undefined
 }
 
-export function getOutgoingRefs(graphData: GraphData, node: Book) {
+export type Ref = { other: Book | undefined; link: Link }
+
+export function getOutgoingRefs(graphData: GraphData, node: Book): Ref[] {
   return graphData.links
-    .filter((l) => {
-      const srcId = endpointId(l.source)
-      return srcId === node.id
-    })
-    .map((l) => {
-      const tgtId = endpointId(l.target)
-      return { link: l, other: graphData.nodes.find((n) => n.id === tgtId) }
-    })
+    .filter((l) => endpointId(l.source) === node.id)
+    .map((l) => ({
+      link: l,
+      other: graphData.nodes.find((n) => n.id === endpointId(l.target)),
+    }))
 }
 
-export function getIncomingRefs(graphData: GraphData, node: Book) {
+export function getIncomingRefs(graphData: GraphData, node: Book): Ref[] {
   return graphData.links
-    .filter((l) => {
-      const tgtId = endpointId(l.target)
-      return tgtId === node.id
-    })
-    .map((l) => {
-      const srcId = endpointId(l.source)
-      return { link: l, other: graphData.nodes.find((n) => n.id === srcId) }
-    })
+    .filter((l) => endpointId(l.target) === node.id)
+    .map((l) => ({
+      link: l,
+      other: graphData.nodes.find((n) => n.id === endpointId(l.source)),
+    }))
 }
 
 export function getLinkNodes(graphData: GraphData, link: Link) {

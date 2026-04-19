@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import { useEffect } from 'react'
-import { BarChart3, Network, AlertCircle, Waves } from 'lucide-react'
+import { BarChart3, Network, AlertCircle, Waves, TrendingUp } from 'lucide-react'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 import { Button } from '@/common/components/ui/Button'
 import { Panel } from '@/common/components/ui/Panel'
@@ -145,6 +145,13 @@ function AnalysisPanel({ graphData, activeFilter, activeHighlight, onFilterChang
             onHighlightChange={onHighlightChange}
           />
 
+          {/* ── Rayonnement (seuil de citations reçues) ── */}
+          <CitedMinControl
+            max={mostCited[0]?.citedBy ?? 0}
+            activeHighlight={activeHighlight}
+            onHighlightChange={onHighlightChange}
+          />
+
           {/* ── 7. Maillage ──────────────────────────── */}
           <section className="mb-5 rounded-lg border border-white/10 bg-white/5 p-3 backdrop-blur-xl">
             <h3 className="mb-2 inline-flex items-center gap-1.5 text-label font-semibold uppercase tracking-wide text-white/50">
@@ -152,12 +159,12 @@ function AnalysisPanel({ graphData, activeFilter, activeHighlight, onFilterChang
             </h3>
             <div className="flex items-baseline gap-2">
               <span className="text-[1.3rem] font-bold text-white/85">{maillage.ratio}</span>
-              <span className="text-caption text-white/35">soudures / ouvrage</span>
+              <span className="text-caption text-white/35">soudures / ressource</span>
             </div>
             {maillage.orphans > 0 && (
               <p className="mt-1.5 inline-flex items-center gap-1.5 text-[0.78rem] text-amber-400/70">
                 <AlertCircle size={12} />
-                {maillage.orphans} ouvrage{maillage.orphans > 1 ? 's' : ''} sans lien
+                {maillage.orphans} ressource{maillage.orphans > 1 ? 's' : ''} sans lien
               </p>
             )}
           </section>
@@ -174,7 +181,7 @@ function AnalysisPanel({ graphData, activeFilter, activeHighlight, onFilterChang
               <div className="mb-2 flex items-baseline gap-2">
                 <span className="text-[1.3rem] font-bold text-white/85">{archipelagos.mainPct}%</span>
                 <span className="text-caption text-white/35">
-                  dans la composante principale ({archipelagos.mainSize} ouvrage{archipelagos.mainSize > 1 ? 's' : ''})
+                  dans la composante principale ({archipelagos.mainSize} ressource{archipelagos.mainSize > 1 ? 's' : ''})
                 </span>
               </div>
               {archipelagos.smallIslands.length > 0 && (
@@ -184,9 +191,9 @@ function AnalysisPanel({ graphData, activeFilter, activeHighlight, onFilterChang
                     <span
                       key={i}
                       className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-micro text-white/60"
-                      title={`${size} ouvrages connectés entre eux mais détachés du reste`}
+                      title={`${size} ressources connectés entre eux mais détachés du reste`}
                     >
-                      {size} ouvrages
+                      {size} ressources
                     </span>
                   ))}
                 </div>
@@ -199,6 +206,56 @@ function AnalysisPanel({ graphData, activeFilter, activeHighlight, onFilterChang
         </div>
       </Panel>
     </>
+  )
+}
+
+type CitedMinControlProps = {
+  max: number
+  activeHighlight: Highlight | null
+  onHighlightChange: (h: Highlight | null) => void
+}
+
+function CitedMinControl({ max, activeHighlight, onHighlightChange }: CitedMinControlProps) {
+  if (max < 1) return null
+  const current = activeHighlight?.kind === 'citedMin' ? activeHighlight.min : 0
+  const handle = (v: number) => {
+    const clamped = Math.max(0, Math.min(max, v))
+    onHighlightChange(clamped <= 0 ? null : { kind: 'citedMin', min: clamped })
+  }
+  return (
+    <section className="mb-5">
+      <h3 className="mb-2 inline-flex items-center gap-1.5 text-label font-semibold uppercase tracking-wide text-white/50">
+        <TrendingUp size={12} /> Rayonnement
+      </h3>
+      <p className="mb-2 text-micro text-white/35">
+        N'affiche que les œuvres citées au moins {current || 'N'} fois.
+      </p>
+      <div className="flex items-center gap-2">
+        <input
+          type="range"
+          min={0}
+          max={max}
+          step={1}
+          value={current}
+          onChange={(e) => handle(Number(e.target.value))}
+          className="flex-1 accent-amber-400"
+          aria-label={`Seuil minimal de citations reçues (0 à ${max})`}
+        />
+        <span className="tabular-nums text-caption font-semibold text-white/80 min-w-[2.5ch] text-right">
+          {current}
+        </span>
+        {current > 0 && (
+          <button
+            type="button"
+            onClick={() => onHighlightChange(null)}
+            className="cursor-pointer text-micro text-white/40 hover:text-white/70"
+            aria-label="Réinitialiser le seuil"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+    </section>
   )
 }
 

@@ -7,6 +7,7 @@ export type Highlight =
   | { kind: 'decade'; decade: number }
   | { kind: 'book'; bookId: string }
   | { kind: 'author'; authorId: string }
+  | { kind: 'citedMin'; min: number }
 
 type FilterState = {
   activeFilter: string | null
@@ -38,6 +39,7 @@ function highlightEquals(a: Highlight, b: Highlight): boolean {
   if (a.kind === 'decade' && b.kind === 'decade') return a.decade === b.decade
   if (a.kind === 'book' && b.kind === 'book') return a.bookId === b.bookId
   if (a.kind === 'author' && b.kind === 'author') return a.authorId === b.authorId
+  if (a.kind === 'citedMin' && b.kind === 'citedMin') return a.min === b.min
   return false
 }
 

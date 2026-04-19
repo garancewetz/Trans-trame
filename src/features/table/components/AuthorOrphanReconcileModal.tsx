@@ -97,7 +97,7 @@ export function AuthorOrphanReconcileModal({
           <span className="font-semibold text-white">
             {orphanedAuthors.length} auteur·ice{orphanedAuthors.length > 1 ? 's' : ''}
           </span>{' '}
-          sans ouvrage. Correspondances trouvées via les champs legacy des ouvrages.
+          sans ressource. Correspondances trouvées via les champs legacy des ressources.
         </>
       }
       footer={

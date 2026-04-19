@@ -8,10 +8,10 @@ import { useSelection } from '@/core/SelectionContext'
 const Q = MAP_QUERY_KEYS
 
 /**
- * `?book=<uuid>` — ouvrage ouvert dans le panneau.
+ * `?book=<uuid>` — ressource ouvert dans le panneau.
  * `?link=<id>&from=<uuid>` (optionnel) — détail lien ; `from` = nœud contexte si ≠ `book`.
  */
-export function useMapUrlSync() {
+export function useMapUrlSync({ enabled = true }: { enabled?: boolean } = {}) {
   const { books, links, isLoading } = useAppData()
   const {
     selectedNode,
@@ -29,6 +29,7 @@ export function useMapUrlSync() {
   const isInitialSync = useRef(true)
 
   useEffect(() => {
+    if (!enabled) return
     if (isLoading) return
 
     const bookId = searchParams.get(Q.book) as BookId | null
@@ -75,9 +76,10 @@ export function useMapUrlSync() {
         skipStateToUrl.current = false
       })
     }
-  }, [isLoading, searchParams, books, links, setSelectedNode, setSelectedLink, setLinkContextNode, setPanelTab])
+  }, [enabled, isLoading, searchParams, books, links, setSelectedNode, setSelectedLink, setLinkContextNode, setPanelTab])
 
   useEffect(() => {
+    if (!enabled) return
     if (skipStateToUrl.current) return
 
     const next = new URLSearchParams()
@@ -99,6 +101,7 @@ export function useMapUrlSync() {
     setSearchParams(next, { replace: isInitialSync.current })
     isInitialSync.current = false
   }, [
+    enabled,
     selectedNode?.id,
     selectedLink?.id,
     linkContextNode?.id,

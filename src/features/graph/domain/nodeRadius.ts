@@ -4,8 +4,8 @@
 export function getNodeRadius(node: { type?: string }, citationCount: number): number {
   if (node.type === 'author') return 11
   const n = Math.max(0, Number.isFinite(citationCount) ? citationCount : 0)
-  if (n === 0) return 2.2
-  if (n === 1) return 4
+  if (n === 0) return 3.5
+  if (n === 1) return 5
   const boost = Math.min((Math.pow(2, n - 1) - 1) * 8, 96)
   return 4 + boost
 }

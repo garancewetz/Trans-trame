@@ -6,14 +6,13 @@ import { exportFullDatabase } from '@/features/graph/api/graphDataApi'
 import { formatSupabaseError } from '@/core/supabaseErrors'
 import { devWarn } from '@/common/utils/logger'
 import { countReviewItems } from './tabs/ReviewTab'
+import type { TableTabId, DrawerTool } from '@/core/TableUiContext'
 import type { Author, Book, Link } from '@/types/domain'
-
-type TabId = 'books' | 'authors' | 'links' | 'history' | 'review'
 
 type Props = {
   onClose: () => void
-  tab: TabId | undefined
-  setTab: (tab: TabId | undefined) => void
+  tab: TableTabId
+  setTab: (tab: TableTabId) => void
   nodes: Book[]
   links: Link[]
   authors: Author[]
@@ -21,6 +20,8 @@ type Props = {
   setLinkSearch: (value: string) => void
   setAuthorSearch: (value: string) => void
   onSmartImport: () => void
+  drawerTool: DrawerTool
+  setDrawerTool: (t: DrawerTool) => void
 }
 
 export function TableTopbar({
@@ -34,7 +35,13 @@ export function TableTopbar({
   setLinkSearch,
   setAuthorSearch,
   onSmartImport,
+  drawerTool,
+  setDrawerTool,
 }: Props) {
+  const reviewCount = countReviewItems(nodes, authors)
+  const toggleDrawer = (next: Exclude<DrawerTool, null>) =>
+    setDrawerTool(drawerTool === next ? null : next)
+
   return (
     <div className="flex shrink-0 items-center gap-3 border-b border-white/8 px-5 py-2.5">
       <Button
@@ -49,7 +56,7 @@ export function TableTopbar({
 
       <div className="flex rounded-lg border border-white/8 bg-white/3 p-0.5">
         {([
-          { id: 'books' as const, label: 'Ouvrages', count: nodes.length },
+          { id: 'books' as const, label: 'Ressources', count: nodes.length },
           { id: 'authors' as const, label: 'Auteur·ices', count: authors.length },
           { id: 'links' as const, label: 'Liens', count: links.length },
         ]).map((t) => (
@@ -73,45 +80,45 @@ export function TableTopbar({
         ))}
       </div>
 
-      <Button
-        type="button"
-        variant="chip"
-        className="flex items-center gap-1.5"
-        selected={tab === 'history'}
-        onClick={() => { setTab('history'); setSearch(''); setLinkSearch(''); setAuthorSearch('') }}
-      >
-        <Clock size={12} />
-        Historique
-      </Button>
-
-      {(() => {
-        const reviewCount = countReviewItems(nodes, authors)
-        return (
-          <Button
-            type="button"
-            variant="chip"
-            className="flex items-center gap-1.5"
-            selected={tab === 'review'}
-            onClick={() => { setTab('review'); setSearch(''); setLinkSearch(''); setAuthorSearch('') }}
-            title={reviewCount > 0 ? `${reviewCount} élément${reviewCount > 1 ? 's' : ''} à relire` : 'Aucun élément à relire'}
-          >
-            <Flag size={12} className={reviewCount > 0 ? 'text-amber/70' : undefined} />
-            À relire
-            {reviewCount > 0 && (
-              <span
-                className={[
-                  'ml-0.5 rounded-full px-1.5 py-px text-micro tabular-nums',
-                  tab === 'review' ? 'bg-amber/25 text-amber' : 'bg-amber/12 text-amber/70',
-                ].join(' ')}
-              >
-                {reviewCount}
-              </span>
-            )}
-          </Button>
-        )
-      })()}
-
       <div className="ml-auto flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          outlineWeight="muted"
+          icon={<Clock size={12} />}
+          selected={drawerTool === 'history'}
+          onClick={() => toggleDrawer('history')}
+          title="Historique — audit log et rollback"
+          aria-label="Ouvrir l'historique"
+          aria-pressed={drawerTool === 'history'}
+        >
+          Historique
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          outlineWeight="muted"
+          icon={<Flag size={12} className={reviewCount > 0 ? 'text-amber/80' : undefined} />}
+          selected={drawerTool === 'review'}
+          onClick={() => toggleDrawer('review')}
+          title={reviewCount > 0 ? `${reviewCount} élément${reviewCount > 1 ? 's' : ''} à relire` : 'Aucun élément à relire'}
+          aria-label="Ouvrir la liste à relire"
+          aria-pressed={drawerTool === 'review'}
+        >
+          À relire
+          {reviewCount > 0 && (
+            <span
+              className={[
+                'ml-1 rounded-full px-1.5 py-px text-micro tabular-nums',
+                drawerTool === 'review' ? 'bg-amber/25 text-amber' : 'bg-amber/12 text-amber/70',
+              ].join(' ')}
+            >
+              {reviewCount}
+            </span>
+          )}
+        </Button>
+
         <ExportButton />
         <Button
           type="button"

@@ -36,7 +36,7 @@ export function TableSameWorkModal({
     <Modal
       open={open}
       title="Même œuvre"
-      subtitle="Ces ouvrages sont des traductions ou éditions d'une même œuvre. Choisis le titre original."
+      subtitle="Ces ressources sont des traductions ou éditions d'une même œuvre. Choisis le titre original."
       footer={
         <>
           <Button type="button" onClick={onClose} variant="surface">
@@ -79,7 +79,7 @@ export function TableSameWorkModal({
         </strong>
       </p>
       <p className="mt-1 text-caption text-white/20">
-        Tous les ouvrages ci-dessus recevront ce titre original et seront regroupés en un seul nœud dans le graphe. Chaque ouvrage reste une entrée séparée en base.
+        Tous les ressources ci-dessus recevront ce titre original et seront regroupés en un seul nœud dans le graphe. Chaque ressource reste une entrée séparée en base.
       </p>
     </Modal>
   )

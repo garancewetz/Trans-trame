@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toggleSetItem } from '@/common/utils/setUtils'
 import { useColumnSort } from './useColumnSort'
 import { useBooksTabTableDerived } from '../components/tabs/useBooksTabTableDerived'
-import type { Author, AuthorId, Book, BookId, Link } from '@/types/domain'
+import type { Author, Book, BookId, Link } from '@/types/domain'
 import type { Axis } from '@/common/utils/categories'
 
 type Args = {
@@ -10,13 +10,10 @@ type Args = {
   links: Link[]
   search: string
   authors: Author[]
-  onAddBook?: (book: Partial<Book> & Pick<Book, 'id' | 'title'>) => unknown
   onUpdateBook?: (book: Book) => unknown
   onDeleteBook?: (bookId: BookId) => unknown
   onMergeBooks?: (fromNodeId: BookId, intoNodeId: BookId) => unknown
   onLastEdited?: (bookId: BookId) => unknown
-  initialAuthorIds?: AuthorId[]
-  autoFocusTitle?: boolean
   focusBookId?: BookId | null
 }
 
@@ -25,13 +22,10 @@ export function useBooksTabState({
   links,
   search,
   authors,
-  onAddBook,
   onUpdateBook,
   onDeleteBook,
   onMergeBooks,
   onLastEdited,
-  initialAuthorIds = [],
-  autoFocusTitle = false,
   focusBookId = null,
 }: Args) {
   const [editingAuthorsNodeId, setEditingAuthorsNodeId] = useState<BookId | null>(null)
@@ -49,11 +43,6 @@ export function useBooksTabState({
   const [sameWorkBooks, setSameWorkBooks] = useState<Book[]>([])
   const [axisFilter, setAxisFilter] = useState<Axis | null>(null)
   const [todoOnly, setTodoOnly] = useState(false)
-  const [inputTitle, setInputTitle] = useState('')
-  const [inputAuthorIds, setInputAuthorIds] = useState<AuthorId[]>(initialAuthorIds)
-  const [inputYear, setInputYear] = useState('')
-  const [inputAxes, setInputAxes] = useState<Axis[]>([])
-  const titleInputRef = useRef<HTMLInputElement | null>(null)
   const [justAddedBookId, setJustAddedBookId] = useState<BookId | null>(null)
   const [aiEnrichModal, setAiEnrichModal] = useState(false)
   const [aiEnrichBooks, setAiEnrichBooks] = useState<Book[]>([])
@@ -87,7 +76,6 @@ export function useBooksTabState({
   const allSelected = sortedNodes.length > 0 && sortedNodes.every((n) => selectedIds.has(n.id))
   const someSelected = selectedIds.size > 0 && !allSelected
 
-  useEffect(() => { if (autoFocusTitle) setTimeout(() => titleInputRef.current?.focus(), 0) }, [autoFocusTitle])
   useEffect(() => {
     if (!focusBookId) return
     requestAnimationFrame(() => {
@@ -98,14 +86,14 @@ export function useBooksTabState({
     })
   }, [focusBookId])
 
-  const toggleRow = (id: BookId) => setSelectedIds((prev) => toggleSetItem(prev, id))
+  const toggleRow = useCallback((id: BookId) => setSelectedIds((prev) => toggleSetItem(prev, id)), [])
   const toggleAll = () => {
     if (allSelected || someSelected) setSelectedIds(new Set())
     else setSelectedIds(new Set(sortedNodes.map((n) => n.id)))
   }
   const clearSelection = () => setSelectedIds(new Set())
 
-  const commitNodeEdit = () => {
+  const commitNodeEdit = useCallback(() => {
     if (!editingCell) return
     const { nodeId, field } = editingCell
     const node = (nodes || []).find((n) => n.id === nodeId)
@@ -120,42 +108,18 @@ export function useBooksTabState({
       onLastEdited?.(nodeId)
     }
     setEditingCell(null)
-  }
+  }, [editingCell, editingValue, nodes, onUpdateBook, onLastEdited])
+
+  const onBookAdded = useCallback((bookId: BookId) => {
+    setJustAddedBookId(bookId)
+    setTimeout(() => setJustAddedBookId((prev) => (prev === bookId ? null : prev)), 3000)
+  }, [])
 
   const handleBulkDelete = () => {
     if (!bulkDeleteConfirm) { setBulkDeleteConfirm(true); return }
     selectedIds.forEach((id) => onDeleteBook?.(id))
     clearSelection()
     setBulkDeleteConfirm(false)
-  }
-
-  const handleAddBookRow = () => {
-    if (!inputTitle.trim()) return
-    const title = inputTitle.trim()
-    const newId = crypto.randomUUID()
-    onAddBook?.({
-      id: newId,
-      title,
-      authorIds: inputAuthorIds,
-      year: parseInt(inputYear, 10) || null,
-      axes: inputAxes,
-      description: '',
-      originalTitle: null,
-    })
-    setInputTitle('')
-    setInputYear('')
-    setInputAxes([])
-    setJustAddedBookId(newId)
-    setTimeout(() => {
-      titleInputRef.current?.focus()
-      const el = document.querySelector(`[data-book-row-id="${newId}"]`)
-      if (el instanceof HTMLElement) {
-        const rect = el.getBoundingClientRect()
-        const fullyVisible = rect.top >= 0 && rect.bottom <= window.innerHeight
-        if (!fullyVisible) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
-      }
-    }, 50)
-    setTimeout(() => setJustAddedBookId((prev) => (prev === newId ? null : prev)), 3000)
   }
 
   const handleConfirmMerge = () => {
@@ -225,15 +189,13 @@ export function useBooksTabState({
     sameWorkModal, setSameWorkModal, sameWorkTitle, setSameWorkTitle,
     sameWorkConfirm, setSameWorkConfirm, sameWorkBooks, setSameWorkBooks,
     axisFilter, setAxisFilter, todoOnly, setTodoOnly,
-    inputTitle, setInputTitle, inputAuthorIds, setInputAuthorIds,
-    inputYear, setInputYear, inputAxes, setInputAxes,
-    titleInputRef, justAddedBookId,
+    justAddedBookId, onBookAdded,
     aiEnrichModal, setAiEnrichModal, aiEnrichBooks, setAiEnrichBooks,
     batchInfoModal, setBatchInfoModal, sortCol, sortDir,
     authorsMap, linkCountByNode, linkedBooksByNode, sortedNodes, mergeNodes, workSiblingsMap,
     allSelected, someSelected,
     handleNodeSort, toggleRow, toggleAll, clearSelection,
-    commitNodeEdit, handleBulkDelete, handleAddBookRow,
+    commitNodeEdit, handleBulkDelete,
     handleConfirmMerge, handleConfirmSameWork,
     openAIEnrich, onOpenSameWorkModal, onOpenMergeModal, onExport,
   }

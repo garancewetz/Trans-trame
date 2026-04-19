@@ -51,16 +51,16 @@ export function ReviewPhase({
   const { authorToBook: authorMatches, bookToSource: sourceMatches } = result
 
   return (
-    <div className="flex max-h-[70vh] flex-col gap-4">
-      <p className="text-label text-white/45">
+    <div className="flex max-h-[calc(100vh-10rem)] flex-col gap-4">
+      <p className="shrink-0 text-label text-white/45">
         {authorMatches.length + sourceMatches.length} suggestion{authorMatches.length + sourceMatches.length > 1 ? 's' : ''}
       </p>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
         {authorMatches.length > 0 && (
           <MatchTable
-            title="Auteur·ice → Ouvrage"
-            columns={['Auteur·ice', 'Ouvrage suggéré', 'Confiance', 'Raison']}
+            title="Auteur·ice → Ressource"
+            columns={['Auteur·ice', 'Ressource suggéré', 'Confiance', 'Raison']}
             items={authorMatches}
             renderRow={(m) => {
               const author = authorsMap.get(m.authorId)
@@ -84,8 +84,8 @@ export function ReviewPhase({
 
         {sourceMatches.length > 0 && (
           <MatchTable
-            title="Ouvrage orphelin → Source (lien de citation)"
-            columns={['Ouvrage orphelin', 'Cité par', 'Confiance', 'Raison']}
+            title="Ressource orphelin → Source (lien de citation)"
+            columns={['Ressource orphelin', 'Cité par', 'Confiance', 'Raison']}
             items={sourceMatches}
             renderRow={(m) => {
               const orphanBook = bookById.get(m.orphanBookId)

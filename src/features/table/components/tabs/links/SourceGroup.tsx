@@ -59,7 +59,7 @@ export function SourceGroup({
         />
         <AxesDot axes={group.sourceNode?.axes || []} />
         <span className="min-w-0 flex-1 truncate font-mono text-[0.88rem] font-semibold text-white/85">
-          {group.sourceNode?.title || '[ouvrage supprimé]'}
+          {group.sourceNode?.title || '[ressource supprimée]'}
           <span className="ml-1.5 font-normal text-caption text-white/30">
             {group.sourceNode ? bookAuthorDisplay(group.sourceNode, authorsMap) : ''}
             {group.sourceNode?.year ? `, ${group.sourceNode.year}` : ''}

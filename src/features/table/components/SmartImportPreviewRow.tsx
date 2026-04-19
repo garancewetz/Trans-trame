@@ -447,7 +447,7 @@ export function SmartImportPreviewRow({
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-white/4 bg-green/3 px-3 py-1.5">
           <div className="flex items-center gap-1.5">
             <Check size={10} className="shrink-0 text-green/55" />
-            <span className="text-caption text-green/50">Ouvrage fusionné</span>
+            <span className="text-caption text-green/50">Ressource fusionnée</span>
           </div>
 
           <div className="ml-auto flex items-center gap-2">

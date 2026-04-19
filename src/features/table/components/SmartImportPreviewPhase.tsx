@@ -125,7 +125,7 @@ export function SmartImportPreviewPhase({
                 {' '}
                 <span className="font-semibold text-white/65">{s.initialAuthor.lastName.toUpperCase()}</span>
                 <span className="ml-1.5 text-[0.7rem] text-white/20">
-                  ({s.affectedItemIds.length} ouvrage{s.affectedItemIds.length > 1 ? 's' : ''})
+                  ({s.affectedItemIds.length} ressource{s.affectedItemIds.length > 1 ? 's' : ''})
                 </span>
               </div>
 
@@ -176,7 +176,7 @@ export function SmartImportPreviewPhase({
             Édition
             <Info size={10} className="text-white/25 transition-colors group-hover/tip:text-white/50" />
             <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-white/10 bg-bg-overlay/95 px-2.5 py-1.5 text-micro font-normal normal-case tracking-normal text-white/65 opacity-0 shadow-lg transition-opacity group-hover/tip:opacity-100">
-              Info du lien, pas de l'ouvrage
+              Info du lien, pas de la ressource
             </span>
           </span>
           <span>Page</span>
@@ -185,7 +185,7 @@ export function SmartImportPreviewPhase({
         </div>
         <div className="max-h-[min(55vh,480px)] overflow-y-auto">
           {parsed.length === 0 && (
-            <p className="p-4 text-center text-label text-white/50">Aucun ouvrage reconnu.</p>
+            <p className="p-4 text-center text-label text-white/50">Aucune ressource reconnue.</p>
           )}
           {parsed.map((item) => (
             <div key={item.id}>
@@ -225,10 +225,10 @@ export function SmartImportPreviewPhase({
           <AlertTriangle size={13} className="mt-px shrink-0 text-amber/80" />
           <div className="flex-1">
             <p className="font-semibold text-amber/90">
-              Aucun ouvrage-source sélectionné
+              Aucune ressource-source sélectionné
             </p>
             <p className="mt-0.5 text-caption text-white/55">
-              Les {selectedCount} ouvrage{selectedCount > 1 ? 's' : ''} importé{selectedCount > 1 ? 's' : ''} {selectedCount > 1 ? 'arriveront' : 'arrivera'} sans aucun lien — {selectedCount > 1 ? 'iels apparaîtront' : 'iel apparaîtra'} en orphelin{selectedCount > 1 ? 's' : ''} dans la galaxie. Reviens à l'étape précédente pour relier cette bibliographie à l'ouvrage dont elle provient, ou confirme ci-dessous si c'est intentionnel (import catalogue).
+              Les {selectedCount} ressource{selectedCount > 1 ? 's' : ''} importé{selectedCount > 1 ? 's' : ''} {selectedCount > 1 ? 'arriveront' : 'arrivera'} sans aucun lien — {selectedCount > 1 ? 'iels apparaîtront' : 'iel apparaîtra'} en orphelin{selectedCount > 1 ? 's' : ''} dans la galaxie. Reviens à l'étape précédente pour relier cette bibliographie à la ressource dont elle provient, ou confirme ci-dessous si c'est intentionnel (import catalogue).
             </p>
           </div>
         </div>

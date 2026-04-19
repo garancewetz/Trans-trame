@@ -44,7 +44,7 @@ export function TableDedupeModal({
           <span className="font-semibold text-white">
             {duplicateGroups.length} groupe{duplicateGroups.length > 1 ? 's' : ''}
           </span>{' '}
-          de doublons détectés ({totalToRemove} ouvrage{totalToRemove > 1 ? 's' : ''} à
+          de doublons détectés ({totalToRemove} ressource{totalToRemove > 1 ? 's' : ''} à
           supprimer). Le plus riche de chaque groupe sera conservé, ses liens préservés.
         </>
       }

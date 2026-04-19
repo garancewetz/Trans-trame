@@ -63,7 +63,7 @@ export function LinkRow({
         />
         <AxesDot axes={link.targetNode?.axes || []} size="small" />
         <span className="min-w-0 flex-1 truncate font-mono text-ui text-white/75">
-          {link.targetNode?.title || '[ouvrage supprim\u00e9]'}
+          {link.targetNode?.title || '[ressource supprim\u00e9]'}
           {link.targetNode && (
             <span className="ml-1.5 text-white/30">
               — {bookAuthorDisplay(link.targetNode, authorsMap)}

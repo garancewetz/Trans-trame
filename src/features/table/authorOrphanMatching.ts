@@ -11,72 +11,12 @@ export type OrphanEntry = {
   matches: Match[]
 }
 
-// ── String normalization ─────────────────────────────────────────────────
-
-function norm(s: unknown): string {
-  return String(s || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .trim()
-}
-
-// ── Levenshtein (capped at 3 for early exit) ─────────────────────────────
-
-function levenshtein(a: string, b: string): number {
-  if (a === b) return 0
-  if (!a.length) return b.length
-  if (!b.length) return a.length
-  if (Math.abs(a.length - b.length) > 2) return 3
-  const m = a.length
-  const n = b.length
-  let prev = Array.from({ length: n + 1 }, (_, i) => i)
-  let curr = new Array<number>(n + 1)
-  for (let i = 1; i <= m; i++) {
-    curr[0] = i
-    for (let j = 1; j <= n; j++) {
-      curr[j] = a[i - 1] === b[j - 1]
-        ? prev[j - 1]
-        : 1 + Math.min(prev[j - 1], prev[j], curr[j - 1])
-    }
-    ;[prev, curr] = [curr, prev]
-  }
-  return prev[n]
-}
-
 // ── Find candidate books for an orphaned author ──────────────────────────
+// Legacy first_name/last_name columns dropped (migration 20260419_books_to_resources).
+// Orphan matching requires a new strategy (e.g. manual selection or title fuzzy match).
 
-export function findMatches(author: Author, books: Book[]): Match[] {
-  const authFn = norm(author.firstName)
-  const authLn = norm(author.lastName)
-  if (!authLn) return []
-
-  const matches: Match[] = []
-
-  for (const book of books) {
-    if (book.authorIds?.includes(author.id)) continue
-
-    const bookFn = norm(book.firstName)
-    const bookLn = norm(book.lastName)
-
-    if (bookLn && authLn === bookLn && authFn && bookFn && authFn === bookFn) {
-      matches.push({ book, confidence: 'high', reason: 'Correspondance exacte (champs legacy)' })
-      continue
-    }
-
-    if (bookLn && authLn === bookLn) {
-      matches.push({ book, confidence: 'medium', reason: 'Même nom de famille (champs legacy)' })
-      continue
-    }
-
-    if (bookLn && authLn.length >= 3 && levenshtein(authLn, bookLn) <= 1) {
-      matches.push({ book, confidence: 'low', reason: 'Nom similaire (champs legacy)' })
-    }
-  }
-
-  const order = { high: 0, medium: 1, low: 2 }
-  matches.sort((a, b) => order[a.confidence] - order[b.confidence])
-  return matches
+export function findMatches(_author: Author, _books: Book[]): Match[] {
+  return []
 }
 
 // ── Confidence badge styles ──────────────────────────────────────────────

@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          operation: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          operation: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          operation?: string
+        }
+        Relationships: []
+      }
       allowed_emails: {
         Row: {
           email: string
@@ -26,39 +59,6 @@ export type Database = {
         }
         Relationships: []
       }
-      activity_log: {
-        Row: {
-          id: string
-          entity_type: string
-          entity_id: string
-          operation: string
-          old_values: Json | null
-          new_values: Json | null
-          created_at: string
-          created_by: string | null
-        }
-        Insert: {
-          id?: string
-          entity_type: string
-          entity_id: string
-          operation: string
-          old_values?: Json | null
-          new_values?: Json | null
-          created_at?: string
-          created_by?: string | null
-        }
-        Update: {
-          id?: string
-          entity_type?: string
-          entity_id?: string
-          operation?: string
-          old_values?: Json | null
-          new_values?: Json | null
-          created_at?: string
-          created_by?: string | null
-        }
-        Relationships: []
-      }
       authors: {
         Row: {
           axes: string[]
@@ -68,6 +68,8 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          status: string | null
+          todo: string | null
           updated_by: string | null
         }
         Insert: {
@@ -78,6 +80,8 @@ export type Database = {
           first_name?: string
           id: string
           last_name?: string
+          status?: string | null
+          todo?: string | null
           updated_by?: string | null
         }
         Update: {
@@ -88,53 +92,56 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          status?: string | null
+          todo?: string | null
           updated_by?: string | null
         }
         Relationships: []
       }
-      book_authors: {
+      resource_authors: {
         Row: {
           author_id: string
-          book_id: string
+          resource_id: string
         }
         Insert: {
           author_id: string
-          book_id: string
+          resource_id: string
         }
         Update: {
           author_id?: string
-          book_id?: string
+          resource_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "book_authors_author_id_fkey"
+            foreignKeyName: "resource_authors_author_id_fkey"
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "authors"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "book_authors_book_id_fkey"
-            columns: ["book_id"]
+            foreignKeyName: "resource_authors_resource_id_fkey"
+            columns: ["resource_id"]
             isOneToOne: false
-            referencedRelation: "books"
+            referencedRelation: "resources"
             referencedColumns: ["id"]
           },
         ]
       }
-      books: {
+      resources: {
         Row: {
           axes: string[]
           created_at: string
           created_by: string | null
           deleted_at: string | null
           description: string
-          first_name: string
           id: string
           import_source_id: string | null
-          last_name: string
           original_title: string | null
+          resource_type: string
+          status: string | null
           title: string
+          todo: string | null
           updated_by: string | null
           year: number | null
         }
@@ -144,12 +151,13 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           description?: string
-          first_name?: string
           id: string
           import_source_id?: string | null
-          last_name?: string
           original_title?: string | null
+          resource_type?: string
+          status?: string | null
           title: string
+          todo?: string | null
           updated_by?: string | null
           year?: number | null
         }
@@ -159,16 +167,64 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           description?: string
-          first_name?: string
           id?: string
           import_source_id?: string | null
-          last_name?: string
           original_title?: string | null
+          resource_type?: string
+          status?: string | null
           title?: string
+          todo?: string | null
           updated_by?: string | null
           year?: number | null
         }
         Relationships: []
+      }
+      link_citations: {
+        Row: {
+          citation_text: string
+          context: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          edition: string
+          id: string
+          link_id: string
+          page: string
+          updated_by: string | null
+        }
+        Insert: {
+          citation_text?: string
+          context?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          edition?: string
+          id?: string
+          link_id: string
+          page?: string
+          updated_by?: string | null
+        }
+        Update: {
+          citation_text?: string
+          context?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          edition?: string
+          id?: string
+          link_id?: string
+          page?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "link_citations_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "links"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       links: {
         Row: {
@@ -180,6 +236,7 @@ export type Database = {
           edition: string
           id: string
           page: string
+          provenance: string
           source_id: string
           target_id: string
           updated_by: string | null
@@ -193,6 +250,7 @@ export type Database = {
           edition?: string
           id?: string
           page?: string
+          provenance?: string
           source_id: string
           target_id: string
           updated_by?: string | null
@@ -206,6 +264,7 @@ export type Database = {
           edition?: string
           id?: string
           page?: string
+          provenance?: string
           source_id?: string
           target_id?: string
           updated_by?: string | null
@@ -215,14 +274,14 @@ export type Database = {
             foreignKeyName: "links_source_id_fkey"
             columns: ["source_id"]
             isOneToOne: false
-            referencedRelation: "books"
+            referencedRelation: "resources"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "links_target_id_fkey"
             columns: ["target_id"]
             isOneToOne: false
-            referencedRelation: "books"
+            referencedRelation: "resources"
             referencedColumns: ["id"]
           },
         ]
@@ -230,21 +289,21 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
-          email: string
+          email: string | null
           first_name: string
           id: string
           last_name: string
         }
         Insert: {
           created_at?: string
-          email?: string
+          email?: string | null
           first_name?: string
           id: string
           last_name?: string
         }
         Update: {
           created_at?: string
-          email?: string
+          email?: string | null
           first_name?: string
           id?: string
           last_name?: string
@@ -256,8 +315,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      is_whitelisted: { Args: never; Returns: boolean }
       is_email_whitelisted: { Args: { check_email: string }; Returns: boolean }
+      is_whitelisted: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

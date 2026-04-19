@@ -78,6 +78,7 @@ export async function runSmartImportBatchInsert(params: {
       axes: allAxes,
       description: '',
       importSourceId: masterNode?.id ?? null,
+      resourceType: r.resourceType || 'book',
     })
     if (isThenable(pending)) insertPromises.push(Promise.resolve(pending))
     newIds.push(r.id)

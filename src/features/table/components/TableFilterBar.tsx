@@ -40,7 +40,7 @@ export function TableFilterBar({
 }: TableFilterBarProps) {
   const value = tab === 'books' ? search : tab === 'authors' ? authorSearch : linkSearch
   const setValue = tab === 'books' ? setSearch : tab === 'authors' ? setAuthorSearch : setLinkSearch
-  const placeholder = tab === 'books' ? 'Filtrer les ouvrages…' : tab === 'authors' ? 'Filtrer les auteur·ices…' : 'Filtrer les liens…'
+  const placeholder = tab === 'books' ? 'Filtrer les ressources…' : tab === 'authors' ? 'Filtrer les auteur·ices…' : 'Filtrer les liens…'
 
   const filteredBooks = useMemo(() => {
     const q = search.trim()
@@ -84,7 +84,7 @@ export function TableFilterBar({
     if (tab === 'books') {
       downloadJson(
         { exportedAt: new Date().toISOString(), books: filteredBooks },
-        exportFilename('ouvrages'),
+        exportFilename('ressources'),
       )
     } else if (tab === 'authors') {
       downloadJson(
@@ -100,7 +100,7 @@ export function TableFilterBar({
   }
 
   const TAB_LABELS: Record<string, string> = {
-    books: 'Ouvrages',
+    books: 'Ressources',
     authors: 'Auteur·ices',
     links: 'Liens',
   }

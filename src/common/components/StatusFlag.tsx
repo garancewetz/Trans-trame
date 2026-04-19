@@ -3,7 +3,7 @@ import { Flag } from 'lucide-react'
 import type { EntityStatus } from '@/types/domain'
 
 /**
- * Petit drapeau de statut pour ouvrages et auteur·ices.
+ * Petit drapeau de statut pour ressources et auteur·ices.
  *  - status 'warning' : drapeau amber visible en permanence ; clic = marquer vérifié·e (status null)
  *  - status null      : drapeau ghost qui n'apparaît qu'au survol de la ligne ; clic = poser warning
  *

@@ -69,7 +69,7 @@ export function NodePicker({
         <SearchResultsDropdown
           results={mapped}
           onPick={onPick}
-          emptyLabel={`Aucun ouvrage trouvé pour \u00ab\u00a0${query}\u00a0\u00bb`}
+          emptyLabel={`Aucune ressource trouvée pour \u00ab\u00a0${query}\u00a0\u00bb`}
           emptyAction={
             addButtonVisible ? (
               <Button
@@ -84,7 +84,7 @@ export function NodePicker({
                 }}
                 type="button"
               >
-                Ajouter un ouvrage ?
+                Ajouter une ressource ?
               </Button>
             ) : undefined
           }

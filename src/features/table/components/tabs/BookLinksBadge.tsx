@@ -57,7 +57,7 @@ export function BookLinksBadge({ linkCount, linkedBooks, authorsMap, onClick }: 
           onMouseLeave={hide}
         >
           <p className="mb-1.5 text-[0.68rem] font-semibold uppercase tracking-widest text-white/35">
-            Ouvrages liés ({linkedBooks!.length})
+            Ressources liés ({linkedBooks!.length})
           </p>
           <ul className="flex flex-col gap-1">
             {linkedBooks!.map((b) => (

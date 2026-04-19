@@ -33,6 +33,9 @@ type AppMutationsValue = {
   handleAddLinks: GraphData['handleAddLinks']
   handleDeleteLink: GraphData['handleDeleteLink']
   handleUpdateLink: GraphData['handleUpdateLink']
+  handleAddCitation: GraphData['handleAddCitation']
+  handleUpdateCitation: GraphData['handleUpdateCitation']
+  handleDeleteCitation: GraphData['handleDeleteCitation']
   handleMergeBooks: GraphData['handleMergeBooks']
   handleMigrateData: GraphData['handleMigrateData']
   resetToDefault: GraphData['resetToDefault']
@@ -98,6 +101,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       handleAddLinks: data.handleAddLinks,
       handleDeleteLink: data.handleDeleteLink,
       handleUpdateLink: data.handleUpdateLink,
+      handleAddCitation: data.handleAddCitation,
+      handleUpdateCitation: data.handleUpdateCitation,
+      handleDeleteCitation: data.handleDeleteCitation,
       handleMergeBooks: data.handleMergeBooks,
       handleMigrateData: data.handleMigrateData,
       resetToDefault: data.resetToDefault,
@@ -113,6 +119,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       data.handleAddLinks,
       data.handleDeleteLink,
       data.handleUpdateLink,
+      data.handleAddCitation,
+      data.handleUpdateCitation,
+      data.handleDeleteCitation,
       data.handleMergeBooks,
       data.handleMigrateData,
       data.resetToDefault,

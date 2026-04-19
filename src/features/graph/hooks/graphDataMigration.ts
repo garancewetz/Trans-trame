@@ -4,7 +4,7 @@ import type { AuthorNode } from '@/common/utils/authorUtils'
 import { migrateData } from '@/common/utils/authorUtils'
 import { devWarn } from '@/common/utils/logger'
 import { supabase } from '@/core/supabase'
-import { insertAuthorRows, setBookAuthors } from '../api/graphDataApi'
+import { insertAuthorRows, setResourceAuthors } from '../api/graphDataApi'
 import {
   authorToDbRow,
   type AxesColorMap,
@@ -96,7 +96,7 @@ export async function migrateLegacyAuthorsAndBooks(params: {
     const orig = books.find((b0) => b0.id === bookId)
     if (!orig) continue
 
-    const result = await setBookAuthors(bookId, book.authorIds)
+    const result = await setResourceAuthors(bookId, book.authorIds)
     if (result && 'error' in result && result.error) {
       devWarn('Migration: erreur set book_authors', bookId, result.error)
       failures.push({
@@ -123,11 +123,11 @@ export async function migrateLegacyAuthorsAndBooks(params: {
     for (let i = 0; i < ids.length; i += CHUNK) {
       const slice = ids.slice(i, i + CHUNK)
       const { data: persistedRows, error } = await supabase
-        .from('book_authors')
-        .select('book_id')
-        .in('book_id', slice)
+        .from('resource_authors')
+        .select('resource_id')
+        .in('resource_id', slice)
       if (error) { verifyError = error; break }
-      for (const r of persistedRows ?? []) persistedBookIds.add(r.book_id)
+      for (const r of persistedRows ?? []) persistedBookIds.add(r.resource_id)
     }
 
     if (verifyError) {

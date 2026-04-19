@@ -1,4 +1,4 @@
-import { X, Calendar, BookOpen, Users } from 'lucide-react'
+import { X, Calendar, BookOpen, Users, TrendingUp } from 'lucide-react'
 import { axisColor, axisLabel } from '@/common/utils/categories'
 import type { Highlight } from '@/core/FilterContext'
 
@@ -17,7 +17,7 @@ type ActiveFilterBarProps = {
   onClearSelectedBook: () => void
 }
 
-const HIGHLIGHT_ICON = { decade: Calendar, book: BookOpen, author: Users } as const
+const HIGHLIGHT_ICON = { decade: Calendar, book: BookOpen, author: Users, citedMin: TrendingUp } as const
 
 export function ActiveFilterBar({
   activeFilter,
@@ -46,7 +46,7 @@ export function ActiveFilterBar({
             <span className="text-white/80">{visibleCount}</span>
             <span className="text-white/25">/</span>
             <span>{totalCount}</span>
-            <span className="ml-0.5 text-white/35">ouvrages</span>
+            <span className="ml-0.5 text-white/35">ressources</span>
           </span>
         ) : (
           <span className="text-[0.78rem] font-medium text-white/35">Filtres</span>

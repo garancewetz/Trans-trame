@@ -169,7 +169,7 @@ export function TextsPanel({
                     </Button>
                     <Button
                       type="button"
-                      title="Grande fiche ouvrage"
+                      title="Grande fiche ressource"
                       className="inline-flex cursor-pointer items-center justify-center gap-1 border-t border-white/10 px-2 py-2 text-caption font-semibold text-white/40 transition-colors hover:bg-white/10 hover:text-violet/95 sm:border-l sm:border-t-0 sm:px-2.5"
                       onClick={(e) => {
                         e.stopPropagation()

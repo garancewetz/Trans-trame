@@ -7,12 +7,73 @@ import {
   loadEntityNamesForLog,
   loadProfiles,
   rollbackActivityEntry,
+  rollbackActivitySession,
 } from '@/features/graph/api/graphDataApi'
 import type { ActivityLogEntry } from '@/features/graph/api/graphDataApi'
 import type { Json } from '@/types/supabase'
 import { DATASET_QUERY_KEY } from '@/features/graph/api/queryKeys'
 
 const PAGE_SIZE = 50
+
+// Events that land within this window and share an actor are considered part
+// of the same "session" (e.g. bulk import, sequence of related edits).
+const SESSION_GAP_MS = 10_000
+
+export type ActivitySession = {
+  id: string
+  actor: string | null
+  newestAt: string
+  oldestAt: string
+  entries: ActivityLogEntry[]
+  counts: { books: number; authors: number; links: number }
+  ops: { INSERT: number; UPDATE: number; DELETE: number; RESTORE: number }
+}
+
+/** Groups a newest-first list of entries into contiguous sessions by actor +
+ *  time proximity. Works on pre-filtered entries too: the gap heuristic still
+ *  holds when some events are hidden by the search query. */
+export function buildActivitySessions(entries: ActivityLogEntry[]): ActivitySession[] {
+  const out: ActivitySession[] = []
+  for (const entry of entries) {
+    const last = out[out.length - 1]
+    const ts = new Date(entry.created_at).getTime()
+    const canExtend =
+      last !== undefined &&
+      last.actor === entry.created_by &&
+      new Date(last.oldestAt).getTime() - ts <= SESSION_GAP_MS
+    if (canExtend) {
+      last.entries.push(entry)
+      last.oldestAt = entry.created_at
+      if (entry.entity_type === 'books' || entry.entity_type === 'resources') last.counts.books++
+      else if (entry.entity_type === 'authors') last.counts.authors++
+      else if (entry.entity_type === 'links') last.counts.links++
+      if (entry.operation === 'INSERT') last.ops.INSERT++
+      else if (entry.operation === 'UPDATE') last.ops.UPDATE++
+      else if (entry.operation === 'DELETE') last.ops.DELETE++
+      else if (entry.operation === 'RESTORE') last.ops.RESTORE++
+    } else {
+      out.push({
+        id: entry.id,
+        actor: entry.created_by,
+        newestAt: entry.created_at,
+        oldestAt: entry.created_at,
+        entries: [entry],
+        counts: {
+          books: (entry.entity_type === 'books' || entry.entity_type === 'resources') ? 1 : 0,
+          authors: entry.entity_type === 'authors' ? 1 : 0,
+          links: entry.entity_type === 'links' ? 1 : 0,
+        },
+        ops: {
+          INSERT: entry.operation === 'INSERT' ? 1 : 0,
+          UPDATE: entry.operation === 'UPDATE' ? 1 : 0,
+          DELETE: entry.operation === 'DELETE' ? 1 : 0,
+          RESTORE: entry.operation === 'RESTORE' ? 1 : 0,
+        },
+      })
+    }
+  }
+  return out
+}
 
 export type Profile = { id: string; first_name: string; last_name: string; email: string }
 
@@ -26,9 +87,10 @@ export const OP_CONFIG: Record<string, { icon: typeof Plus; color: string; label
 }
 
 export const ENTITY_CONFIG: Record<string, { icon: typeof Plus; label: string }> = {
-  books:   { icon: BookOpen, label: 'ouvrage' },
-  authors: { icon: Users,    label: 'auteur·ice' },
-  links:   { icon: Link2,    label: 'lien' },
+  resources: { icon: BookOpen, label: 'ressource' },
+  books:     { icon: BookOpen, label: 'ressource' },
+  authors:   { icon: Users,    label: 'auteur·ice' },
+  links:     { icon: Link2,    label: 'lien' },
 }
 
 // ── Label helpers ───────────────────────────────────────────────────────────
@@ -55,7 +117,7 @@ export function entityTitle(
   const vals = (entry.operation === 'DELETE' ? entry.old_values : entry.new_values) as Record<string, Json> | null
   if (!vals) return entry.entity_id
 
-  if (entry.entity_type === 'books') {
+  if (entry.entity_type === 'books' || entry.entity_type === 'resources') {
     const title = (vals.title as string) || entry.entity_id
     const authorIds = bookAuthorsMap.get(entry.entity_id)
     if (authorIds?.length) {
@@ -112,6 +174,8 @@ export function useHistoryTabData() {
   const [hasMore, setHasMore] = useState(true)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [rollingBackId, setRollingBackId] = useState<string | null>(null)
+  const [confirmingSessionId, setConfirmingSessionId] = useState<string | null>(null)
+  const [rollingBackSessionId, setRollingBackSessionId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
 
   const { data: logData, isLoading: logLoading, error: logError } = useQuery({
@@ -177,9 +241,9 @@ export function useHistoryTabData() {
     const map = new Map<string, string[]>()
     if (entityNamesData) {
       for (const ba of entityNamesData.bookAuthors) {
-        const list = map.get(ba.book_id) ?? []
+        const list = map.get(ba.resource_id) ?? []
         list.push(ba.author_id)
-        map.set(ba.book_id, list)
+        map.set(ba.resource_id, list)
       }
     }
     return map
@@ -201,6 +265,11 @@ export function useHistoryTabData() {
       )
     })
   }, [allEntries, search, profilesMap, entityNamesMap, bookAuthorsMap])
+
+  const filteredSessions = useMemo(
+    () => buildActivitySessions(filteredEntries),
+    [filteredEntries],
+  )
 
   const handleRollback = useCallback(async (entry: ActivityLogEntry) => {
     if (confirmingId !== entry.id) {
@@ -235,10 +304,48 @@ export function useHistoryTabData() {
     return () => clearTimeout(timer)
   }, [confirmingId])
 
+  useEffect(() => {
+    if (!confirmingSessionId) return
+    const timer = setTimeout(() => setConfirmingSessionId(null), 4000)
+    return () => clearTimeout(timer)
+  }, [confirmingSessionId])
+
+  const handleRollbackSession = useCallback(async (session: ActivitySession) => {
+    if (confirmingSessionId !== session.id) {
+      setConfirmingSessionId(session.id)
+      return
+    }
+    setConfirmingSessionId(null)
+    setRollingBackSessionId(session.id)
+    try {
+      const results = await rollbackActivitySession(session.entries)
+      const failed = results.filter((r) => !r.ok)
+      const ok = results.length - failed.length
+      if (failed.length === 0) {
+        toast.success(`Session annulée (${ok} action${ok > 1 ? 's' : ''})`)
+      } else {
+        toast.error(
+          `Session annulée partiellement : ${ok}/${results.length} réussies, ${failed.length} échec${failed.length > 1 ? 's' : ''}`,
+          { duration: 8000 },
+        )
+      }
+      queryClient.invalidateQueries({ queryKey: ['activity_log'] })
+      queryClient.invalidateQueries({ queryKey: DATASET_QUERY_KEY })
+      setAllEntries([])
+      setPage(0)
+      setHasMore(true)
+    } catch {
+      toast.error("Echec du rollback de la session")
+    } finally {
+      setRollingBackSessionId(null)
+    }
+  }, [confirmingSessionId, queryClient])
+
   return {
     search,
     setSearch,
     filteredEntries,
+    filteredSessions,
     allEntries,
     logLoading,
     hasMore,
@@ -247,6 +354,9 @@ export function useHistoryTabData() {
     confirmingId,
     rollingBackId,
     handleRollback,
+    confirmingSessionId,
+    rollingBackSessionId,
+    handleRollbackSession,
     profilesMap,
     entityNamesMap,
     bookAuthorsMap,

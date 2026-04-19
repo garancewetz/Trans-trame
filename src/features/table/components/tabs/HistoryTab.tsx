@@ -2,13 +2,18 @@ import { Loader2 } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { SearchInputWithClear } from '@/common/components/ui/SearchInputWithClear'
 import { useHistoryTabData } from './useHistoryTabData'
-import { HistoryTabEntryRow } from './HistoryTabEntryRow'
+import { HistoryTabSession } from './HistoryTabSession'
+import { HistoryTabAnomalies } from './HistoryTabAnomalies'
 
-export function HistoryTab() {
+type HistoryTabProps = {
+  onOpenAIOrphanReconcile?: () => void
+}
+
+export function HistoryTab({ onOpenAIOrphanReconcile }: HistoryTabProps = {}) {
   const {
     search,
     setSearch,
-    filteredEntries,
+    filteredSessions,
     allEntries,
     logLoading,
     hasMore,
@@ -16,6 +21,9 @@ export function HistoryTab() {
     confirmingId,
     rollingBackId,
     handleRollback,
+    confirmingSessionId,
+    rollingBackSessionId,
+    handleRollbackSession,
     profilesMap,
     entityNamesMap,
     bookAuthorsMap,
@@ -41,6 +49,8 @@ export function HistoryTab() {
   return (
     <div className="flex flex-1 flex-col overflow-y-auto px-5 py-4">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-2">
+        <HistoryTabAnomalies onOpenAIReconcile={onOpenAIOrphanReconcile} />
+
         <SearchInputWithClear
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -49,20 +59,23 @@ export function HistoryTab() {
           className="mb-2"
         />
 
-        {filteredEntries.map((entry) => (
-          <HistoryTabEntryRow
-            key={entry.id}
-            entry={entry}
+        {filteredSessions.map((session) => (
+          <HistoryTabSession
+            key={session.id}
+            session={session}
             profilesMap={profilesMap}
             entityNamesMap={entityNamesMap}
             bookAuthorsMap={bookAuthorsMap}
-            isConfirming={confirmingId === entry.id}
-            isRollingBack={rollingBackId === entry.id}
-            onRollback={handleRollback}
+            confirmingEntryId={confirmingId}
+            rollingBackEntryId={rollingBackId}
+            onRollbackEntry={handleRollback}
+            isConfirmingSession={confirmingSessionId === session.id}
+            isRollingBackSession={rollingBackSessionId === session.id}
+            onRollbackSession={handleRollbackSession}
           />
         ))}
 
-        {filteredEntries.length === 0 && search && (
+        {filteredSessions.length === 0 && search && (
           <div className="py-8 text-center text-sm text-white/30">
             Aucun résultat pour « {search} »
           </div>

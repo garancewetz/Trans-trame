@@ -18,6 +18,7 @@ export function bookDefaultValues(
       axes: Array.isArray(editNode.axes) ? editNode.axes : [],
       description: editNode.description || '',
       stickyAuthor: false,
+      resourceType: editNode.resourceType || 'book',
     }
   }
   return {
@@ -27,5 +28,6 @@ export function bookDefaultValues(
     axes: [],
     description: '',
     stickyAuthor: false,
+    resourceType: 'book',
   }
 }

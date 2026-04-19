@@ -44,15 +44,15 @@ export async function fetchAllPaginated<Row>(
 }
 
 export async function loadGraphDataFromSupabase() {
-  const [booksRes, authorsRes, linksRes] = await Promise.all([
+  const [booksRes, authorsRes, linksRes, citationsRes] = await Promise.all([
     fetchAllPaginated(
       (from, to) => supabase
-        .from('books')
-        .select('*, book_authors(author_id)')
+        .from('resources')
+        .select('*, resource_authors(author_id)')
         .is('deleted_at', null)
         .order('created_at', { ascending: true })
         .range(from, to),
-      'books',
+      'resources',
     ),
     fetchAllPaginated(
       (from, to) => supabase
@@ -71,21 +71,30 @@ export async function loadGraphDataFromSupabase() {
         .range(from, to),
       'links',
     ),
+    fetchAllPaginated(
+      (from, to) => supabase
+        .from('link_citations')
+        .select('*')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true })
+        .range(from, to),
+      'link_citations',
+    ),
   ])
 
-  return { booksRes, authorsRes, linksRes }
+  return { booksRes, authorsRes, linksRes, citationsRes }
 }
 
-export function insertBookRow(row: TablesInsert<'books'>) {
-  return supabase.from('books').insert(row).select('id')
+export function insertResourceRow(row: TablesInsert<'resources'>) {
+  return supabase.from('resources').insert(row).select('id')
 }
 
-export function updateBookRowById(id: string, fields: TablesUpdate<'books'>) {
-  return supabase.from('books').update(fields).eq('id', id)
+export function updateResourceRowById(id: string, fields: TablesUpdate<'resources'>) {
+  return supabase.from('resources').update(fields).eq('id', id)
 }
 
-export function deleteBookRowById(id: string) {
-  return supabase.from('books').update({ deleted_at: new Date().toISOString() }).eq('id', id)
+export function deleteResourceRowById(id: string) {
+  return supabase.from('resources').update({ deleted_at: new Date().toISOString() }).eq('id', id)
 }
 
 export function insertAuthorRow(row: TablesInsert<'authors'>) {
@@ -130,43 +139,65 @@ export function deleteLinkRowsByIds(ids: string[]) {
   return supabase.from('links').update({ deleted_at: new Date().toISOString() }).in('id', ids)
 }
 
-/** Soft-deletes all books. Does NOT touch links or authors — callers must
- *  handle those separately or rely on the UI clearing local state. */
-export function deleteAllBooks() {
-  return supabase.from('books').update({ deleted_at: new Date().toISOString() }).not('id', 'is', null)
+// ── link_citations CRUD ────────────────────────────────────────────────────
+//
+// Multiple citations (page/edition/context/citation_text) can coexist under
+// a single links row since migration 20260418_link_citations_subtable. Each
+// citation is an independent row with its own audit trail and soft-delete.
+
+export function insertLinkCitationRow(row: TablesInsert<'link_citations'>) {
+  return supabase.from('link_citations').insert(row).select()
 }
 
-// ── Book-Authors junction ─────────────────────────────────────────────────
+export function insertLinkCitationRows(rows: TablesInsert<'link_citations'>[]) {
+  return supabase.from('link_citations').insert(rows).select()
+}
 
-export async function setBookAuthors(bookId: string, authorIds: string[]) {
-  const delResult = await supabase.from('book_authors').delete().eq('book_id', bookId).select()
+export function updateLinkCitationRowById(id: string, fields: TablesUpdate<'link_citations'>) {
+  return supabase.from('link_citations').update(fields).eq('id', id)
+}
+
+export function deleteLinkCitationRowById(id: string) {
+  return supabase.from('link_citations').update({ deleted_at: new Date().toISOString() }).eq('id', id)
+}
+
+/** Soft-deletes all resources. Does NOT touch links or authors — callers must
+ *  handle those separately or rely on the UI clearing local state. */
+export function deleteAllResources() {
+  return supabase.from('resources').update({ deleted_at: new Date().toISOString() }).not('id', 'is', null)
+}
+
+// ── Resource-Authors junction ─────────────────────────────────────────────
+
+export async function setResourceAuthors(resourceId: string, authorIds: string[]) {
+  const delResult = await supabase.from('resource_authors').delete().eq('resource_id', resourceId).select()
   if (delResult.error) {
-    devWarn('[setBookAuthors] delete failed', { bookId, error: delResult.error })
+    devWarn('[setResourceAuthors] delete failed', { resourceId, error: delResult.error })
     return { error: delResult.error }
   }
   if (authorIds.length === 0) return { error: null }
-  const rows = authorIds.map((author_id) => ({ book_id: bookId, author_id }))
-  const insResult = await supabase.from('book_authors').insert(rows).select()
+  const rows = authorIds.map((author_id) => ({ resource_id: resourceId, author_id }))
+  const insResult = await supabase.from('resource_authors').insert(rows).select()
   if (insResult.error) {
-    devWarn('[setBookAuthors] insert failed', { bookId, error: insResult.error })
+    devWarn('[setResourceAuthors] insert failed', { resourceId, error: insResult.error })
     return { error: insResult.error }
   }
   if (!insResult.data?.length) {
-    devWarn('[setBookAuthors] insert returned no data — RLS may be silently blocking', { bookId })
+    devWarn('[setResourceAuthors] insert returned no data — RLS may be silently blocking', { resourceId })
     return { error: { message: 'Insert silencieux : aucune donnée retournée (vérifier RLS)' } }
   }
   return insResult
 }
 
-export function insertBookAuthors(bookId: string, authorIds: string[]) {
+export function insertResourceAuthors(resourceId: string, authorIds: string[]) {
   if (authorIds.length === 0) return Promise.resolve({ data: null, error: null })
-  return supabase.from('book_authors').insert(
-    authorIds.map((author_id) => ({ book_id: bookId, author_id }))
+  return supabase.from('resource_authors').insert(
+    authorIds.map((author_id) => ({ resource_id: resourceId, author_id }))
   ).select()
 }
 
-export function deleteBookAuthorsByBookId(bookId: string) {
-  return supabase.from('book_authors').delete().eq('book_id', bookId)
+export function deleteResourceAuthorsByResourceId(resourceId: string) {
+  return supabase.from('resource_authors').delete().eq('resource_id', resourceId)
 }
 
 // ── JSON export helpers ──────────────────────────────────────────────────
@@ -192,25 +223,25 @@ export async function exportFullDatabase() {
 
   // Refuse to export a partial backup — silently dropping rows would lead users
   // to trust an incomplete snapshot.
-  const books = ensureOk(booksRes, 'export: books')
+  const resources = ensureOk(booksRes, 'export: resources')
   const authors = ensureOk(authorsRes, 'export: authors')
   const links = ensureOk(linksRes, 'export: links')
 
-  // Extraire book_authors depuis la relation embarquée
-  const bookAuthors = (books ?? []).flatMap((b) =>
-    ((b.book_authors as { author_id: string }[] | null) ?? []).map((ba) => ({
-      book_id: b.id,
-      author_id: ba.author_id,
+  // Extraire resource_authors depuis la relation embarquée
+  const resourceAuthors = (resources ?? []).flatMap((r) =>
+    ((r.resource_authors as { author_id: string }[] | null) ?? []).map((ra) => ({
+      resource_id: r.id,
+      author_id: ra.author_id,
     })),
   )
 
   downloadJson(
     {
       exportedAt: new Date().toISOString(),
-      books: books ?? [],
+      resources: resources ?? [],
       authors: authors ?? [],
       links: links ?? [],
-      bookAuthors,
+      resourceAuthors,
     },
     exportFilename('backup'),
   )
@@ -225,24 +256,24 @@ export async function exportFullDatabase() {
 // JSONB stored in the log entry itself.
 
 export async function loadEntityNamesForLog() {
-  const [booksRes, authorsRes, bookAuthorsRes] = await Promise.all([
+  const [resourcesRes, authorsRes, resourceAuthorsRes] = await Promise.all([
     fetchAllPaginated(
-      (from, to) => supabase.from('books').select('id, title').range(from, to),
-      'entityNames:books',
+      (from, to) => supabase.from('resources').select('id, title').range(from, to),
+      'entityNames:resources',
     ),
     fetchAllPaginated(
       (from, to) => supabase.from('authors').select('id, first_name, last_name').range(from, to),
       'entityNames:authors',
     ),
     fetchAllPaginated(
-      (from, to) => supabase.from('book_authors').select('book_id, author_id').range(from, to),
-      'entityNames:bookAuthors',
+      (from, to) => supabase.from('resource_authors').select('resource_id, author_id').range(from, to),
+      'entityNames:resourceAuthors',
     ),
   ])
   return {
-    books: ensureOk(booksRes, 'loadEntityNamesForLog: books') ?? [],
+    books: ensureOk(resourcesRes, 'loadEntityNamesForLog: resources') ?? [],
     authors: ensureOk(authorsRes, 'loadEntityNamesForLog: authors') ?? [],
-    bookAuthors: ensureOk(bookAuthorsRes, 'loadEntityNamesForLog: bookAuthors') ?? [],
+    bookAuthors: ensureOk(resourceAuthorsRes, 'loadEntityNamesForLog: resourceAuthors') ?? [],
   }
 }
 
@@ -255,6 +286,35 @@ export async function loadActivityLog(limit = 50, offset = 0): Promise<ActivityL
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
   return ensureOk(res, 'loadActivityLog') ?? []
+}
+
+/** Returns a map resourceId → last-known title for soft-deleted resources.
+ *  The resources_select RLS policy hides soft-deleted rows from the resources
+ *  table, but the audit trigger preserved the title in old_values at delete
+ *  time. Checks both 'resources' (new) and 'books' (historical) entity_type.
+ *  Iterates newest-first so that the first DELETE entry wins if a resource was
+ *  deleted-restored-deleted again. */
+export async function loadDeletedBookTitles(): Promise<Map<string, string>> {
+  const res = await fetchAllPaginated(
+    (from, to) =>
+      supabase
+        .from('activity_log')
+        .select('entity_id, old_values, created_at')
+        .in('entity_type', ['resources', 'books'])
+        .eq('operation', 'DELETE')
+        .order('created_at', { ascending: false })
+        .range(from, to),
+    'deletedBookTitles',
+  )
+  const entries = ensureOk(res, 'loadDeletedBookTitles') ?? []
+  const map = new Map<string, string>()
+  for (const e of entries) {
+    if (map.has(e.entity_id)) continue
+    const ov = e.old_values as { title?: unknown } | null
+    const title = ov?.title
+    if (typeof title === 'string' && title.trim()) map.set(e.entity_id, title)
+  }
+  return map
 }
 
 export async function loadProfiles() {
@@ -273,7 +333,8 @@ export type ActivityLogEntry = Tables<'activity_log'>
 
 export async function rollbackActivityEntry(entry: ActivityLogEntry) {
   const { entity_type, entity_id, operation, old_values } = entry
-  const table = entity_type as 'books' | 'authors' | 'links'
+  const tableRaw = entity_type === 'books' ? 'resources' : entity_type
+  const table = tableRaw as 'resources' | 'authors' | 'links'
 
   switch (operation) {
     case 'INSERT':
@@ -297,4 +358,31 @@ export async function rollbackActivityEntry(entry: ActivityLogEntry) {
     default:
       return null
   }
+}
+
+/** Rolls back a batch of log entries newest-first. Continues on failure and
+ *  reports per-entry outcomes so callers can tell the user exactly how many
+ *  actions reverted when a partial failure occurs. Entries MUST be passed in
+ *  newest-first order (the order the session struct already exposes). */
+export async function rollbackActivitySession(entries: ActivityLogEntry[]) {
+  const results: { entry: ActivityLogEntry; ok: boolean; error?: string }[] = []
+  for (const entry of entries) {
+    try {
+      const res = await rollbackActivityEntry(entry)
+      if (res === null) {
+        results.push({ entry, ok: true })
+      } else if (res.error) {
+        results.push({ entry, ok: false, error: res.error.message })
+      } else {
+        results.push({ entry, ok: true })
+      }
+    } catch (e) {
+      results.push({
+        entry,
+        ok: false,
+        error: e instanceof Error ? e.message : 'Erreur inconnue',
+      })
+    }
+  }
+  return results
 }

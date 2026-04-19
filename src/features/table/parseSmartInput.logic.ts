@@ -192,6 +192,7 @@ export async function parseSmartInputHybrid(
       needsLLM: false,
       parsedByLLM: true,
       suggestedThemes: llm.suggestedThemes.length > 0 ? llm.suggestedThemes : item.suggestedThemes,
+      resourceType: llm.resourceType || item.resourceType,
     }
   })
 }
@@ -242,6 +243,7 @@ export async function parseSmartInputFromImages(
       needsLLM: false,
       parsedByLLM: true,
       suggestedThemes: item.suggestedThemes.length > 0 ? item.suggestedThemes : undefined,
+      resourceType: item.resourceType || 'book',
     })
   }
 

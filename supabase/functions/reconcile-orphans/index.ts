@@ -73,23 +73,29 @@ Response format — strict JSON, no markdown:
 }
 
 ABOUT "hints":
-For books or authors you CANNOT match with confidence, provide a research hint instead — a concrete suggestion to help the user find the answer manually.
+For books or authors you CANNOT match with confidence, provide a concise research hint — a concrete suggestion to help the user find the answer manually.
 
-CRITICAL: The hints are for a non-technical user (a researcher, not a developer). NEVER mention batchKey, timestamps, IDs, or any technical term. Instead, refer to books and authors BY NAME. Say "importé·e en même temps que [Titre du livre] de [Auteur]" instead of "importé avec le batchKey 2026-04-05T20:25". Use the titles and author names from batchSiblings to make the hint human-readable.
+AUDIENCE: non-technical user (a researcher, not a developer). NEVER mention batchKey, timestamps, IDs, or any technical term. Refer to books and authors BY NAME.
 
-MANDATORY: When "importedFor" is set on an orphanedBook, the hint MUST start by stating that this book is part of the bibliography of "[importedFor.title]" de [importedFor.authors]. This is the single most useful piece of information for the researcher — never omit it. Only then add complementary clues (batch siblings, title recognition, etc.).
+KEEP IT SHORT (≤ 1-2 sentences). The UI already displays the book's own title and import source next to the hint. Do NOT restate information the user can see. Focus on what is NEW and actionable.
+
+NO HALLUCINATION:
+- Do NOT invent publication years. Only state a year if it was given in the input data. If unsure, omit the year entirely (do not write "(1985)" or "de 1980" speculatively).
+- Do NOT attribute authorship to anyone whose name is not in the input. A book cited by X is NOT authored by X — "cité par" ≠ "de". When suggesting a possible author from your knowledge, mark it speculative: "peut-être écrit·e par [nom]" — never assert it.
+- Do NOT confidently state a document type ("numéro spécial", "ouvrage collectif", …) unless the title itself makes it obvious. Prefer "peut-être un numéro de revue" over "Il s'agit d'un numéro de revue".
 
 Good hint examples:
-- "Fait partie de la bibliographie de « Sister Outsider » d'Audre Lorde. Importé·e en même temps que « Ain't I a Woman » de bell hooks. Cherche dans les notes et l'index de « Sister Outsider »."
-- "Spécialiste de [thématique]. Peut-être auteur·ice de [titre d'un ouvrage sans auteur du même import]."
-- "Le titre ressemble à un ouvrage de [auteur·ice connu·e], mais iel n'est pas dans la liste des auteur·ices orphelin·es. Vérifie si iel existe déjà dans la base."
+- "Peut-être un chapitre issu de « Ain't I a Woman » de bell hooks (importé dans le même lot)."
+- "Titre évoquant un article académique — chercher les auteur·ices sur JSTOR."
+- "Ressemble à un ouvrage d'Audre Lorde non encore présent en base. À vérifier."
 Bad hint examples (NEVER DO THIS):
-- "Cherchez des ouvrages importés avec le batchKey 2026-04-05T20:25" ← FORBIDDEN, too technical
+- "Fait partie de la bibliographie de « Sister Outsider » d'Audre Lorde. Importé·e en même temps que …" ← redundant, the UI shows this already
+- "Ce livre est un numéro spécial de 1987. Il s'agit probablement d'un numéro de revue." ← speculative year AND forced typing
+- "Cherchez des ouvrages importés avec le batchKey 2026-04-05T20:25" ← too technical
 - "bookId: abc-123" ← FORBIDDEN
-- Omitting the importedFor bibliography when it is set ← FORBIDDEN
 
 The "bookId" field in hints refers to an orphanedBook id OR an orphanedAuthor id (this is for the system, NOT shown to the user).
-ALWAYS provide hints for items you cannot match. Do NOT leave items with no match AND no hint.
+ALWAYS provide a hint for items you cannot match. Do NOT leave items with no match AND no hint.
 
 Rules:
 - PRIORITISE authorToBook matches. This is what the user needs most.

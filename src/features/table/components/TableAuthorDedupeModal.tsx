@@ -46,10 +46,14 @@ export function TableAuthorDedupeModal({
     setPrevOpenKey({ open: false, groups: duplicateGroups })
   }
 
-  const bookCountById = useMemo(() => {
-    const m = new Map<AuthorId, number>()
+  const booksByAuthor = useMemo(() => {
+    const m = new Map<AuthorId, Book[]>()
     ;(nodes || []).forEach((b) => {
-      ;(b.authorIds || []).forEach((aid) => m.set(aid, (m.get(aid) || 0) + 1))
+      ;(b.authorIds || []).forEach((aid) => {
+        const list = m.get(aid)
+        if (list) list.push(b)
+        else m.set(aid, [b])
+      })
     })
     return m
   }, [nodes])
@@ -145,7 +149,8 @@ export function TableAuthorDedupeModal({
                 {group.map((author) => {
                   const isKept = author.id === keepId
                   const isExcluded = !isKept && !!excluded.get(i)?.has(author.id)
-                  const booksCount = bookCountById.get(author.id) || 0
+                  const books = booksByAuthor.get(author.id) || []
+                  const booksCount = books.length
                   const rowClasses = isKept
                     ? 'border-green/25 bg-green/[0.06]'
                     : isExcluded
@@ -165,40 +170,55 @@ export function TableAuthorDedupeModal({
                     <div
                       key={author.id}
                       className={[
-                        'flex items-center gap-3 rounded-lg border px-2.5 py-1.5 font-mono transition-all',
+                        'flex flex-col gap-1.5 rounded-lg border px-2.5 py-1.5 font-mono transition-all',
                         rowClasses,
                       ].join(' ')}
                     >
-                      <Button
-                        type="button"
-                        onClick={() => toggleExcluded(i, author.id)}
-                        disabled={isKept}
-                        aria-label={`${isExcluded ? 'Inclure' : 'Exclure'} ${author.firstName || ''} ${author.lastName || ''} de la fusion`}
-                        className={[
-                          'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-all',
-                          checkboxClasses,
-                        ].join(' ')}
-                      >
-                        <Check size={9} strokeWidth={3} />
-                      </Button>
-                      <button
-                        type="button"
-                        onClick={() => selectAuthor(i, author.id)}
-                        className="flex flex-1 cursor-pointer items-center gap-2 text-left"
-                      >
-                        <span className={['flex flex-1 items-center gap-1.5', nameClasses].join(' ')}>
-                          <span>{author.firstName || ''}</span>
-                          <span className="font-semibold">{(author.lastName || '').toUpperCase()}</span>
-                        </span>
-                        {isKept && (
-                          <span className="rounded-sm bg-green/15 px-1.5 py-px text-[0.55rem] font-semibold uppercase tracking-[0.15em] text-green/80">
-                            Conservé
+                      <div className="flex items-center gap-3">
+                        <Button
+                          type="button"
+                          onClick={() => toggleExcluded(i, author.id)}
+                          disabled={isKept}
+                          aria-label={`${isExcluded ? 'Inclure' : 'Exclure'} ${author.firstName || ''} ${author.lastName || ''} de la fusion`}
+                          className={[
+                            'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-all',
+                            checkboxClasses,
+                          ].join(' ')}
+                        >
+                          <Check size={9} strokeWidth={3} />
+                        </Button>
+                        <button
+                          type="button"
+                          onClick={() => selectAuthor(i, author.id)}
+                          className="flex flex-1 cursor-pointer items-center gap-2 text-left"
+                        >
+                          <span className={['flex flex-1 items-center gap-1.5', nameClasses].join(' ')}>
+                            <span>{author.firstName || ''}</span>
+                            <span className="font-semibold">{(author.lastName || '').toUpperCase()}</span>
                           </span>
-                        )}
-                        <span className="text-[0.68rem] text-white/25">
-                          {booksCount} ouvrage{booksCount !== 1 ? 's' : ''}
-                        </span>
-                      </button>
+                          {isKept && (
+                            <span className="rounded-sm bg-green/15 px-1.5 py-px text-[0.55rem] font-semibold uppercase tracking-[0.15em] text-green/80">
+                              Conservé
+                            </span>
+                          )}
+                          <span className="text-[0.68rem] text-white/25">
+                            {booksCount} ressource{booksCount !== 1 ? 's' : ''}
+                          </span>
+                        </button>
+                      </div>
+                      {books.length > 0 && (
+                        <ul className="ml-6.5 flex flex-col gap-0.5 text-[0.7rem] text-white/45">
+                          {books.map((b) => (
+                            <li key={b.id} className="flex items-baseline gap-1.5">
+                              <span className="text-white/25">·</span>
+                              <span className="text-white/65">{b.title || '(sans titre)'}</span>
+                              {b.year != null && (
+                                <span className="text-white/25">({b.year})</span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   )
                 })}

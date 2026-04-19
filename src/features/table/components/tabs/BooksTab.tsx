@@ -29,8 +29,6 @@ type BooksTabProps = {
   onOpenDedupeModal?: () => void
   orphans?: Book[]
   onOpenOrphanModal?: () => void
-  onOpenAIOrphanReconcile?: () => void
-  showAIReconcile?: boolean
   todoCount?: number
   focusBookId?: BookId | null
 }
@@ -55,8 +53,6 @@ export function BooksTab({
   orphans = [],
   onOpenDedupeModal,
   onOpenOrphanModal,
-  onOpenAIOrphanReconcile,
-  showAIReconcile = false,
   todoCount = 0,
   focusBookId = null,
 }: BooksTabProps) {
@@ -65,13 +61,10 @@ export function BooksTab({
     links,
     search,
     authors,
-    onAddBook,
     onUpdateBook,
     onDeleteBook,
     onMergeBooks,
     onLastEdited,
-    initialAuthorIds,
-    autoFocusTitle,
     focusBookId,
   })
 
@@ -83,10 +76,8 @@ export function BooksTab({
         todoCount={todoCount}
         todoOnly={s.todoOnly}
         onToggleTodoOnly={() => s.setTodoOnly((v) => !v)}
-        showAIReconcile={showAIReconcile}
         onOpenDedupeModal={onOpenDedupeModal}
         onOpenOrphanModal={onOpenOrphanModal}
-        onOpenAIOrphanReconcile={onOpenAIOrphanReconcile}
       />
 
       <BooksTabSelectionBar
@@ -124,20 +115,14 @@ export function BooksTab({
         setEditingCell={s.setEditingCell}
         editingValue={s.editingValue}
         setEditingValue={s.setEditingValue}
-        inputTitle={s.inputTitle}
-        setInputTitle={s.setInputTitle}
-        inputAuthorIds={s.inputAuthorIds}
-        setInputAuthorIds={s.setInputAuthorIds}
-        inputYear={s.inputYear}
-        setInputYear={s.setInputYear}
-        inputAxes={s.inputAxes}
-        setInputAxes={s.setInputAxes}
-        titleInputRef={s.titleInputRef}
+        initialAuthorIds={initialAuthorIds}
+        autoFocusTitle={autoFocusTitle}
         onNodeSort={s.handleNodeSort}
         toggleAll={s.toggleAll}
         toggleRow={s.toggleRow}
         commitNodeEdit={s.commitNodeEdit}
-        handleAddBookRow={s.handleAddBookRow}
+        onAddBook={onAddBook}
+        onBookAdded={s.onBookAdded}
         onUpdateBook={onUpdateBook}
         onLastEdited={onLastEdited}
         onAddAuthor={onAddAuthor}

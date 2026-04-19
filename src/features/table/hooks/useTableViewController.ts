@@ -2,11 +2,16 @@ import { useMemo, useState } from 'react'
 import { toggleSetItem } from '@/common/utils/setUtils'
 import { buildAuthorsMap } from '@/common/utils/authorUtils'
 import type { AuthorId, Book, BookId } from '@/types/domain'
+import type { TableTabId } from '@/core/TableUiContext'
 import type { TableViewProps } from '../tableViewTypes'
 import { useTableViewDuplicateDerived } from './useTableViewDuplicateDerived'
 import { useTableViewLinkDerived } from './useTableViewLinkDerived'
-import { useTableViewVisibility } from './useTableViewVisibility'
 import { useTableViewActions } from './useTableViewActions'
+
+type ControllerParams = TableViewProps & {
+  tab: TableTabId
+  setTab: (t: TableTabId) => void
+}
 
 export function useTableViewController({
   nodes,
@@ -19,13 +24,11 @@ export function useTableViewController({
   onUpdateLink,
   onMergeBooks,
   onDeleteAuthor,
-  initialTab = 'books',
+  tab,
+  setTab,
   initialLinkSourceId = null,
   initialFocusBookId = null,
-}: TableViewProps) {
-  const visible = useTableViewVisibility()
-
-  const [tab, setTab] = useState<TableViewProps['initialTab']>(initialTab)
+}: ControllerParams) {
   const [focusAuthorId, setFocusAuthorId] = useState<AuthorId | null>(null)
   const [booksPrefill, setBooksPrefill] = useState<null | { nonce: string; authorId: AuthorId }>(null)
 
@@ -146,7 +149,6 @@ export function useTableViewController({
   }
 
   return {
-    visible,
     tab,
     setTab,
     focusAuthorId,
