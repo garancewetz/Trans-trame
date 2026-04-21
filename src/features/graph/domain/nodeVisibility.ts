@@ -1,4 +1,3 @@
-// @ts-nocheck — shared with Graph.tsx which disables strict checking
 import type { Highlight } from '@/core/FilterContext'
 
 type AdjacencyEntry = { linkKeys: string[]; neighborIds: string[] }

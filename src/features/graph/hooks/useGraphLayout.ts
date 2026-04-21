@@ -1,4 +1,5 @@
-// @ts-nocheck — interacts with d3-force internals not exposed in react-force-graph-2d types
+// @ts-nocheck — d3-force-3d ships without type declarations, and our d3 force
+// closures iterate `any`-typed nodes/links until an ambient d.ts is written.
 import { useEffect, useRef, type RefObject } from 'react'
 import type { ForceGraphMethods } from 'react-force-graph-2d'
 import { forceCollide } from 'd3-force-3d'

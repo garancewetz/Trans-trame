@@ -1,5 +1,3 @@
-// @ts-nocheck — domain types have optional x/y (d3 adds them at runtime)
-
 /** Calculate node radius based on citation count */
 export function getNodeRadius(node: { type?: string }, citationCount: number): number {
   if (node.type === 'author') return 11

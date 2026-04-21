@@ -1,5 +1,3 @@
-// @ts-nocheck — shared with nodeObject.ts which disables strict checking
-
 /** Convert hex/rgb color to rgba with specified alpha.
  *
  * Hot path : ~150-300 appels/frame sur les nœuds actifs pendant un hover.

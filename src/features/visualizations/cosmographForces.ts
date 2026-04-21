@@ -8,6 +8,11 @@ export const LINK_DEFAULT_RGBA = [140 / 255, 220 / 255, 255 / 255, 0.15] as cons
 export const LINK_DIM_RGBA = [140 / 255, 220 / 255, 255 / 255, 0.03] as const
 export const LINK_CITES_FOCAL_RGBA = [140 / 255, 220 / 255, 255 / 255, 0.85] as const
 export const LINK_CITED_BY_FOCAL_RGBA = [255 / 255, 210 / 255, 80 / 255, 0.85] as const
+// Lien directement survolé : alpha saturé pour compenser le multiplicateur
+// `linkOpacity` global (0.44) et la multiplication appliquée par le shader
+// cosmos.gl sur l'alpha existant. Sans ça, le lien survolé reste invisible
+// car l'alpha baseline (0.15) domine.
+export const LINK_HOVERED_RGBA = [220 / 255, 240 / 255, 255 / 255, 1] as const
 // Lien dont au moins une extrémité est greyout (filtre, highlight, ou livre
 // publié hors-range de la timeline) : alpha 0 → invisible. cosmos.gl n'a pas
 // de `setLinkVisibility`, on atténue via la couleur comme pour les autres
@@ -19,30 +24,29 @@ export type LinkRgba = readonly [number, number, number, number]
 // Profils de forces simulation — bascule via setConfigPartial au toggle
 // cluster. Séparer les profils évite de tuner à l'aveugle dans l'effet.
 
-// Mode libre : forte répulsion, liens longs et mous, centrage léger. Laisse
-// respirer les gros hubs (beaucoup de citations = beaucoup de liens tirant).
+// Mode libre : répulsion forte, liens courts et mous, centrage marqué pour
+// compacter le nuage. Friction basse = le graphe s'immobilise vite après
+// chaque perturbation.
 export const FORCES_FREE = {
-  simulationRepulsion: 8.0,
-  simulationLinkSpring: 0.15,
-  simulationLinkDistance: 140,
-  simulationCenter: 0.1,
-  simulationGravity: 0.1,
-  simulationCluster: 0,
-  simulationFriction: 0.9,
+  simulationRepulsion: 38.5,    // À quel point les points se repoussent. ↑ = plus d'espace entre eux.
+  simulationLinkSpring: 0.06,   // Raideur du "ressort" des liens. ↑ = le lien tire fort pour ramener les nœuds à sa longueur cible ; ↓ = corde molle.
+  simulationLinkDistance: 45,   // Longueur cible d'un lien au repos, en unités sim. ↑ = graphe étalé.
+  simulationCenter: 2,          // Force qui ramène tout vers (0, 0). ↑ = le nuage se contracte vers le milieu du canvas.
+  simulationGravity: 0.1,       // Gravité globale vers le centre, appliquée à chaque nœud. ↑ = effet "aspirateur" plus fort que simulationCenter.
+  simulationCluster: 0,         // Force qui attire chaque nœud vers le centroïde de son cluster. 0 = désactivée (en mode libre).
+  simulationFriction: 0.52,     // Amortissement. 1 = le graphe bouge sans s'arrêter ; ↓ = s'immobilise vite (0.5 = coupe sec, 0.9 = respiration douce).
 } as const
 
-// Mode cluster : valeurs alignées sur l'exemple officiel cosmos.gl
-// (stories/clusters/with-labels). La gravité élevée (2.0) rapproche tous les
-// clusters autour de l'origine → ils se touchent, se compactent en
-// "honeycomb". Sans setClusterPositions explicite (laissé à l'auto-placement
-// cosmos par centermass), cette gravité + répulsion 10 + cluster 0.25 suffit
-// à les packer proprement sans les superposer.
+// Mode cluster : répulsion très forte + ressorts coupés = chaque cluster se
+// forme comme un disque compact autour de son centroïde, sans que les liens
+// tirent sur la composition. Gravité modérée rapproche les clusters sans les
+// écraser l'un dans l'autre.
 export const FORCES_CLUSTER = {
-  simulationRepulsion: 10.0,
-  simulationLinkSpring: 0.03,
-  simulationLinkDistance: 100,
-  simulationCenter: 0,
-  simulationGravity: 2.0,
-  simulationCluster: 0.25,
-  simulationFriction: 0.95,
+  simulationRepulsion: 80,     // Répulsion entre points. Très élevée pour que les nœuds d'un même cluster restent lisibles malgré le packing.
+  simulationLinkSpring: 0,     // Liens désactivés côté force : en cluster, seuls les centroïdes dictent la place.
+  simulationLinkDistance: 10,  // Non pertinent quand linkSpring = 0, gardé bas par cohérence.
+  simulationCenter: 0,         // Pas de recentrage : c'est la gravité qui s'en charge, plus brutalement.
+  simulationGravity: 0.9,      // Gravité modérée : rapproche les clusters vers l'origine sans les fusionner.
+  simulationCluster: 0.24,     // Force qui colle chaque nœud à son cluster. ↑ = clusters plus compacts, mais peut écraser les nœuds les uns sur les autres.
+  simulationFriction: 0.5,     // Amortissement faible : le graphe oscille peu et se stabilise vite après chaque perturbation.
 } as const

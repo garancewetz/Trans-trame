@@ -96,7 +96,7 @@ export function Navbar({ viewMode, onViewChange }: NavbarProps) {
         <div className="flex min-w-0 items-center gap-2.5">
           <h1 className="flex items-center gap-2 text-[0.95rem] font-semibold text-white/90">
             <Logo />
-            <span className="flex min-w-0 flex-col">
+            <span className="hidden min-w-0 flex-col md:flex">
               <span className="flex items-center gap-2">
                 Trans-Trame
                 <Badge
@@ -110,7 +110,9 @@ export function Navbar({ viewMode, onViewChange }: NavbarProps) {
               </span>
             </span>
           </h1>
-          <ViewSelector currentView={viewMode} onViewChange={onViewChange} inline discreet />
+          <div className="hidden md:inline-flex">
+            <ViewSelector currentView={viewMode} onViewChange={onViewChange} inline discreet />
+          </div>
           <Button
             variant="outline"
             frosted
@@ -121,13 +123,14 @@ export function Navbar({ viewMode, onViewChange }: NavbarProps) {
             onClick={onToggleTableMode}
             type="button"
             title={isAdminRoute ? 'Retour au graphe' : 'Contribuer — Ajouter et tisser des liens'}
+            className="hidden md:inline-flex"
           >
             Contribuer
           </Button>
         </div>
 
           {/* Global search */}
-          <div className="relative w-80 shrink-0 md:w-[420px]" ref={searchRef}>
+          <div className="relative min-w-0 flex-1 md:w-[420px] md:flex-none" ref={searchRef}>
             <SearchInputWithClear
               placeholder="Rechercher une ressource ou un·e auteur·ice…"
               value={globalSearch}

@@ -37,6 +37,10 @@ export function Legend({
     <div
       className="fixed top-[68px] left-3 z-20 flex flex-col rounded-[10px] border border-white/10 bg-bg-base/45 px-4 backdrop-blur-2xl backdrop-saturate-150 py-3"
     >
+      <div className="mb-2 space-y-1 border-b border-white/5 pb-3 text-caption leading-snug text-white/55">
+        <div><span className="text-white/75">Un point</span> · une œuvre</div>
+        <div><span className="text-white/75">Un lien</span> · une œuvre qui en cite une autre</div>
+      </div>
       <Button
         type="button"
         onClick={() => setCollapsed((v) => !v)}

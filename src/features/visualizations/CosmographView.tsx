@@ -1,7 +1,6 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { Graph } from '@cosmos.gl/graph'
-import { Loader2 } from 'lucide-react'
 import type { Book, Author, GraphData, TimelineRange } from '@/types/domain'
 import type { Highlight } from '@/core/FilterContext'
 import { buildAuthorsMap } from '@/common/utils/authorUtils'
@@ -81,6 +80,11 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
   const flashNodeIdsRef = useRef<Set<string>>(new Set())
   const flashAlphaRef = useRef(0)
 
+  // Hover de lien (cosmos onLinkMouseOver) : stocke les 2 extrémités pour que
+  // l'overlay peigne leur glow/label et pour que le tracking cosmos les
+  // résolve en positions via getTrackedPointPositionsMap().
+  const hoveredLinkRef = useRef<{ index: number; source: number; target: number } | null>(null)
+
   // Pont entre l'instance cosmos (qui déclare `onSimulationEnd` à la création)
   // et les effets qui veulent réagir à la convergence (ex : cluster loading
   // mask). Source unique pour éviter d'ouvrir un second listener.
@@ -121,12 +125,13 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
   const applyFocalRef = useCosmographFocalState({
     graphRef,
     selectedBookIdRef, peekBookIdRef, visibleIndexSetRef, flashNodeIdsRef,
+    hoveredLinkRef,
     ...dataRefs,
   })
 
   const drawOverlay = useCosmographOverlay({
     graphRef, labelCanvasRef, selectedVisualIndexRef, visibleIndexSetRef,
-    clusterByAxisRef, flashNodeIdsRef, flashAlphaRef,
+    clusterByAxisRef, flashNodeIdsRef, flashAlphaRef, hoveredLinkRef,
     hoveredIndexRef: dataRefs.hoveredIndexRef,
     flatSizesRef: dataRefs.flatSizesRef,
     labelByIndexRef: dataRefs.labelByIndexRef,
@@ -160,9 +165,10 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
   useCosmographInstance({
     containerRef, labelCanvasRef, graphRef, draggingRef, onNodeClickRef,
     applyFocalRef, drawOverlay, initialCamRef, writeCamToUrl,
-    onSimulationEndExtraRef,
+    onSimulationEndExtraRef, hoveredLinkRef,
     hoveredIndexRef: dataRefs.hoveredIndexRef,
     booksRef: dataRefs.booksRef,
+    flatLinksRef: dataRefs.flatLinksRef,
   })
 
   useCosmographDataSync({
@@ -171,7 +177,7 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
     applyFocalRef,
   })
 
-  const { categoriesLoading } = useCosmographClusterEffect({
+  useCosmographClusterEffect({
     graphRef, clusterByAxis, clusterAssignments, prevClusterByAxisRef, drawOverlay,
     onSimulationEndExtraRef,
   })
@@ -221,19 +227,6 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
           ? `${books.length} ressources · ${CLUSTER_RING.length} catégories thématiques · cosmos.gl GPU`
           : `${books.length} ressources · ${edgeCount} citations · cosmos.gl GPU`}
       </div>
-
-      {mode === 'categories' && categoriesLoading && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-bg-base/85 backdrop-blur-md"
-        >
-          <Loader2 size={32} className="animate-spin text-white/70" />
-          <p className="text-[0.95rem] font-medium text-white/70">
-            Composition des catégories…
-          </p>
-        </div>
-      )}
 
     </div>
   )

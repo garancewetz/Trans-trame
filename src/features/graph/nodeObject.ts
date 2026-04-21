@@ -1,4 +1,8 @@
-// @ts-nocheck — domain types have optional x/y (d3 adds them at runtime); avoiding widespread casts.
+// @ts-nocheck — D3Node has x/y as optional (d3 mutates them at layout time),
+// but drawNode is only ever called by react-force-graph after d3 has written
+// positions. Adding non-null assertions in ~20 places would bloat the hot path
+// rendering code; a scoped declaration file for the post-layout node shape
+// would be the clean fix.
 import { bookAuthorDisplay, authorName } from '@/common/utils/authorUtils'
 import type { Book, Author } from '@/types/domain'
 

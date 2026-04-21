@@ -1,4 +1,3 @@
-// @ts-nocheck — shared with Graph.tsx which disables strict checking
 import { useMemo } from 'react'
 import type { GraphData } from '@/types/domain'
 import { normalizeEndpointId } from '../domain/graphDataModel'

@@ -169,24 +169,63 @@ export function deleteAllResources() {
 
 // ── Resource-Authors junction ─────────────────────────────────────────────
 
+/** Pure diff: which author IDs to add vs remove so that current → target. */
+export function diffAuthorIds(current: readonly string[], target: readonly string[]) {
+  const currentSet = new Set(current)
+  const targetSet = new Set(target)
+  const toAdd = [...targetSet].filter((id) => !currentSet.has(id))
+  const toRemove = [...currentSet].filter((id) => !targetSet.has(id))
+  return { toAdd, toRemove }
+}
+
+// Diff-based sync: read current, compute added/removed, INSERT first then DELETE.
+// The naive delete-all-then-insert approach loses every author if the INSERT fails
+// after the DELETE succeeds (network blip, transient RLS hiccup). Ordering insert
+// before delete means a mid-operation failure leaves a recoverable surplus rather
+// than a destructive gap — the next save self-heals.
 export async function setResourceAuthors(resourceId: string, authorIds: string[]) {
-  const delResult = await supabase.from('resource_authors').delete().eq('resource_id', resourceId).select()
-  if (delResult.error) {
-    devWarn('[setResourceAuthors] delete failed', { resourceId, error: delResult.error })
-    return { error: delResult.error }
+  const currentRes = await supabase
+    .from('resource_authors')
+    .select('author_id')
+    .eq('resource_id', resourceId)
+  if (currentRes.error) {
+    devWarn('[setResourceAuthors] read current failed', { resourceId, error: currentRes.error })
+    return { error: currentRes.error }
   }
-  if (authorIds.length === 0) return { error: null }
-  const rows = authorIds.map((author_id) => ({ resource_id: resourceId, author_id }))
-  const insResult = await supabase.from('resource_authors').insert(rows).select()
-  if (insResult.error) {
-    devWarn('[setResourceAuthors] insert failed', { resourceId, error: insResult.error })
-    return { error: insResult.error }
+
+  const { toAdd, toRemove } = diffAuthorIds(
+    (currentRes.data ?? []).map((r) => r.author_id),
+    authorIds,
+  )
+
+  if (toAdd.length === 0 && toRemove.length === 0) return { error: null }
+
+  if (toAdd.length > 0) {
+    const rows = toAdd.map((author_id) => ({ resource_id: resourceId, author_id }))
+    const insResult = await supabase.from('resource_authors').insert(rows).select()
+    if (insResult.error) {
+      devWarn('[setResourceAuthors] insert failed', { resourceId, error: insResult.error })
+      return { error: insResult.error }
+    }
+    if (!insResult.data?.length) {
+      devWarn('[setResourceAuthors] insert returned no data — RLS may be silently blocking', { resourceId })
+      return { error: { message: 'Insert silencieux : aucune donnée retournée (vérifier RLS)' } }
+    }
   }
-  if (!insResult.data?.length) {
-    devWarn('[setResourceAuthors] insert returned no data — RLS may be silently blocking', { resourceId })
-    return { error: { message: 'Insert silencieux : aucune donnée retournée (vérifier RLS)' } }
+
+  if (toRemove.length > 0) {
+    const delResult = await supabase
+      .from('resource_authors')
+      .delete()
+      .eq('resource_id', resourceId)
+      .in('author_id', toRemove)
+    if (delResult.error) {
+      devWarn('[setResourceAuthors] delete failed', { resourceId, error: delResult.error })
+      return { error: delResult.error }
+    }
   }
-  return insResult
+
+  return { error: null }
 }
 
 export function insertResourceAuthors(resourceId: string, authorIds: string[]) {

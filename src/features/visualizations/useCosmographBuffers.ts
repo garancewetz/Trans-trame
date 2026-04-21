@@ -32,6 +32,13 @@ const TOP_LANDMARK_COUNT = 12
 // silhouette des régions denses (hubs + leurs voisins immédiats) sans saturer.
 const MINIMAP_TOP_N = 500
 
+// Cache module-level : un combo d'axes → la même ImageData à vie. Sans ça,
+// chaque rebuild du useMemo (filtre, refetch, edit, merge) re-rasterise les
+// ~20 combos populaires via canvas 2D, ce qui bloque le main thread sur les
+// gros datasets. Les clés sont stables (axes.join('|')) et le résultat
+// déterministe, donc un cache global est sûr.
+const axesImageCache = new Map<string, ImageData>()
+
 export type CosmographBuffers = {
   books: Book[]
   idToIndex: Map<string, number>
@@ -118,8 +125,13 @@ export function useCosmographBuffers(
       const key = axes.join('|')
       const cached = keyToImageIndex.get(key)
       if (cached !== undefined) return cached
-      const img = axesGradientImageData(axes)
-      if (!img) return -1
+      let img = axesImageCache.get(key)
+      if (!img) {
+        const produced = axesGradientImageData(axes)
+        if (!produced) return -1
+        axesImageCache.set(key, produced)
+        img = produced
+      }
       const idx = imageDatas.length
       imageDatas.push(img)
       keyToImageIndex.set(key, idx)

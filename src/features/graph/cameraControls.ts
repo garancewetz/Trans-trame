@@ -205,6 +205,10 @@ export function setupMouseDragHandlers({ containerRef, velRef, hoveredNodeRef, w
 
   const onPointerDown = (e: PointerEvent) => {
     if (e.button !== 0) return
+    // Touch devices: skip pan-drag so the finger stays free for tap/scroll.
+    // Zoom-on-wheel doesn't fire on touch anyway, so the graph becomes a
+    // fit-to-screen static view on mobile — node taps still open the side panel.
+    if (e.pointerType === 'touch') return
     // If the cursor is over a node, let force-graph handle the drag — don't pan
     if (hoveredNodeRef?.current) return
     dragging = true

@@ -1,4 +1,3 @@
-// @ts-nocheck — domain types have optional x/y (d3 adds them at runtime)
 import { blendAxesColors } from '@/common/utils/categories'
 import type { Book, Author } from '@/types/domain'
 import { computeHover } from '../cache/nodeCache'

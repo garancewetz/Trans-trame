@@ -1,4 +1,3 @@
-// @ts-nocheck — react-force-graph types vs domain types (see Graph.tsx for context)
 import { memo, useEffect, useRef, type RefObject } from 'react'
 import type { ForceGraphMethods } from 'react-force-graph-2d'
 import type { GraphData } from '@/types/domain'
@@ -21,6 +20,10 @@ const REFRESH_FPS = 12 // 12fps suffisent largement pour une mini-map
 const BBOX_LERP = 0.12
 
 type Bbox = { minX: number; minY: number; maxX: number; maxY: number }
+
+// d3 mutates nodes to add x/y at runtime ; authors can also be mixed in at
+// render time even though GraphData.nodes is declared as Book[].
+type SimNode = { x?: number; y?: number; fx?: number; fy?: number; type?: string }
 
 function readCssVar(name: string, fallback: string): string {
   if (typeof window === 'undefined') return fallback
@@ -65,10 +68,10 @@ function MinimapImpl({ graphData, fgRef, camRef, containerRef, onEnter }: Minima
 
       // 1. Compute world bbox (skip nodes without positions yet)
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-      for (const n of nodes) {
+      for (const n of nodes as SimNode[]) {
         const x = n.fx ?? n.x
         const y = n.fy ?? n.y
-        if (!Number.isFinite(x) || !Number.isFinite(y)) continue
+        if (typeof x !== 'number' || typeof y !== 'number' || !Number.isFinite(x) || !Number.isFinite(y)) continue
         if (x < minX) minX = x
         if (y < minY) minY = y
         if (x > maxX) maxX = x
@@ -104,10 +107,10 @@ function MinimapImpl({ graphData, fgRef, camRef, containerRef, onEnter }: Minima
 
       // Nodes as small dots
       ctx.fillStyle = bookColor
-      for (const n of nodes) {
+      for (const n of nodes as SimNode[]) {
         const x = n.fx ?? n.x
         const y = n.fy ?? n.y
-        if (!Number.isFinite(x) || !Number.isFinite(y)) continue
+        if (typeof x !== 'number' || typeof y !== 'number' || !Number.isFinite(x) || !Number.isFinite(y)) continue
         const px = x * scale + offsetX
         const py = y * scale + offsetY
         const isAuthor = n.type === 'author'

@@ -1,4 +1,3 @@
-// @ts-nocheck — shared with nodeObject.ts which disables strict checking
 import { AXES_COLORS } from '@/common/utils/categories'
 
 // ── Hover animation cache ────────────────────────────────────────────────────
@@ -52,8 +51,9 @@ export function getGradientCanvas(axes: string[] | undefined | null): HTMLCanvas
     return canvas
   }
 
+  const axesMap = AXES_COLORS as Record<string, string | undefined>
   let colors = (axes || [])
-    .map((a) => AXES_COLORS[a])
+    .map((a) => axesMap[a])
     .filter((c): c is string => typeof c === 'string' && c.length > 0)
   if (colors.length === 0) colors = ['#ffffff']
 

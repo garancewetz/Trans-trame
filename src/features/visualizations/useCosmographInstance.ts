@@ -23,6 +23,11 @@ type Args = {
   // sert pour fermer le loading mask dès que la simu converge, au lieu d'un
   // setTimeout hardcodé qui sur-estime ou sous-estime la durée réelle.
   onSimulationEndExtraRef: MutableRefObject<(() => void) | null>
+  // Hover d'un lien : ses 2 extrémités alimentent l'overlay (glow + labels).
+  hoveredLinkRef: MutableRefObject<{ index: number; source: number; target: number } | null>
+  // flatLinks aligné sur le setLinks cosmos — utilisé par onLinkMouseOver pour
+  // résoudre linkIndex → (source, target).
+  flatLinksRef: MutableRefObject<Float32Array>
 }
 
 /**
@@ -34,7 +39,7 @@ type Args = {
 export function useCosmographInstance({
   containerRef, labelCanvasRef, graphRef, hoveredIndexRef, draggingRef,
   onNodeClickRef, booksRef, applyFocalRef, drawOverlay, initialCamRef,
-  writeCamToUrl, onSimulationEndExtraRef,
+  writeCamToUrl, onSimulationEndExtraRef, hoveredLinkRef, flatLinksRef,
 }: Args): void {
   useEffect(() => {
     const container = containerRef.current
@@ -78,17 +83,29 @@ export function useCosmographInstance({
       randomSeed: RANDOM_SEED,
       // Baseline très dim — les liens sont à l'arrière-plan sauf au hover.
       linkDefaultColor: [...LINK_DEFAULT_RGBA],
-      linkDefaultWidth: 1.5,
+      linkDefaultWidth: 2.2,
+      // Multiplicateur global appliqué par-dessus les couleurs par-lien.
+      // < 1 = tous les liens atténués uniformément → moins de bruit visuel
+      // quand on dézoome (zoom out rend les liens plus courts à l'écran, donc
+      // plus opaques via linkVisibilityDistanceRange, d'où la saturation).
+      linkOpacity: 0.44,
       // Cosmos calcule `arrowWidth = linkWidth × 2 × linkArrowsSizeScale` et
-      // la pointe = max(0, arrowWidth - linkWidth). Avec linkWidth=1.5, un
-      // scale de 1.2 donne une pointe ~2px lisible sans surcharger le graphe
-      // au repos. `scaleLinksOnZoom=false` (défaut) → flèches stables en px écran.
+      // la pointe = max(0, arrowWidth - linkWidth). `scaleLinksOnZoom=false`
+      // (défaut) → flèches stables en px écran.
       linkDefaultArrows: true,
       linkArrowsSizeScale: 1.2,
-      // cosmos.gl fade les liens longs. On laisse un floor bas (0.3) pour
-      // que les longs liens s'effacent vraiment et ne surchargent pas le graphe.
+      // cosmos.gl fade les liens selon leur longueur écran.
       linkVisibilityDistanceRange: [50, 2000],
-      linkVisibilityMinTransparency: 0.3,
+      linkVisibilityMinTransparency: 0.36,
+      // Hover de lien : blanc-cyan + largeur +6 px. Le shader cosmos fait
+      // `alpha_final = alpha_buffer * linkOpacity * hoveredLinkColor.a`, donc
+      // il faut (a) peindre l'alpha buffer à 1 côté applyFocalLinkColors via
+      // LINK_HOVERED_RGBA — sinon l'alpha baseline (0.15) écrase tout — et
+      // (b) compenser le `linkOpacity: 0.44` global par une grosse épaisseur.
+      // L'activation de la détection hover se fait automatiquement dès qu'un
+      // callback onLink* est défini (cf. updateLinkHoveringEnabled côté cosmos).
+      hoveredLinkColor: [220 / 255, 240 / 255, 255 / 255, 1] as [number, number, number, number],
+      hoveredLinkWidthIncrease: 6,
       curvedLinks: true,
       pointSizeScale: 0.8,
       scalePointsOnZoom: true,
@@ -97,6 +114,10 @@ export function useCosmographInstance({
       pointGreyoutOpacity: 0.12,
       spaceSize: 8192,
       simulationRepulsionTheta: 1.15,
+      // Refroidissement lent : les forces ont besoin de temps pour amener les
+      // nœuds à leur position cible (surtout en mode Catégories où la cluster
+      // force doit aspirer chaque nœud vers son centroïde). Baisser cette
+      // valeur coupe la simu avant que le layout tuné s'établisse.
       simulationDecay: 6000,
       // FORCES_FREE porte friction + gravity + répulsion/linkSpring/linkDistance/
       // center/cluster. Le mode Catégories bascule vers FORCES_CLUSTER via
@@ -131,6 +152,26 @@ export function useCosmographInstance({
         hoveredIndexRef.current = null
         applyFocalRef.current()
         graphRef.current?.render()
+        drawOverlay()
+      },
+      onLinkMouseOver: (linkIndex: number) => {
+        if (draggingRef.current) return
+        // flatLinks = [s0, t0, s1, t1, ...] aligné sur l'ordre setLinks →
+        // linkIndex résout directement à ses 2 extrémités.
+        const links = flatLinksRef.current
+        const source = links[linkIndex * 2]
+        const target = links[linkIndex * 2 + 1]
+        if (!Number.isFinite(source) || !Number.isFinite(target)) return
+        hoveredLinkRef.current = { index: linkIndex, source, target }
+        // applyFocal resync les indices trackés → les 2 extrémités deviennent
+        // lisibles par getTrackedPointPositionsMap() pour l'overlay.
+        applyFocalRef.current()
+        drawOverlay()
+      },
+      onLinkMouseOut: () => {
+        if (hoveredLinkRef.current === null) return
+        hoveredLinkRef.current = null
+        applyFocalRef.current()
         drawOverlay()
       },
       onDragStart: () => {
