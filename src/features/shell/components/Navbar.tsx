@@ -26,7 +26,7 @@ type NavbarProps = {
 const VIEW_MODE_LABELS: Record<string, string> = {
   cosmograph: 'Cosmograph',
   categories: 'Catégories',
-  constellation: 'Constellation',
+  chronological: 'Chronologie',
 }
 
 export function Navbar({ viewMode, onViewChange }: NavbarProps) {

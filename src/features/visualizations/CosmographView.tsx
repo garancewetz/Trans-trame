@@ -14,7 +14,7 @@ import { useCosmographFocalState } from './useCosmographFocalState'
 import { useCosmographOverlay } from './useCosmographOverlay'
 import { useCosmographInstance } from './useCosmographInstance'
 import { useCosmographDataSync } from './useCosmographDataSync'
-import { useCosmographClusterEffect } from './useCosmographClusterEffect'
+import { type CosmographMode, useCosmographLayoutEffect } from './useCosmographLayoutEffect'
 import { useCosmographVisibilityEffect } from './useCosmographVisibilityEffect'
 import { useCosmographFlashEffect } from './useCosmographFlashEffect'
 import { useCosmographFocalCameraEffect } from './useCosmographFocalCameraEffect'
@@ -47,8 +47,10 @@ interface Props {
    *   lire les filiations.
    * - `categories` (vue "Catégories") : clustering par axe, liens masqués —
    *   pour lire la composition thématique du corpus.
+   * - `chronological` (vue "Chronologique") : positions fixes X ∝ année de
+   *   publication, simulation figée, livres sans année regroupés à droite.
    */
-  mode?: 'free' | 'categories'
+  mode?: CosmographMode
 }
 
 export type CosmographImperativeHandle = {
@@ -80,11 +82,6 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
   const flashNodeIdsRef = useRef<Set<string>>(new Set())
   const flashAlphaRef = useRef(0)
 
-  // Hover de lien (cosmos onLinkMouseOver) : stocke les 2 extrémités pour que
-  // l'overlay peigne leur glow/label et pour que le tracking cosmos les
-  // résolve en positions via getTrackedPointPositionsMap().
-  const hoveredLinkRef = useRef<{ index: number; source: number; target: number } | null>(null)
-
   // Pont entre l'instance cosmos (qui déclare `onSimulationEnd` à la création)
   // et les effets qui veulent réagir à la convergence (ex : cluster loading
   // mask). Source unique pour éviter d'ouvrir un second listener.
@@ -95,10 +92,14 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
   const clusterByAxis = mode === 'categories'
   const clusterByAxisRef = useRef(clusterByAxis)
   clusterByAxisRef.current = clusterByAxis
-  // Tracks the *previous render's* clusterByAxis so the cluster effect can
-  // distinguish a real toggle from a re-run triggered by clusterAssignments
-  // changing (which would otherwise schedule an unwanted fitView dezoom).
-  const prevClusterByAxisRef = useRef(clusterByAxis)
+  // Tracks the *previous render's* mode so the layout effect can distinguish
+  // a real toggle from a re-run triggered by data changing (which would
+  // otherwise schedule an unwanted fitView dezoom).
+  const prevModeRef = useRef<CosmographMode>(mode)
+  // Ref miroir du mode courant, lu par les callbacks init-once du Graph
+  // (onDrag). Maintenu en phase via une assignation à chaque render parent.
+  const modeRef = useRef<CosmographMode>(mode)
+  modeRef.current = mode
 
   // URL params — on capture la caméra initiale *avant* le premier render pour
   // pouvoir désactiver fitViewOnInit quand une caméra est persistée.
@@ -112,7 +113,7 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
   const buffers = useCosmographBuffers(graphData, authorsMap)
   const {
     books, idToIndex, edgeCount, minimapIndices, citationsByBookId,
-    clusterAssignments,
+    clusterAssignments, flatPositionsChrono,
   } = buffers
 
   const selectedBookIdRef = useRef<string | null>(null)
@@ -125,13 +126,12 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
   const applyFocalRef = useCosmographFocalState({
     graphRef,
     selectedBookIdRef, peekBookIdRef, visibleIndexSetRef, flashNodeIdsRef,
-    hoveredLinkRef,
     ...dataRefs,
   })
 
   const drawOverlay = useCosmographOverlay({
     graphRef, labelCanvasRef, selectedVisualIndexRef, visibleIndexSetRef,
-    clusterByAxisRef, flashNodeIdsRef, flashAlphaRef, hoveredLinkRef,
+    clusterByAxisRef, flashNodeIdsRef, flashAlphaRef,
     hoveredIndexRef: dataRefs.hoveredIndexRef,
     flatSizesRef: dataRefs.flatSizesRef,
     labelByIndexRef: dataRefs.labelByIndexRef,
@@ -165,10 +165,9 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
   useCosmographInstance({
     containerRef, labelCanvasRef, graphRef, draggingRef, onNodeClickRef,
     applyFocalRef, drawOverlay, initialCamRef, writeCamToUrl,
-    onSimulationEndExtraRef, hoveredLinkRef,
+    onSimulationEndExtraRef, modeRef,
     hoveredIndexRef: dataRefs.hoveredIndexRef,
     booksRef: dataRefs.booksRef,
-    flatLinksRef: dataRefs.flatLinksRef,
   })
 
   useCosmographDataSync({
@@ -177,8 +176,8 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
     applyFocalRef,
   })
 
-  useCosmographClusterEffect({
-    graphRef, clusterByAxis, clusterAssignments, prevClusterByAxisRef, drawOverlay,
+  useCosmographLayoutEffect({
+    graphRef, mode, clusterAssignments, flatPositionsChrono, prevModeRef, drawOverlay,
     onSimulationEndExtraRef,
   })
 
@@ -225,7 +224,9 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
       <div className="absolute bottom-3 left-3 text-[14px] text-white/20 font-mono">
         {mode === 'categories'
           ? `${books.length} ressources · ${CLUSTER_RING.length} catégories thématiques · cosmos.gl GPU`
-          : `${books.length} ressources · ${edgeCount} citations · cosmos.gl GPU`}
+          : mode === 'chronological'
+            ? `${books.length} ressources · chronologie par année de publication · cosmos.gl GPU`
+            : `${books.length} ressources · ${edgeCount} citations · cosmos.gl GPU`}
       </div>
 
     </div>

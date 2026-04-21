@@ -23,6 +23,26 @@ export const UNCATEGORIZED_CLUSTER_INDEX = CLUSTER_RING.length
 // chronologique survive à l'équilibre de la simulation sous gravity=0.1.
 const CHRONO_SEED_X_RANGE = 2000
 
+// ── Vue Chronologique (mode='chronological') ────────────────────────────────
+// Positions fixes : X = année de publication mappée sur [−CHRONO_X_HALF, +CHRONO_X_HALF],
+// Y = lane déterministe par année (pas de jitter aléatoire : la simulation est
+// figée, aucune répulsion ne corrige les chevauchements → on les évite en
+// plaçant chaque livre dans sa propre "colonne" verticale).
+const CHRONO_X_HALF = 2400
+// Demi-hauteur de la colonne. Les livres d'une même année sont répartis
+// uniformément sur [−CHRONO_Y_HALF, +CHRONO_Y_HALF]. Valeur suffisamment large
+// pour que les années denses (~30 livres) gardent un espacement vertical
+// supérieur au diamètre du plus gros nœud.
+const CHRONO_Y_HALF = 1400
+// Perturbation aléatoire verticale (±) ajoutée par-dessus la lane déterministe :
+// casse juste assez l'alignement parfait pour que chaque colonne ne ressemble
+// pas à une grille rigide, sans compromettre la séparation des points.
+const CHRONO_Y_SHAKE = 18
+// Livres sans année : bande séparée à droite, après la dernière année connue.
+// Gap = rupture visuelle pour signaler qu'ils sortent de la timeline.
+const CHRONO_UNKNOWN_GAP = 300
+const CHRONO_UNKNOWN_WIDTH = 380
+
 // Nombre de points nommés en permanence — aligné sur Galaxy
 // (TOP_LANDMARK_COUNT=12, cf. useGraphDerivedLinkState.ts).
 const TOP_LANDMARK_COUNT = 12
@@ -43,6 +63,13 @@ export type CosmographBuffers = {
   books: Book[]
   idToIndex: Map<string, number>
   flatPositions: Float32Array
+  /**
+   * Positions fixes pour le mode Chronologique : X ∝ année de publication,
+   * Y = jitter. Les livres sans année occupent une bande séparée à droite.
+   * La simulation est figée dans ce mode (cf. FORCES_FROZEN) donc ces
+   * positions sont lues telles quelles, sans dérive.
+   */
+  flatPositionsChrono: Float32Array
   flatColors: Float32Array
   flatSizes: Float32Array
   flatLinks: Float32Array
@@ -91,6 +118,7 @@ export function useCosmographBuffers(
 
     const N = books.length
     const positions = new Float32Array(N * 2)
+    const positionsChrono = new Float32Array(N * 2)
     const colors = new Float32Array(N * 4)
     const sizes = new Float32Array(N)
     const labels: LabelData[] = new Array(N)
@@ -138,14 +166,30 @@ export function useCosmographBuffers(
       return idx
     }
 
+    // Bande "année inconnue" du mode Chronologique : débute juste après la
+    // dernière année connue, avec un gap visuel.
+    const chronoUnknownStart = CHRONO_X_HALF + CHRONO_UNKNOWN_GAP
+
+    // Pass préalable pour le mode Chronologique : compte de livres par année
+    // (bucket). Nécessaire pour distribuer les Y de façon déterministe sur
+    // toute la hauteur — la simulation étant figée, aucune répulsion ne peut
+    // corriger a posteriori les points qui atterriraient au même Y.
+    const chronoBucketCounts = new Map<number | 'unknown', number>()
+    for (const b of books) {
+      const key = typeof b.year === 'number' && Number.isFinite(b.year) ? b.year : 'unknown'
+      chronoBucketCounts.set(key, (chronoBucketCounts.get(key) ?? 0) + 1)
+    }
+    const chronoBucketLane = new Map<number | 'unknown', number>()
+
     for (let i = 0; i < N; i++) {
       const b = books[i]
+      const hasYear = typeof b.year === 'number' && Number.isFinite(b.year)
       // X chronologique + jitter pour éviter les alignements verticaux rigides.
       // Jitter ±5% de la plage = les livres de la même année se répartissent
       // sans former une colonne, mais restent clairement groupés.
       let seedX: number
-      if (yearSpan > 0 && typeof b.year === 'number' && Number.isFinite(b.year)) {
-        const norm = (b.year - minYear) / yearSpan - 0.5
+      if (yearSpan > 0 && hasYear) {
+        const norm = (b.year! - minYear) / yearSpan - 0.5
         const jitter = (rng() - 0.5) * CHRONO_SEED_X_RANGE * 0.05
         seedX = norm * CHRONO_SEED_X_RANGE + jitter
       } else {
@@ -153,6 +197,36 @@ export function useCosmographBuffers(
       }
       positions[i * 2] = seedX
       positions[i * 2 + 1] = (rng() - 0.5) * 400
+
+      // Positions fixes pour le mode Chronologique. rng partagé avec le mode
+      // libre : l'ordre de tirage est identique → même seed produit le même
+      // layout entre modes (utile pour conserver la position relative d'un
+      // livre si l'utilisateur·ice l'a repéré dans une autre vue).
+      let chronoX: number
+      if (yearSpan > 0 && hasYear) {
+        const norm = (b.year! - minYear) / yearSpan - 0.5
+        // Jitter X réduit pour que l'axe temporel reste lisible : un livre
+        // publié en 1980 doit tomber proche de la graduation 1980, pas
+        // flotter vers 1975 ou 1985.
+        const chronoJitter = (rng() - 0.5) * CHRONO_X_HALF * 0.02
+        chronoX = norm * 2 * CHRONO_X_HALF + chronoJitter
+      } else {
+        // Jitter X dans la bande "inconnu" : centre + demi-largeur aléatoire.
+        chronoX = chronoUnknownStart + (rng() - 0.5) * CHRONO_UNKNOWN_WIDTH
+      }
+      // Y déterministe par lane : les livres d'un même bucket (année ou
+      // "inconnu") sont répartis uniformément sur [−CHRONO_Y_HALF, +CHRONO_Y_HALF].
+      // laneNorm ∈ [−0.5, +0.5] ; pour un bucket de 1 livre, laneNorm = 0
+      // (centré). Le shake final casse l'alignement visuel parfait entre
+      // colonnes adjacentes sans risquer de chevauchement.
+      const bucketKey: number | 'unknown' = hasYear ? b.year! : 'unknown'
+      const bucketTotal = chronoBucketCounts.get(bucketKey) ?? 1
+      const laneIdx = chronoBucketLane.get(bucketKey) ?? 0
+      chronoBucketLane.set(bucketKey, laneIdx + 1)
+      const laneNorm = bucketTotal > 1 ? laneIdx / (bucketTotal - 1) - 0.5 : 0
+      const chronoYShake = (rng() - 0.5) * 2 * CHRONO_Y_SHAKE
+      positionsChrono[i * 2] = chronoX
+      positionsChrono[i * 2 + 1] = laneNorm * 2 * CHRONO_Y_HALF + chronoYShake
 
       const bookAxes = b.axes ?? []
       const firstAxis = bookAxes[0]
@@ -246,6 +320,7 @@ export function useCosmographBuffers(
       books,
       idToIndex,
       flatPositions: positions,
+      flatPositionsChrono: positionsChrono,
       flatColors: colors,
       flatSizes: sizes,
       flatLinks: links,

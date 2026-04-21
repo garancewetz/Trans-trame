@@ -1,18 +1,13 @@
 // Link colors. Baseline discrète (alpha 0.15, aligné sur ALPHA.dim de
 // Galaxy/linkStyle.ts) pour ne pas saturer la lecture du graphe au repos —
 // les liens ne servent qu'à répondre à "qui cite quoi" au moment où on
-// interroge un nœud spécifique. Au hover, outgoing (cyan vif = le focal cite)
-// et incoming (jaune vif = est cité par le focal) remontent, les autres
-// s'effacent encore plus.
+// interroge un nœud spécifique. Au hover d'un nœud, outgoing (cyan vif = le
+// focal cite) et incoming (jaune vif = est cité par le focal) remontent, les
+// autres s'effacent encore plus.
 export const LINK_DEFAULT_RGBA = [140 / 255, 220 / 255, 255 / 255, 0.15] as const
 export const LINK_DIM_RGBA = [140 / 255, 220 / 255, 255 / 255, 0.03] as const
 export const LINK_CITES_FOCAL_RGBA = [140 / 255, 220 / 255, 255 / 255, 0.85] as const
 export const LINK_CITED_BY_FOCAL_RGBA = [255 / 255, 210 / 255, 80 / 255, 0.85] as const
-// Lien directement survolé : alpha saturé pour compenser le multiplicateur
-// `linkOpacity` global (0.44) et la multiplication appliquée par le shader
-// cosmos.gl sur l'alpha existant. Sans ça, le lien survolé reste invisible
-// car l'alpha baseline (0.15) domine.
-export const LINK_HOVERED_RGBA = [220 / 255, 240 / 255, 255 / 255, 1] as const
 // Lien dont au moins une extrémité est greyout (filtre, highlight, ou livre
 // publié hors-range de la timeline) : alpha 0 → invisible. cosmos.gl n'a pas
 // de `setLinkVisibility`, on atténue via la couleur comme pour les autres
@@ -35,6 +30,21 @@ export const FORCES_FREE = {
   simulationGravity: 0.1,       // Gravité globale vers le centre, appliquée à chaque nœud. ↑ = effet "aspirateur" plus fort que simulationCenter.
   simulationCluster: 0,         // Force qui attire chaque nœud vers le centroïde de son cluster. 0 = désactivée (en mode libre).
   simulationFriction: 0.52,     // Amortissement. 1 = le graphe bouge sans s'arrêter ; ↓ = s'immobilise vite (0.5 = coupe sec, 0.9 = respiration douce).
+} as const
+
+// Mode chronologique : toutes les forces à zéro. Les positions sont imposées
+// explicitement (X ∝ année) et la simulation est mise en pause juste après —
+// ces valeurs servent de filet de sécurité pour le cas où une interaction
+// (drag, resize) relance une tick avant que `pause()` ne reprenne la main.
+export const FORCES_FROZEN = {
+  simulationRepulsion: 90,
+  simulationLinkSpring: 0,
+  simulationLinkDistance: 90,
+  simulationCenter: 0,
+  simulationGravity: 0,
+  simulationCluster: 0,
+  // Friction haute = tout mouvement résiduel (drag release) s'arrête aussitôt.
+  simulationFriction: 0.2,
 } as const
 
 // Mode cluster : répulsion très forte + ressorts coupés = chaque cluster se

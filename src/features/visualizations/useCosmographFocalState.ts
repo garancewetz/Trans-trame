@@ -7,7 +7,7 @@ import { HOVER_RADIUS_BONUS } from './cosmographDrawing'
 type AdjacencyIndex = ReturnType<typeof useAdjacencyIndex>
 import {
   LINK_CITED_BY_FOCAL_RGBA, LINK_CITES_FOCAL_RGBA, LINK_DEFAULT_RGBA,
-  LINK_DIM_RGBA, LINK_HIDDEN_RGBA, LINK_HOVERED_RGBA, type LinkRgba,
+  LINK_DIM_RGBA, LINK_HIDDEN_RGBA, type LinkRgba,
 } from './cosmographForces'
 
 type FocalRefs = {
@@ -28,9 +28,6 @@ type FocalRefs = {
   peekBookIdRef: MutableRefObject<string | null>
   visibleIndexSetRef: MutableRefObject<Set<number> | null>
   flashNodeIdsRef: MutableRefObject<Set<string>>
-  // Hover d'un lien (onLinkMouseOver) : ses deux extrémités sont ajoutées
-  // aux indices trackés pour que l'overlay puisse peindre leur glow/label.
-  hoveredLinkRef: MutableRefObject<{ index: number; source: number; target: number } | null>
 }
 
 export type ApplyFocalVisualStateRef = RefObject<() => void>
@@ -121,15 +118,6 @@ function applyFocalLinkColors(refs: FocalRefs, focalIndex: number | null): void 
     else if (tgt === focalIndex) writeLinkRgba(buf, i, LINK_CITED_BY_FOCAL_RGBA)
     else writeLinkRgba(buf, i, LINK_DIM_RGBA)
   }
-  // Override : lien directement survolé. Écrit en dernier pour dominer les
-  // règles de focal/dim ci-dessus. cosmos.gl applique son `hoveredLinkColor`
-  // par-dessus, mais via *multiplication* d'alpha (cf. shader) — avec un alpha
-  // baseline de 0.15 × linkOpacity 0.44, l'effet hover passerait inaperçu.
-  // En peignant ici un alpha saturé, on rend le lien vraiment lisible.
-  const hoveredLink = refs.hoveredLinkRef.current
-  if (hoveredLink && hoveredLink.index >= 0 && hoveredLink.index < N) {
-    writeLinkRgba(buf, hoveredLink.index, LINK_HOVERED_RGBA)
-  }
   g.setLinkColors(buf)
 }
 
@@ -144,11 +132,6 @@ function syncTrackedPositionsForFocal(refs: FocalRefs, focal: number | null): vo
   const set = new Set<number>(refs.landmarkIndicesRef.current)
   for (const i of refs.minimapIndicesRef.current) set.add(i)
   if (focal !== null) set.add(focal)
-  const hoveredLink = refs.hoveredLinkRef.current
-  if (hoveredLink) {
-    set.add(hoveredLink.source)
-    set.add(hoveredLink.target)
-  }
   const idToIdx = refs.idToIndexRef.current
   for (const id of refs.flashNodeIdsRef.current) {
     const i = idToIdx.get(id)

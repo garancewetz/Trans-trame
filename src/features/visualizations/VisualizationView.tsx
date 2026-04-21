@@ -22,13 +22,16 @@ export const VisualizationView = forwardRef<CosmographImperativeHandle, Props>(f
   { viewMode, graphData, authors, selectedNode, onNodeClick, activeFilter, hoveredFilter, activeHighlight, selectedAuthorId, peekNodeId, flashNodeIds, timelineRange },
   ref,
 ) {
-  if (viewMode === 'cosmograph' || viewMode === 'categories') {
-    // Même composant, deux modes — React réutilise l'instance au switch pour
+  if (viewMode === 'cosmograph' || viewMode === 'categories' || viewMode === 'chronological') {
+    // Même composant, trois modes — React réutilise l'instance au switch pour
     // préserver la caméra entre les vues (ne reconstruit pas le Graph cosmos).
+    const mode = viewMode === 'categories'
+      ? 'categories'
+      : viewMode === 'chronological' ? 'chronological' : 'free'
     return (
       <CosmographView
         ref={ref}
-        mode={viewMode === 'categories' ? 'categories' : 'free'}
+        mode={mode}
         graphData={graphData}
         authors={authors}
         selectedNode={selectedNode}

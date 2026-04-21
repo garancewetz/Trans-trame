@@ -6,6 +6,7 @@ import type { ApplyFocalVisualStateRef } from './useCosmographFocalState'
 import { RANDOM_SEED } from './cosmographRng'
 import { FORCES_FREE, LINK_DEFAULT_RGBA } from './cosmographForces'
 import type { CamState } from './cosmographCamera'
+import type { CosmographMode } from './useCosmographLayoutEffect'
 
 type Args = {
   containerRef: RefObject<HTMLDivElement | null>
@@ -23,11 +24,11 @@ type Args = {
   // sert pour fermer le loading mask dès que la simu converge, au lieu d'un
   // setTimeout hardcodé qui sur-estime ou sous-estime la durée réelle.
   onSimulationEndExtraRef: MutableRefObject<(() => void) | null>
-  // Hover d'un lien : ses 2 extrémités alimentent l'overlay (glow + labels).
-  hoveredLinkRef: MutableRefObject<{ index: number; source: number; target: number } | null>
-  // flatLinks aligné sur le setLinks cosmos — utilisé par onLinkMouseOver pour
-  // résoudre linkIndex → (source, target).
-  flatLinksRef: MutableRefObject<Float32Array>
+  // Mode courant lu depuis onDrag : en Chronologique, le nœud tiré doit suivre
+  // le curseur (cosmos le gère nativement via enableDrag) mais on n'appelle
+  // PAS `start()` — sinon la simulation reprend et la répulsion de
+  // FORCES_FROZEN fait dériver les voisins hors de leur colonne année.
+  modeRef: MutableRefObject<CosmographMode>
 }
 
 /**
@@ -39,7 +40,7 @@ type Args = {
 export function useCosmographInstance({
   containerRef, labelCanvasRef, graphRef, hoveredIndexRef, draggingRef,
   onNodeClickRef, booksRef, applyFocalRef, drawOverlay, initialCamRef,
-  writeCamToUrl, onSimulationEndExtraRef, hoveredLinkRef, flatLinksRef,
+  writeCamToUrl, onSimulationEndExtraRef, modeRef,
 }: Args): void {
   useEffect(() => {
     const container = containerRef.current
@@ -55,6 +56,12 @@ export function useCosmographInstance({
       drawOverlay()
     }
     window.addEventListener('resize', onResize)
+
+    // Curseur contextuel : `grab` par défaut (le canvas est pannable), `pointer`
+    // sur un nœud cliquable, `grabbing` pendant un drag. Cosmos.gl n'expose
+    // pas d'API cursor — on pilote le DOM à la main depuis les handlers
+    // ci-dessous.
+    container.style.cursor = 'grab'
 
     let camRestoreApplied = false
     const tryRestoreCamFromUrl = () => {
@@ -97,15 +104,6 @@ export function useCosmographInstance({
       // cosmos.gl fade les liens selon leur longueur écran.
       linkVisibilityDistanceRange: [50, 2000],
       linkVisibilityMinTransparency: 0.36,
-      // Hover de lien : blanc-cyan + largeur +6 px. Le shader cosmos fait
-      // `alpha_final = alpha_buffer * linkOpacity * hoveredLinkColor.a`, donc
-      // il faut (a) peindre l'alpha buffer à 1 côté applyFocalLinkColors via
-      // LINK_HOVERED_RGBA — sinon l'alpha baseline (0.15) écrase tout — et
-      // (b) compenser le `linkOpacity: 0.44` global par une grosse épaisseur.
-      // L'activation de la détection hover se fait automatiquement dès qu'un
-      // callback onLink* est défini (cf. updateLinkHoveringEnabled côté cosmos).
-      hoveredLinkColor: [220 / 255, 240 / 255, 255 / 255, 1] as [number, number, number, number],
-      hoveredLinkWidthIncrease: 6,
       curvedLinks: true,
       pointSizeScale: 0.8,
       scalePointsOnZoom: true,
@@ -139,6 +137,7 @@ export function useCosmographInstance({
       onPointMouseOver: (index: number) => {
         if (draggingRef.current) return
         hoveredIndexRef.current = index
+        container.style.cursor = 'pointer'
         const g = graphRef.current
         if (!g) return
         applyFocalRef.current()
@@ -150,39 +149,28 @@ export function useCosmographInstance({
         // verrouille le hover pour que le highlight reste sur le nœud tiré.
         if (draggingRef.current) return
         hoveredIndexRef.current = null
+        container.style.cursor = 'grab'
         applyFocalRef.current()
         graphRef.current?.render()
         drawOverlay()
       },
-      onLinkMouseOver: (linkIndex: number) => {
-        if (draggingRef.current) return
-        // flatLinks = [s0, t0, s1, t1, ...] aligné sur l'ordre setLinks →
-        // linkIndex résout directement à ses 2 extrémités.
-        const links = flatLinksRef.current
-        const source = links[linkIndex * 2]
-        const target = links[linkIndex * 2 + 1]
-        if (!Number.isFinite(source) || !Number.isFinite(target)) return
-        hoveredLinkRef.current = { index: linkIndex, source, target }
-        // applyFocal resync les indices trackés → les 2 extrémités deviennent
-        // lisibles par getTrackedPointPositionsMap() pour l'overlay.
-        applyFocalRef.current()
-        drawOverlay()
-      },
-      onLinkMouseOut: () => {
-        if (hoveredLinkRef.current === null) return
-        hoveredLinkRef.current = null
-        applyFocalRef.current()
-        drawOverlay()
-      },
       onDragStart: () => {
         draggingRef.current = true
+        container.style.cursor = 'grabbing'
       },
       onDrag: () => {
+        // En Chronologique, le nœud tiré suit le curseur (cosmos.gl l'impose
+        // via enableDrag) mais on ne relance PAS la simulation — sinon la
+        // répulsion de FORCES_FROZEN éjecterait les voisins hors de leur
+        // colonne année. Les positions du reste du graphe restent figées.
+        if (modeRef.current === 'chronological') return
         // Réchauffe la simu pour que les voisins suivent le nœud tiré.
         graphRef.current?.start(0.3)
       },
       onDragEnd: () => {
         draggingRef.current = false
+        // Après drag : curseur selon l'élément courant sous le pointeur.
+        container.style.cursor = hoveredIndexRef.current !== null ? 'pointer' : 'grab'
       },
       onSimulationTick: () => {
         if (!camRestoreApplied) tryRestoreCamFromUrl()

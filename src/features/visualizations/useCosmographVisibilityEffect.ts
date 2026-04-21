@@ -5,7 +5,7 @@ import type { Highlight } from '@/core/FilterContext'
 import { isNodeVisibleForFilters } from '@/features/graph/domain/nodeVisibility'
 import type { ApplyFocalVisualStateRef } from './useCosmographFocalState'
 
-type AdjacencyIndex = Map<string, { linkKeys: string[]; neighborIds: string[] }>
+type AdjacencyIndex = Map<string, { neighborIds: string[] }>
 
 type Args = {
   graphRef: RefObject<Graph | null>

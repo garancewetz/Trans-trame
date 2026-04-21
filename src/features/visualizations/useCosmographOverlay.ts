@@ -24,10 +24,6 @@ type OverlayRefs = {
   flashNodeIdsRef: MutableRefObject<Set<string>>
   flashAlphaRef: MutableRefObject<number>
   idToIndexRef: MutableRefObject<Map<string, number>>
-  // Hover d'un lien : on peint glow + label sur ses 2 extrémités. Les indices
-  // sont tracés via syncTrackedPositionsForFocal pour être accessibles via
-  // getTrackedPointPositionsMap().
-  hoveredLinkRef: MutableRefObject<{ index: number; source: number; target: number } | null>
 }
 
 /** Synchronise la taille du canvas overlay au container (DPR-aware). */
@@ -133,25 +129,6 @@ export function useCosmographOverlay(refs: OverlayRefs): () => void {
     // le label atterrit au centroïde et masque les nœuds denses.
     if (categoriesMode) {
       drawClusterRingLabels(ctx, g, refs.clusterAssignmentsRef.current, tracked)
-    }
-
-    // (4b) Hover de lien : glow + label sur les 2 extrémités. Mutuellement
-    // exclusif avec le hover de nœud côté cosmos (prioritise hoveredPoint),
-    // donc rendu indépendamment du bloc focal.
-    const hoveredLink = refs.hoveredLinkRef.current
-    if (hoveredLink) {
-      for (const idx of [hoveredLink.source, hoveredLink.target]) {
-        if (idx < 0 || idx >= sizes.length) continue
-        if (visible !== null && !visible.has(idx)) continue
-        const space = tracked.get(idx)
-        if (!space) continue
-        const [sx, sy] = g.spaceToScreenPosition(space)
-        const baseR = sizes[idx]
-        const hoverR = baseR + HOVER_RADIUS_BONUS
-        const glowColor = glowHex[idx] ?? '#ffffff'
-        drawGlow(ctx, sx, sy, hoverR, hoverR + 6, glowColor, 0.42)
-        drawLabel(ctx, sx, sy, hoverR, labels[idx], true)
-      }
     }
 
     // (5) Flash d'import : anneau vert pulsant autour des IDs fraîchement

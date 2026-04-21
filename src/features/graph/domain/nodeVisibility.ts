@@ -1,6 +1,6 @@
 import type { Highlight } from '@/core/FilterContext'
 
-type AdjacencyEntry = { linkKeys: string[]; neighborIds: string[] }
+type AdjacencyEntry = { neighborIds: string[] }
 
 /**
  * Determines whether a node is visible given the current filter/highlight state.

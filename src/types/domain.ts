@@ -24,14 +24,6 @@ export type Book = {
   // legacy — à supprimer une fois les fallbacks authorUtils nettoyés
   firstName?: string
   lastName?: string
-
-  // react-force-graph positions (mutées par la lib)
-  x?: number
-  y?: number
-  fx?: number
-  fy?: number
-  vx?: number
-  vy?: number
 } & Record<string, unknown>
 
 export type Author = {

@@ -1,11 +1,11 @@
-import { Orbit, Hexagon, LayoutGrid } from 'lucide-react'
+import { Hexagon, LayoutGrid, CalendarRange } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { Tooltip } from '@/common/components/ui/Tooltip'
 
 const VIEWS = [
   { id: 'cosmograph', label: 'Cosmograph', icon: Hexagon, hint: 'Spike Cosmograph — WebGL GPU' },
   { id: 'categories', label: 'Catégories', icon: LayoutGrid, hint: 'Cartographie par axe thématique' },
-  { id: 'constellation', label: 'Constellation', icon: Orbit, hint: 'Exploration libre' },
+  { id: 'chronological', label: 'Chronologie', icon: CalendarRange, hint: 'Ouvrages par année de publication' },
 ]
 
 type ViewSelectorProps = {

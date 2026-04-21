@@ -2,10 +2,11 @@ import { useEffect, type MutableRefObject, type RefObject } from 'react'
 import type { Graph } from '@cosmos.gl/graph'
 import type { CosmographBuffers } from './useCosmographBuffers'
 import type { ApplyFocalVisualStateRef } from './useCosmographFocalState'
+import type { CosmographMode } from './useCosmographLayoutEffect'
 
 type Args = {
   graphRef: RefObject<Graph | null>
-  mode: 'free' | 'categories'
+  mode: CosmographMode
   buffers: CosmographBuffers
   liveLinkColorsRef: MutableRefObject<Float32Array>
   applyFocalRef: ApplyFocalVisualStateRef

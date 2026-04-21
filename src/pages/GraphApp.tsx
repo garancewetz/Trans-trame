@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useMatch, useNavigate } from 'react-router-dom'
 import { AnalysisPanel } from '@/features/analysis-panel/components/AnalysisPanel'
-import { Graph, type GraphImperativeHandle } from '@/features/graph/components/Graph'
 import { Legend } from '@/features/graph/components/Legend'
 import { Navbar } from '@/features/shell/components/Navbar'
 import { VisualizationView } from '@/features/visualizations/VisualizationView'
@@ -56,7 +55,6 @@ function GraphAppContent() {
   const { session, canContribute, loading: authLoading } = useAuthState()
   const { requireAuth } = useAuthActions()
 
-  const graphRef = useRef<GraphImperativeHandle | null>(null)
   const timeline = useAppTimelineAndLayout(graphData)
   useMapUrlSync({ enabled: !isAdminRoute })
 
@@ -119,58 +117,34 @@ function GraphAppContent() {
     [selection, filter],
   )
 
-  // Noop mémoïsé : une closure inline recrée la prop à chaque render parent et
-  // casse la memoization de <Graph> (qui propage à <ForceGraph2D>).
-  const handleLinkClickNoop = useCallback(() => {}, [])
-
-  const isGraphView = timeline.viewMode === 'constellation'
   const canShowAdmin = isAdminRoute && !authLoading && Boolean(session) && canContribute
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
-      {/* Graph layer stays mounted while in /admin — unmounting d3-force on a
-       *  large graph blocks the main thread. TableView overlays on top with an
-       *  opaque background, so the browser occludes the graph paint on its own —
-       *  no need to toggle `visibility` (which forced a slow style recalc). */}
+      {/* Graph stays mounted while in /admin — TableView overlays on top with
+       *  an opaque background, so the browser occludes the graph paint on its
+       *  own (no need to toggle `visibility`, which forced a slow style recalc). */}
       <div className="absolute inset-0 z-0">
         <ErrorBoundary>
-          {isGraphView ? (
-            <Graph
-              ref={graphRef}
-              graphData={timeline.filteredGraphData}
-              authors={authors}
-              selectedNode={selection.selectedNode}
-              selectedAuthorId={filter.selectedAuthor}
-              peekNodeId={selection.peekNodeId}
-              activeFilter={filter.activeFilter}
-              activeHighlight={filter.activeHighlight}
-              hoveredFilter={filter.hoveredFilter}
-              onNodeClick={handleNodeClick}
-              onLinkClick={handleLinkClickNoop}
-              viewMode={timeline.viewMode}
-              flashNodeIds={tableUi.flashNodeIds}
-            />
-          ) : (
-            // Raw graphData + timelineRange (pas filteredGraphData) : éviter
-            // que chaque tick de la timeline (play = 120 ms) ne change
-            // l'identité des nodes/links et ne force CosmographView à
-            // reconstruire ses Float32Arrays / re-randomiser les positions.
-            // La timeline est appliquée en interne via greyout.
-            <VisualizationView
-              viewMode={timeline.viewMode}
-              graphData={graphData}
-              authors={authors}
-              selectedNode={selection.selectedNode}
-              onNodeClick={handleNodeClick}
-              activeFilter={filter.activeFilter}
-              hoveredFilter={filter.hoveredFilter}
-              activeHighlight={filter.activeHighlight}
-              selectedAuthorId={filter.selectedAuthor}
-              peekNodeId={selection.peekNodeId}
-              flashNodeIds={tableUi.flashNodeIds}
-              timelineRange={timeline.timelineRange}
-            />
-          )}
+          {/* Raw graphData + timelineRange (pas filteredGraphData) : éviter
+            *  que chaque tick de la timeline (play = 120 ms) ne change
+            *  l'identité des nodes/links et ne force CosmographView à
+            *  reconstruire ses Float32Arrays / re-randomiser les positions.
+            *  La timeline est appliquée en interne via greyout. */}
+          <VisualizationView
+            viewMode={timeline.viewMode}
+            graphData={graphData}
+            authors={authors}
+            selectedNode={selection.selectedNode}
+            onNodeClick={handleNodeClick}
+            activeFilter={filter.activeFilter}
+            hoveredFilter={filter.hoveredFilter}
+            activeHighlight={filter.activeHighlight}
+            selectedAuthorId={filter.selectedAuthor}
+            peekNodeId={selection.peekNodeId}
+            flashNodeIds={tableUi.flashNodeIds}
+            timelineRange={timeline.timelineRange}
+          />
         </ErrorBoundary>
       </div>
 

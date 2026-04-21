@@ -1,9 +1,6 @@
 import type { CSSProperties } from 'react'
 
-/**
- * Shared hover-scale style for SVG node groups.
- * Mirrors the smooth scale effect from the Galaxy (constellation) graph view.
- */
+/** Shared hover-scale style for SVG node groups. */
 
 const SCALE = 1.6
 const TRANSITION = 'transform 0.18s ease-out'
