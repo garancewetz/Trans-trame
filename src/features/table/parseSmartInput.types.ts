@@ -38,6 +38,6 @@ export type ParsedBook = {
   parsedByLLM?: boolean
   /** Emerging themes detected by the LLM (e.g. "philosophy", "psychoanalysis"). */
   suggestedThemes?: string[]
-  /** Resource type detected by the LLM (book, article, podcast, film, other). */
+  /** Livre / article / podcast / film / autre — renseigné par l’IA si elle est sûre ; absent ou vide sinon (défaut livre à l’injection). */
   resourceType?: string
 }

@@ -134,17 +134,19 @@ export function AxisDots({
       {themes.map((theme) => {
         const isPending = pendingRemove === `theme:${theme}`
         return (
-          <Tooltip key={theme} content={isPending ? `Cliquer pour retirer « ${theme} »` : theme}>
+          <Tooltip key={theme} content={isPending ? `Cliquer pour retirer « ${theme} »` : `Sous-thème : ${theme}`}>
             <button
               type="button"
               onClick={() => handleThemeClick(theme)}
               className={[
-                'h-2 w-2 shrink-0 cursor-pointer rounded-full border border-dashed transition-all',
+                'cursor-pointer rounded-full border border-dashed px-1.5 py-0 text-[0.68rem] leading-[1.4] transition-all',
                 isPending
-                  ? 'scale-125 border-red/60 bg-red/20 ring-1 ring-red/40'
-                  : 'border-white/25 bg-white/8 hover:scale-125 hover:border-white/40 hover:bg-white/15',
+                  ? 'border-red/60 bg-red/15 text-red/85'
+                  : 'border-white/25 bg-white/5 text-white/55 hover:border-white/45 hover:bg-white/10 hover:text-white/80',
               ].join(' ')}
-            />
+            >
+              {theme}
+            </button>
           </Tooltip>
         )
       })}

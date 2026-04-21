@@ -166,6 +166,8 @@ function GraphAppContent() {
               hoveredFilter={filter.hoveredFilter}
               activeHighlight={filter.activeHighlight}
               selectedAuthorId={filter.selectedAuthor}
+              peekNodeId={selection.peekNodeId}
+              flashNodeIds={tableUi.flashNodeIds}
               timelineRange={timeline.timelineRange}
             />
           )}

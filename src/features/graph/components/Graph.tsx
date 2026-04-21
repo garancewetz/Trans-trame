@@ -249,7 +249,7 @@ const Graph = forwardRef<GraphImperativeHandle, GraphProps>(function Graph(
       .distance((link) => linkDistanceForType(link, bookCountByAuthorId, citationsByNodeId))
       .strength((link) => linkStrengthForType(link, externalCitationsByBookId, citationsByNodeId))
     // Collision : alignée sur le *rayon visuel* du nœud pour éviter tout chevauchement
-    // (les livres très cités peuvent atteindre 46px de rayon — cf. getNodeRadius).
+    // (rayon max des livres plafonné dans getNodeRadius — cf. ce fichier).
     fg.d3Force('collide', forceCollide((node) => {
       const cit = citationsByNodeId.get(node.id) || 0
       return getNodeRadius(node, cit) + FORCE_COLLIDE_PADDING

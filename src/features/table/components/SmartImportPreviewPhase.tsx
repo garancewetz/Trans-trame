@@ -167,10 +167,17 @@ export function SmartImportPreviewPhase({
 
       {/* Table */}
       <div className="mb-4 overflow-hidden rounded-xl border border-white/8">
-        <div className="grid grid-cols-[28px_2fr_1.2fr_0.5fr_1fr_48px_28px_54px] border-b border-white/6 bg-white/2.5 px-3 py-1.5 text-micro font-semibold uppercase tracking-[1.3px] text-white/28">
+        <div className="grid grid-cols-[28px_2fr_1.2fr_minmax(5.25rem,0.35fr)_0.5fr_1fr_48px_28px_54px] border-b border-white/6 bg-white/2.5 px-3 py-1.5 text-micro font-semibold uppercase tracking-[1.3px] text-white/28">
           <span />
           <span>Titre</span>
           <span>Auteur·ice</span>
+          <span className="group/tip relative flex items-center gap-1">
+            Type
+            <Info size={10} className="text-white/25 transition-colors group-hover/tip:text-white/50" />
+            <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-white/10 bg-bg-overlay/95 px-2.5 py-1.5 text-micro font-normal normal-case tracking-normal text-white/65 opacity-0 shadow-lg transition-opacity group-hover/tip:opacity-100">
+              Livre, article, podcast… — prérempli par l’IA si elle est sûre ; sinon vide (défaut livre à l’injection).
+            </span>
+          </span>
           <span>Axes</span>
           <span className="group/tip relative flex items-center gap-1">
             Édition

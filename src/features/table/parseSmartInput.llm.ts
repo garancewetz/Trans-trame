@@ -53,10 +53,18 @@ function validateLLMItem(item: Record<string, unknown>): LLMParsedResult {
       a !== 'UNCATEGORIZED',
   ))]
 
-  // Preserve every UNCATEGORIZED:label and any unrecognized axis as a theme
-  // so the front-end can surface them in the preview (AxisDots) and persist
-  // them on the book — instead of silently dropping labels the LLM returned.
-  const suggestedThemes = rawAxes
+  // L'Edge Function renvoie déjà un champ `suggestedThemes` calculé (extraction
+  // des `UNCATEGORIZED:label` et normalisation). On l'utilise en priorité — sinon
+  // la sous-étiquette est perdue, parce que `item.axes` renvoyé par le serveur
+  // ne contient plus que `['UNCATEGORIZED']` nu (les labels ont été extraits
+  // vers `suggestedThemes` côté serveur).
+  const serverThemes = Array.isArray(item.suggestedThemes)
+    ? item.suggestedThemes
+        .map((t: unknown) => String(t).toLowerCase().replace(/_/g, ' ').trim())
+        .filter(Boolean)
+    : null
+
+  const suggestedThemes = serverThemes ?? rawAxes
     .flatMap((a) => {
       if (a.startsWith('UNCATEGORIZED:'))
         return [a.slice('UNCATEGORIZED:'.length).trim()]
@@ -66,6 +74,12 @@ function validateLLMItem(item: Record<string, unknown>): LLMParsedResult {
     .map((t) => t.toLowerCase().replace(/_/g, ' ').trim())
     .filter(Boolean)
     .filter((v, idx, arr) => arr.indexOf(v) === idx)
+
+  // Filet de sécurité côté client : si ni axe primaire ni sous-thème, retombe
+  // sur "other" plutôt que de laisser un UNCATEGORIZED nu non filtrable.
+  if (knownAxes.length === 0 && suggestedThemes.length === 0) {
+    suggestedThemes.push('other')
+  }
 
   const rawAuthors = Array.isArray(item.authors) ? item.authors : []
   return {
@@ -88,7 +102,7 @@ function validateLLMItem(item: Record<string, unknown>): LLMParsedResult {
     suggestedThemes,
     resourceType: VALID_RESOURCE_TYPES.includes(item.resourceType as typeof VALID_RESOURCE_TYPES[number])
       ? String(item.resourceType)
-      : 'book',
+      : '',
   }
 }
 

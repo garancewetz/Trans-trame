@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { narrowAxes, type Axis } from '@/common/utils/categories'
+import { getResourceType } from '@/common/constants/resourceTypes'
 import type { Author, AuthorId, Book } from '@/types/domain'
 import { parseWithLLMBatch, type LLMParsedResult } from '../parseSmartInput.llm'
 import { useFakeProgress } from '@/common/hooks/useFakeProgress'
@@ -111,6 +112,17 @@ export function useEnrichmentState({
         diffs.push({ field: 'year', label: 'Année', current: bookYear ? String(bookYear) : '—', proposed: String(llm.year) })
       }
 
+      const llmType = llm.resourceType?.trim() || ''
+      const bookType = book.resourceType?.trim() || ''
+      if (llmType && llmType !== bookType) {
+        diffs.push({
+          field: 'resourceType',
+          label: 'Type',
+          current: bookType ? getResourceType(bookType).label : '—',
+          proposed: getResourceType(llmType).label,
+        })
+      }
+
       const newAxes = llm.axes.length > 0 ? narrowAxes(llm.axes) : []
       const hasNewAxes = newAxes.length > 0 && (!book.axes || book.axes.length === 0 || newAxes.some((a) => !book.axes!.includes(a)))
 
@@ -193,6 +205,7 @@ export function useEnrichmentState({
         if (!e.acceptedFields.has(d.field)) continue
         if (d.field === 'title') updates.title = d.proposed
         if (d.field === 'year') updates.year = parseInt(d.proposed, 10) || null
+        if (d.field === 'resourceType') updates.resourceType = e.llm.resourceType.trim()
         if (d.field === 'author' && onAddAuthor) {
           const { ids, promises } = resolveOrCreateAuthors(e.llm.authors, existingAuthors, onAddAuthor)
           if (ids.length > 0) updates.authorIds = ids

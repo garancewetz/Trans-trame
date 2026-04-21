@@ -3,9 +3,9 @@ import { Button } from '@/common/components/ui/Button'
 import { Tooltip } from '@/common/components/ui/Tooltip'
 
 const VIEWS = [
-  { id: 'constellation', label: 'Constellation', icon: Orbit, hint: 'Exploration libre' },
   { id: 'cosmograph', label: 'Cosmograph', icon: Hexagon, hint: 'Spike Cosmograph — WebGL GPU' },
-  { id: 'territories', label: 'Territoires', icon: LayoutGrid, hint: 'Cartographie par axe thématique' },
+  { id: 'categories', label: 'Catégories', icon: LayoutGrid, hint: 'Cartographie par axe thématique' },
+  { id: 'constellation', label: 'Constellation', icon: Orbit, hint: 'Exploration libre' },
 ]
 
 type ViewSelectorProps = {

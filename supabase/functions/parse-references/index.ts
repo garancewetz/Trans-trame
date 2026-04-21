@@ -40,6 +40,8 @@ const VALID_AXES = [
   'INSTITUTIONAL', 'CHILDHOOD', 'CRIP', 'BODY', 'FEMINIST', 'UNCATEGORIZED',
 ] as const
 
+const VALID_RESOURCE_TYPES = ['book', 'article', 'podcast', 'film', 'other'] as const
+
 const SYSTEM_PROMPT = `You are a bibliographic reference parser. You receive a list of numbered lines. For EACH line, extract bibliographic fields and classify the work thematically. Return a JSON array.
 
 Context: this is an intersectional corpus mapping intellectual filiations across feminism, afrofeminism, queer studies, disability, race, body politics, and social justice.
@@ -90,7 +92,40 @@ Priority rules for classification:
 2. SPECIFICITY: Be specific with HISTORY and INSTITUTIONAL. Only use them if the work's primary focus is archives or legal/economic structures. Do not apply them by default to every old book.
 3. PREFERENCE: ALWAYS prefer existing categories above. A feminist philosophy book → FEMINIST, not UNCATEGORIZED.
 4. ECOLOGY: Do not use ECOLOGY as a main axis. If a work is about ecofeminism or environment, use "UNCATEGORIZED:ecology".
-5. UNCATEGORIZED: Only when the work truly does not fit the 10 main axes. You may add a broad family label: "UNCATEGORIZED:label", ONLY from: "philosophy", "psychoanalysis", "literature", "science", "art", "religion", "education", "media", "geography", "technology", "ecology". Lowercase, one word only.
+5. UNCATEGORIZED: Only when the work truly does not fit the 10 main axes above. See the MANDATORY format rule below.
+
+════════════════════════════════════════════════════════════════════
+UNCATEGORIZED FORMAT RULE (MANDATORY, NO EXCEPTIONS)
+════════════════════════════════════════════════════════════════════
+When a work does not fit any of the 10 main axes, you MUST output "UNCATEGORIZED:label" — NEVER bare "UNCATEGORIZED" alone.
+
+❌ INVALID: "axes":["UNCATEGORIZED"]          ← bare, missing label, REJECTED
+✅ VALID:   "axes":["UNCATEGORIZED:philosophy"]
+✅ VALID:   "axes":["UNCATEGORIZED:psychology"]
+✅ VALID:   "axes":["UNCATEGORIZED:sociology"]
+
+Choose the label from this CLOSED list (17 values, lowercase, one word):
+  philosophy, psychology, psychoanalysis, sociology, anthropology,
+  economics, literature, science, art, religion, education, media,
+  geography, technology, ecology, other
+
+Label-choice guidance:
+- philosophy     → phenomenology, ethics, metaphysics, continental/analytic philosophy, political philosophy (when not institutional)
+- psychology     → cognitive, developmental, social, clinical psychology (NOT psychoanalysis)
+- psychoanalysis → Freud, Lacan, Klein, object relations, psychoanalytic theory
+- sociology      → general sociology outside the feminist/race/queer frame (which belong to primary axes)
+- anthropology   → ethnology, cultural anthropology, structural anthropology
+- economics      → economic theory outside labor/gender frame
+- literature     → literary theory, poetics, narratology, close reading, literary fiction analysis
+- science        → natural sciences, biology (outside health/body), cognitive science, philosophy of science
+- art            → art history, aesthetics, visual culture, film studies (as art, not media)
+- religion       → theology, religious studies, spirituality
+- education      → pedagogy, educational theory
+- media          → communication studies, journalism, radio/TV studies
+- geography      → urban studies, spatial theory, cartography
+- technology     → technology studies, STS outside feminist frame
+- ecology        → ecofeminism, environmental humanities, nature writing
+- other          → LAST RESORT ONLY, when nothing above fits. Using "other" when a specific label fits is a bug.
 
 Examples:
 Input: Didier Eribon (dir.), Les études gay et lesbiennes, Centre Georges-Pompidou, Paris, 1998.
@@ -102,14 +137,31 @@ Input: Richard Dyer, « Male Gay Porn : Coming to Terms », in Jump Cut, Mars, 1
 Input: Audre Lorde, Sister Outsider, Crossing Press, 1984.
 → {"authors":[{"firstName":"Audre","lastName":"Lorde"}],"title":"Sister Outsider","originalTitle":"Sister Outsider","edition":"Crossing Press","city":"","year":1984,"page":"","axes":["AFROFEMINIST","QUEER","FEMINIST"],"resourceType":"book"}
 
-Input: Simone de Beauvoir, The Second Sex, Vintage, New York, 2011.
-→ {"authors":[{"firstName":"Simone","lastName":"de Beauvoir"}],"title":"The Second Sex","originalTitle":"Le Deuxième Sexe","edition":"Vintage","city":"New York","year":2011,"page":"","axes":["FEMINIST"],"resourceType":"book"}
-
 Input: Simone de Beauvoir, Le Deuxième Sexe, Gallimard, Paris, 1949.
 → {"authors":[{"firstName":"Simone","lastName":"de Beauvoir"}],"title":"Le Deuxième Sexe","originalTitle":"Le Deuxième Sexe","edition":"Gallimard","city":"Paris","year":1949,"page":"","axes":["FEMINIST"],"resourceType":"book"}
 
+UNCATEGORIZED examples (showing the MANDATORY label):
+
 Input: Jacques Lacan, Écrits, Seuil, Paris, 1966.
-→ {"authors":[{"firstName":"Jacques","lastName":"Lacan"}],"title":"Écrits","originalTitle":"Écrits","edition":"Seuil","city":"Paris","year":1966,"page":"","axes":["UNCATEGORIZED:psychoanalysis"],"resourceType":"book"}`
+→ {"authors":[{"firstName":"Jacques","lastName":"Lacan"}],"title":"Écrits","originalTitle":"Écrits","edition":"Seuil","city":"Paris","year":1966,"page":"","axes":["UNCATEGORIZED:psychoanalysis"],"resourceType":"book"}
+
+Input: Jacques Derrida, Positions, Minuit, Paris, 1972.
+→ {"authors":[{"firstName":"Jacques","lastName":"Derrida"}],"title":"Positions","originalTitle":"Positions","edition":"Minuit","city":"Paris","year":1972,"page":"","axes":["UNCATEGORIZED:philosophy"],"resourceType":"book"}
+
+Input: Daniel Kahneman, Thinking, Fast and Slow, Farrar Straus Giroux, New York, 2011.
+→ {"authors":[{"firstName":"Daniel","lastName":"Kahneman"}],"title":"Thinking, Fast and Slow","originalTitle":"Thinking, Fast and Slow","edition":"Farrar Straus Giroux","city":"New York","year":2011,"page":"","axes":["UNCATEGORIZED:psychology"],"resourceType":"book"}
+
+Input: Pierre Bourdieu, La Distinction, Minuit, Paris, 1979.
+→ {"authors":[{"firstName":"Pierre","lastName":"Bourdieu"}],"title":"La Distinction","originalTitle":"La Distinction","edition":"Minuit","city":"Paris","year":1979,"page":"","axes":["UNCATEGORIZED:sociology"],"resourceType":"book"}
+
+Input: Claude Lévi-Strauss, Tristes Tropiques, Plon, Paris, 1955.
+→ {"authors":[{"firstName":"Claude","lastName":"Lévi-Strauss"}],"title":"Tristes Tropiques","originalTitle":"Tristes Tropiques","edition":"Plon","city":"Paris","year":1955,"page":"","axes":["UNCATEGORIZED:anthropology"],"resourceType":"book"}
+
+Input: Gérard Genette, Palimpsestes, Seuil, Paris, 1982.
+→ {"authors":[{"firstName":"Gérard","lastName":"Genette"}],"title":"Palimpsestes","originalTitle":"Palimpsestes","edition":"Seuil","city":"Paris","year":1982,"page":"","axes":["UNCATEGORIZED:literature"],"resourceType":"book"}
+
+Input: Christian Metz, Le Signifiant imaginaire, UGE, Paris, 1977.
+→ {"authors":[{"firstName":"Christian","lastName":"Metz"}],"title":"Le Signifiant imaginaire","originalTitle":"Le Signifiant imaginaire","edition":"UGE","city":"Paris","year":1977,"page":"","axes":["UNCATEGORIZED:psychoanalysis"],"resourceType":"book"}`
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -263,6 +315,13 @@ function validateParsedItem(item: Record<string, unknown>): ParsedResult {
     .filter(Boolean)
     .filter((v, idx, arr) => arr.indexOf(v) === idx)
 
+  // Garantit qu'un livre UNCATEGORIZED porte toujours un sous-thème : si le
+  // modèle n'a rien renvoyé d'autre, on retombe sur "other" plutôt que de
+  // laisser un UNCATEGORIZED nu qui n'est filtrable nulle part.
+  if (knownAxes.length === 0 && suggestedThemes.length === 0) {
+    suggestedThemes.push('other')
+  }
+
   const rawAuthors = Array.isArray(item.authors) ? item.authors : []
   return {
     authors: rawAuthors
@@ -282,6 +341,11 @@ function validateParsedItem(item: Record<string, unknown>): ParsedResult {
     page: String(item.page ?? '').trim(),
     axes: knownAxes.length > 0 ? knownAxes : ['UNCATEGORIZED'],
     suggestedThemes,
+    resourceType: (() => {
+      const raw = typeof item.resourceType === 'string' ? item.resourceType.trim() : ''
+      if (!raw) return ''
+      return (VALID_RESOURCE_TYPES as readonly string[]).includes(raw) ? raw : ''
+    })(),
   }
 }
 

@@ -14,7 +14,7 @@ export function useAppTimelineAndLayout(graphData: GraphData) {
   const minYear = useMemo(() => Math.min(...allYears, 1800), [allYears])
   const [timelineRange, setTimelineRange] = useState<TimelineRange | null>(null)
 
-  const [viewMode, setViewMode] = useState('constellation')
+  const [viewMode, setViewMode] = useState('cosmograph')
 
   const clampedTimelineRange = useMemo(() => {
     if (!timelineRange) return { start: minYear, end: maxYear }

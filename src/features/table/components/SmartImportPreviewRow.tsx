@@ -7,6 +7,7 @@ import type { Book } from '@/types/domain'
 import type { Axis } from '@/common/utils/categories'
 import type { ParsedBook } from '../parseSmartInput.types'
 import { AxisDots } from './AxisDots'
+import { ResourceTypePicker } from './ResourceTypePicker'
 
 type EditingCell = { id: string; field: string } | null
 type EditingAuthor = { id: string; authorIndex: number | null; firstName: string; lastName: string } | null
@@ -75,7 +76,7 @@ export function SmartImportPreviewRow({
     <div>
       <div
         className={[
-          'group/row grid grid-cols-[28px_2fr_1.2fr_0.5fr_1fr_48px_28px_54px] items-start gap-x-1 border-b border-white/4 px-3 py-1.5 transition-colors',
+          'group/row grid grid-cols-[28px_2fr_1.2fr_minmax(5.25rem,0.35fr)_0.5fr_1fr_48px_28px_54px] items-start gap-x-1 border-b border-white/4 px-3 py-1.5 transition-colors',
           '',
           isExact && !isMerged ? 'bg-red/3' : '',
           isFuzzy && !isMerged ? 'bg-amber/3' : '',
@@ -224,6 +225,15 @@ export function SmartImportPreviewRow({
               <ArrowRightLeft size={10} />
             </button>
           )}
+        </div>
+
+        {/* Resource type */}
+        <div className={['flex items-center py-0.5', isMerged ? 'pointer-events-none opacity-45' : ''].join(' ')}>
+          <ResourceTypePicker
+            value={item.resourceType?.trim() ?? ''}
+            allowEmpty
+            onChange={(v) => onUpdateField(item.id, 'resourceType', v)}
+          />
         </div>
 
         {/* Axes */}
