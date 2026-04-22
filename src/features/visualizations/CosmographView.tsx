@@ -1,12 +1,10 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react'
 import type { Graph } from '@cosmos.gl/graph'
 import type { Book, Author, GraphData, TimelineRange } from '@/types/domain'
 import type { Highlight } from '@/core/FilterContext'
 import { buildAuthorsMap } from '@/common/utils/authorUtils'
 import { useAdjacencyIndex } from '@/features/graph/hooks/useAdjacencyIndex'
 import { CosmographMinimap } from './CosmographMinimap'
-import { CAM_QUERY_KEY, CAM_WRITE_THROTTLE_MS, type CamState, parseCamParam, serializeCam } from './cosmographCamera'
 import { CLUSTER_RING, useCosmographBuffers } from './useCosmographBuffers'
 import { useCosmographKeyboardControls } from './useCosmographKeyboardControls'
 import { useCosmographDataRefs } from './useCosmographDataRefs'
@@ -24,7 +22,7 @@ interface Props {
   authors: Author[]
   selectedNode?: Book | null
   onNodeClick?: (node: Book) => void
-  activeFilter?: string | null
+  activeAxes?: ReadonlySet<string>
   hoveredFilter?: string | null
   activeHighlight?: Highlight | null
   selectedAuthorId?: string | null
@@ -43,8 +41,8 @@ interface Props {
   timelineRange?: TimelineRange | null
   /**
    * Mode de la vue :
-   * - `free` (défaut, = vue "Cosmograph") : force libre, liens visibles — pour
-   *   lire les filiations.
+   * - `free` (défaut, = vue "Transmissions") : force libre, liens visibles —
+   *   pour lire les transmissions entre ressources.
    * - `categories` (vue "Catégories") : clustering par axe, liens masqués —
    *   pour lire la composition thématique du corpus.
    * - `chronological` (vue "Chronologique") : positions fixes X ∝ année de
@@ -57,11 +55,14 @@ export type CosmographImperativeHandle = {
   centerCamera: () => void
 }
 
+const EMPTY_AXES: ReadonlySet<string> = new Set()
+
 export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(function CosmographView({
-  graphData, authors, selectedNode, onNodeClick, activeFilter, hoveredFilter,
+  graphData, authors, selectedNode, onNodeClick, activeAxes, hoveredFilter,
   activeHighlight, selectedAuthorId, peekNodeId, flashNodeIds, timelineRange,
   mode = 'free',
 }: Props, ref) {
+  const effectiveAxes = activeAxes ?? EMPTY_AXES
   const containerRef = useRef<HTMLDivElement>(null)
   const labelCanvasRef = useRef<HTMLCanvasElement>(null)
   const graphRef = useRef<Graph | null>(null)
@@ -101,19 +102,12 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
   const modeRef = useRef<CosmographMode>(mode)
   modeRef.current = mode
 
-  // URL params — on capture la caméra initiale *avant* le premier render pour
-  // pouvoir désactiver fitViewOnInit quand une caméra est persistée.
-  const [searchParams, setSearchParams] = useSearchParams()
-  const searchParamsRef = useRef(searchParams)
-  searchParamsRef.current = searchParams
-  const initialCamRef = useRef<CamState | null>(parseCamParam(searchParams.get(CAM_QUERY_KEY)))
-
   const authorsMap = useMemo(() => buildAuthorsMap(authors), [authors])
   const linksByNodeId = useAdjacencyIndex(graphData.links)
   const buffers = useCosmographBuffers(graphData, authorsMap)
   const {
     books, idToIndex, edgeCount, minimapIndices, citationsByBookId,
-    clusterAssignments, flatPositionsChrono,
+    clusterAssignments, flatPositionsChrono, subClusters, totalClusterCount,
   } = buffers
 
   const selectedBookIdRef = useRef<string | null>(null)
@@ -136,36 +130,22 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
     flatSizesRef: dataRefs.flatSizesRef,
     labelByIndexRef: dataRefs.labelByIndexRef,
     glowHexByIndexRef: dataRefs.glowHexByIndexRef,
-    landmarkIndicesRef: dataRefs.landmarkIndicesRef,
-    landmarkIndicesCategoriesRef: dataRefs.landmarkIndicesCategoriesRef,
+    landmarkIndicesExtendedRef: dataRefs.landmarkIndicesExtendedRef,
+    landmarkIndicesCategoriesExtendedRef: dataRefs.landmarkIndicesCategoriesExtendedRef,
     clusterAssignmentsRef: dataRefs.clusterAssignmentsRef,
+    subClusterByIndexRef: dataRefs.subClusterByIndexRef,
+    subClustersRef: dataRefs.subClustersRef,
     idToIndexRef: dataRefs.idToIndexRef,
   })
 
-  // URL sync caméra — throttlé pour ne pas spammer history.
-  const camWriteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const writeCamToUrl = useCallback((cam: CamState) => {
-    if (camWriteTimerRef.current) clearTimeout(camWriteTimerRef.current)
-    camWriteTimerRef.current = setTimeout(() => {
-      const next = new URLSearchParams(searchParamsRef.current)
-      next.set(CAM_QUERY_KEY, serializeCam(cam))
-      setSearchParams(next, { replace: true })
-      camWriteTimerRef.current = null
-    }, CAM_WRITE_THROTTLE_MS)
-  }, [setSearchParams])
-
-  useEffect(() => () => {
-    if (camWriteTimerRef.current) clearTimeout(camWriteTimerRef.current)
-  }, [])
-
   useCosmographKeyboardControls({
-    graphRef, containerRef, onCamChange: writeCamToUrl, onFrame: drawOverlay,
+    graphRef, containerRef, onFrame: drawOverlay,
   })
 
   useCosmographInstance({
     containerRef, labelCanvasRef, graphRef, draggingRef, onNodeClickRef,
-    applyFocalRef, drawOverlay, initialCamRef, writeCamToUrl,
-    onSimulationEndExtraRef, modeRef,
+    applyFocalRef, drawOverlay,
+    onSimulationEndExtraRef, modeRef, visibleIndexSetRef,
     hoveredIndexRef: dataRefs.hoveredIndexRef,
     booksRef: dataRefs.booksRef,
   })
@@ -177,12 +157,14 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
   })
 
   useCosmographLayoutEffect({
-    graphRef, mode, clusterAssignments, flatPositionsChrono, prevModeRef, drawOverlay,
+    graphRef, mode, clusterAssignments, flatPositionsChrono,
+    subClusters, totalClusterCount,
+    prevModeRef, drawOverlay,
     onSimulationEndExtraRef,
   })
 
   useCosmographVisibilityEffect({
-    graphRef, books, activeFilter, hoveredFilter, activeHighlight, selectedAuthorId,
+    graphRef, books, activeAxes: effectiveAxes, hoveredFilter, activeHighlight, selectedAuthorId,
     timelineRange, linksByNodeId, citationsByBookId, visibleIndexSetRef,
     applyFocalRef, drawOverlay,
   })
@@ -202,7 +184,18 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
     },
   }), [])
 
-  const a11yLabel = `Constellation interactive : ${books.length} œuvres reliées par ${edgeCount} citations. Une alternative tabulaire est disponible dans l'onglet Ressources.`
+  const a11yLabel = (() => {
+    const prefix = `${books.length} œuvres`
+    const suffix = "Une alternative tabulaire est disponible dans l'onglet Ressources."
+    switch (mode) {
+      case 'categories':
+        return `Cartographie Catégories : ${prefix} regroupées par axe thématique. ${suffix}`
+      case 'chronological':
+        return `Cartographie Chronologie : ${prefix} disposées par année de publication. ${suffix}`
+      default:
+        return `Cartographie Transmissions : ${prefix} reliées par ${edgeCount} citations. ${suffix}`
+    }
+  })()
 
   return (
     <div
@@ -210,7 +203,12 @@ export const CosmographView = forwardRef<CosmographImperativeHandle, Props>(func
       aria-label={a11yLabel}
       className="absolute inset-0 bg-bg-base overflow-hidden"
     >
-      <div ref={containerRef} className="absolute inset-0" />
+      {/* cursor-grab → signale que le nœud est saisissable en modes libres.
+          cursor-default en Chronologie : simulation figée, drag désactivé. */}
+      <div
+        ref={containerRef}
+        className={`absolute inset-0 ${mode === 'chronological' ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}`}
+      />
       {/* Overlay canvas pour les labels — pointer-events-none pour laisser
           passer les événements au renderer WebGL en dessous. */}
       <canvas ref={labelCanvasRef} className="pointer-events-none absolute inset-0" />

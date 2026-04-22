@@ -1,13 +1,9 @@
 import { useEffect, useRef, type RefObject } from 'react'
 import type { Graph } from '@cosmos.gl/graph'
-import type { CamState } from './cosmographCamera'
 
 type Args = {
   graphRef: RefObject<Graph | null>
   containerRef: RefObject<HTMLDivElement | null>
-  // Appelé à chaque rafraîchissement de la caméra clavier. Le parent le branche
-  // sur writeCamToUrl pour persister l'état dans l'URL.
-  onCamChange: (cam: CamState) => void
   // Appelé après chaque frame animée. Le parent le branche sur drawOverlay
   // pour que labels / glow suivent le pan-zoom clavier.
   onFrame: () => void
@@ -33,15 +29,13 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 /**
  * Pan + zoom clavier — miroir de cameraControls.ts (Galaxy). Attache les
  * listeners `keydown` / `keyup` au window, anime la caméra en rAF, et
- * notifie le parent à chaque frame pour qu'il persiste l'URL + redessine
- * l'overlay. Les callbacks sont lus via refs internes → l'effet ne se
- * re-déclenche pas si leur identité change à chaque render.
+ * notifie le parent à chaque frame pour qu'il redessine l'overlay. Les
+ * callbacks sont lus via refs internes → l'effet ne se re-déclenche pas si
+ * leur identité change à chaque render.
  */
 export function useCosmographKeyboardControls({
-  graphRef, containerRef, onCamChange, onFrame,
+  graphRef, containerRef, onFrame,
 }: Args): void {
-  const onCamChangeRef = useRef(onCamChange)
-  onCamChangeRef.current = onCamChange
   const onFrameRef = useRef(onFrame)
   onFrameRef.current = onFrame
 
@@ -71,7 +65,6 @@ export function useCosmographKeyboardControls({
       const g = graphRef.current
       if (!g) return
       g.setZoomTransformByPointPositions(new Float32Array([cam.x, cam.y]), 0, cam.zoom, 0, false)
-      onCamChangeRef.current({ ...cam })
       onFrameRef.current()
     }
 

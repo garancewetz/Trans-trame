@@ -1,9 +1,24 @@
 import { useMemo } from 'react'
 import { bookAuthorDisplay, bookAuthorSortKey } from '@/common/utils/authorUtils'
 import { matchAllWords } from '@/common/utils/searchUtils'
+import { RESOURCE_TYPES, type ResourceTypeValue } from '@/common/constants/resourceTypes'
+import { AXES } from '@/common/utils/categories'
 import { maybeNodeId } from '../../maybeNodeId'
 import type { Author, Book, BookId, Link } from '@/types/domain'
 import type { Axis } from '@/common/utils/categories'
+
+const RESOURCE_TYPE_ORDER: Record<string, number> = Object.fromEntries(
+  RESOURCE_TYPES.map((t, i) => [t.value, i]),
+)
+
+const AXIS_ORDER: Record<string, number> = Object.fromEntries(AXES.map((a, i) => [a, i]))
+
+function primaryAxisRank(book: Book): number {
+  const first = book.axes?.[0]
+  if (!first) return Number.MAX_SAFE_INTEGER
+  const rank = AXIS_ORDER[first]
+  return rank ?? Number.MAX_SAFE_INTEGER - 1
+}
 
 type Args = {
   nodes: Book[]
@@ -14,6 +29,7 @@ type Args = {
   selectedIds: Set<BookId>
   authors: Author[]
   axisFilter?: Axis | null
+  typeFilter?: ResourceTypeValue | null
   todoOnly?: boolean
 }
 
@@ -26,6 +42,7 @@ export function useBooksTabTableDerived({
   selectedIds,
   authors,
   axisFilter,
+  typeFilter,
   todoOnly,
 }: Args) {
   const authorsMap = useMemo(() => {
@@ -69,6 +86,7 @@ export function useBooksTabTableDerived({
     const q = String(search || '').trim()
     let list = nodes || []
     if (todoOnly) list = list.filter((n) => !!n.todo)
+    if (typeFilter) list = list.filter((n) => (n.resourceType ?? 'book') === typeFilter)
     if (axisFilter === 'UNCATEGORIZED') {
       list = list.filter((n) => !n.axes?.length || n.axes.includes('UNCATEGORIZED'))
     } else if (axisFilter) {
@@ -78,7 +96,7 @@ export function useBooksTabTableDerived({
       matchAllWords(q, [n.title || '', bookAuthorDisplay(n, authorsMap), String(n.year || '')].join(' '))
     )
     return list
-  }, [nodes, search, authorsMap, axisFilter, todoOnly])
+  }, [nodes, search, authorsMap, axisFilter, typeFilter, todoOnly])
 
   const sortedNodes = useMemo(() => {
     const list = [...filteredNodes]
@@ -89,6 +107,14 @@ export function useBooksTabTableDerived({
         case 'title': va = String(a.title || '').toLowerCase(); vb = String(b.title || '').toLowerCase(); break
         case 'lastName': va = bookAuthorSortKey(a, authorsMap); vb = bookAuthorSortKey(b, authorsMap); break
         case 'year': va = a.year || 0; vb = b.year || 0; break
+        case 'resourceType':
+          va = RESOURCE_TYPE_ORDER[a.resourceType ?? 'book'] ?? RESOURCE_TYPES.length
+          vb = RESOURCE_TYPE_ORDER[b.resourceType ?? 'book'] ?? RESOURCE_TYPES.length
+          break
+        case 'axes':
+          va = primaryAxisRank(a)
+          vb = primaryAxisRank(b)
+          break
         case 'linkCount': va = linkCountByNode.get(a.id) || 0; vb = linkCountByNode.get(b.id) || 0; break
         case 'createdAt': va = (a.created_at as string) || ''; vb = (b.created_at as string) || ''; break
         default: va = ''; vb = ''

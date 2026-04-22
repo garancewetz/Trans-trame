@@ -13,16 +13,18 @@ les continuités, les transmissions et les ruptures.
 - `links` : citations / références entre ouvrages (avec citation_text, edition, page, context)
 - 11 axes thématiques : Antiracism & Decolonial, Afrofeminism, Queer Studies,
   Health & Trauma, History & Archives, Institutional & Labor, Childhood & Family,
-  Crip Theory, Body & Sexology, Feminist Theory, Sans catégorie (fallback)
+  Crip Theory, Body & Sexology, Feminist Theory, Autres disciplines (fallback
+  pour les œuvres citées issues d'autres champs : philosophie, sociologie,
+  psychanalyse, littérature…)
 
 ## Expérience actuelle
 
-- Graphe 2D interactif (react-force-graph-2d)
+- Graphe 2D interactif rendu en GPU (cosmos.gl / WebGL)
 - Timeline en bas de l’écran avec filtre de période et contrôles play/pause
-- Modes de vue :
-  - `Constellation` (exploration libre, react-force-graph-2d)
-  - `Cosmograph` (spike expérimental, renderer cosmos.gl GPU — filtres,
-    drag et nav clavier alignés sur Constellation)
+- Trois modes de vue (même instance, caméra et sélection préservées au switch) :
+  - `Transmissions` (défaut — réseau libre des citations entre ressources)
+  - `Catégories` (clustering par axe thématique, liens masqués)
+  - `Chronologie` (positions fixes par année de publication, simulation figée)
 - Navbar compacte et centralisée :
   - switch de vue discret près du logo
   - bouton `Contribuer` (mint) — bascule vers la vue table d’édition
@@ -61,7 +63,7 @@ Les filtres sont distribués dans l’interface :
 ## Stack technique
 
 - React 19 + Vite 8
-- react-force-graph-2d
+- cosmos.gl (@cosmos.gl/graph) — rendu WebGL/GPU
 - Tailwind CSS 4
 - Supabase (base de données PostgreSQL + auth)
 - TanStack React Query (état serveur)

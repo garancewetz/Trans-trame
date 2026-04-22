@@ -2,7 +2,7 @@ import { useEffect, useRef, type MutableRefObject } from 'react'
 import type { Book } from '@/types/domain'
 import type { LabelData } from './cosmographDrawing'
 import { LINK_DEFAULT_RGBA } from './cosmographForces'
-import type { CosmographBuffers } from './useCosmographBuffers'
+import type { CosmographBuffers, SubClusterInfo } from './useCosmographBuffers'
 import type { useAdjacencyIndex } from '@/features/graph/hooks/useAdjacencyIndex'
 
 type AdjacencyIndex = ReturnType<typeof useAdjacencyIndex>
@@ -10,9 +10,13 @@ type AdjacencyIndex = ReturnType<typeof useAdjacencyIndex>
 export type CosmographDataRefs = {
   flatSizesRef: MutableRefObject<Float32Array>
   labelByIndexRef: MutableRefObject<LabelData[]>
+  subClusterByIndexRef: MutableRefObject<number[]>
+  subClustersRef: MutableRefObject<SubClusterInfo[]>
   glowHexByIndexRef: MutableRefObject<string[]>
   landmarkIndicesRef: MutableRefObject<number[]>
+  landmarkIndicesExtendedRef: MutableRefObject<number[]>
   landmarkIndicesCategoriesRef: MutableRefObject<number[]>
+  landmarkIndicesCategoriesExtendedRef: MutableRefObject<number[]>
   minimapIndicesRef: MutableRefObject<number[]>
   booksRef: MutableRefObject<Book[]>
   idToIndexRef: MutableRefObject<Map<string, number>>
@@ -40,15 +44,21 @@ export function useCosmographDataRefs(
 ): CosmographDataRefs {
   const {
     books, idToIndex, flatSizes, flatLinks, edgeCount, labelByIndex,
-    landmarkIndices, landmarkIndicesCategories, minimapIndices, glowHexByIndex,
-    clusterAssignments,
+    subClusterByIndex, subClusters,
+    landmarkIndices, landmarkIndicesExtended,
+    landmarkIndicesCategories, landmarkIndicesCategoriesExtended,
+    minimapIndices, glowHexByIndex, clusterAssignments,
   } = buffers
 
   const flatSizesRef = useRef<Float32Array>(flatSizes)
   const labelByIndexRef = useRef<LabelData[]>(labelByIndex)
+  const subClusterByIndexRef = useRef<number[]>(subClusterByIndex)
+  const subClustersRef = useRef<SubClusterInfo[]>(subClusters)
   const glowHexByIndexRef = useRef<string[]>(glowHexByIndex)
   const landmarkIndicesRef = useRef<number[]>(landmarkIndices)
+  const landmarkIndicesExtendedRef = useRef<number[]>(landmarkIndicesExtended)
   const landmarkIndicesCategoriesRef = useRef<number[]>(landmarkIndicesCategories)
+  const landmarkIndicesCategoriesExtendedRef = useRef<number[]>(landmarkIndicesCategoriesExtended)
   const minimapIndicesRef = useRef<number[]>(minimapIndices)
   const booksRef = useRef<Book[]>(books)
   const idToIndexRef = useRef<Map<string, number>>(idToIndex)
@@ -64,9 +74,13 @@ export function useCosmographDataRefs(
   useEffect(() => {
     flatSizesRef.current = flatSizes
     labelByIndexRef.current = labelByIndex
+    subClusterByIndexRef.current = subClusterByIndex
+    subClustersRef.current = subClusters
     glowHexByIndexRef.current = glowHexByIndex
     landmarkIndicesRef.current = landmarkIndices
+    landmarkIndicesExtendedRef.current = landmarkIndicesExtended
     landmarkIndicesCategoriesRef.current = landmarkIndicesCategories
+    landmarkIndicesCategoriesExtendedRef.current = landmarkIndicesCategoriesExtended
     minimapIndicesRef.current = minimapIndices
     booksRef.current = books
     idToIndexRef.current = idToIndex
@@ -84,7 +98,7 @@ export function useCosmographDataRefs(
     liveLinkColorsRef.current = linkBuf
     prevHoveredRef.current = null
     hoveredIndexRef.current = null
-  }, [flatSizes, labelByIndex, glowHexByIndex, landmarkIndices, landmarkIndicesCategories, minimapIndices, books, idToIndex, flatLinks, edgeCount, clusterAssignments])
+  }, [flatSizes, labelByIndex, subClusterByIndex, subClusters, glowHexByIndex, landmarkIndices, landmarkIndicesExtended, landmarkIndicesCategories, landmarkIndicesCategoriesExtended, minimapIndices, books, idToIndex, flatLinks, edgeCount, clusterAssignments])
 
   // linksByNodeId est recalculé par useAdjacencyIndex (changement de
   // graphData.links) — son effect dédié évite d'invalider le buffer live
@@ -94,8 +108,11 @@ export function useCosmographDataRefs(
   }, [linksByNodeId])
 
   return {
-    flatSizesRef, labelByIndexRef, glowHexByIndexRef, landmarkIndicesRef,
-    landmarkIndicesCategoriesRef, minimapIndicesRef, booksRef, idToIndexRef,
+    flatSizesRef, labelByIndexRef, subClusterByIndexRef, subClustersRef,
+    glowHexByIndexRef,
+    landmarkIndicesRef, landmarkIndicesExtendedRef,
+    landmarkIndicesCategoriesRef, landmarkIndicesCategoriesExtendedRef,
+    minimapIndicesRef, booksRef, idToIndexRef,
     linksByNodeIdRef, flatLinksRef, edgeCountRef, clusterAssignmentsRef,
     liveSizesRef, liveLinkColorsRef, prevHoveredRef, hoveredIndexRef,
   }

@@ -1,15 +1,17 @@
-import { Clock, Flag, X } from 'lucide-react'
+import { Clock, Flag, Layers, X } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import type { AuthorNode } from '@/common/utils/authorUtils'
-import type { Author, AuthorId, Book, BookId } from '@/types/domain'
+import type { Author, AuthorId, Book, BookId, Link } from '@/types/domain'
 import type { DrawerTool } from '@/core/TableUiContext'
 import { HistoryTab } from './tabs/HistoryTab'
 import { ReviewTab } from './tabs/ReviewTab'
+import { SubAxesTab } from './tabs/SubAxesTab'
 
 type AdminDrawerProps = {
   tool: Exclude<DrawerTool, null>
   onClose: () => void
   books: Book[]
+  links: Link[]
   authors: Author[]
   authorsMap: Map<string, AuthorNode>
   onUpdateBook?: (book: Book) => unknown
@@ -22,12 +24,14 @@ type AdminDrawerProps = {
 const TOOL_CONFIG = {
   history: { icon: Clock, label: 'Historique' },
   review: { icon: Flag, label: 'À relire' },
+  subaxes: { icon: Layers, label: 'Autres disciplines' },
 } as const
 
 export function AdminDrawer({
   tool,
   onClose,
   books,
+  links,
   authors,
   authorsMap,
   onUpdateBook,
@@ -68,6 +72,13 @@ export function AdminDrawer({
             onUpdateAuthor={onUpdateAuthor}
             onOpenWorkDetail={onOpenWorkDetail}
             onFocusAuthorInAuthorsTab={onFocusAuthorInAuthorsTab}
+          />
+        )}
+        {tool === 'subaxes' && (
+          <SubAxesTab
+            books={books}
+            links={links}
+            onOpenWorkDetail={onOpenWorkDetail}
           />
         )}
       </div>

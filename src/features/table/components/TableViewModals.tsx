@@ -60,6 +60,7 @@ export function TableViewModals({
         confirm={c.authorDedupeConfirm}
         setOpen={c.setAuthorDedupeModal}
         setConfirm={c.setAuthorDedupeConfirm}
+        onMarkGroupNotDuplicate={c.handleMarkGroupNotDuplicate}
       />
 
       <AuthorOrphanReconcileModal

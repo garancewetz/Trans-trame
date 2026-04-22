@@ -3,8 +3,8 @@ import { Check, Loader2, Sparkles } from 'lucide-react'
 import { Modal } from '@/common/components/ui/Modal'
 import { Button } from '@/common/components/ui/Button'
 import type { Author, AuthorId, Book } from '@/types/domain'
-import { useEnrichmentState } from '../hooks/useEnrichmentState'
-import { EnrichmentRow } from './AIEnrichReviewTable'
+import { useEnrichmentState, ENRICHABLE_FIELDS } from '../hooks/useEnrichmentState'
+import { EnrichmentRow, FieldCheckbox } from './AIEnrichReviewTable'
 
 type Props = {
   open: boolean
@@ -18,6 +18,7 @@ type Props = {
 export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, onAddAuthor }: Props) {
   const {
     phase, enrichments, progress, error, checkedCount, unchangedCount, allChecked,
+    enabledFields, toggleEnabledField,
     startAnalysis, toggleItem, toggleField, toggleAll, applySelected, resetState,
   } = useEnrichmentState({ books, authorsMap, onUpdateBook, onAddAuthor })
 
@@ -50,14 +51,31 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
             </p>
           )}
           <p className="text-[0.9rem] text-white/60">
-            Analyser {books.length} ressource{books.length > 1 ? 's' : ''} avec Gemini pour
-            enrichir les catégories et les champs manquants.
+            Analyser {books.length} ressource{books.length > 1 ? 's' : ''} avec Gemini.
           </p>
+          <div className="flex flex-col gap-2 rounded-lg border border-white/8 bg-white/2 px-4 py-3">
+            <p className="text-caption text-white/40">Champs à proposer</p>
+            <div className="grid grid-cols-2 gap-x-5 gap-y-1.5">
+              {ENRICHABLE_FIELDS.map(({ key, label }) => {
+                const checked = enabledFields.has(key)
+                return (
+                  <label
+                    key={key}
+                    className="flex cursor-pointer items-center gap-2 text-ui text-white/70 hover:text-white/90"
+                  >
+                    <FieldCheckbox accepted={checked} onClick={() => toggleEnabledField(key)} />
+                    {label}
+                  </label>
+                )
+              })}
+            </div>
+          </div>
           <Button
             type="button"
             variant="outline"
             outlineWeight="accent"
             tone="magic"
+            disabled={enabledFields.size === 0}
             onClick={() => void startAnalysis()}
           >
             <Sparkles size={13} /> {error ? 'Réessayer' : 'Lancer l\'analyse'}

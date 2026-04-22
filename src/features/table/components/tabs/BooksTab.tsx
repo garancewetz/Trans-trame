@@ -99,6 +99,8 @@ export function BooksTab({
         sortedNodes={s.sortedNodes}
         search={search}
         justAddedBookId={s.justAddedBookId}
+        focusBookId={focusBookId}
+        highlightedBookId={s.highlightedBookId}
         authors={authors}
         authorsMap={s.authorsMap}
         linkCountByNode={s.linkCountByNode}
@@ -131,6 +133,8 @@ export function BooksTab({
         onOpenWorkDetail={onOpenWorkDetail}
         axisFilter={s.axisFilter}
         onAxisFilter={s.setAxisFilter}
+        typeFilter={s.typeFilter}
+        onTypeFilter={s.setTypeFilter}
       />
 
       <TableMergeModal

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, Clock, Download, Flag, Zap } from 'lucide-react'
+import { ArrowLeft, Clock, Download, Flag, Layers, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/common/components/ui/Button'
 import { exportFullDatabase } from '@/features/graph/api/graphDataApi'
@@ -81,6 +81,20 @@ export function TableTopbar({
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          outlineWeight="muted"
+          icon={<Layers size={12} />}
+          selected={drawerTool === 'subaxes'}
+          onClick={() => toggleDrawer('subaxes')}
+          title="Autres disciplines — sous-axes convoqués par le corpus (philo, socio, littérature…)"
+          aria-label="Ouvrir le panneau des autres disciplines"
+          aria-pressed={drawerTool === 'subaxes'}
+        >
+          Disciplines
+        </Button>
+
         <Button
           type="button"
           variant="outline"

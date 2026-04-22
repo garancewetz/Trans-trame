@@ -1,7 +1,14 @@
 import { useEffect, type MutableRefObject, type RefObject } from 'react'
 import type { Graph } from '@cosmos.gl/graph'
 import { FORCES_CLUSTER, FORCES_FREE, FORCES_FROZEN } from './cosmographForces'
-import { CLUSTER_RING } from './useCosmographBuffers'
+import { UNCATEGORIZED_CLUSTER_INDEX, type SubClusterInfo } from './useCosmographBuffers'
+
+// Rayon sur lequel on dispose les sous-clusters (philosophy, literature,
+// art…) autour de l'origine. Assez petit pour qu'ils forment une
+// constellation compacte lisible comme "Autres disciplines", mais suffisant
+// pour que chaque pool reste distinct de son voisin. Ajustable si
+// nécessaire.
+const SUB_CLUSTER_ORBIT_RADIUS = 220
 
 export type CosmographMode = 'free' | 'categories' | 'chronological'
 
@@ -10,6 +17,8 @@ type Args = {
   mode: CosmographMode
   clusterAssignments: (number | undefined)[]
   flatPositionsChrono: Float32Array
+  subClusters: SubClusterInfo[]
+  totalClusterCount: number
   prevModeRef: MutableRefObject<CosmographMode>
   drawOverlay: () => void
   onSimulationEndExtraRef: MutableRefObject<(() => void) | null>
@@ -26,7 +35,8 @@ type Args = {
  * s'étend ~5000 unités : un fit après switch garantit que tout soit lisible.
  */
 export function useCosmographLayoutEffect({
-  graphRef, mode, clusterAssignments, flatPositionsChrono, prevModeRef,
+  graphRef, mode, clusterAssignments, flatPositionsChrono,
+  subClusters, totalClusterCount, prevModeRef,
   drawOverlay, onSimulationEndExtraRef,
 }: Args): void {
   useEffect(() => {
@@ -40,12 +50,23 @@ export function useCosmographLayoutEffect({
     prevModeRef.current = mode
 
     if (mode === 'categories') {
-      // Auto-placement cosmos : positions undefined → chaque cluster est placé
-      // à son centermass et la gravité de FORCES_CLUSTER les aspire autour de
-      // l'origine.
-      const autoPositions: (number | undefined)[] = new Array((CLUSTER_RING.length + 1) * 2).fill(undefined)
+      // Ring (10) : auto-placé (undefined) → se répartit en cercle autour
+      // de l'origine sous les forces. UNCATEGORIZED : fixé à l'origine.
+      // Sous-clusters (philo, litt, art…) : fixés en petit cercle autour
+      // de l'origine — chaque pool est distinct mais tous restent visible-
+      // ment dans la zone "Autres disciplines".
+      const positions: (number | undefined)[] = new Array(totalClusterCount * 2).fill(undefined)
+      positions[UNCATEGORIZED_CLUSTER_INDEX * 2] = 0
+      positions[UNCATEGORIZED_CLUSTER_INDEX * 2 + 1] = 0
+      const n = subClusters.length
+      for (let i = 0; i < n; i++) {
+        const angle = (i / Math.max(n, 1)) * Math.PI * 2
+        const idx = subClusters[i].clusterIdx
+        positions[idx * 2] = Math.cos(angle) * SUB_CLUSTER_ORBIT_RADIUS
+        positions[idx * 2 + 1] = Math.sin(angle) * SUB_CLUSTER_ORBIT_RADIUS
+      }
       g.setPointClusters(clusterAssignments)
-      g.setClusterPositions(autoPositions)
+      g.setClusterPositions(positions)
       g.setConfigPartial(FORCES_CLUSTER)
       g.unpause()
     } else if (mode === 'chronological') {
@@ -108,5 +129,5 @@ export function useCosmographLayoutEffect({
         onSimulationEndExtraRef.current = null
       }
     }
-  }, [mode, clusterAssignments, flatPositionsChrono, graphRef, prevModeRef, drawOverlay, onSimulationEndExtraRef])
+  }, [mode, clusterAssignments, flatPositionsChrono, subClusters, totalClusterCount, graphRef, prevModeRef, drawOverlay, onSimulationEndExtraRef])
 }

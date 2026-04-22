@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { Book, GraphData } from '@/types/domain'
-import { axisColor, CLUSTER_RING_AXES, type Axis } from '@/common/utils/categories'
+import { axisColor, CLUSTER_RING_AXES, SUB_CLUSTERS, type Axis } from '@/common/utils/categories'
 import { bookAuthorDisplay, type AuthorNode } from '@/common/utils/authorUtils'
 import { getNodeRadius } from '@/features/graph/domain/nodeRadius'
 import { getCitationEdges } from './utils'
@@ -17,6 +17,49 @@ export const CLUSTER_RING: Axis[] = [...CLUSTER_RING_AXES]
 // En leur donnant un cluster à l'origine, ils forment une masse centrale nette
 // visuellement identifiée comme "hors axe".
 export const UNCATEGORIZED_CLUSTER_INDEX = CLUSTER_RING.length
+
+/**
+ * Métadonnée d'un sous-cluster *référencé* (éditorialement approuvé via
+ * SUB_CLUSTERS). Devient un cluster cosmos dédié pour que ses livres
+ * forment un pool distinct dans la zone "Autres disciplines". Les
+ * sous-axes non référencés (Literature, Art…) restent mélangés dans le
+ * cluster UNCATEGORIZED générique — la promotion est toujours un acte
+ * éditorial explicite.
+ */
+export type SubClusterInfo = {
+  subKey: string          // 'philosophy', …
+  label: string           // label éditorial ('Philosophie')
+  color: string           // couleur éditoriale
+  clusterIdx: number      // index cluster cosmos (UNCATEGORIZED_CLUSTER_INDEX + 1 + i)
+}
+
+/**
+ * Construit la liste ordonnée des sous-clusters **référencés présents** dans
+ * le corpus. Un sous-cluster SUB_CLUSTERS qui n'a aucune œuvre dans le
+ * corpus actuel n'occupe pas de slot (économie de cluster + label). L'ordre
+ * suit SUB_CLUSTERS → index cosmos stable → pas de flicker au re-render.
+ */
+function buildSubClusters(books: Book[]): SubClusterInfo[] {
+  const seen = new Set<string>()
+  for (const book of books) {
+    for (const ax of book.axes ?? []) {
+      if (!ax.startsWith('UNCATEGORIZED:')) continue
+      const sub = ax.slice('UNCATEGORIZED:'.length)
+      if (sub) seen.add(sub)
+    }
+  }
+  const infos: SubClusterInfo[] = []
+  for (const ref of SUB_CLUSTERS) {
+    if (!seen.has(ref.subKey)) continue
+    infos.push({
+      subKey: ref.subKey,
+      label: ref.label,
+      color: ref.color,
+      clusterIdx: UNCATEGORIZED_CLUSTER_INDEX + 1 + infos.length,
+    })
+  }
+  return infos
+}
 
 // Étendue horizontale utilisée pour semer les positions initiales par année.
 // Suffisamment large (~1/4 de spaceSize=8192) pour que la tendance
@@ -43,9 +86,15 @@ const CHRONO_Y_SHAKE = 18
 const CHRONO_UNKNOWN_GAP = 300
 const CHRONO_UNKNOWN_WIDTH = 380
 
-// Nombre de points nommés en permanence — aligné sur Galaxy
-// (TOP_LANDMARK_COUNT=12, cf. useGraphDerivedLinkState.ts).
+// Nombre de points nommés *au zoom par défaut* — aligné sur Galaxy
+// (TOP_LANDMARK_COUNT=12, cf. useGraphDerivedLinkState.ts). Le rendu overlay
+// peut en afficher plus en zoomant (level-of-detail par zoom, cf.
+// useCosmographOverlay.ts).
 const TOP_LANDMARK_COUNT = 12
+// Pool étendu conservé pour le zoom-LOD. Plus on zoome, plus on nomme. Borne
+// haute choisie pour que la collision detection fasse le tri visuel sans
+// exploser le coût CPU à chaque frame (≤60 tests de chevauchement).
+const EXTENDED_LANDMARK_COUNT = 60
 
 // Nombre de points tracés dans la mini-map. À 10k nœuds, tout afficher donnerait
 // une bouillie illisible sur 170×110 px. Les top-500 par degré conservent la
@@ -76,13 +125,22 @@ export type CosmographBuffers = {
   flatLinkWidths: Float32Array
   edgeCount: number
   labelByIndex: LabelData[]
+  // Map index de livre → index dans SUB_CLUSTERS (ou -1 si aucun). Les
+  // sous-clusters ne sont PAS des clusters cosmos (cosmos.gl ne nest pas)
+  // — cette map sert uniquement au rendu : couleur du livre + label overlay
+  // positionné au centre de masse du sous-cluster.
+  subClusterByIndex: number[]
   landmarkIndices: number[]
+  // Pool étendu (trié par degré) pour le zoom-LOD — l'overlay en prend un
+  // préfixe de plus en plus long à mesure qu'on zoome.
+  landmarkIndicesExtended: number[]
   // Landmarks spécifiques au mode Catégories : trié par taille (= proxy de
   // citations reçues) plutôt que par degré. Le degré devient muet quand les
   // liens sont masqués — prendre par taille garantit qu'on nomme bien les
   // gros hubs visibles plutôt que des petits nœuds accidentellement fortement
   // liés.
   landmarkIndicesCategories: number[]
+  landmarkIndicesCategoriesExtended: number[]
   minimapIndices: number[]
   imageDataArray: ImageData[]
   flatImageIndices: Float32Array
@@ -90,6 +148,13 @@ export type CosmographBuffers = {
   glowHexByIndex: string[]
   citationsByBookId: Map<string, number>
   clusterAssignments: (number | undefined)[]
+  // Liste ordonnée des sous-clusters détectés dans le corpus. Utilisée par
+  // le layout effect (positions) et l'overlay (labels). Ordre stable →
+  // index cluster cosmos stable.
+  subClusters: SubClusterInfo[]
+  // Total des slots cluster à allouer dans setClusterPositions : ring +
+  // UNCATEGORIZED + sous-clusters.
+  totalClusterCount: number
 }
 
 export function useCosmographBuffers(
@@ -104,6 +169,18 @@ export function useCosmographBuffers(
     const books = graphData.nodes.filter((n): n is Book => n.type === 'book')
     const idToIndex = new Map<string, number>()
     books.forEach((b, i) => idToIndex.set(b.id, i))
+
+    // Détection des sous-clusters présents dans le corpus : philosophie,
+    // literature, art… Chaque devient un cluster cosmos distinct dans la
+    // zone "Autres disciplines" pour que les livres s'y densifient ensemble.
+    const subClusters = buildSubClusters(books)
+    const subKeyToClusterIdx = new Map<string, number>()
+    const subKeyToSubIndex = new Map<string, number>()
+    subClusters.forEach((sc, i) => {
+      subKeyToClusterIdx.set(sc.subKey, sc.clusterIdx)
+      subKeyToSubIndex.set(sc.subKey, i)
+    })
+    const totalClusterCount = UNCATEGORIZED_CLUSTER_INDEX + 1 + subClusters.length
 
     const citationsByBookId = new Map<string, number>()
     const degreeByBookId = new Map<string, number>()
@@ -126,6 +203,10 @@ export function useCosmographBuffers(
     const imageSizes = new Float32Array(N)
     const glowHex: string[] = new Array(N)
     const clusters: (number | undefined)[] = new Array(N)
+    // Map index → sub-cluster index (ou -1). Indépendant de `clusters`
+    // (niveau simulation) — sert uniquement au rendu (couleur + label
+    // overlay au centre de masse).
+    const subClusterByIndex: number[] = new Array(N).fill(-1)
 
     // PRNG déterministe : seed = hash(RANDOM_SEED + N). Dépendre de N évite
     // qu'un dataset plus petit atterrisse exactement sur le même layout que
@@ -254,17 +335,41 @@ export function useCosmographBuffers(
         imageSizes[i] = 0
       }
 
-      // Cluster : index dans CLUSTER_RING si l'axe principal y figure, sinon
-      // le cluster central UNCATEGORIZED (livres sans axe reconnu ou
-      // explicitement UNCATEGORIZED). Aucun `undefined` → tous les points ont
-      // une ancre, plus de points fantômes qui dérivent.
-      const clusterIdx = firstAxis ? CLUSTER_RING.indexOf(firstAxis as Axis) : -1
-      clusters[i] = clusterIdx >= 0 ? clusterIdx : UNCATEGORIZED_CLUSTER_INDEX
+      // Cluster cosmos : priorité à un axe féministe (ring) ; sinon, on
+      // cherche un sous-cluster détecté (UNCATEGORIZED:xxx) ; sinon, le
+      // cluster central "Autres disciplines".
+      const ringIdx = firstAxis ? CLUSTER_RING.indexOf(firstAxis as Axis) : -1
+      if (ringIdx >= 0) {
+        clusters[i] = ringIdx
+        subClusterByIndex[i] = -1
+      } else {
+        let subClusterIdx: number | undefined
+        let subIdxInList = -1
+        for (const ax of bookAxes) {
+          if (!ax.startsWith('UNCATEGORIZED:')) continue
+          const sub = ax.slice('UNCATEGORIZED:'.length)
+          const ci = subKeyToClusterIdx.get(sub)
+          if (ci !== undefined) {
+            subClusterIdx = ci
+            subIdxInList = subKeyToSubIndex.get(sub) ?? -1
+            break
+          }
+        }
+        clusters[i] = subClusterIdx ?? UNCATEGORIZED_CLUSTER_INDEX
+        subClusterByIndex[i] = subIdxInList
+      }
 
       const authorDisplay = bookAuthorDisplay(b, authorsMap)
+      const title = b.title ?? ''
+      const originalTitle = b.originalTitle?.trim() || undefined
+      // N'ajoute `originalTitle` que s'il apporte une information nouvelle —
+      // redondant avec le titre traduit dans ~60% des cas. Comparaison
+      // insensible à la casse et aux espaces marginaux.
+      const showOriginal = originalTitle && originalTitle.toLowerCase() !== title.trim().toLowerCase()
       labels[i] = {
         author: (authorDisplay ?? '').toUpperCase(),
-        title: b.title ?? '',
+        title,
+        originalTitle: showOriginal ? originalTitle : undefined,
       }
     }
 
@@ -297,20 +402,25 @@ export function useCosmographBuffers(
       linkWidths[i] = w > 1 ? LINK_BASE_WIDTH + LINK_STRONG_BONUS : LINK_BASE_WIDTH
     }
 
-    // Landmarks : top-N par degré (Galaxy utilise exactement le même critère).
+    // Landmarks : top-N par degré, deux grains — le "base" (12) est nommé au
+    // zoom 1, le pool "extended" (60) sert au zoom-LOD. L'ordre est stable :
+    // les 12 premiers de `extended` sont exactement ceux de `base` (même
+    // tri), donc aucune valse de labels en zoomant.
     const byDegree = books
       .map((b, i) => ({ i, d: degreeByBookId.get(b.id) ?? 0 }))
       .filter((x) => x.d > 0)
       .sort((a, b) => b.d - a.d)
     const landmarks = byDegree.slice(0, TOP_LANDMARK_COUNT).map((x) => x.i)
+    const landmarksExtended = byDegree.slice(0, EXTENDED_LANDMARK_COUNT).map((x) => x.i)
     // Landmarks Catégories : trié par taille. En mode cluster, les liens
     // sont masqués → le degré n'est plus lisible, alors que la taille reste
     // une indication immédiate de l'importance du nœud à l'écran.
-    const landmarksCategories = sizes.length === 0
+    const bySize = sizes.length === 0
       ? []
       : Array.from({ length: sizes.length }, (_, i) => i)
           .sort((a, b) => sizes[b] - sizes[a])
-          .slice(0, TOP_LANDMARK_COUNT)
+    const landmarksCategories = bySize.slice(0, TOP_LANDMARK_COUNT)
+    const landmarksCategoriesExtended = bySize.slice(0, EXTENDED_LANDMARK_COUNT)
     // Indices trackés pour la mini-map — top-N par degré, capés. Ne tracker
     // que ces points évite de uploader 10k positions par frame (trop cher à
     // grande échelle) tout en gardant la silhouette du graphe lisible.
@@ -327,8 +437,13 @@ export function useCosmographBuffers(
       flatLinkWidths: linkWidths,
       edgeCount: rawEdges.length,
       labelByIndex: labels,
+      subClusterByIndex,
+      subClusters,
+      totalClusterCount,
       landmarkIndices: landmarks,
+      landmarkIndicesExtended: landmarksExtended,
       landmarkIndicesCategories: landmarksCategories,
+      landmarkIndicesCategoriesExtended: landmarksCategoriesExtended,
       minimapIndices,
       imageDataArray: imageDatas,
       flatImageIndices: imageIndices,

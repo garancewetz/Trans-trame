@@ -8,6 +8,17 @@ import { resolveOrCreateAuthors } from '../smartImportModal.utils'
 
 type FieldDiff = { field: string; label: string; current: string; proposed: string }
 
+export type EnrichableField = 'title' | 'author' | 'year' | 'resourceType' | 'axes' | 'themes'
+
+export const ENRICHABLE_FIELDS: { key: EnrichableField; label: string }[] = [
+  { key: 'title',        label: 'Titre' },
+  { key: 'author',       label: 'Auteur·ice' },
+  { key: 'year',         label: 'Année' },
+  { key: 'resourceType', label: 'Type' },
+  { key: 'axes',         label: 'Catégories' },
+  { key: 'themes',       label: 'Thématiques émergentes' },
+]
+
 export type Enrichment = {
   bookId: string
   book: Book
@@ -46,6 +57,18 @@ export function useEnrichmentState({
   const [realProgress, setRealProgress] = useState<number | null>(null)
   const progress = realProgress ?? fakeProgress
   const [error, setError] = useState<string | null>(null)
+  const [enabledFields, setEnabledFields] = useState<Set<EnrichableField>>(
+    () => new Set(ENRICHABLE_FIELDS.map((f) => f.key)),
+  )
+
+  const toggleEnabledField = (field: EnrichableField) => {
+    setEnabledFields((prev) => {
+      const next = new Set(prev)
+      if (next.has(field)) next.delete(field)
+      else next.add(field)
+      return next
+    })
+  }
 
   const startAnalysis = async () => {
     setPhase('loading')
@@ -93,28 +116,30 @@ export function useEnrichmentState({
 
       const diffs: FieldDiff[] = []
 
-      if (llm.title && llm.title.toLowerCase() !== (book.title || '').toLowerCase()) {
+      if (enabledFields.has('title') && llm.title && llm.title.toLowerCase() !== (book.title || '').toLowerCase()) {
         diffs.push({ field: 'title', label: 'Titre', current: book.title || '', proposed: llm.title })
       }
 
-      const currentAuthorNames = (book.authorIds || [])
-        .map((id) => authorsMap.get(id))
-        .filter(Boolean)
-        .map((a) => [a!.firstName, a!.lastName].filter(Boolean).join(' '))
-        .join(', ')
-      const llmAuthorNames = llm.authors.map((a) => [a.firstName, a.lastName].filter(Boolean).join(' ')).join(', ')
-      if (llmAuthorNames && llmAuthorNames.toLowerCase() !== currentAuthorNames.toLowerCase()) {
-        diffs.push({ field: 'author', label: 'Auteur·ice', current: currentAuthorNames || '—', proposed: llmAuthorNames })
+      if (enabledFields.has('author')) {
+        const currentAuthorNames = (book.authorIds || [])
+          .map((id) => authorsMap.get(id))
+          .filter(Boolean)
+          .map((a) => [a!.firstName, a!.lastName].filter(Boolean).join(' '))
+          .join(', ')
+        const llmAuthorNames = llm.authors.map((a) => [a.firstName, a.lastName].filter(Boolean).join(' ')).join(', ')
+        if (llmAuthorNames && llmAuthorNames.toLowerCase() !== currentAuthorNames.toLowerCase()) {
+          diffs.push({ field: 'author', label: 'Auteur·ice', current: currentAuthorNames || '—', proposed: llmAuthorNames })
+        }
       }
 
       const bookYear = book.year ?? null
-      if (llm.year && llm.year !== bookYear) {
+      if (enabledFields.has('year') && llm.year && llm.year !== bookYear) {
         diffs.push({ field: 'year', label: 'Année', current: bookYear ? String(bookYear) : '—', proposed: String(llm.year) })
       }
 
       const llmType = llm.resourceType?.trim() || ''
       const bookType = book.resourceType?.trim() || ''
-      if (llmType && llmType !== bookType) {
+      if (enabledFields.has('resourceType') && llmType && llmType !== bookType) {
         diffs.push({
           field: 'resourceType',
           label: 'Type',
@@ -123,12 +148,13 @@ export function useEnrichmentState({
         })
       }
 
-      const newAxes = llm.axes.length > 0 ? narrowAxes(llm.axes) : []
+      const newAxes = enabledFields.has('axes') && llm.axes.length > 0 ? narrowAxes(llm.axes) : []
       const hasNewAxes = newAxes.length > 0 && (!book.axes || book.axes.length === 0 || newAxes.some((a) => !book.axes!.includes(a)))
 
       const existingAxes = book.axes || []
-      const suggestedThemes = (llm.suggestedThemes || [])
-        .filter((t) => !existingAxes.includes(`UNCATEGORIZED:${t}`))
+      const suggestedThemes = enabledFields.has('themes')
+        ? (llm.suggestedThemes || []).filter((t) => !existingAxes.includes(`UNCATEGORIZED:${t}`))
+        : []
       const hasChanges = diffs.length > 0 || hasNewAxes || suggestedThemes.length > 0
 
       if (hasChanges) {
@@ -244,6 +270,8 @@ export function useEnrichmentState({
     checkedCount,
     unchangedCount,
     allChecked,
+    enabledFields,
+    toggleEnabledField,
     startAnalysis,
     toggleItem,
     toggleField,

@@ -12,6 +12,8 @@ import {
   deleteLinkRowsByIds,
   insertResourceAuthors,
   updateLinkRowById,
+  insertAuthorNotDuplicatePair,
+  deleteAuthorNotDuplicatePair,
 } from '../api/graphDataApi'
 import { type AxesColorMap, normalizeEndpointId } from '../domain/graphDataModel'
 import { DATASET_QUERY_KEY } from '../api/queryKeys'
@@ -35,6 +37,7 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
   const [books, setBooks] = useState<Book[]>([])
   const [authors, setAuthors] = useState<Author[]>([])
   const [links, setLinks] = useState<Link[]>([])
+  const [authorNotDuplicatePairs, setAuthorNotDuplicatePairs] = useState<Array<[string, string]>>([])
   const queryClient = useQueryClient()
   const invalidate = useCallback(
     () => queryClient.invalidateQueries({ queryKey: DATASET_QUERY_KEY }),
@@ -83,6 +86,7 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
     setBooks(datasetData.books)
     setAuthors(datasetData.authors)
     setLinks(datasetData.links)
+    setAuthorNotDuplicatePairs(datasetData.authorNotDuplicatePairs)
   }, [datasetData, isMutating, isFetching, dataUpdatedAt])
 
   // When all mutations settle, discard any stale buffered data and refetch fresh
@@ -260,6 +264,56 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
     return true
   }, [books, links, invalidate])
 
+  // ── Author "not a duplicate" pairs ────────────────────────────────────────
+
+  const markAuthorsNotDuplicate = useCallback((a: string, b: string) => {
+    if (!a || !b || a === b) return
+    const [lo, hi] = a < b ? [a, b] : [b, a]
+    setAuthorNotDuplicatePairs((prev) =>
+      prev.some(([x, y]) => x === lo && y === hi) ? prev : [...prev, [lo, hi]],
+    )
+    Promise.resolve(insertAuthorNotDuplicatePair(lo, hi))
+      .then(({ error }) => {
+        if (!error) return
+        devWarn('Erreur marquage paire non-doublon', error)
+        toast.error(`Impossible d'enregistrer : ${formatSupabaseError(error)}`)
+        setAuthorNotDuplicatePairs((prev) =>
+          prev.filter(([x, y]) => !(x === lo && y === hi)),
+        )
+      })
+      .catch((err) => {
+        devWarn('Erreur inattendue marquage paire non-doublon', err)
+        toast.error(`Impossible d'enregistrer : ${formatSupabaseError(err)}`)
+        setAuthorNotDuplicatePairs((prev) =>
+          prev.filter(([x, y]) => !(x === lo && y === hi)),
+        )
+      })
+  }, [])
+
+  const unmarkAuthorsNotDuplicate = useCallback((a: string, b: string) => {
+    if (!a || !b || a === b) return
+    const [lo, hi] = a < b ? [a, b] : [b, a]
+    const rollback = () =>
+      setAuthorNotDuplicatePairs((prev) =>
+        prev.some(([x, y]) => x === lo && y === hi) ? prev : [...prev, [lo, hi]],
+      )
+    setAuthorNotDuplicatePairs((prev) =>
+      prev.filter(([x, y]) => !(x === lo && y === hi)),
+    )
+    Promise.resolve(deleteAuthorNotDuplicatePair(lo, hi))
+      .then(({ error }) => {
+        if (!error) return
+        devWarn('Erreur suppression paire non-doublon', error)
+        toast.error(`Impossible d'annuler : ${formatSupabaseError(error)}`)
+        rollback()
+      })
+      .catch((err) => {
+        devWarn('Erreur inattendue suppression paire non-doublon', err)
+        toast.error(`Impossible d'annuler : ${formatSupabaseError(err)}`)
+        rollback()
+      })
+  }, [])
+
   // ── Migration legacy → entités auteurs ───────────────────────────────────────
 
   const handleMigrateData = useCallback(async () => {
@@ -301,6 +355,7 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
     books,
     authors,
     links,
+    authorNotDuplicatePairs,
     isLoading,
     isError,
     handleAddBook,
@@ -318,6 +373,8 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
     handleUpdateCitation,
     handleDeleteCitation,
     handleMergeBooks,
+    markAuthorsNotDuplicate,
+    unmarkAuthorsNotDuplicate,
     resetToDefault,
   }
 }

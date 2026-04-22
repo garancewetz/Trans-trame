@@ -59,6 +59,42 @@ export type Database = {
         }
         Relationships: []
       }
+      author_not_duplicate_pairs: {
+        Row: {
+          author_a_id: string
+          author_b_id: string
+          created_at: string
+          created_by: string | null
+        }
+        Insert: {
+          author_a_id: string
+          author_b_id: string
+          created_at?: string
+          created_by?: string | null
+        }
+        Update: {
+          author_a_id?: string
+          author_b_id?: string
+          created_at?: string
+          created_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "author_not_duplicate_pairs_author_a_id_fkey"
+            columns: ["author_a_id"]
+            isOneToOne: false
+            referencedRelation: "authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "author_not_duplicate_pairs_author_b_id_fkey"
+            columns: ["author_b_id"]
+            isOneToOne: false
+            referencedRelation: "authors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       authors: {
         Row: {
           axes: string[]
@@ -98,17 +134,142 @@ export type Database = {
         }
         Relationships: []
       }
+      link_citations: {
+        Row: {
+          citation_text: string
+          context: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          edition: string
+          id: string
+          link_id: string
+          page: string
+          updated_by: string | null
+        }
+        Insert: {
+          citation_text?: string
+          context?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          edition?: string
+          id?: string
+          link_id: string
+          page?: string
+          updated_by?: string | null
+        }
+        Update: {
+          citation_text?: string
+          context?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          edition?: string
+          id?: string
+          link_id?: string
+          page?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "link_citations_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          provenance: string
+          source_id: string
+          target_id: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          provenance?: string
+          source_id: string
+          target_id: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          provenance?: string
+          source_id?: string
+          target_id?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "links_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "links_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          first_name: string
+          id: string
+          last_name: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          first_name?: string
+          id: string
+          last_name?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+        }
+        Relationships: []
+      }
       resource_authors: {
         Row: {
           author_id: string
+          created_at: string
+          created_by: string | null
           resource_id: string
         }
         Insert: {
           author_id: string
+          created_at?: string
+          created_by?: string | null
           resource_id: string
         }
         Update: {
           author_id?: string
+          created_at?: string
+          created_by?: string | null
           resource_id?: string
         }
         Relationships: [
@@ -177,138 +338,15 @@ export type Database = {
           updated_by?: string | null
           year?: number | null
         }
-        Relationships: []
-      }
-      link_citations: {
-        Row: {
-          citation_text: string
-          context: string
-          created_at: string
-          created_by: string | null
-          deleted_at: string | null
-          edition: string
-          id: string
-          link_id: string
-          page: string
-          updated_by: string | null
-        }
-        Insert: {
-          citation_text?: string
-          context?: string
-          created_at?: string
-          created_by?: string | null
-          deleted_at?: string | null
-          edition?: string
-          id?: string
-          link_id: string
-          page?: string
-          updated_by?: string | null
-        }
-        Update: {
-          citation_text?: string
-          context?: string
-          created_at?: string
-          created_by?: string | null
-          deleted_at?: string | null
-          edition?: string
-          id?: string
-          link_id?: string
-          page?: string
-          updated_by?: string | null
-        }
         Relationships: [
           {
-            foreignKeyName: "link_citations_link_id_fkey"
-            columns: ["link_id"]
-            isOneToOne: false
-            referencedRelation: "links"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      links: {
-        Row: {
-          citation_text: string
-          context: string
-          created_at: string
-          created_by: string | null
-          deleted_at: string | null
-          edition: string
-          id: string
-          page: string
-          provenance: string
-          source_id: string
-          target_id: string
-          updated_by: string | null
-        }
-        Insert: {
-          citation_text?: string
-          context?: string
-          created_at?: string
-          created_by?: string | null
-          deleted_at?: string | null
-          edition?: string
-          id?: string
-          page?: string
-          provenance?: string
-          source_id: string
-          target_id: string
-          updated_by?: string | null
-        }
-        Update: {
-          citation_text?: string
-          context?: string
-          created_at?: string
-          created_by?: string | null
-          deleted_at?: string | null
-          edition?: string
-          id?: string
-          page?: string
-          provenance?: string
-          source_id?: string
-          target_id?: string
-          updated_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "links_source_id_fkey"
-            columns: ["source_id"]
-            isOneToOne: false
-            referencedRelation: "resources"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "links_target_id_fkey"
-            columns: ["target_id"]
+            foreignKeyName: "resources_import_source_id_fkey"
+            columns: ["import_source_id"]
             isOneToOne: false
             referencedRelation: "resources"
             referencedColumns: ["id"]
           },
         ]
-      }
-      profiles: {
-        Row: {
-          created_at: string
-          email: string | null
-          first_name: string
-          id: string
-          last_name: string
-        }
-        Insert: {
-          created_at?: string
-          email?: string | null
-          first_name?: string
-          id: string
-          last_name?: string
-        }
-        Update: {
-          created_at?: string
-          email?: string | null
-          first_name?: string
-          id?: string
-          last_name?: string
-        }
-        Relationships: []
       }
     }
     Views: {

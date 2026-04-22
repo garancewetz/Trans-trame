@@ -1,7 +1,7 @@
 import { Check, Loader2, Sparkles } from 'lucide-react'
 import { Modal } from '@/common/components/ui/Modal'
 import { Button } from '@/common/components/ui/Button'
-import type { Author, AuthorId, Book, Link } from '@/types/domain'
+import type { Author, AuthorId, Book, CreateLinkInput, Link } from '@/types/domain'
 import { useReconcileState } from '../hooks/useReconcileState'
 import { ReviewPhase } from './ReconcileReviewPhase'
 import { HintsPanel } from './ReconcileMatchWidgets'
@@ -15,8 +15,8 @@ type Props = {
   links: Link[]
   authorsMap: Map<AuthorId, Author>
   onUpdateBook?: (book: Book) => unknown
-  onAddLink?: (link: { source: string; target: string; citation_text: string; edition: string; page: string; context: string }) => unknown
-  onAddLinks?: (links: Array<{ source: string; target: string; citation_text: string; edition: string; page: string; context: string }>) => unknown
+  onAddLink?: (link: CreateLinkInput) => unknown
+  onAddLinks?: (links: CreateLinkInput[]) => unknown
   onClose: () => void
 }
 

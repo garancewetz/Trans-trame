@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { Author, AuthorId, Book, Link } from '@/types/domain'
+import type { Author, AuthorId, Book, CreateLinkInput, Link } from '@/types/domain'
 import { devWarn } from '@/common/utils/logger'
 import { normalizeEndpointId } from '@/features/graph/domain/graphDataModel'
 import { useOrphanReconcileData } from './useOrphanReconcileData'
@@ -49,8 +49,8 @@ export function useReconcileState({
   links: Link[]
   authorsMap: Map<AuthorId, Author>
   onUpdateBook?: (book: Book) => unknown
-  onAddLink?: (link: { source: string; target: string; citation_text: string; edition: string; page: string; context: string }) => unknown
-  onAddLinks?: (links: Array<{ source: string; target: string; citation_text: string; edition: string; page: string; context: string }>) => unknown
+  onAddLink?: (link: CreateLinkInput) => unknown
+  onAddLinks?: (links: CreateLinkInput[]) => unknown
 }) {
   const [phase, setPhase] = useState<ReconcilePhase>('idle')
   const [error, setError] = useState<string | null>(null)
@@ -179,7 +179,7 @@ export function useReconcileState({
       if (s && t) existingPairs.add(`${s}|${t}`)
     }
 
-    const linksToAdd: Array<{ source: string; target: string; citation_text: string; edition: string; page: string; context: string }> = []
+    const linksToAdd: CreateLinkInput[] = []
     for (const m of result.bookToSource) {
       if (!acceptedSourceMatches.has(sourceKey(m))) continue
       if (existingPairs.has(`${m.sourceBookId}|${m.orphanBookId}`)) {
@@ -192,10 +192,6 @@ export function useReconcileState({
       linksToAdd.push({
         source: m.sourceBookId,
         target: m.orphanBookId,
-        citation_text: '',
-        edition: '',
-        page: '',
-        context: '',
       })
     }
     if (linksToAdd.length > 0) {

@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import { Check } from 'lucide-react'
-import { CATEGORY_THEME, type Axis } from '@/common/utils/categories'
+import { CATEGORY_THEME, splitBookAxes } from '@/common/utils/categories'
 import type { AuthorId, Author } from '@/types/domain'
 import type { Enrichment } from '../hooks/useEnrichmentState'
 
@@ -39,7 +39,12 @@ export function EnrichmentRow({
     .filter(Boolean)
     .map((a) => [a!.firstName, a!.lastName].filter(Boolean).join(' '))
     .join(', ')
-  const currentAxes = (e.book.axes || []).map((a) => CATEGORY_THEME[a as Axis]?.label).filter(Boolean)
+  // splitBookAxes filtre les formes `UNCATEGORIZED:sub-axis` (philosophie,
+  // socio…) qui ne sont pas des clés de CATEGORY_THEME — caster directement
+  // en Axis les laissait crasher silencieusement à l'affichage.
+  const currentAxes = splitBookAxes(e.book.axes).axes
+    .map((a) => CATEGORY_THEME[a]?.label)
+    .filter(Boolean)
 
   const allKeys = new Set<string>([
     ...e.diffs.map((d) => d.field),

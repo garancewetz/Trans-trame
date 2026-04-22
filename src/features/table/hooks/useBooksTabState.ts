@@ -4,6 +4,7 @@ import { useColumnSort } from './useColumnSort'
 import { useBooksTabTableDerived } from '../components/tabs/useBooksTabTableDerived'
 import type { Author, Book, BookId, Link } from '@/types/domain'
 import type { Axis } from '@/common/utils/categories'
+import type { ResourceTypeValue } from '@/common/constants/resourceTypes'
 
 type Args = {
   nodes: Book[]
@@ -42,6 +43,7 @@ export function useBooksTabState({
   const [sameWorkConfirm, setSameWorkConfirm] = useState(false)
   const [sameWorkBooks, setSameWorkBooks] = useState<Book[]>([])
   const [axisFilter, setAxisFilter] = useState<Axis | null>(null)
+  const [typeFilter, setTypeFilter] = useState<ResourceTypeValue | null>(null)
   const [todoOnly, setTodoOnly] = useState(false)
   const [justAddedBookId, setJustAddedBookId] = useState<BookId | null>(null)
   const [aiEnrichModal, setAiEnrichModal] = useState(false)
@@ -49,7 +51,7 @@ export function useBooksTabState({
   const [batchInfoModal, setBatchInfoModal] = useState(false)
 
   const { authorsMap, linkCountByNode, linkedBooksByNode, sortedNodes, mergeNodes } = useBooksTabTableDerived({
-    nodes, links, search, sortCol, sortDir, selectedIds, authors, axisFilter, todoOnly,
+    nodes, links, search, sortCol, sortDir, selectedIds, authors, axisFilter, typeFilter, todoOnly,
   })
 
   /** Map bookId -> sibling books sharing the same originalTitle (excluding self). */
@@ -76,14 +78,22 @@ export function useBooksTabState({
   const allSelected = sortedNodes.length > 0 && sortedNodes.every((n) => selectedIds.has(n.id))
   const someSelected = selectedIds.size > 0 && !allSelected
 
+  /** Highlight the focused row (set when focusBookId arrives, cleared after the flash animation).
+   *  DOM-based scroll doesn't work here because the table is virtualized — the target row isn't
+   *  mounted until we scroll to it. `BooksTabBooksTable` handles the actual scroll via Virtuoso's
+   *  imperative API; this state only drives the visual highlight. */
+  const [highlightedBookId, setHighlightedBookId] = useState<BookId | null>(null)
+
   useEffect(() => {
     if (!focusBookId) return
-    requestAnimationFrame(() => {
-      const row = document.querySelector(`[data-book-row-id="${focusBookId}"]`)
-      row?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      row?.classList.add('animate-flash-row')
-      setTimeout(() => row?.classList.remove('animate-flash-row'), 1500)
-    })
+    setAxisFilter(null)
+    setTypeFilter(null)
+    setTodoOnly(false)
+    setHighlightedBookId(focusBookId)
+    const t = setTimeout(() => {
+      setHighlightedBookId((curr) => (curr === focusBookId ? null : curr))
+    }, 3000)
+    return () => clearTimeout(t)
   }, [focusBookId])
 
   const toggleRow = useCallback((id: BookId) => setSelectedIds((prev) => toggleSetItem(prev, id)), [])
@@ -188,10 +198,11 @@ export function useBooksTabState({
     mergeModal, setMergeModal, mergeKeepId, setMergeKeepId, mergeConfirm, setMergeConfirm,
     sameWorkModal, setSameWorkModal, sameWorkTitle, setSameWorkTitle,
     sameWorkConfirm, setSameWorkConfirm, sameWorkBooks, setSameWorkBooks,
-    axisFilter, setAxisFilter, todoOnly, setTodoOnly,
+    axisFilter, setAxisFilter, typeFilter, setTypeFilter, todoOnly, setTodoOnly,
     justAddedBookId, onBookAdded,
     aiEnrichModal, setAiEnrichModal, aiEnrichBooks, setAiEnrichBooks,
     batchInfoModal, setBatchInfoModal, sortCol, sortDir,
+    highlightedBookId,
     authorsMap, linkCountByNode, linkedBooksByNode, sortedNodes, mergeNodes, workSiblingsMap,
     allSelected, someSelected,
     handleNodeSort, toggleRow, toggleAll, clearSelection,

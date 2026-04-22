@@ -10,7 +10,7 @@ type AdjacencyIndex = Map<string, { neighborIds: string[] }>
 type Args = {
   graphRef: RefObject<Graph | null>
   books: Book[]
-  activeFilter: string | null | undefined
+  activeAxes: ReadonlySet<string>
   hoveredFilter: string | null | undefined
   activeHighlight: Highlight | null | undefined
   selectedAuthorId: string | null | undefined
@@ -30,7 +30,7 @@ type Args = {
  * (aligné avec useAppTimelineAndLayout).
  */
 export function useCosmographVisibilityEffect({
-  graphRef, books, activeFilter, hoveredFilter, activeHighlight, selectedAuthorId,
+  graphRef, books, activeAxes, hoveredFilter, activeHighlight, selectedAuthorId,
   timelineRange, linksByNodeId, citationsByBookId, visibleIndexSetRef,
   applyFocalRef, drawOverlay,
 }: Args): void {
@@ -38,7 +38,12 @@ export function useCosmographVisibilityEffect({
     const g = graphRef.current
     if (!g || books.length === 0) return
 
-    const effectiveFilter = hoveredFilter ?? activeFilter ?? null
+    // Le hover dans la légende prend le pas sur la sélection (preview) ; sinon
+    // on utilise le Set courant. Un `hoveredFilter` s'exprime comme un filtre
+    // à un seul axe pour conserver la sémantique du preview.
+    const effectiveAxes: ReadonlySet<string> = hoveredFilter
+      ? new Set([hoveredFilter])
+      : activeAxes
     const effectiveHighlight = activeHighlight
       ?? (selectedAuthorId ? { kind: 'author' as const, authorId: selectedAuthorId } : null)
 
@@ -49,7 +54,7 @@ export function useCosmographVisibilityEffect({
       return y >= timelineRange.start && y <= timelineRange.end
     }
 
-    if (!effectiveFilter && !effectiveHighlight && !timelineRange) {
+    if (effectiveAxes.size === 0 && !effectiveHighlight && !timelineRange) {
       visibleIndexSetRef.current = null
       applyFocalRef.current()
       g.render()
@@ -61,7 +66,7 @@ export function useCosmographVisibilityEffect({
     for (let i = 0; i < books.length; i++) {
       const b = books[i]
       if (!inRange(b)) continue
-      if (isNodeVisibleForFilters(b, effectiveFilter, effectiveHighlight, linksByNodeId, citationsByBookId)) {
+      if (isNodeVisibleForFilters(b, effectiveAxes, effectiveHighlight, linksByNodeId, citationsByBookId)) {
         matched.push(i)
       }
     }
@@ -70,7 +75,7 @@ export function useCosmographVisibilityEffect({
     g.render()
     drawOverlay()
   }, [
-    graphRef, books, activeFilter, hoveredFilter, activeHighlight, selectedAuthorId,
+    graphRef, books, activeAxes, hoveredFilter, activeHighlight, selectedAuthorId,
     timelineRange, linksByNodeId, citationsByBookId, visibleIndexSetRef,
     applyFocalRef, drawOverlay,
   ])

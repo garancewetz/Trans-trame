@@ -17,13 +17,17 @@ export function useTableViewController({
   nodes,
   links,
   authors,
+  authorNotDuplicatePairs,
   onAddLink,
   onAddLinks,
   onUpdateBook,
   onDeleteBook,
   onUpdateLink,
+  onAddCitation,
+  onUpdateCitation,
   onMergeBooks,
   onDeleteAuthor,
+  onMarkAuthorsNotDuplicate,
   tab,
   setTab,
   initialLinkSourceId = null,
@@ -88,7 +92,17 @@ export function useTableViewController({
     linkCheckedIds,
   })
 
-  const derived = useTableViewDuplicateDerived(nodes, links, authors, authorsMap)
+  const derived = useTableViewDuplicateDerived(nodes, links, authors, authorsMap, authorNotDuplicatePairs)
+
+  const handleMarkGroupNotDuplicate = (groupIndex: number) => {
+    const group = derived.authorDuplicateGroups[groupIndex]
+    if (!group || group.length < 2 || !onMarkAuthorsNotDuplicate) return
+    for (let i = 0; i < group.length; i++) {
+      for (let j = i + 1; j < group.length; j++) {
+        onMarkAuthorsNotDuplicate(group[i].id, group[j].id)
+      }
+    }
+  }
 
   const actions = useTableViewActions({
     nodes,
@@ -119,19 +133,12 @@ export function useTableViewController({
     if (!linkSourceNode || newLinksCount === 0) return
     // Batch insert (chunked + awaited in useLinkMutations). Firing N parallel
     // single-row mutations lost rows on large selections — see useLinkMutations.
-    const linksToAdd: Array<{ source: BookId; target: BookId; citation_text: string; edition: string; page: string; context: string }> = []
+    const linksToAdd: Array<{ source: BookId; target: BookId }> = []
     linkCheckedIds.forEach((id) => {
       if (existingTargetIds.has(id) || id === linkSourceNode.id) return
       const src = linkDirection === 'source' ? linkSourceNode.id : id
       const tgt = linkDirection === 'source' ? id : linkSourceNode.id
-      linksToAdd.push({
-        source: src,
-        target: tgt,
-        citation_text: '',
-        edition: '',
-        page: '',
-        context: '',
-      })
+      linksToAdd.push({ source: src, target: tgt })
     })
     if (linksToAdd.length === 0) return
     if (onAddLinks) onAddLinks(linksToAdd)
@@ -139,11 +146,29 @@ export function useTableViewController({
     setLinkCheckedIds(new Set<BookId>())
   }
 
+  // Citation fields (citation_text / edition / page / context) live in the
+  // `link_citations` subtable, not on `links`. Edits route through the
+  // citation mutations: upsert citations[0] on first edit, update it on
+  // subsequent edits. Non-citation link-level edits (future use) fall back
+  // to onUpdateLink.
+  const CITATION_FIELDS = new Set(['citation_text', 'edition', 'page', 'context'])
   const commitLinkEdit = () => {
     if (!editingLink) return
     const linkId = editingLink.id
-    if (editingLink.field !== '_expand') {
-      onUpdateLink?.(linkId, { [editingLink.field]: editingLinkValue.trim() })
+    const field = editingLink.field
+    const value = editingLinkValue.trim()
+    if (field !== '_expand') {
+      if (CITATION_FIELDS.has(field)) {
+        const link = links.find((l) => l.id === linkId)
+        const primary = link?.citations?.[0]
+        if (primary) {
+          onUpdateCitation?.(primary.id, { [field]: value })
+        } else if (value) {
+          onAddCitation?.(linkId, { [field]: value })
+        }
+      } else {
+        onUpdateLink?.(linkId, { [field]: value })
+      }
     }
     setEditingLink({ id: linkId, field: '_expand' })
   }
@@ -193,6 +218,7 @@ export function useTableViewController({
     toggleChecklist,
     handleTisser,
     commitLinkEdit,
+    handleMarkGroupNotDuplicate,
     initialFocusBookId,
   }
 }

@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
-import type { Book, BookId, Link } from '@/types/domain'
+import type { Book, BookId, CreateLinkInput } from '@/types/domain'
 import type { BookFormValues, BookRecentDraft } from '../components/BookForm'
 
 type LinkFormValues = {
@@ -16,8 +16,8 @@ type Args = {
   editNode: Book | null | undefined
   onAddBook?: (book: Partial<Book> & Pick<Book, 'id' | 'title'>) => void | PromiseLike<unknown>
   onUpdateBook?: (book: Book) => void
-  onAddLink?: (link: Partial<Link> & Pick<Link, 'source' | 'target'>) => void
-  onAddLinks?: (links: Array<Partial<Link> & Pick<Link, 'source' | 'target'>>) => void
+  onAddLink?: (link: CreateLinkInput) => void
+  onAddLinks?: (links: CreateLinkInput[]) => void
   sourceId: string
   targetIds: string[]
   setTargetIds: (ids: string[]) => void

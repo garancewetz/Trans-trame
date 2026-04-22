@@ -28,6 +28,7 @@ export function LinkExpandedPanel({
   const isEditCtx = editingLink?.id === link.id && editingLink?.field === 'citation_text'
   const isEditPage = editingLink?.id === link.id && editingLink?.field === 'page'
   const isEditEdition = editingLink?.id === link.id && editingLink?.field === 'edition'
+  const primary = link.citations[0]
 
   return (
     <div className="ml-5 mb-1 mt-1 rounded-lg border border-white/8 bg-white/2 p-3">
@@ -63,15 +64,15 @@ export function LinkExpandedPanel({
           <span
             className={clsx(
               'block cursor-text rounded px-2 py-1 font-mono text-[0.8rem] italic transition-colors hover:bg-white/5',
-              (link.citation_text || link.context) ? 'text-white/50' : 'text-white/18',
+              (primary?.citation_text || primary?.context) ? 'text-white/50' : 'text-white/18',
             )}
             onClick={(e) => {
               e.stopPropagation()
               setEditingLink({ id: link.id, field: 'citation_text' })
-              setEditingLinkValue(link.citation_text || link.context || '')
+              setEditingLinkValue(primary?.citation_text || primary?.context || '')
             }}
           >
-            {link.citation_text || link.context || 'Ajouter une citation\u2026'}
+            {primary?.citation_text || primary?.context || 'Ajouter une citation\u2026'}
           </span>
         )}
       </div>
@@ -99,15 +100,15 @@ export function LinkExpandedPanel({
             <span
               className={clsx(
                 'block cursor-text rounded px-2 py-1 font-mono text-[0.8rem] tabular-nums transition-colors hover:bg-white/5',
-                link.page ? 'text-white/50' : 'text-white/18',
+                primary?.page ? 'text-white/50' : 'text-white/18',
               )}
               onClick={(e) => {
                 e.stopPropagation()
                 setEditingLink({ id: link.id, field: 'page' })
-                setEditingLinkValue(link.page || '')
+                setEditingLinkValue(primary?.page || '')
               }}
             >
-              {link.page || '\u2014'}
+              {primary?.page || '\u2014'}
             </span>
           )}
         </div>
@@ -132,15 +133,15 @@ export function LinkExpandedPanel({
             <span
               className={clsx(
                 'block cursor-text rounded px-2 py-1 font-mono text-[0.8rem] transition-colors hover:bg-white/5',
-                link.edition ? 'text-white/50' : 'text-white/18',
+                primary?.edition ? 'text-white/50' : 'text-white/18',
               )}
               onClick={(e) => {
                 e.stopPropagation()
                 setEditingLink({ id: link.id, field: 'edition' })
-                setEditingLinkValue(link.edition || '')
+                setEditingLinkValue(primary?.edition || '')
               }}
             >
-              {link.edition || '\u00e9d.\u2014'}
+              {primary?.edition || '\u00e9d.\u2014'}
             </span>
           )}
         </div>

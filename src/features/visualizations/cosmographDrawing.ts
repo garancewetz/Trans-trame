@@ -17,17 +17,61 @@ export const GRADIENT_TEX_SIZE = 256
 // Bonus de rayon au hover — aligné sur Galaxy (hoveredRadius : baseR + 12).
 export const HOVER_RADIUS_BONUS = 12
 
+// Tolérance de pick en px écran : distance max entre le curseur et le centre
+// d'un point pour qu'il soit considéré comme hovered. Remplace la détection
+// stricte de cosmos.gl qui exigeait un pixel pile sur le disque — fastidieux
+// sur les petits points (~2–4 px à bas zoom).
+export const HOVER_TOLERANCE_PX = 14
+
+// Déplacement max autorisé entre pointerdown et click pour qu'on considère
+// l'interaction comme un clic (et pas un pan). Au-delà, le click event natif
+// est ignoré — évite qu'un pan ne déclenche onNodeClick.
+export const CLICK_MOVE_THRESHOLD_PX = 5
+
+// Anneau dessiné autour du nœud hovered — remplace le renderHoveredPointRing
+// natif de cosmos.gl (qu'on désactive pour piloter le pick en tolérance).
+export const HOVER_RING_COLOR = '#ece9ff'
+
+/**
+ * Peint un fin anneau circulaire autour du nœud focal. Remplace le
+ * renderHoveredPointRing natif de cosmos : même aspect visuel, mais suit
+ * notre détection en tolérance au lieu du pick strict interne.
+ */
+export function drawHoverRing(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, radius: number,
+): void {
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(x, y, radius + 2.5, 0, Math.PI * 2)
+  ctx.strokeStyle = HOVER_RING_COLOR
+  ctx.lineWidth = 1.5
+  ctx.stroke()
+  ctx.restore()
+}
+
 // Tokens typographiques — miroir de Galaxy (nodeObject.ts drawBookLabel).
 const LABEL_FONT = "'Space Grotesk', system-ui, sans-serif"
 const LABEL_BG_IDLE = 'rgba(8, 4, 22, 0.72)'
-const LABEL_BG_HOVER = '#080416'
+// Hover : alpha 0.9 plutôt qu'opaque. Sur un cluster dense, un fond full
+// opaque masquait complètement les voisins du nœud focalisé — pile ce qu'on
+// cherche à voir en contexte.
+const LABEL_BG_HOVER = 'rgba(8, 4, 22, 0.9)'
 const LABEL_BORDER = 'rgba(255, 255, 255, 0.1)'
 const LABEL_TEXT_IDLE = 'rgba(236, 233, 255, 0.88)'
 const LABEL_TEXT_DIM_IDLE = 'rgba(255, 255, 255, 0.55)'
 const LABEL_TEXT_HOVER = '#ece9ff'
 const LABEL_TEXT_DIM_HOVER = 'rgba(255, 255, 255, 0.55)'
+const LABEL_TEXT_ORIGINAL_HOVER = 'rgba(255, 220, 180, 0.72)'
 
-export type LabelData = { author: string; title: string }
+export type LabelData = {
+  author: string
+  title: string
+  // Titre dans la langue d'origine, si différent du titre traduit. Rendu en
+  // 3ᵉ ligne, en italique grisé, uniquement au hover — montrer d'où l'œuvre
+  // vient sans surcharger le rendu idle.
+  originalTitle?: string
+}
 
 /** Convert `#rrggbb` / `#rgb` → `[r,g,b,a]` in [0,1]. cosmos.gl expects floats. */
 export function hexToRgba(hex: string, alpha = 1): [number, number, number, number] {
@@ -78,8 +122,25 @@ export function axesGradientImageData(axes: readonly string[]): ImageData | null
   return ctx.getImageData(0, 0, SZ, SZ)
 }
 
-function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxW: number): { lines: string[]; maxLineWidth: number } {
+// Cache module-level pour wrapLines. Le drawOverlay tourne 60 fps et
+// recalcule ~12 landmarks + focal à chaque frame — la mise en cache évite
+// des centaines de `ctx.measureText()` inutiles. Clé = texte+font+maxW
+// arrondi. Borne LRU simple pour éviter la fuite (1000 entrées ≈ taille
+// largement supérieure au corpus + tailles fontes courantes).
+type WrapResult = { lines: string[]; maxLineWidth: number }
+const WRAP_CACHE_MAX = 1000
+const wrapCache = new Map<string, WrapResult>()
+
+function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxW: number): WrapResult {
   if (!text) return { lines: [], maxLineWidth: 0 }
+  const key = `${ctx.font}|${Math.round(maxW)}|${text}`
+  const hit = wrapCache.get(key)
+  if (hit) {
+    // LRU refresh — re-insert to move to end.
+    wrapCache.delete(key)
+    wrapCache.set(key, hit)
+    return hit
+  }
   const words = text.split(/\s+/)
   const lines: string[] = []
   let current = ''
@@ -98,28 +159,48 @@ function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxW: number): {
     const w = ctx.measureText(l).width
     if (w > maxLineWidth) maxLineWidth = w
   }
-  return { lines, maxLineWidth }
+  const result = { lines, maxLineWidth }
+  if (wrapCache.size >= WRAP_CACHE_MAX) {
+    const firstKey = wrapCache.keys().next().value
+    if (firstKey !== undefined) wrapCache.delete(firstKey)
+  }
+  wrapCache.set(key, result)
+  return result
 }
 
 /**
- * Peint un label 2-lignes (AUTEUR maj + titre) au-dessus du point. Clone
- * visuel de drawBookLabel dans Galaxy (features/graph/nodeObject.ts L257-341).
+ * AABB retournée par `measureLabel` / `drawLabel`, utilisée par la détection
+ * de collision côté overlay — deux labels dont les boîtes se chevauchent sont
+ * masqués (le moins prioritaire).
  */
-export function drawLabel(
+export type LabelBox = { x: number; y: number; w: number; h: number }
+
+type LabelLayout = {
+  box: LabelBox
+  nameWrap: WrapResult
+  titleWrap: WrapResult
+  origTitleWrap: WrapResult
+  baseFont: number
+  lineH: number
+  subFont: number
+  subLineH: number
+  padX: number
+  padY: number
+  border: number
+  nameH: number
+}
+
+function computeLabelLayout(
   ctx: CanvasRenderingContext2D,
   x: number, y: number, radius: number,
   data: LabelData,
   hover: boolean,
-): void {
+): LabelLayout {
   const baseFont = hover ? 14 : 11
   const lineH = baseFont * 1.25
   const subFont = baseFont * 0.9
   const subLineH = subFont * 1.25
   const maxW = baseFont * 14
-
-  ctx.save()
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'top'
 
   ctx.font = `${hover ? 600 : 500} ${baseFont}px ${LABEL_FONT}`
   const nameWrap = wrapLines(ctx, data.author, maxW)
@@ -127,19 +208,66 @@ export function drawLabel(
   ctx.font = `400 ${subFont}px ${LABEL_FONT}`
   const titleWrap = data.title ? wrapLines(ctx, data.title, maxW) : { lines: [], maxLineWidth: 0 }
 
+  // Titre original : rendu uniquement au hover pour ne pas alourdir les
+  // landmarks idle. Même taille que le titre traduit, italique.
+  ctx.font = `italic 400 ${subFont}px ${LABEL_FONT}`
+  const origTitleWrap = hover && data.originalTitle
+    ? wrapLines(ctx, data.originalTitle, maxW)
+    : { lines: [], maxLineWidth: 0 }
+
   const padX = baseFont * (hover ? 0.8 : 0.5)
   const padY = baseFont * (hover ? 0.5 : 0.3)
   const border = baseFont * (hover ? 0.6 : 0.4)
-  const contentW = Math.max(nameWrap.maxLineWidth, titleWrap.maxLineWidth)
+  const contentW = Math.max(nameWrap.maxLineWidth, titleWrap.maxLineWidth, origTitleWrap.maxLineWidth)
   const boxW = contentW + padX * 2
   const nameH = lineH * nameWrap.lines.length
   const titleH = subLineH * titleWrap.lines.length
-  const boxH = nameH + titleH + padY * 2
+  const origTitleH = origTitleWrap.lines.length > 0
+    ? subLineH * origTitleWrap.lines.length + subFont * 0.3 // petit gap avant
+    : 0
+  const boxH = nameH + titleH + origTitleH + padY * 2
   const boxX = x - boxW / 2
   const boxY = y - radius - boxH - baseFont * 0.4
 
+  return {
+    box: { x: boxX, y: boxY, w: boxW, h: boxH },
+    nameWrap, titleWrap, origTitleWrap,
+    baseFont, lineH, subFont, subLineH,
+    padX, padY, border, nameH,
+  }
+}
+
+/** Mesure seulement — pas de rendu. Pour la détection de collision. */
+export function measureLabel(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, radius: number,
+  data: LabelData,
+  hover: boolean,
+): LabelBox {
+  return computeLabelLayout(ctx, x, y, radius, data, hover).box
+}
+
+/**
+ * Peint un label 2-3 lignes (AUTEUR maj + titre + titre original en italique
+ * au hover) au-dessus du point. Retourne l'AABB rendue pour permettre au
+ * dessinateur amont de gérer les collisions.
+ */
+export function drawLabel(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, radius: number,
+  data: LabelData,
+  hover: boolean,
+): LabelBox {
+  const L = computeLabelLayout(ctx, x, y, radius, data, hover)
+  const { box, nameWrap, titleWrap, origTitleWrap } = L
+  const { baseFont, lineH, subFont, subLineH, padY, border, nameH } = L
+
+  ctx.save()
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'top'
+
   ctx.fillStyle = hover ? LABEL_BG_HOVER : LABEL_BG_IDLE
-  roundRect(ctx, boxX, boxY, boxW, boxH, border)
+  roundRect(ctx, box.x, box.y, box.w, box.h, border)
   ctx.fill()
   if (hover) {
     ctx.strokeStyle = LABEL_BORDER
@@ -150,54 +278,114 @@ export function drawLabel(
   ctx.font = `${hover ? 600 : 500} ${baseFont}px ${LABEL_FONT}`
   ctx.fillStyle = hover ? LABEL_TEXT_HOVER : LABEL_TEXT_IDLE
   for (let i = 0; i < nameWrap.lines.length; i++) {
-    ctx.fillText(nameWrap.lines[i], x, boxY + padY + lineH * i)
+    ctx.fillText(nameWrap.lines[i], x, box.y + padY + lineH * i)
   }
 
+  const titleStart = box.y + padY + nameH
   if (titleWrap.lines.length > 0) {
     ctx.font = `400 ${subFont}px ${LABEL_FONT}`
     ctx.fillStyle = hover ? LABEL_TEXT_DIM_HOVER : LABEL_TEXT_DIM_IDLE
-    const titleStart = boxY + padY + nameH
     for (let i = 0; i < titleWrap.lines.length; i++) {
       ctx.fillText(titleWrap.lines[i], x, titleStart + subLineH * i)
     }
   }
 
+  if (origTitleWrap.lines.length > 0) {
+    ctx.font = `italic 400 ${subFont}px ${LABEL_FONT}`
+    ctx.fillStyle = LABEL_TEXT_ORIGINAL_HOVER
+    const titleH = subLineH * titleWrap.lines.length
+    const origStart = titleStart + titleH + subFont * 0.3
+    for (let i = 0; i < origTitleWrap.lines.length; i++) {
+      ctx.fillText(origTitleWrap.lines[i], x, origStart + subLineH * i)
+    }
+  }
+
   ctx.restore()
+  return box
 }
 
 /**
- * Peint le label d'un axe à sa position de cluster. Typo large, uppercase,
- * tracking marqué — c'est le repère macro, il doit se lire au-dessus de la
- * masse des labels de livres sans les noyer. Pill assombrie + stroke couleur
- * d'axe pour identifier le pôle au premier coup d'œil.
+ * Variante visuelle d'un label de cluster.
+ * - `major` : axe principal du ring + "Autres disciplines". Typo large,
+ *   tracking 2px, weight 700 — repère macro, priorité de lecture.
+ * - `minor` : sous-cluster à l'intérieur de "Autres disciplines"
+ *   (Philosophie…). Typo plus petite, tracking réduit, weight 600,
+ *   alpha plus bas — signale la subordination hiérarchique.
+ */
+export type ClusterLabelVariant = 'major' | 'minor'
+
+type ClusterLabelStyle = {
+  font: number
+  weight: number
+  letterSpacing: string
+  padX: number
+  padY: number
+  strokeAlpha: number
+  bgAlpha: number
+}
+
+const CLUSTER_LABEL_STYLES: Record<ClusterLabelVariant, ClusterLabelStyle> = {
+  major: { font: 13, weight: 700, letterSpacing: '2px', padX: 14, padY: 8, strokeAlpha: 0.7, bgAlpha: 0.92 },
+  minor: { font: 10, weight: 600, letterSpacing: '1px', padX: 10, padY: 5, strokeAlpha: 0.45, bgAlpha: 0.78 },
+}
+
+function clusterLabelBox(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number,
+  text: string,
+  variant: ClusterLabelVariant = 'major',
+): LabelBox {
+  const s = CLUSTER_LABEL_STYLES[variant]
+  ctx.save()
+  ctx.font = `${s.weight} ${s.font}px ${LABEL_FONT}`
+  ctx.letterSpacing = s.letterSpacing
+  const metrics = ctx.measureText(text)
+  ctx.restore()
+  const w = metrics.width + s.padX * 2
+  const h = s.font + s.padY * 2
+  return { x: x - w / 2, y: y - h / 2, w, h }
+}
+
+/** Mesure seulement — pour la détection de collision entre labels d'axes. */
+export function measureClusterLabel(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number,
+  text: string,
+  variant: ClusterLabelVariant = 'major',
+): LabelBox {
+  return clusterLabelBox(ctx, x, y, text, variant)
+}
+
+/**
+ * Peint le label d'un axe à sa position de cluster. Pill assombrie + stroke
+ * couleur d'axe pour identifier le pôle au premier coup d'œil. La variante
+ * `minor` est utilisée pour les sous-clusters (mini-pôles à l'intérieur de
+ * "Autres disciplines") — plus petite, plus discrète.
  */
 export function drawClusterLabel(
   ctx: CanvasRenderingContext2D,
   x: number, y: number,
   text: string,
   color: string,
-): void {
-  const font = 13
+  variant: ClusterLabelVariant = 'major',
+): LabelBox {
+  const s = CLUSTER_LABEL_STYLES[variant]
+  const box = clusterLabelBox(ctx, x, y, text, variant)
   ctx.save()
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.font = `700 ${font}px ${LABEL_FONT}`
-  ctx.letterSpacing = '2px'
+  ctx.font = `${s.weight} ${s.font}px ${LABEL_FONT}`
+  ctx.letterSpacing = s.letterSpacing
 
-  const metrics = ctx.measureText(text)
-  const padX = 14
-  const padY = 8
-  const w = metrics.width + padX * 2
-  const h = font + padY * 2
-
-  ctx.fillStyle = 'rgba(8, 4, 22, 0.92)'
-  roundRect(ctx, x - w / 2, y - h / 2, w, h, h / 2)
+  ctx.fillStyle = `rgba(8, 4, 22, ${s.bgAlpha})`
+  roundRect(ctx, box.x, box.y, box.w, box.h, box.h / 2)
   ctx.fill()
-  ctx.strokeStyle = withAlpha(color, 0.7)
-  ctx.lineWidth = 1.5
+  ctx.strokeStyle = withAlpha(color, s.strokeAlpha)
+  ctx.lineWidth = variant === 'minor' ? 1 : 1.5
   ctx.stroke()
 
   ctx.fillStyle = color
   ctx.fillText(text, x, y)
   ctx.restore()
+  return box
 }

@@ -1,8 +1,8 @@
-import { CATEGORY_THEME as CATEGORY_THEME_CONSTANTS, type Axis } from './categories.constants'
+import { CATEGORY_THEME as CATEGORY_THEME_CONSTANTS, SUB_CLUSTERS, type Axis } from './categories.constants'
 
 export const CATEGORY_THEME = CATEGORY_THEME_CONSTANTS
 export type { Axis }
-export { CLUSTER_RING_AXES } from './categories.constants'
+export { CLUSTER_RING_AXES, SUB_CLUSTERS, type SubCluster } from './categories.constants'
 
 // Dérivés automatiquement de CATEGORY_THEME — rien à maintenir à la main.
 export const AXES = Object.keys(CATEGORY_THEME) as Axis[]
@@ -17,9 +17,20 @@ export const AXES_LABELS = Object.fromEntries(
 
 const AXIS_KEY_SET = new Set<string>(AXES)
 
+// Map des sous-clusters UNCATEGORIZED:<subKey> → couleur. Permet à
+// axisColor() de colorer les livres de philo (et futurs sous-clusters)
+// distinctement dans le pool "Autres disciplines".
+const SUB_CLUSTER_COLOR_BY_KEY = new Map<string, string>(
+  SUB_CLUSTERS.map((sc) => [`UNCATEGORIZED:${sc.subKey}`, sc.color]),
+)
+
 /** Safe lookup — returns `undefined` when `key` is not a known Axis. */
 export function axisColor(key: string): string | undefined {
-  return AXIS_KEY_SET.has(key) ? AXES_COLORS[key as Axis] : undefined
+  if (AXIS_KEY_SET.has(key)) return AXES_COLORS[key as Axis]
+  // Sous-cluster UNCATEGORIZED:xxx : hérite de la couleur du sous-cluster
+  // (cf. SUB_CLUSTERS) pour que les livres rendus avec axes=['UNCAT:philo']
+  // apparaissent visuellement comme philosophie dans le pool central.
+  return SUB_CLUSTER_COLOR_BY_KEY.get(key)
 }
 
 /** Safe lookup — returns `undefined` when `key` is not a known Axis. */

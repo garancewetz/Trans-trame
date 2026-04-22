@@ -10,14 +10,16 @@ export type Highlight =
   | { kind: 'citedMin'; min: number }
 
 type FilterState = {
-  activeFilter: string | null
+  // Axes actifs — multi-sélection (OR). Set vide = pas de filtre. Passer à
+  // multi-axes rend le filtre capable d'exprimer une lecture intersectionnelle
+  // (ex. Queer ∪ Afrofeminism) au lieu d'obliger à choisir un seul axe.
+  activeAxes: ReadonlySet<string>
   activeHighlight: Highlight | null
   hoveredFilter: string | null
   selectedAuthor: string | null
 }
 
 type FilterActions = {
-  setActiveFilter: (v: string | null) => void
   setHoveredFilter: (v: string | null) => void
   setSelectedAuthor: (v: string | null) => void
   toggleFilter: (axis: string) => void
@@ -31,6 +33,7 @@ type FilterActions = {
 
 const FilterStateContext = createContext<FilterState | null>(null)
 const FilterActionsContext = createContext<FilterActions | null>(null)
+const EMPTY_AXES: ReadonlySet<string> = new Set()
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 
@@ -44,26 +47,20 @@ function highlightEquals(a: Highlight, b: Highlight): boolean {
 }
 
 export function FilterProvider({ children }: { children: ReactNode }) {
-  const [activeFilter, setActiveFilterRaw] = useState<string | null>(null)
+  const [activeAxes, setActiveAxes] = useState<ReadonlySet<string>>(EMPTY_AXES)
   const [activeHighlight, setActiveHighlightRaw] = useState<Highlight | null>(null)
   const [hoveredFilter, setHoveredFilter] = useState<string | null>(null)
   const [selectedAuthor, setSelectedAuthorRaw] = useState<string | null>(null)
 
-  // Mutual exclusion: a single filter dimension at a time.
-  // Setting any of axis / highlight / author clears the other two.
-  const setActiveFilter = useCallback((v: string | null) => {
-    setActiveFilterRaw(v)
-    if (v) {
-      setActiveHighlightRaw(null)
-      setSelectedAuthorRaw(null)
-    }
-  }, [])
-
+  // Mutual exclusion: axis filter vs highlight vs author — une seule dimension
+  // à la fois. Multi-axes reste possible à l'intérieur de la dimension "axis".
   const toggleFilter = useCallback(
     (axis: string) => {
-      setActiveFilterRaw((prev) => {
-        const next = prev === axis ? null : axis
-        if (next) {
+      setActiveAxes((prev) => {
+        const next = new Set(prev)
+        if (next.has(axis)) next.delete(axis)
+        else next.add(axis)
+        if (next.size > 0) {
           setActiveHighlightRaw(null)
           setSelectedAuthorRaw(null)
         }
@@ -72,14 +69,14 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     },
     [],
   )
-  const clearActiveFilter = useCallback(() => setActiveFilterRaw(null), [])
+  const clearActiveFilter = useCallback(() => setActiveAxes(EMPTY_AXES), [])
 
   const toggleHighlight = useCallback(
     (h: Highlight) => {
       setActiveHighlightRaw((prev) => {
         const next = prev && highlightEquals(prev, h) ? null : h
         if (next) {
-          setActiveFilterRaw(null)
+          setActiveAxes(EMPTY_AXES)
           setSelectedAuthorRaw(null)
         }
         return next
@@ -92,7 +89,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
   const setSelectedAuthor = useCallback((v: string | null) => {
     setSelectedAuthorRaw(v)
     if (v) {
-      setActiveFilterRaw(null)
+      setActiveAxes(EMPTY_AXES)
       setActiveHighlightRaw(null)
     }
   }, [])
@@ -102,7 +99,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
       setSelectedAuthorRaw((prev) => {
         const next = prev === authorId ? null : authorId
         if (next) {
-          setActiveFilterRaw(null)
+          setActiveAxes(EMPTY_AXES)
           setActiveHighlightRaw(null)
         }
         return next
@@ -112,14 +109,14 @@ export function FilterProvider({ children }: { children: ReactNode }) {
   )
 
   const state = useMemo<FilterState>(() => ({
-    activeFilter, activeHighlight, hoveredFilter, selectedAuthor,
-  }), [activeFilter, activeHighlight, hoveredFilter, selectedAuthor])
+    activeAxes, activeHighlight, hoveredFilter, selectedAuthor,
+  }), [activeAxes, activeHighlight, hoveredFilter, selectedAuthor])
 
   const actions = useMemo<FilterActions>(() => ({
-    setActiveFilter, setHoveredFilter, setSelectedAuthor,
+    setHoveredFilter, setSelectedAuthor,
     toggleFilter, clearActiveFilter, toggleSelectedAuthor,
     toggleHighlight, clearHighlight,
-  }), [setActiveFilter, setSelectedAuthor, toggleFilter, clearActiveFilter, toggleSelectedAuthor, toggleHighlight, clearHighlight])
+  }), [setSelectedAuthor, toggleFilter, clearActiveFilter, toggleSelectedAuthor, toggleHighlight, clearHighlight])
 
   return (
     <FilterActionsContext.Provider value={actions}>
@@ -132,22 +129,18 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 
 // ── Hooks ─────────────────────────────────────────────────────────────────────
 
-/** Reactive filter state. */
 function useFilterState() {
   const ctx = useContext(FilterStateContext)
   if (!ctx) throw new Error('useFilterState must be inside <FilterProvider>')
   return ctx
 }
 
-/** Stable filter callbacks — never triggers re-renders. */
 function useFilterActions() {
   const ctx = useContext(FilterActionsContext)
   if (!ctx) throw new Error('useFilterActions must be inside <FilterProvider>')
   return ctx
 }
 
-/** Combined hook (backward compatible).
- * Memoized : voir commentaire équivalent dans SelectionContext. */
 export function useFilter() {
   const state = useFilterState()
   const actions = useFilterActions()

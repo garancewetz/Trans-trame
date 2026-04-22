@@ -24,7 +24,7 @@ type NavbarProps = {
 }
 
 const VIEW_MODE_LABELS: Record<string, string> = {
-  cosmograph: 'Cosmograph',
+  transmissions: 'Transmissions',
   categories: 'Catégories',
   chronological: 'Chronologie',
 }
@@ -106,7 +106,7 @@ export function Navbar({ viewMode, onViewChange }: NavbarProps) {
                 />
               </span>
               <span className="text-label font-semibold text-white/45">
-                {VIEW_MODE_LABELS[viewMode] ?? 'Cosmograph'}
+                {VIEW_MODE_LABELS[viewMode] ?? 'Transmissions'}
               </span>
             </span>
           </h1>

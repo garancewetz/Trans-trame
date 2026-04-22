@@ -3,9 +3,9 @@ import { Button } from '@/common/components/ui/Button'
 import { Tooltip } from '@/common/components/ui/Tooltip'
 
 const VIEWS = [
-  { id: 'cosmograph', label: 'Cosmograph', icon: Hexagon, hint: 'Spike Cosmograph — WebGL GPU' },
+  { id: 'transmissions', label: 'Transmissions', icon: Hexagon, hint: 'Réseau des citations entre ressources' },
   { id: 'categories', label: 'Catégories', icon: LayoutGrid, hint: 'Cartographie par axe thématique' },
-  { id: 'chronological', label: 'Chronologie', icon: CalendarRange, hint: 'Ouvrages par année de publication' },
+  { id: 'chronological', label: 'Chronologie', icon: CalendarRange, hint: 'Ressources par année de publication' },
 ]
 
 type ViewSelectorProps = {

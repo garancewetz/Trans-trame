@@ -16,7 +16,7 @@ import { useTableViewCallbacks } from '../hooks/useTableViewCallbacks'
 import { useAdminUrlState } from '../hooks/useAdminUrlState'
 
 export function TableView() {
-  const { books, links, authors } = useAppData()
+  const { books, links, authors, authorNotDuplicatePairs } = useAppData()
   const mutations = useAppMutations()
   const selection = useSelection()
   const tableUi = useTableUi()
@@ -28,13 +28,17 @@ export function TableView() {
     nodes: books,
     links,
     authors,
+    authorNotDuplicatePairs,
     onAddLink: mutations.handleAddLink,
     onAddLinks: mutations.handleAddLinks,
     onUpdateBook: mutations.handleUpdateBook,
     onDeleteBook: mutations.handleDeleteBook,
     onUpdateLink: mutations.handleUpdateLink,
+    onAddCitation: mutations.handleAddCitation,
+    onUpdateCitation: mutations.handleUpdateCitation,
     onMergeBooks: mutations.handleMergeBooks,
     onDeleteAuthor: mutations.handleDeleteAuthor,
+    onMarkAuthorsNotDuplicate: mutations.markAuthorsNotDuplicate,
     tab,
     setTab,
     initialLinkSourceId: searchParams.get(ADMIN_QUERY_KEYS.from),
@@ -172,6 +176,7 @@ export function TableView() {
             tool={drawerTool}
             onClose={() => setDrawerTool(null)}
             books={books}
+            links={links}
             authors={authors}
             authorsMap={c.authorsMap}
             onUpdateBook={cb.onUpdateBookWithTracking}

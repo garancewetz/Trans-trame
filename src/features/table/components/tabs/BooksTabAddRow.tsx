@@ -75,9 +75,6 @@ export function BooksTabAddRow({
       <div className="flex h-full items-center justify-center bg-cyan/6 px-3">
         <Plus size={11} className="text-cyan/60" />
       </div>
-      <div className="flex h-full items-center justify-center bg-cyan/6 px-2">
-        <ResourceTypePicker value={resourceType} onChange={setResourceType} />
-      </div>
       <div className="flex h-full min-w-0 max-w-full items-center bg-cyan/6 px-2">
         <TextInput
           variant="table"
@@ -107,6 +104,9 @@ export function BooksTabAddRow({
           onChange={(e) => setYear(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
         />
+      </div>
+      <div className="flex h-full items-center justify-center bg-cyan/6 px-2">
+        <ResourceTypePicker value={resourceType} onChange={setResourceType} />
       </div>
       <div className="flex h-full items-center bg-cyan/6 px-3">
         <AxisDots axes={axes} onChange={setAxes} compact />

@@ -15,7 +15,7 @@ import { Badge } from '@/common/components/ui/Badge'
 type LegendProps = {
   axesColors: Record<string, string>
   axisCountsByAxis: Record<string, number>
-  activeFilter: string | null
+  activeAxes: ReadonlySet<string>
   hoveredFilter: string | null
   toggleFilter: (axis: string) => void
   setHoveredFilter: (axis: string | null) => void
@@ -25,7 +25,7 @@ type LegendProps = {
 export function Legend({
   axesColors,
   axisCountsByAxis,
-  activeFilter,
+  activeAxes,
   hoveredFilter,
   toggleFilter,
   setHoveredFilter,
@@ -64,7 +64,7 @@ export function Legend({
         <div className="min-h-0 overflow-hidden">
           <div className="flex flex-col gap-2">
             {Object.entries(axesColors).map(([axis, color]) => {
-              const isActive = activeFilter === axis
+              const isActive = activeAxes.has(axis)
               const isHovered = hoveredFilter === axis
 
               const axisLabel = axisLabelOrRaw(axis)
@@ -99,13 +99,14 @@ export function Legend({
                 </Button>
               )
             })}
-            {activeFilter && (
+            {activeAxes.size > 0 && (
               <Button
                 className="mt-1 cursor-pointer rounded-md bg-white/5 px-2 py-1 text-caption text-white/40 backdrop-blur-lg transition-colors hover:bg-white/10 hover:text-white/70"
                 onClick={clearFilter}
                 type="button"
               >
                 Tout afficher
+                {activeAxes.size > 1 ? ` (${activeAxes.size})` : ''}
               </Button>
             )}
           </div>

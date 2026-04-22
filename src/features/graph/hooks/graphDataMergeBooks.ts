@@ -31,7 +31,13 @@ export function planLinksAfterBookMerge(
       linkIdsToDelete.push(link.id)
       return
     }
-    const key = `${srcId}|${tgtId}|${link.citation_text || ''}|${link.page || ''}|${link.edition || ''}`
+    // Dedup key uses the primary citation's fingerprint. Multiple citations on
+    // the same edge live as sibling rows; after a merge only the surviving
+    // link keeps them, so collapsing on citations[0] is enough for the
+    // post-merge uniqueness check (belt-and-suspenders with the DB UNIQUE
+    // partial index on source_id + target_id).
+    const primary = link.citations?.[0]
+    const key = `${srcId}|${tgtId}|${primary?.citation_text || ''}|${primary?.page || ''}|${primary?.edition || ''}`
     if (dedupe.has(key)) {
       linkIdsToDelete.push(link.id)
       return

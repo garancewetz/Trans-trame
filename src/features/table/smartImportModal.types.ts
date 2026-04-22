@@ -1,4 +1,4 @@
-import type { Author, Book, Link } from '@/types/domain'
+import type { Author, Book, CreateLinkInput } from '@/types/domain'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 
 export type SmartImportModalProps = {
@@ -9,8 +9,8 @@ export type SmartImportModalProps = {
   authorsMap: Map<string, AuthorNode>
   onAddBook?: (book: Partial<Book> & Pick<Book, 'id' | 'title'>) => void | PromiseLike<unknown>
   onAddAuthor?: (author: Author) => unknown
-  onAddLink?: (link: Partial<Link> & Pick<Link, 'source' | 'target'>) => void
-  onAddLinks?: (links: Array<Partial<Link> & Pick<Link, 'source' | 'target'>>) => void
+  onAddLink?: (link: CreateLinkInput) => void
+  onAddLinks?: (links: CreateLinkInput[]) => void
   onUpdateBook?: (book: Book) => void
   onQueued?: (titles: string[]) => void
   onImportComplete?: (ids: string[]) => void

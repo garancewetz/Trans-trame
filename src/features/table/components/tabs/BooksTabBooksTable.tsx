@@ -1,11 +1,14 @@
-import { Virtuoso } from 'react-virtuoso'
+import { useEffect, useRef } from 'react'
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso'
 import clsx from 'clsx'
 import { Check, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/common/components/ui/Button'
 import { AxisFilterTH } from '../AxisFilterTH'
+import { TypeFilterTH } from '../TypeFilterTH'
 import { BOOKS_GRID_STYLE } from '../../tableConstants'
 import type { Author, AuthorId, Book, BookId } from '@/types/domain'
 import { type Axis } from '@/common/utils/categories'
+import type { ResourceTypeValue } from '@/common/constants/resourceTypes'
 import { BooksTabAddRow } from './BooksTabAddRow'
 import { BooksTabBookRow } from './BooksTabBookRow'
 
@@ -13,6 +16,8 @@ type BooksTabBooksTableProps = {
   sortedNodes: Book[]
   search: string
   justAddedBookId?: BookId | null
+  focusBookId?: BookId | null
+  highlightedBookId?: BookId | null
   authors: Author[]
   authorsMap: Map<string, Author>
   linkCountByNode: Map<string, number>
@@ -45,6 +50,8 @@ type BooksTabBooksTableProps = {
   onOpenWorkDetail?: (bookId: BookId) => unknown
   axisFilter?: Axis | null
   onAxisFilter?: (axis: Axis | null) => void
+  typeFilter?: ResourceTypeValue | null
+  onTypeFilter?: (type: ResourceTypeValue | null) => void
 }
 
 function SortCell({ col, activeCol, dir, onSort, children }: {
@@ -64,9 +71,9 @@ function SortCell({ col, activeCol, dir, onSort, children }: {
       {children}
       {active
         ? (dir === 'asc'
-          ? <ChevronUp size={10} className="text-green" />
-          : <ChevronDown size={10} className="text-green" />)
-        : <ChevronUp size={10} className="text-white/18" />}
+          ? <ChevronUp size={13} strokeWidth={2.5} className="text-green" />
+          : <ChevronDown size={13} strokeWidth={2.5} className="text-green" />)
+        : <ChevronUp size={13} strokeWidth={2.5} className="text-white/45" />}
     </button>
   )
 }
@@ -75,6 +82,8 @@ export function BooksTabBooksTable({
   sortedNodes,
   search,
   justAddedBookId,
+  focusBookId,
+  highlightedBookId,
   authors,
   authorsMap,
   linkCountByNode,
@@ -107,7 +116,18 @@ export function BooksTabBooksTable({
   onOpenWorkDetail,
   axisFilter,
   onAxisFilter,
+  typeFilter,
+  onTypeFilter,
 }: BooksTabBooksTableProps) {
+  const virtuosoRef = useRef<VirtuosoHandle>(null)
+
+  useEffect(() => {
+    if (!focusBookId) return
+    const index = sortedNodes.findIndex((n) => n.id === focusBookId)
+    if (index < 0) return
+    virtuosoRef.current?.scrollToIndex({ index, align: 'center', behavior: 'smooth' })
+  }, [focusBookId, sortedNodes])
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="shrink-0 bg-bg-overlay">
@@ -129,11 +149,23 @@ export function BooksTabBooksTable({
               <Check size={9} />
             </Button>
           </div>
-          <div className="px-2 py-2.5 text-left text-micro font-semibold uppercase tracking-[1.5px] text-white/32">Type</div>
           <SortCell col="title" activeCol={sortCol} dir={sortDir} onSort={onNodeSort}>Titre</SortCell>
           <SortCell col="lastName" activeCol={sortCol} dir={sortDir} onSort={onNodeSort}>Auteur·ice</SortCell>
           <SortCell col="year" activeCol={sortCol} dir={sortDir} onSort={onNodeSort}>Année</SortCell>
-          <AxisFilterTH activeAxis={axisFilter ?? null} onSelect={onAxisFilter ?? (() => {})} />
+          <TypeFilterTH
+            activeType={typeFilter ?? null}
+            onSelect={onTypeFilter ?? (() => {})}
+            sortCol={sortCol}
+            sortDir={sortDir}
+            onSort={onNodeSort}
+          />
+          <AxisFilterTH
+            activeAxis={axisFilter ?? null}
+            onSelect={onAxisFilter ?? (() => {})}
+            sortCol={sortCol}
+            sortDir={sortDir}
+            onSort={onNodeSort}
+          />
           <SortCell col="linkCount" activeCol={sortCol} dir={sortDir} onSort={onNodeSort}>Liens</SortCell>
           <SortCell col="createdAt" activeCol={sortCol} dir={sortDir} onSort={onNodeSort}>Ajouté</SortCell>
           <div className="px-2 py-2.5 text-left text-micro font-semibold uppercase tracking-[1.5px] text-white/32">
@@ -159,6 +191,7 @@ export function BooksTabBooksTable({
         </div>
       ) : (
         <Virtuoso
+          ref={virtuosoRef}
           className="flex-1"
           totalCount={sortedNodes.length}
           itemContent={(i) => {
@@ -168,6 +201,7 @@ export function BooksTabBooksTable({
                 node={node}
                 rowIndex={i}
                 justAdded={justAddedBookId === node.id}
+                highlighted={highlightedBookId === node.id}
                 isSelected={selectedIds.has(node.id)}
                 isEditTitle={editingCell?.nodeId === node.id && editingCell?.field === 'title'}
                 isEditYear={editingCell?.nodeId === node.id && editingCell?.field === 'year'}

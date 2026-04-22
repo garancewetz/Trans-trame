@@ -45,12 +45,22 @@ function normalize(s: unknown): string {
   return String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim()
 }
 
+function pairKey(a: string, b: string): string {
+  return a < b ? `${a}|${b}` : `${b}|${a}`
+}
+
 export function useTableViewDuplicateDerived(
   nodes: Book[],
   links: Link[],
   authors: Author[],
-  authorsMap: Map<string, AuthorNodeLike>
+  authorsMap: Map<string, AuthorNodeLike>,
+  authorNotDuplicatePairs: Array<[string, string]> = [],
 ) {
+  const notDupKeys = useMemo(
+    () => new Set(authorNotDuplicatePairs.map(([a, b]) => pairKey(a, b))),
+    [authorNotDuplicatePairs],
+  )
+
   const orphans = useMemo(() => {
     const linked = new Set<string>()
     links.forEach((l) => {
@@ -113,7 +123,7 @@ export function useTableViewDuplicateDerived(
   // blocked by it. Mount renders with []; the compute runs on a macrotask,
   // then a second render shows the real count. Users see ~1s lag on the
   // "N doublons" counter, never on navigation.
-  const authorDuplicateGroups = useDeferredAuthorDuplicates(authors)
+  const authorDuplicateGroups = useDeferredAuthorDuplicates(authors, notDupKeys)
 
   /** Ressources sans aucun·e auteur·ice assigné·e (authorIds vide ou absent). */
   const booksWithoutAuthors = useMemo(
@@ -130,16 +140,63 @@ export function useTableViewDuplicateDerived(
   return { orphans, duplicateGroups, authorDuplicateGroups, orphanedAuthors, booksWithoutAuthors, todoCount }
 }
 
-function useDeferredAuthorDuplicates(authors: Author[]): Author[][] {
+function useDeferredAuthorDuplicates(authors: Author[], notDupKeys: Set<string>): Author[][] {
   const [groups, setGroups] = useState<Author[][]>([])
   useEffect(() => {
-    const id = setTimeout(() => setGroups(computeAuthorDuplicateGroups(authors)), 0)
+    const id = setTimeout(() => setGroups(computeAuthorDuplicateGroups(authors, notDupKeys)), 0)
     return () => clearTimeout(id)
-  }, [authors])
+  }, [authors, notDupKeys])
   return groups
 }
 
-function computeAuthorDuplicateGroups(authors: Author[]): Author[][] {
+/**
+ * Splits a detected duplicate group by removing user-declared "not a duplicate"
+ * edges and keeping only connected components of size ≥ 2. Transitivity is
+ * preserved: in {A,B,C} where (A,C) is rejected but (A,B) and (B,C) match,
+ * the full group stays connected via B. A rejected pair with no other link
+ * (group of 2) disappears entirely.
+ */
+function splitGroupByNotDupPairs(group: Author[], notDupKeys: Set<string>): Author[][] {
+  if (group.length < 2) return []
+  // If no pair in this group is rejected, short-circuit to preserve the group as-is.
+  let anyExcluded = false
+  for (let i = 0; !anyExcluded && i < group.length; i++) {
+    for (let j = i + 1; j < group.length; j++) {
+      if (notDupKeys.has(pairKey(group[i].id, group[j].id))) { anyExcluded = true; break }
+    }
+  }
+  if (!anyExcluded) return [group]
+
+  const parent = new Map<string, string>()
+  group.forEach((a) => parent.set(a.id, a.id))
+  const find = (x: string): string => {
+    const p = parent.get(x)!
+    if (p === x) return x
+    const r = find(p)
+    parent.set(x, r)
+    return r
+  }
+  for (let i = 0; i < group.length; i++) {
+    for (let j = i + 1; j < group.length; j++) {
+      if (notDupKeys.has(pairKey(group[i].id, group[j].id))) continue
+      const rx = find(group[i].id)
+      const ry = find(group[j].id)
+      if (rx !== ry) parent.set(rx, ry)
+    }
+  }
+  const byRoot = new Map<string, Author[]>()
+  for (const a of group) {
+    const root = find(a.id)
+    const list = byRoot.get(root)
+    if (list) list.push(a)
+    else byRoot.set(root, [a])
+  }
+  const out: Author[][] = []
+  for (const comp of byRoot.values()) if (comp.length >= 2) out.push(comp)
+  return out
+}
+
+function computeAuthorDuplicateGroups(authors: Author[], notDupKeys: Set<string>): Author[][] {
   const norm = (s: unknown) =>
     String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[^a-z0-9\s]/g, '').trim()
   const fullName = (a: Author) => {
@@ -156,12 +213,12 @@ function computeAuthorDuplicateGroups(authors: Author[]): Author[][] {
   })
 
   const merged = new Set<string>()
-  const groups: Author[][] = []
+  const rawGroups: Author[][] = []
 
   for (const group of exactMap.values()) {
     if (group.length > 1) {
       group.forEach((a) => merged.add(a.id))
-      groups.push(group)
+      rawGroups.push(group)
     }
   }
 
@@ -183,9 +240,11 @@ function computeAuthorDuplicateGroups(authors: Author[]): Author[][] {
     }
     if (fuzzyGroup.length > 1) {
       fuzzyGroup.forEach((a) => merged.add(a.id))
-      groups.push(fuzzyGroup)
+      rawGroups.push(fuzzyGroup)
     }
   }
 
-  return groups
+  const out: Author[][] = []
+  for (const g of rawGroups) out.push(...splitGroupByNotDupPairs(g, notDupKeys))
+  return out
 }

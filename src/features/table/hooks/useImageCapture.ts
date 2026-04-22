@@ -67,11 +67,6 @@ export function useImageCapture(addImages: (files: File[]) => void) {
       })
       streamRef.current = stream
       setCameraActive(true)
-      requestAnimationFrame(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-        }
-      })
     } catch (err) {
       const msg =
         err instanceof DOMException && err.name === 'NotAllowedError'
@@ -80,6 +75,13 @@ export function useImageCapture(addImages: (files: File[]) => void) {
       setCameraError(msg)
     }
   }, [])
+
+  // Attach stream once <video> is mounted to avoid a render/rAF race
+  useEffect(() => {
+    if (cameraActive && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current
+    }
+  }, [cameraActive])
 
   const capturePhoto = useCallback(() => {
     const video = videoRef.current

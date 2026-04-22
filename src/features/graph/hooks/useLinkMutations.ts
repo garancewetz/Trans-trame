@@ -1,7 +1,7 @@
 import { useCallback, type RefObject, type Dispatch, type SetStateAction } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import type { Link, LinkCitation } from '@/types/domain'
+import type { CreateLinkInput, Link, LinkCitation } from '@/types/domain'
 import type { TablesInsert, TablesUpdate } from '@/types/supabase'
 import { devWarn } from '@/common/utils/logger'
 import { ensureOk } from '@/core/supabaseErrors'
@@ -39,7 +39,7 @@ function hasAnyCitationField(c: CitationInput): boolean {
   return Boolean((c.citation_text || '').trim() || (c.page || '').trim() || (c.edition || '').trim() || (c.context || '').trim())
 }
 
-function extractCitation(link: Partial<Link>): CitationInput {
+function extractCitation(link: CreateLinkInput): CitationInput {
   return {
     citation_text: link.citation_text,
     edition: link.edition,
@@ -69,13 +69,6 @@ export function useLinkMutations({
           id: newLink.id,
           source_id: newLink.source,
           target_id: newLink.target,
-          // Flat citation fields kept at '' on new rows: the real data lives
-          // in link_citations. The columns still exist as a rollback net from
-          // the 20260418_link_citations_subtable migration.
-          citation_text: '',
-          edition: '',
-          page: '',
-          context: '',
         }),
         'ajout lien',
       )
@@ -143,10 +136,6 @@ export function useLinkMutations({
           id: l.id,
           source_id: l.source,
           target_id: l.target,
-          citation_text: '',
-          edition: '',
-          page: '',
-          context: '',
         }))
         try {
           const { data, error } = await insertLinkRows(rows)
@@ -267,9 +256,7 @@ export function useLinkMutations({
   // planAddLink resolves a user-submitted link input into one of three
   // outcomes. Callers can dispatch the mutations synchronously afterwards.
 
-  const planAddLink = (
-    link: Link | (Partial<Link> & Pick<Link, 'source' | 'target'>),
-  ): AddLinkPlan => {
+  const planAddLink = (link: CreateLinkInput): AddLinkPlan => {
     const srcId = normalizeEndpointId(link.source)
     const tgtId = normalizeEndpointId(link.target)
     if (!srcId || !tgtId) return { kind: 'skip' }
@@ -311,7 +298,7 @@ export function useLinkMutations({
   }
 
   const handleAddLink = useCallback(
-    (link: Link | (Partial<Link> & Pick<Link, 'source' | 'target'>)) => {
+    (link: CreateLinkInput) => {
       const plan = planAddLink(link)
       if (plan.kind === 'skip') return
 
@@ -349,7 +336,7 @@ export function useLinkMutations({
   )
 
   const handleAddLinks = useCallback(
-    (links: Array<Link | (Partial<Link> & Pick<Link, 'source' | 'target'>)>) => {
+    (links: CreateLinkInput[]) => {
       const linksToCreate: Array<{ id: string; source: string; target: string }> = []
       const citations: TablesInsert<'link_citations'>[] = []
       // Track (source|target) pairs already planned in this batch to avoid

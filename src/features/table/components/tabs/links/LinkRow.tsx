@@ -34,7 +34,8 @@ export function LinkRow({
   onOpenWorkDetail,
 }: Props) {
   const isExpanded = editingLink?.id === link.id
-  const hasMeta = link.citation_text || link.context || link.page || link.edition
+  const primary = link.citations[0]
+  const hasMeta = primary && (primary.citation_text || primary.context || primary.page || primary.edition)
 
   const toggleExpand = () => {
     if (isExpanded) {
@@ -73,11 +74,11 @@ export function LinkRow({
         </span>
 
         {/* Inline meta preview (collapsed) */}
-        {!isExpanded && hasMeta && (
+        {!isExpanded && hasMeta && primary && (
           <span className="hidden shrink-0 items-center gap-2 font-mono text-micro text-white/25 sm:flex">
-            {link.page && <span className="tabular-nums">{link.page}</span>}
-            {link.edition && (
-              <span className="flex items-center gap-0.5"><BookCopy size={8} />{link.edition}</span>
+            {primary.page && <span className="tabular-nums">{primary.page}</span>}
+            {primary.edition && (
+              <span className="flex items-center gap-0.5"><BookCopy size={8} />{primary.edition}</span>
             )}
           </span>
         )}
@@ -105,11 +106,11 @@ export function LinkRow({
       </div>
 
       {/* Citation preview (collapsed) */}
-      {!isExpanded && (link.citation_text || link.context) && (
+      {!isExpanded && primary && (primary.citation_text || primary.context) && (
         <div className="ml-7 mb-1 flex items-start gap-1.5 px-2">
           <Quote size={10} className="mt-0.5 shrink-0 text-white/20" />
           <p className="whitespace-pre-wrap font-mono text-caption italic leading-relaxed text-white/30">
-            {link.citation_text || link.context}
+            {primary.citation_text || primary.context}
           </p>
         </div>
       )}

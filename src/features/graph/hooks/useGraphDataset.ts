@@ -23,13 +23,15 @@ export function useGraphDataset(axesColors: AxesColorMap) {
   return useQuery({
     queryKey: DATASET_QUERY_KEY,
     queryFn: async () => {
-      const { booksRes, authorsRes, linksRes, citationsRes } = await loadGraphDataFromSupabase()
+      const { booksRes, authorsRes, linksRes, citationsRes, notDupPairsRes } =
+        await loadGraphDataFromSupabase()
 
       if (booksRes.error) throw new Error(booksRes.error.message)
       if (linksRes.error) throw new Error(linksRes.error.message)
 
       const authorsData = authorsRes.error ? [] : (authorsRes.data ?? [])
       const citationsData = citationsRes.error ? [] : (citationsRes.data ?? [])
+      const notDupPairsData = notDupPairsRes.error ? [] : (notDupPairsRes.data ?? [])
 
       const citationsByLinkId = new Map<string, LinkCitation[]>()
       for (const row of citationsData) {
@@ -48,6 +50,9 @@ export function useGraphDataset(axesColors: AxesColorMap) {
         }),
         authors: authorsData.map((r) => sanitizeAuthor(dbAuthorToNode(r), axesColors)),
         links: (linksRes.data ?? []).map((r) => dbLinkToLink(r, citationsByLinkId.get(r.id) ?? [])),
+        authorNotDuplicatePairs: notDupPairsData.map<[string, string]>(
+          (p) => [p.author_a_id, p.author_b_id],
+        ),
       }
     },
   })

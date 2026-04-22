@@ -48,7 +48,7 @@ export function useKnownEditions() {
     queryKey: ['known-editions'],
     queryFn: async () => {
       const { data, error } = await fetchAllPaginated<{ edition: string | null }>(
-        (from, to) => supabase.from('links').select('edition').is('deleted_at', null).range(from, to),
+        (from, to) => supabase.from('link_citations').select('edition').is('deleted_at', null).range(from, to),
         'knownEditions',
       )
 

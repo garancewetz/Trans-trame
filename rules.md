@@ -84,6 +84,14 @@ Do **not** reference files that do not exist here (e.g. `use-cache-view.ts`, `us
 - Avoid meaningless single-letter names such as `v` or `i` except in extremely local, obvious contexts (e.g. a short numeric loop index where the team already uses `i`).
 - Replace magic numbers with named constants when it aids readability.
 
+#### Book (code) ≡ resource (DB)
+
+The DB pivot table is `resources` (renamed from `books` in migration `20260419_books_to_resources`), with a `resource_type` column allowing polymorphism (`'book'`, and eventually `'film'`, `'album'`, …). Application code keeps `Book`, `BookId`, `handleAddBook`, `BooksTab`, `graphData.books`, etc. — "book" is still the dominant type (>95%) and reads well in UI copy.
+
+- When writing **new** code: match nearby conventions. In DB-adjacent modules (`graphDataApi.ts`, `graphDataModel.ts`, `supabase.ts`), use `resource_*` for DB column names and table references; elsewhere use `book`/`Book`.
+- When reading code: `Book` type ↔ `resources` table is the same entity — don't chase down a phantom `Resource` type.
+- **No rename planned.** If/when non-book resource types become the majority (films, albums at volume), revisit.
+
 ### Functions
 
 - Small, focused functions; few parameters when possible.

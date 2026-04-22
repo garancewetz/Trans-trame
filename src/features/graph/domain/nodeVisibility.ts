@@ -8,7 +8,7 @@ type AdjacencyEntry = { neighborIds: string[] }
  */
 export function isNodeVisibleForFilters(
   node: { id: string; type?: string; axes?: string[]; year?: number | null; authorIds?: string[] },
-  activeFilter: string | null,
+  activeAxes: ReadonlySet<string>,
   activeHighlight: Highlight | null,
   linksByNodeId: Map<string, AdjacencyEntry>,
   citationsByNodeId?: Map<string, number> | null,
@@ -36,7 +36,13 @@ export function isNodeVisibleForFilters(
       }
     }
   }
-  if (!activeFilter) return true
+  if (activeAxes.size === 0) return true
   if (node.type === 'author') return true
-  return (node.axes || []).includes(activeFilter)
+  // OR entre axes : un livre est visible s'il porte au moins un des axes
+  // sélectionnés. C'est la lecture "intersectionnelle" au sens union — on
+  // cherche les œuvres qui touchent *au moins une* des catégories cochées.
+  for (const ax of node.axes || []) {
+    if (activeAxes.has(ax)) return true
+  }
+  return false
 }

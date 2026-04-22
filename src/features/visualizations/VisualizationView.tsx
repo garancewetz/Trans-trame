@@ -9,7 +9,7 @@ interface Props {
   authors: Author[]
   selectedNode?: Book | null
   onNodeClick?: (node: Book) => void
-  activeFilter?: string | null
+  activeAxes?: ReadonlySet<string>
   hoveredFilter?: string | null
   activeHighlight?: Highlight | null
   selectedAuthorId?: string | null
@@ -19,10 +19,10 @@ interface Props {
 }
 
 export const VisualizationView = forwardRef<CosmographImperativeHandle, Props>(function VisualizationView(
-  { viewMode, graphData, authors, selectedNode, onNodeClick, activeFilter, hoveredFilter, activeHighlight, selectedAuthorId, peekNodeId, flashNodeIds, timelineRange },
+  { viewMode, graphData, authors, selectedNode, onNodeClick, activeAxes, hoveredFilter, activeHighlight, selectedAuthorId, peekNodeId, flashNodeIds, timelineRange },
   ref,
 ) {
-  if (viewMode === 'cosmograph' || viewMode === 'categories' || viewMode === 'chronological') {
+  if (viewMode === 'transmissions' || viewMode === 'categories' || viewMode === 'chronological') {
     // Même composant, trois modes — React réutilise l'instance au switch pour
     // préserver la caméra entre les vues (ne reconstruit pas le Graph cosmos).
     const mode = viewMode === 'categories'
@@ -36,7 +36,7 @@ export const VisualizationView = forwardRef<CosmographImperativeHandle, Props>(f
         authors={authors}
         selectedNode={selectedNode}
         onNodeClick={onNodeClick}
-        activeFilter={activeFilter}
+        activeAxes={activeAxes}
         hoveredFilter={hoveredFilter}
         activeHighlight={activeHighlight}
         selectedAuthorId={selectedAuthorId}

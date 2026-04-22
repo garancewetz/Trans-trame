@@ -68,12 +68,15 @@ export function useTableViewLinkDerived({
   const filteredLinks = useMemo(() => {
     if (!linkSearch.trim()) return resolvedLinks
     return resolvedLinks.filter((l) => {
+      const citationsBlob = (l.citations ?? [])
+        .map((c) => `${c.citation_text || ''} ${c.context || ''}`)
+        .join(' ')
       const haystack = [
         l.sourceNode?.title || '',
         l.targetNode?.title || '',
         bookAuthorDisplay(l.sourceNode || {}, authorsMap),
         bookAuthorDisplay(l.targetNode || {}, authorsMap),
-        l.citation_text || l.context || '',
+        citationsBlob,
       ].join(' ')
       return matchAllWords(linkSearch, haystack)
     })

@@ -2,7 +2,7 @@ import { createContext, useContext, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 
 export type TableTabId = 'books' | 'authors' | 'links'
-export type DrawerTool = 'history' | 'review' | null
+export type DrawerTool = 'history' | 'review' | 'subaxes' | null
 
 type TableUiContextValue = {
   lastEditedNodeId: string | null

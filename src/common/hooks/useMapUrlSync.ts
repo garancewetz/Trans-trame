@@ -82,7 +82,13 @@ export function useMapUrlSync({ enabled = true }: { enabled?: boolean } = {}) {
     if (!enabled) return
     if (skipStateToUrl.current) return
 
-    const next = new URLSearchParams()
+    // Préserve les params inconnus (view, etc.) — on ne doit réécrire
+    // que les clés de sélection qu'on contrôle, sinon on écrase le mode de
+    // vue partagé dans le lien.
+    const next = new URLSearchParams(searchParams)
+    next.delete(Q.book)
+    next.delete(Q.link)
+    next.delete(Q.from)
     if (selectedNode) {
       next.set(Q.book, selectedNode.id)
       if (selectedLink && linkContextNode) {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
-import type { Author, AuthorId, Book, BookId, Link } from '@/types/domain'
+import type { Author, AuthorId, Book, BookId, CreateLinkInput } from '@/types/domain'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { matchAllWords } from '@/common/utils/searchUtils'
@@ -21,8 +21,8 @@ type AddBookFormProps = {
   authorsMap: Map<string, AuthorNode>
   onAddAuthor?: (author: Author) => void
   onAddBook?: (book: Partial<Book> & Pick<Book, 'id' | 'title'>) => void | PromiseLike<unknown>
-  onAddLink?: (link: Partial<Link> & Pick<Link, 'source' | 'target'>) => void
-  onAddLinks?: (links: Array<Partial<Link> & Pick<Link, 'source' | 'target'>>) => void
+  onAddLink?: (link: CreateLinkInput) => void
+  onAddLinks?: (links: CreateLinkInput[]) => void
   onUpdateBook?: (book: Book) => void
   onDeleteBook?: (nodeId: BookId) => void
   onMergeBooks?: (fromNodeId: BookId, intoNodeId: BookId) => void

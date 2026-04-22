@@ -40,7 +40,7 @@ const VALID_AXES = [
   'INSTITUTIONAL', 'CHILDHOOD', 'CRIP', 'BODY', 'FEMINIST', 'UNCATEGORIZED',
 ] as const
 
-const VALID_RESOURCE_TYPES = ['book', 'article', 'podcast', 'film', 'other'] as const
+const VALID_RESOURCE_TYPES = ['book', 'article', 'podcast', 'film', 'music', 'other'] as const
 
 const SYSTEM_PROMPT = `You are a bibliographic reference parser. You receive a list of numbered lines. For EACH line, extract bibliographic fields and classify the work thematically. Return a JSON array.
 
@@ -73,6 +73,7 @@ Resource type ("resourceType") — classify the resource as ONE of:
 - "article": journal article, magazine piece, newspaper article, blog post
 - "podcast": podcast episode or radio broadcast
 - "film": documentary, film, video
+- "music": song, album, musical track, opera, classical composition
 - "other": when none of the above apply
 
 Thematic classification ("axes") — pick 1 to 3 categories from:

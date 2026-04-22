@@ -15,6 +15,7 @@ type AppDataValue = {
   books: GraphData['books']
   authors: GraphData['authors']
   links: GraphData['links']
+  authorNotDuplicatePairs: GraphData['authorNotDuplicatePairs']
   isLoading: GraphData['isLoading']
   isError: GraphData['isError']
   authorsMap: Map<string, AuthorNode>
@@ -38,6 +39,8 @@ type AppMutationsValue = {
   handleDeleteCitation: GraphData['handleDeleteCitation']
   handleMergeBooks: GraphData['handleMergeBooks']
   handleMigrateData: GraphData['handleMigrateData']
+  markAuthorsNotDuplicate: GraphData['markAuthorsNotDuplicate']
+  unmarkAuthorsNotDuplicate: GraphData['unmarkAuthorsNotDuplicate']
   resetToDefault: GraphData['resetToDefault']
 }
 
@@ -70,6 +73,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       books: data.books,
       authors: data.authors,
       links: data.links,
+      authorNotDuplicatePairs: data.authorNotDuplicatePairs,
       isLoading: data.isLoading,
       isError: data.isError,
       authorsMap,
@@ -81,6 +85,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       data.books,
       data.authors,
       data.links,
+      data.authorNotDuplicatePairs,
       data.isLoading,
       data.isError,
       authorsMap,
@@ -106,6 +111,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       handleDeleteCitation: data.handleDeleteCitation,
       handleMergeBooks: data.handleMergeBooks,
       handleMigrateData: data.handleMigrateData,
+      markAuthorsNotDuplicate: data.markAuthorsNotDuplicate,
+      unmarkAuthorsNotDuplicate: data.unmarkAuthorsNotDuplicate,
       resetToDefault: data.resetToDefault,
     }),
     [
@@ -124,6 +131,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       data.handleDeleteCitation,
       data.handleMergeBooks,
       data.handleMigrateData,
+      data.markAuthorsNotDuplicate,
+      data.unmarkAuthorsNotDuplicate,
       data.resetToDefault,
     ],
   )

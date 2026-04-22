@@ -137,7 +137,7 @@ function GraphAppContent() {
             authors={authors}
             selectedNode={selection.selectedNode}
             onNodeClick={handleNodeClick}
-            activeFilter={filter.activeFilter}
+            activeAxes={filter.activeAxes}
             hoveredFilter={filter.hoveredFilter}
             activeHighlight={filter.activeHighlight}
             selectedAuthorId={filter.selectedAuthor}
@@ -155,7 +155,7 @@ function GraphAppContent() {
       />
 
       <ActiveFilterBar
-        activeFilter={filter.activeFilter}
+        activeAxes={filter.activeAxes}
         activeHighlight={filter.activeHighlight}
         highlightLabel={highlightLabel}
         selectedAuthor={filter.selectedAuthor}
@@ -163,7 +163,8 @@ function GraphAppContent() {
         selectedBookTitle={selection.selectedNode?.title ?? null}
         visibleCount={timeline.filteredGraphData.nodes.length}
         totalCount={graphData.nodes.length}
-        onClearAxis={filter.clearActiveFilter}
+        onToggleAxis={filter.toggleFilter}
+        onClearAxes={filter.clearActiveFilter}
         onClearHighlight={filter.clearHighlight}
         onClearAuthor={() => filter.setSelectedAuthor(null)}
         onClearSelectedBook={selection.closePanel}
@@ -172,7 +173,7 @@ function GraphAppContent() {
       <Legend
         axisCountsByAxis={axisCountsByAxis}
         axesColors={AXES_COLORS}
-        activeFilter={filter.activeFilter}
+        activeAxes={filter.activeAxes}
         hoveredFilter={filter.hoveredFilter}
         toggleFilter={filter.toggleFilter}
         setHoveredFilter={filter.setHoveredFilter}
@@ -189,12 +190,10 @@ function GraphAppContent() {
 
       <AnalysisPanel
         graphData={timeline.filteredGraphData}
-        activeFilter={filter.activeFilter}
+        activeAxes={filter.activeAxes}
         activeHighlight={filter.activeHighlight}
-        onFilterChange={(axis) => {
-          if (axis === null) filter.clearActiveFilter()
-          else filter.toggleFilter(axis)
-        }}
+        onToggleAxis={filter.toggleFilter}
+        onClearAxes={filter.clearActiveFilter}
         onHighlightChange={(h: Highlight | null) => {
           if (h === null) filter.clearHighlight()
           else filter.toggleHighlight(h)

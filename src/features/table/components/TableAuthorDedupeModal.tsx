@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Check } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import type { Author, AuthorId, Book } from '@/types/domain'
 import { Button } from '@/common/components/ui/Button'
 import { Modal } from '@/common/components/ui/Modal'
@@ -16,6 +16,7 @@ type Props = {
   confirm: boolean
   setOpen: (v: boolean) => void
   setConfirm: (v: boolean) => void
+  onMarkGroupNotDuplicate?: (groupIndex: number) => void
 }
 
 export function TableAuthorDedupeModal({
@@ -26,6 +27,7 @@ export function TableAuthorDedupeModal({
   confirm,
   setOpen,
   setConfirm,
+  onMarkGroupNotDuplicate,
 }: Props) {
   const [choices, setChoices] = useState<Map<number, AuthorId>>(new Map())
   const [excluded, setExcluded] = useState<Map<number, Set<AuthorId>>>(new Map())
@@ -143,6 +145,20 @@ export function TableAuthorDedupeModal({
               <div className="mb-1.5 flex items-center gap-2 text-[0.65rem] uppercase tracking-[0.15em] text-white/30">
                 <span>Groupe {i + 1}</span>
                 <span className="h-px flex-1 bg-white/8" />
+                {onMarkGroupNotDuplicate && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onMarkGroupNotDuplicate(i)
+                      setConfirm(false)
+                    }}
+                    className="flex items-center gap-1 rounded border border-white/10 px-1.5 py-0.5 text-[0.6rem] font-semibold text-white/55 transition-colors hover:border-white/25 hover:bg-white/5 hover:text-white/85"
+                    title="Marquer ce groupe comme non-doublons (ne réapparaîtra plus)"
+                  >
+                    <X size={10} strokeWidth={2.5} />
+                    <span>Pas des doublons</span>
+                  </button>
+                )}
                 <span>{group.length} entrées</span>
               </div>
               <div className="flex flex-col gap-1">

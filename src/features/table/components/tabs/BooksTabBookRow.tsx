@@ -15,8 +15,7 @@ import { AuthorPicker } from '../AuthorPicker'
 import { BookLinksBadge } from './BookLinksBadge'
 import { WorkSiblingsBadge } from './WorkSiblingsBadge'
 import { splitBookAxes } from '@/common/utils/categories'
-import { getResourceType } from '@/common/constants/resourceTypes'
-import { Tooltip } from '@/common/components/ui/Tooltip'
+import { ResourceTypePicker } from '../ResourceTypePicker'
 import type { Author, AuthorId, Book, BookId, EntityStatus } from '@/types/domain'
 
 const GRAPH_BTN = 'inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-2 py-0.5 text-caption font-semibold text-white/45 transition-all hover:border-violet/40 hover:bg-violet/10 hover:text-violet/95'
@@ -25,6 +24,7 @@ type Props = {
   node: Book
   rowIndex: number
   justAdded?: boolean
+  highlighted?: boolean
   isSelected: boolean
   isEditTitle: boolean
   isEditYear: boolean
@@ -52,6 +52,7 @@ function BooksTabBookRowImpl({
   node,
   rowIndex,
   justAdded,
+  highlighted,
   isSelected,
   isEditTitle,
   isEditYear,
@@ -80,7 +81,7 @@ function BooksTabBookRowImpl({
       style={BOOKS_GRID_STYLE}
       className={clsx(
         'group grid cursor-pointer items-center border-b border-white/4 transition-colors hover:bg-white/2.5',
-        justAdded && 'animate-flash-row',
+        (justAdded || highlighted) && 'animate-flash-row',
         isSelected ? 'bg-green/2.5' : rowIndex % 2 === 0 ? 'bg-white/[0.003]' : '',
       )}
       onClick={(e) => {
@@ -101,18 +102,6 @@ function BooksTabBookRowImpl({
         >
           <Check size={9} />
         </Button>
-      </div>
-      <div className="flex items-center justify-center px-2 py-2">
-        {(() => {
-          const rt = getResourceType(node.resourceType)
-          return (
-            <Tooltip content={rt.label}>
-              <span className="flex items-center text-white/35">
-                <rt.icon size={12} />
-              </span>
-            </Tooltip>
-          )
-        })()}
       </div>
       <div className={clsx(TD, 'min-w-0')}>
         {isEditTitle ? (
@@ -214,6 +203,15 @@ function BooksTabBookRowImpl({
             {node.year || <span className="text-white/18">—</span>}
           </span>
         )}
+      </div>
+      <div className="flex items-center px-2 py-2" onClick={(e) => e.stopPropagation()}>
+        <ResourceTypePicker
+          value={node.resourceType ?? 'book'}
+          onChange={(next) => {
+            onUpdateBook?.({ ...node, resourceType: next })
+            onLastEdited?.(node.id)
+          }}
+        />
       </div>
       <div className="px-3 py-2">
         {(() => {

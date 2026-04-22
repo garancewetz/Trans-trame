@@ -5,8 +5,8 @@ import { syncOverlayCanvasSize } from './useCosmographOverlay'
 import type { ApplyFocalVisualStateRef } from './useCosmographFocalState'
 import { RANDOM_SEED } from './cosmographRng'
 import { FORCES_FREE, LINK_DEFAULT_RGBA } from './cosmographForces'
-import type { CamState } from './cosmographCamera'
 import type { CosmographMode } from './useCosmographLayoutEffect'
+import { CLICK_MOVE_THRESHOLD_PX, HOVER_TOLERANCE_PX } from './cosmographDrawing'
 
 type Args = {
   containerRef: RefObject<HTMLDivElement | null>
@@ -18,8 +18,6 @@ type Args = {
   booksRef: MutableRefObject<Book[]>
   applyFocalRef: ApplyFocalVisualStateRef
   drawOverlay: () => void
-  initialCamRef: MutableRefObject<CamState | null>
-  writeCamToUrl: (cam: CamState) => void
   // Callback one-shot attaché sur `onSimulationEnd`. Le cluster effect s'en
   // sert pour fermer le loading mask dès que la simu converge, au lieu d'un
   // setTimeout hardcodé qui sur-estime ou sous-estime la durée réelle.
@@ -29,18 +27,22 @@ type Args = {
   // PAS `start()` — sinon la simulation reprend et la répulsion de
   // FORCES_FROZEN fait dériver les voisins hors de leur colonne année.
   modeRef: MutableRefObject<CosmographMode>
+  // Set des index visibles après filtres + timeline. Utilisé par le pick en
+  // tolérance pour ne pas « accrocher » un nœud greyed-out que l'utilisateur·ice
+  // ne peut pas voir à l'écran.
+  visibleIndexSetRef: MutableRefObject<Set<number> | null>
 }
 
 /**
  * Crée l'instance cosmos.gl une fois, attache les listeners du Graph
- * (pointer, drag, simulation, zoom) et gère le resize du canvas overlay +
- * la restauration de la caméra persistée dans l'URL. Tout est lu via refs
- * pour que les handlers restent valides sans recréer le Graph.
+ * (pointer, drag, simulation, zoom) et gère le resize du canvas overlay.
+ * Tout est lu via refs pour que les handlers restent valides sans recréer le
+ * Graph.
  */
 export function useCosmographInstance({
   containerRef, labelCanvasRef, graphRef, hoveredIndexRef, draggingRef,
-  onNodeClickRef, booksRef, applyFocalRef, drawOverlay, initialCamRef,
-  writeCamToUrl, onSimulationEndExtraRef, modeRef,
+  onNodeClickRef, booksRef, applyFocalRef, drawOverlay,
+  onSimulationEndExtraRef, modeRef, visibleIndexSetRef,
 }: Args): void {
   useEffect(() => {
     const container = containerRef.current
@@ -62,21 +64,6 @@ export function useCosmographInstance({
     // pas d'API cursor — on pilote le DOM à la main depuis les handlers
     // ci-dessous.
     container.style.cursor = 'grab'
-
-    let camRestoreApplied = false
-    const tryRestoreCamFromUrl = () => {
-      if (camRestoreApplied) return
-      const cam = initialCamRef.current
-      if (!cam) return
-      const g = graphRef.current
-      if (!g) return
-      g.setZoomTransformByPointPositions(
-        new Float32Array([cam.x, cam.y]),
-        0, cam.zoom, 0, false,
-      )
-      camRestoreApplied = true
-      drawOverlay()
-    }
 
     // Même background que Constellation — lu depuis la CSS var pour rester
     // en phase avec le thème (--color-bg-base = #06030f).
@@ -107,8 +94,11 @@ export function useCosmographInstance({
       curvedLinks: true,
       pointSizeScale: 0.8,
       scalePointsOnZoom: true,
-      renderHoveredPointRing: true,
-      hoveredPointRingColor: '#ece9ff',
+      // Anneau natif désactivé : on pilote nous-mêmes la détection en
+      // tolérance via pointermove (voir plus bas) et on redessine le ring
+      // dans l'overlay. Laisser cosmos gérer créerait deux sources de vérité
+      // qui divergent sur les hovers tolérants.
+      renderHoveredPointRing: false,
       pointGreyoutOpacity: 0.12,
       spaceSize: 8192,
       simulationRepulsionTheta: 1.15,
@@ -123,37 +113,17 @@ export function useCosmographInstance({
       ...FORCES_FREE,
       // Pas d'auto-fit : cosmos refit les positions après simulation, ce qui
       // dézoome sous les yeux de l'utilisateur·ice. `rescalePositions: true`
-      // donne déjà un cadrage initial correct à t=0 ; si une caméra est
-      // persistée dans l'URL, tryRestoreCamFromUrl l'applique.
+      // donne déjà un cadrage initial correct à t=0.
       fitViewOnInit: false,
       fitViewPadding: 0.2,
       rescalePositions: true,
       enableDrag: true,
       showFPSMonitor: false,
-      onPointClick: (index: number) => {
-        const book = booksRef.current[index]
-        if (book && onNodeClickRef.current) onNodeClickRef.current(book)
-      },
-      onPointMouseOver: (index: number) => {
-        if (draggingRef.current) return
-        hoveredIndexRef.current = index
-        container.style.cursor = 'pointer'
-        const g = graphRef.current
-        if (!g) return
-        applyFocalRef.current()
-        g.render()
-        drawOverlay()
-      },
-      onPointMouseOut: () => {
-        // Pendant un drag, le curseur peut déraper hors du nœud ; on
-        // verrouille le hover pour que le highlight reste sur le nœud tiré.
-        if (draggingRef.current) return
-        hoveredIndexRef.current = null
-        container.style.cursor = 'grab'
-        applyFocalRef.current()
-        graphRef.current?.render()
-        drawOverlay()
-      },
+      // NB : onPointClick / onPointMouseOver / onPointMouseOut sont
+      // intentionnellement absents — la détection du hover et du clic se fait
+      // côté container avec une tolérance de HOVER_TOLERANCE_PX pour ne pas
+      // obliger l'utilisateur·ice à viser au pixel près les petits points.
+      // Voir le bloc `pointermove` / `click` plus bas.
       onDragStart: () => {
         draggingRef.current = true
         container.style.cursor = 'grabbing'
@@ -172,12 +142,8 @@ export function useCosmographInstance({
         // Après drag : curseur selon l'élément courant sous le pointeur.
         container.style.cursor = hoveredIndexRef.current !== null ? 'pointer' : 'grab'
       },
-      onSimulationTick: () => {
-        if (!camRestoreApplied) tryRestoreCamFromUrl()
-        drawOverlay()
-      },
+      onSimulationTick: drawOverlay,
       onSimulationEnd: () => {
-        tryRestoreCamFromUrl()
         drawOverlay()
         const extra = onSimulationEndExtraRef.current
         if (extra) {
@@ -187,25 +153,133 @@ export function useCosmographInstance({
           extra()
         }
       },
-      onZoom: (_e, userDriven) => {
-        drawOverlay()
-        // Ne persiste que les changements initiés par l'utilisateur·ice —
-        // évite une boucle quand on restaure depuis l'URL ou que cosmos.gl
-        // fait un fitView automatique.
-        if (!userDriven) return
-        const g = graphRef.current
-        if (!g) return
-        const w = container.clientWidth
-        const h = container.clientHeight
-        const [cx, cy] = g.screenToSpacePosition([w / 2, h / 2])
-        writeCamToUrl({ x: cx, y: cy, zoom: g.getZoomLevel() })
-      },
+      onZoom: drawOverlay,
     })
     graphRef.current = graph
     applyFocalRef.current()
 
+    // ── Hover / click en tolérance ──────────────────────────────────────
+    // Cosmos.gl n'expose pas de `interactionRadius` public : son pick
+    // interne (renderHoveredPointRing + onPointMouseOver) teste uniquement
+    // le disque réel du point, ce qui est pénible sur les nœuds de 2–4 px à
+    // bas zoom. On prend la main sur le container : pointermove dessine un
+    // carré de HOVER_TOLERANCE_PX autour du curseur, on y cherche les
+    // candidats via `getPointsInRect` (GPU picking côté cosmos) et on
+    // garde le plus proche en distance écran. Le hovered index est notre
+    // source de vérité unique (applyFocalRef + drawOverlay la lisent).
+    //
+    // Le click est repris en parallèle : pointerdown mémorise la position,
+    // le click n'est validé que si le curseur a bougé < CLICK_MOVE_THRESHOLD
+    // — évite qu'un pan (mousedown + déplacement sur zone vide) ne
+    // déclenche onNodeClick parce que le hovered est resté verrouillé.
+    let rafQueued = false
+    let lastEvent: PointerEvent | null = null
+    const pickNearest = (ev: PointerEvent): number | null => {
+      const g = graphRef.current
+      if (!g) return null
+      const rect = container.getBoundingClientRect()
+      const x = ev.clientX - rect.left
+      const y = ev.clientY - rect.top
+      const T = HOVER_TOLERANCE_PX
+      // cosmos.gl lit les candidats via un readPixels sur son picking FBO.
+      // Avant le premier tick / après un context-loss ou resize, la texture
+      // peut être `undefined` et luma.gl jette. On laisse passer la frame :
+      // le prochain pointermove retentera une fois le FBO rétabli.
+      let candidates: ReturnType<typeof g.getPointsInRect> | undefined
+      try {
+        candidates = g.getPointsInRect([[x - T, y - T], [x + T, y + T]])
+      } catch {
+        return null
+      }
+      if (!candidates || candidates.length === 0) return null
+      const visible = visibleIndexSetRef.current
+      const passes = (idx: number): boolean => visible === null || visible.has(idx)
+      // Cas commun (rect 28×28 px) : 0 ou 1 candidat. Pas besoin de
+      // rechercher le plus proche, ni d'allouer le tableau de positions.
+      if (candidates.length === 1) {
+        const idx = candidates[0]
+        return passes(idx) ? idx : null
+      }
+      // Rare (cluster dense) : plusieurs points dans la tolérance — on
+      // prend le plus proche en distance écran. `getPointPositions()` alloue
+      // un number[] mais c'est payé uniquement dans ce cas.
+      const positions = g.getPointPositions()
+      let best: number | null = null
+      let bestD2 = Infinity
+      for (let k = 0; k < candidates.length; k++) {
+        const idx = candidates[k]
+        if (!passes(idx)) continue
+        const px = positions[idx * 2]
+        const py = positions[idx * 2 + 1]
+        if (!Number.isFinite(px) || !Number.isFinite(py)) continue
+        const [sx, sy] = g.spaceToScreenPosition([px, py])
+        const dx = sx - x
+        const dy = sy - y
+        const d2 = dx * dx + dy * dy
+        if (d2 < bestD2) {
+          bestD2 = d2
+          best = idx
+        }
+      }
+      return best
+    }
+    const processMove = () => {
+      rafQueued = false
+      const ev = lastEvent
+      lastEvent = null
+      if (!ev) return
+      if (draggingRef.current) return
+      const next = pickNearest(ev)
+      const prev = hoveredIndexRef.current
+      if (next === prev) return
+      hoveredIndexRef.current = next
+      container.style.cursor = next !== null ? 'pointer' : 'grab'
+      applyFocalRef.current()
+      graphRef.current?.render()
+      drawOverlay()
+    }
+    const onPointerMove = (ev: PointerEvent): void => {
+      lastEvent = ev
+      if (rafQueued) return
+      rafQueued = true
+      requestAnimationFrame(processMove)
+    }
+    const onPointerLeave = (): void => {
+      lastEvent = null
+      if (draggingRef.current) return
+      if (hoveredIndexRef.current === null) return
+      hoveredIndexRef.current = null
+      container.style.cursor = 'grab'
+      applyFocalRef.current()
+      graphRef.current?.render()
+      drawOverlay()
+    }
+    let downX = 0
+    let downY = 0
+    const onPointerDown = (ev: PointerEvent): void => {
+      downX = ev.clientX
+      downY = ev.clientY
+    }
+    const onClick = (ev: MouseEvent): void => {
+      const dx = ev.clientX - downX
+      const dy = ev.clientY - downY
+      if (dx * dx + dy * dy > CLICK_MOVE_THRESHOLD_PX * CLICK_MOVE_THRESHOLD_PX) return
+      const idx = hoveredIndexRef.current
+      if (idx === null) return
+      const book = booksRef.current[idx]
+      if (book && onNodeClickRef.current) onNodeClickRef.current(book)
+    }
+    container.addEventListener('pointermove', onPointerMove)
+    container.addEventListener('pointerleave', onPointerLeave)
+    container.addEventListener('pointerdown', onPointerDown)
+    container.addEventListener('click', onClick)
+
     return () => {
       window.removeEventListener('resize', onResize)
+      container.removeEventListener('pointermove', onPointerMove)
+      container.removeEventListener('pointerleave', onPointerLeave)
+      container.removeEventListener('pointerdown', onPointerDown)
+      container.removeEventListener('click', onClick)
       graph.destroy()
       graphRef.current = null
     }

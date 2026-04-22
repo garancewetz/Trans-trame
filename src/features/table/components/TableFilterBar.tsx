@@ -69,12 +69,15 @@ export function TableFilterBar({
       const tgtId = typeof l.target === 'string' ? l.target : (l.target as { id: string })?.id
       const srcNode = nodes.find((n) => n.id === srcId)
       const tgtNode = nodes.find((n) => n.id === tgtId)
+      const citationsBlob = (l.citations ?? [])
+        .map((c) => `${c.citation_text || ''} ${c.context || ''}`)
+        .join(' ')
       const haystack = [
         srcNode?.title || '',
         tgtNode?.title || '',
         bookAuthorDisplay(srcNode || {}, authorsMap),
         bookAuthorDisplay(tgtNode || {}, authorsMap),
-        l.citation_text || l.context || '',
+        citationsBlob,
       ].join(' ')
       return matchAllWords(q, haystack)
     })

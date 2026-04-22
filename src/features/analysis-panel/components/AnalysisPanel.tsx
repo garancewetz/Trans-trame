@@ -19,9 +19,10 @@ type AnalysisPanelProps = {
     nodes: unknown[]
     links: unknown[]
   }
-  activeFilter: string | null
+  activeAxes: ReadonlySet<string>
   activeHighlight: Highlight | null
-  onFilterChange: (axis: string | null) => void
+  onToggleAxis: (axis: string) => void
+  onClearAxes: () => void
   onHighlightChange: (h: Highlight | null) => void
   showTrigger?: boolean
   authorsMap: Map<string, AuthorNode>
@@ -30,7 +31,7 @@ type AnalysisPanelProps = {
 type AnyBook = { id: string; title?: string; year?: number | null; axes?: string[]; authorIds?: string[] }
 type AnyLink = { source: unknown; target: unknown }
 
-function AnalysisPanel({ graphData, activeFilter, activeHighlight, onFilterChange, onHighlightChange, showTrigger = true, authorsMap }: AnalysisPanelProps) {
+function AnalysisPanel({ graphData, activeAxes, activeHighlight, onToggleAxis, onClearAxes, onHighlightChange, showTrigger = true, authorsMap }: AnalysisPanelProps) {
   const { analysisPanelOpen: open, setAnalysisPanelOpen } = usePanelVisibility()
   const bookNodes = graphData.nodes as AnyBook[]
   const links = graphData.links as AnyLink[]
@@ -83,41 +84,55 @@ function AnalysisPanel({ graphData, activeFilter, activeHighlight, onFilterChang
           <section className="mb-5">
             <h3 className="mb-2 text-label font-semibold uppercase tracking-wide text-white/50">Axes</h3>
 
-            {/* Stacked bar */}
+            {/* Stacked bar — multi-axes : les axes sélectionnés restent à
+                opacity 1, les autres passent à 0.25 (si au moins un axe est
+                actif). Axes non actifs + set vide = full opacité. */}
             <div className="mb-2 flex h-3 w-full overflow-hidden rounded-full">
-              {axisStats.map(({ axis, pct, color }) => (
-                <button
-                  key={axis}
-                  type="button"
-                  onClick={() => onFilterChange(activeFilter === axis ? null : axis)}
-                  className="h-full cursor-pointer transition-opacity hover:opacity-80"
-                  style={{
-                    width: `${Math.max(pct, 1)}%`,
-                    backgroundColor: color,
-                    opacity: activeFilter && activeFilter !== axis ? 0.25 : 1,
-                  }}
-                  title={`${axis} — ${pct}%`}
-                />
-              ))}
+              {axisStats.map(({ axis, pct, color }) => {
+                const isSelected = activeAxes.has(axis)
+                const opacity = activeAxes.size === 0 || isSelected ? 1 : 0.25
+                return (
+                  <button
+                    key={axis}
+                    type="button"
+                    onClick={() => onToggleAxis(axis)}
+                    className="h-full cursor-pointer transition-opacity hover:opacity-80"
+                    style={{ width: `${Math.max(pct, 1)}%`, backgroundColor: color, opacity }}
+                    title={`${axis} — ${pct}%`}
+                  />
+                )
+              })}
             </div>
 
             {/* Legend */}
-            <div className="flex flex-wrap gap-x-3 gap-y-1">
-              {axisStats.map(({ axis, count, color }) => (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              {axisStats.map(({ axis, count, color }) => {
+                const isSelected = activeAxes.has(axis)
+                return (
+                  <button
+                    key={axis}
+                    type="button"
+                    onClick={() => onToggleAxis(axis)}
+                    className={clsx(
+                      'inline-flex cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-micro transition-all',
+                      isSelected ? 'bg-white/10 text-white/90' : 'text-white/45 hover:text-white/70',
+                    )}
+                  >
+                    <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+                    <span>{axis}</span>
+                    <span className="tabular-nums text-white/30">{count}</span>
+                  </button>
+                )
+              })}
+              {activeAxes.size > 0 && (
                 <button
-                  key={axis}
                   type="button"
-                  onClick={() => onFilterChange(activeFilter === axis ? null : axis)}
-                  className={clsx(
-                    'inline-flex cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-micro transition-all',
-                    activeFilter === axis ? 'bg-white/10 text-white/90' : 'text-white/45 hover:text-white/70',
-                  )}
+                  onClick={onClearAxes}
+                  className="rounded px-1 py-0.5 text-micro text-white/30 transition-colors hover:text-white/70"
                 >
-                  <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-                  <span>{axis}</span>
-                  <span className="tabular-nums text-white/30">{count}</span>
+                  × tout
                 </button>
-              ))}
+              )}
             </div>
           </section>
 

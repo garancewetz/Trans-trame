@@ -50,7 +50,9 @@ export const FORCES_FROZEN = {
 // Mode cluster : répulsion très forte + ressorts coupés = chaque cluster se
 // forme comme un disque compact autour de son centroïde, sans que les liens
 // tirent sur la composition. Gravité modérée rapproche les clusters sans les
-// écraser l'un dans l'autre.
+// écraser l'un dans l'autre. UNCATEGORIZED est traité comme un pair du ring
+// (auto-placement) — les livres de sous-clusters (philo…) partagent ce
+// cluster et sont distingués uniquement par le rendu.
 export const FORCES_CLUSTER = {
   simulationRepulsion: 80,     // Répulsion entre points. Très élevée pour que les nœuds d'un même cluster restent lisibles malgré le packing.
   simulationLinkSpring: 0,     // Liens désactivés côté force : en cluster, seuls les centroïdes dictent la place.

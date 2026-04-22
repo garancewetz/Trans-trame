@@ -3,7 +3,7 @@ import { axisColor, axisLabel } from '@/common/utils/categories'
 import type { Highlight } from '@/core/FilterContext'
 
 type ActiveFilterBarProps = {
-  activeFilter: string | null
+  activeAxes: ReadonlySet<string>
   activeHighlight: Highlight | null
   highlightLabel: string | null
   selectedAuthor: string | null
@@ -11,7 +11,8 @@ type ActiveFilterBarProps = {
   selectedBookTitle: string | null
   visibleCount?: number
   totalCount?: number
-  onClearAxis: () => void
+  onToggleAxis: (axis: string) => void
+  onClearAxes: () => void
   onClearHighlight: () => void
   onClearAuthor: () => void
   onClearSelectedBook: () => void
@@ -20,7 +21,7 @@ type ActiveFilterBarProps = {
 const HIGHLIGHT_ICON = { decade: Calendar, book: BookOpen, author: Users, citedMin: TrendingUp } as const
 
 export function ActiveFilterBar({
-  activeFilter,
+  activeAxes,
   activeHighlight,
   highlightLabel,
   selectedAuthor,
@@ -28,15 +29,17 @@ export function ActiveFilterBar({
   selectedBookTitle,
   visibleCount,
   totalCount,
-  onClearAxis,
+  onToggleAxis,
+  onClearAxes,
   onClearHighlight,
   onClearAuthor,
   onClearSelectedBook,
 }: ActiveFilterBarProps) {
-  if (!activeFilter && !activeHighlight && !selectedAuthor && !selectedBookTitle) return null
+  if (activeAxes.size === 0 && !activeHighlight && !selectedAuthor && !selectedBookTitle) return null
 
   const HighlightIcon = activeHighlight ? HIGHLIGHT_ICON[activeHighlight.kind] : null
   const showCount = typeof visibleCount === 'number' && typeof totalCount === 'number'
+  const axesList = Array.from(activeAxes)
 
   return (
     <div className="pointer-events-none fixed left-1/2 top-[60px] z-30 -translate-x-1/2">
@@ -52,23 +55,33 @@ export function ActiveFilterBar({
           <span className="text-[0.78rem] font-medium text-white/35">Filtres</span>
         )}
 
-        {activeFilter && (
+        {axesList.map((axis) => (
           <button
+            key={axis}
             type="button"
-            onClick={onClearAxis}
+            onClick={() => onToggleAxis(axis)}
             className="group inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/12 bg-white/5 py-0.5 pl-2 pr-1.5 text-[0.8rem] font-semibold text-white/75 transition-all hover:border-white/25 hover:bg-white/10 hover:text-white"
           >
             <span
               className="h-2 w-2 shrink-0 rounded-full"
-              style={{ background: axisColor(activeFilter) ?? '#fff' }}
+              style={{ background: axisColor(axis) ?? '#fff' }}
             />
             <span className="truncate">
-              {axisLabel(activeFilter) ?? activeFilter}
+              {axisLabel(axis) ?? axis}
             </span>
             <X
               size={12}
               className="shrink-0 text-white/30 transition-colors group-hover:text-white/70"
             />
+          </button>
+        ))}
+        {activeAxes.size > 1 && (
+          <button
+            type="button"
+            onClick={onClearAxes}
+            className="inline-flex cursor-pointer items-center gap-1 rounded-full px-2 py-0.5 text-micro font-medium text-white/40 transition-colors hover:bg-white/5 hover:text-white/75"
+          >
+            Tout effacer
           </button>
         )}
 

@@ -4,54 +4,61 @@ Comprehensive reference of all user-facing features in the application.
 
 ---
 
-## 1. Graph Visualization (Constellation)
+## 1. Graph Visualization
 
-Main view: a 2D force-directed graph where **nodes = works** and **edges = citations**.
+Main view: a 2D GPU-accelerated graph (cosmos.gl / WebGL) where **nodes = works** and **edges = citations**. Three view modes share the same renderer instance — switching preserves camera and selection.
 
-### Interactions
+### View modes
+
+| Mode | Layout | Purpose |
+|------|--------|---------|
+| **Transmissions** (default) | Force-directed (repulsion + link spring + gravity) | Read the citation network — who cites whom |
+| **Catégories** | Clustered around a ring of thematic axes + a central "Autres disciplines" mass (philosophy / sociology / literature etc. cited by the feminist corpus) | Read the thematic composition of the corpus |
+| **Chronologie** | Positions fixed: X ∝ publication year, Y stacked per year; works without a year grouped at the right | Read the temporal spread of the corpus |
+
+### Interactions (all modes)
 
 | Action | Trigger | Effect |
 |--------|---------|--------|
 | Select node | Click node | Opens side panel with book details |
 | Deselect node | Click same node / Escape | Closes side panel |
-| Hover node | Mouse over node | Highlights connected citations, shows label + year |
-| Select link | Click link (or citation in side panel) | Shows citation details (quote, edition, page) |
-| Pan camera | Drag on empty space / Arrow keys | Moves viewport |
-| Zoom | Scroll wheel | Zooms in/out (clamped to bounds) |
+| Hover node | Mouse over node | Highlights outgoing (cyan) / incoming (gold) citations, shows full label |
+| Select link | Click citation in side panel | Shows citation details (quote, edition, page) |
+| Drag node | Pointer drag on node (Transmissions / Catégories) | Moves node and reheats the simulation so neighbors follow |
+| Pan camera | Drag empty space / Arrow keys | Moves viewport |
+| Zoom | Scroll wheel / Z, S, +, − | Zooms in/out (clamped) |
 | Fit to view | Space | Centers camera on all visible nodes |
 
 ### Node rendering
 
 - Circle size scaled by citation count (in-degree)
-- Color blended from thematic axes
-- Gradient for multi-axis nodes
-- Label + year shown on hover or when zoomed in
-- Selection halo on click
+- Conic-gradient disc colored by the work's thematic axes (solid fill for single-axis works)
+- Gradient textures cached per unique axis-combination (≈50 textures for ~5k nodes)
+- Green pulse ring for ~3.5 s around freshly imported nodes
+- Selection halo on click; hover glow tinted by the dominant axis color
+
+### Labels
+
+- **Landmarks always visible**: top 12 by in-degree in Transmissions; top 12 by size in Catégories
+- **Focal label on hover / selection**: larger font, brighter background, full author + title wrapped on 2 lines
+- **Axis ring labels**: only in Catégories — uppercase, placed above the topmost tracked point of each cluster, bordered with the axis color
+- Greyed-out points (filter / timeline) suppress their landmark label
 
 ### Physics engine
 
-- D3 force simulation: charge (repulsion), collide (padding), link distance
-- Adaptive forces based on node degree
-- Damping/friction for stable layout
+- cosmos.gl GPU simulation — repulsion, link spring, center, gravity, cluster-attraction, friction
+- Three pre-tuned force profiles per mode (see [cosmographForces.ts](src/features/visualizations/cosmographForces.ts))
+- Simulation paused in Chronologie (positions are imposed); safety-net values keep drag-release stable
+
+### Minimap
+
+- Top-500 nodes by degree shown as dots in a corner box
+- Red viewport rectangle tracks the camera
+- Click to pan the camera there
 
 ---
 
-## 2. Alternative Visualization Modes
-
-Selectable via the view mode toggle in the navbar.
-
-### Cosmograph (GPU force-directed, experimental)
-
-- cosmos.gl / WebGL renderer — same work/citation graph as Constellation but GPU-accelerated
-- Axis + highlight filters wired identically to Constellation (click an axis, author, decade → same visibility rules)
-- Node drag reheats the simulation so neighbors follow (mirror of Constellation)
-- Keyboard pan (arrow keys) and zoom (Z / S / + / -) — arrow-up pans up, arrow-down pans down
-- Landmark labels (top-degree) always visible; hovered node shows full label + glow
-- Labeled "COSMOGRAPH (SPIKE)" in-view while the mode is still experimental
-
----
-
-## 3. Timeline
+## 2. Timeline
 
 Bottom bar with year range filter and playback controls.
 
@@ -65,7 +72,7 @@ Display: histogram of book distribution per year, gradient fill between thumbs, 
 
 ---
 
-## 4. Filters
+## 3. Filters
 
 All filter types are mutually exclusive: toggling one clears the others.
 
@@ -92,7 +99,7 @@ All filter types are mutually exclusive: toggling one clears the others.
 
 ---
 
-## 5. Search
+## 4. Search
 
 ### Global search (Navbar)
 
@@ -107,7 +114,7 @@ The Catalogue panels and Contribution table each have a local search bar that fi
 
 ---
 
-## 6. Side Panel (Node & Link Details)
+## 5. Side Panel (Node & Link Details)
 
 Right panel that appears on node/link selection.
 
@@ -142,7 +149,7 @@ Right panel that appears on node/link selection.
 
 ---
 
-## 7. Catalogue Panels (Left Sidebar)
+## 6. Catalogue Panels (Left Sidebar)
 
 ### Textes Panel
 
@@ -158,11 +165,11 @@ Right panel that appears on node/link selection.
 | Action | Trigger | Effect |
 |--------|---------|--------|
 | Browse authors | Open via Catalogue > Auteur·ices | Virtual list of all authors |
-| Filter by author | Click author name | Activates author filter (→ see §4) |
+| Filter by author | Click author name | Activates author filter (→ see §3) |
 
 ---
 
-## 8. Analysis Panel
+## 7. Analysis Panel
 
 Floating panel with graph statistics and metrics. Toggle via navbar.
 
@@ -183,9 +190,9 @@ Dismissible with Escape.
 
 ---
 
-## 9. Contribution Table (CRUD)
+## 8. Contribution Table (CRUD)
 
-Full data editing interface. Requires authentication (→ see §12).
+Full data editing interface. Requires authentication (→ see §11).
 
 ### Books Tab (Textes)
 
@@ -206,6 +213,7 @@ Full data editing interface. Requires authentication (→ see §12).
 | Edit author | Click row → inline edit | Updates author fields |
 | Delete author | Trash icon + confirm | Removes author |
 | Deduplicate | "Dédoublonner" button | Fuzzy match to find similar names |
+| Mark pair as not a duplicate | "Pas des doublons" button per group | Persists in `author_not_duplicate_pairs`; the group never resurfaces in dedupe detection (homonyms like Barbara FRIED vs Barbara CREED) |
 | Find orphans | "Orphelins" button | Authors not linked to any book |
 
 ### Links Tab (Liens)
@@ -224,11 +232,11 @@ Full data editing interface. Requires authentication (→ see §12).
 |--------|---------|--------|
 | View imports | Open history tab | Shows past batch imports with stats |
 | View batch details | Click batch entry | Opens BatchInfoModal with import details |
-| Smart import | "Import intelligent" button | Opens SmartImportModal (→ see §10) |
+| Smart import | "Import intelligent" button | Opens SmartImportModal (→ see §9) |
 
 ---
 
-## 10. Smart Import
+## 9. Smart Import
 
 Two-phase batch import workflow with AI-assisted parsing.
 
@@ -256,7 +264,7 @@ Two-phase batch import workflow with AI-assisted parsing.
 
 ---
 
-## 11. AI-Assisted Features
+## 10. AI-Assisted Features
 
 ### AI Enrichment (AIEnrichModal)
 
@@ -284,7 +292,7 @@ Two-phase batch import workflow with AI-assisted parsing.
 
 ---
 
-## 12. Authentication
+## 11. Authentication
 
 | Action | Trigger | Effect |
 |--------|---------|--------|
@@ -300,7 +308,7 @@ Two-phase batch import workflow with AI-assisted parsing.
 
 ---
 
-## 13. Keyboard Shortcuts
+## 12. Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
@@ -342,4 +350,4 @@ Two-phase batch import workflow with AI-assisted parsing.
 | 8 | Crip Theory | #8B4513 |
 | 9 | Body & Sexology | #FF4D6D |
 | 10 | Feminist Theory | #E040FB |
-| 11 | Uncategorized | #999999 |
+| 11 | Autres disciplines | #999999 |

@@ -21,13 +21,13 @@ export interface LLMParsedResult {
   axes: Axis[]
   /** Thematiques emergentes detectees par le LLM (format « UNCATEGORIZED:label ») */
   suggestedThemes: string[]
-  /** Resource type: book, article, podcast, film, other */
+  /** Resource type: book, article, podcast, film, music, other */
   resourceType: string
 }
 
 // ─── Validation constants (kept client-side for response validation) ────────
 
-const VALID_RESOURCE_TYPES = ['book', 'article', 'podcast', 'film', 'other'] as const
+const VALID_RESOURCE_TYPES = ['book', 'article', 'podcast', 'film', 'music', 'other'] as const
 
 const VALID_AXES = [
   'ANTIRACISM', 'AFROFEMINIST', 'QUEER', 'HEALTH', 'HISTORY',

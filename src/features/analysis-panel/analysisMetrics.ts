@@ -46,6 +46,100 @@ export function computeAxisStats(bookNodes: { axes?: string[] }[]) {
   })).filter((s) => s.count > 0)
 }
 
+/* ── Sous-axes — détection des disciplines convoquées ──── */
+
+const SUB_AXIS_PREFIX = 'UNCATEGORIZED:'
+
+export type SubAxisStat = {
+  key: string              // "philosophy" (sans préfixe)
+  fullKey: string          // "UNCATEGORIZED:philosophy"
+  bookCount: number        // nombre d'œuvres dans ce sous-axe
+  pctOfCorpus: number      // % du corpus total
+  citedByCorpus: number    // citations reçues depuis le reste du corpus
+  // Score "gravité éditoriale" = combien la pensée féministe sollicite ce
+  // sous-axe. Heuristique simple : bookCount + citedByCorpus (un sous-axe
+  // peut peser par nombre d'œuvres ou par centralité d'un seul hub — les
+  // deux comptent pour juger de la pertinence d'une promotion).
+  gravity: number
+  topWorks: Array<{
+    id: string
+    title: string
+    year?: number | null
+    citedBy: number
+  }>
+}
+
+/**
+ * Agrège les sous-axes `UNCATEGORIZED:xxx` — outil d'aide à la décision
+ * éditoriale : les sous-axes avec forte gravité sont des candidats à
+ * promotion au rang d'axe à part entière. Promotion = décision politique
+ * (cf. context.md), pas un effet de seuil automatique.
+ */
+export function computeSubAxisStats(
+  bookNodes: { id: string; title?: string; year?: number | null; axes?: string[] }[],
+  links: { source: unknown; target: unknown }[],
+  topWorksLimit = 3,
+): SubAxisStat[] {
+  // Regroupe les books par sous-axe. Un livre peut apparaître dans plusieurs
+  // sous-axes (rare mais possible), on l'accepte pour ne pas mentir sur la
+  // distribution.
+  const booksBySubAxis = new Map<string, typeof bookNodes>()
+  for (const book of bookNodes) {
+    for (const axis of book.axes || []) {
+      if (!axis.startsWith(SUB_AXIS_PREFIX)) continue
+      const sub = axis.slice(SUB_AXIS_PREFIX.length)
+      if (!sub) continue
+      const list = booksBySubAxis.get(sub) ?? []
+      list.push(book)
+      booksBySubAxis.set(sub, list)
+    }
+  }
+
+  const citedByCount: Record<string, number> = {}
+  for (const link of links) {
+    const tgt = resolveId(link.target)
+    if (tgt) citedByCount[tgt] = (citedByCount[tgt] || 0) + 1
+  }
+
+  const totalCorpus = bookNodes.length || 1
+  const stats: SubAxisStat[] = []
+  for (const [sub, books] of booksBySubAxis) {
+    const bookIds = new Set(books.map((b) => b.id))
+    // "Cited by corpus" = liens entrants provenant d'un livre *hors* du
+    // sous-axe (éviter de compter les citations internes — ce qu'on veut
+    // mesurer, c'est à quel point la pensée féministe sollicite ce champ).
+    let citedByCorpus = 0
+    for (const link of links) {
+      const src = resolveId(link.source)
+      const tgt = resolveId(link.target)
+      if (!src || !tgt) continue
+      if (bookIds.has(tgt) && !bookIds.has(src)) citedByCorpus++
+    }
+
+    const topWorks = [...books]
+      .map((b) => ({
+        id: b.id,
+        title: b.title ?? '(sans titre)',
+        year: b.year ?? null,
+        citedBy: citedByCount[b.id] || 0,
+      }))
+      .sort((a, b) => b.citedBy - a.citedBy)
+      .slice(0, topWorksLimit)
+
+    stats.push({
+      key: sub,
+      fullKey: `${SUB_AXIS_PREFIX}${sub}`,
+      bookCount: books.length,
+      pctOfCorpus: Math.round((books.length / totalCorpus) * 1000) / 10, // 1 décimale
+      citedByCorpus,
+      gravity: books.length + citedByCorpus,
+      topWorks,
+    })
+  }
+
+  return stats.sort((a, b) => b.gravity - a.gravity)
+}
+
 /* ── Décennies — temporal distribution ─────────────────── */
 
 export function computeDecades(bookNodes: { year?: number | null }[]) {

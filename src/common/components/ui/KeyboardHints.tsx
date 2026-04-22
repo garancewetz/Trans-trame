@@ -94,6 +94,7 @@ export function KeyboardHints() {
               }}
             />
             <HintRow keys={['Espace']} label="Recentrer" />
+            <HintRow keys={['Glisser']} label="Déplacer un nœud" />
           </div>
         </div>
       </div>

@@ -35,14 +35,6 @@ type DbLinkRow = {
   id: string
   source_id?: string
   target_id?: string
-  /** @deprecated kept for rollback safety; citations live in link_citations. */
-  citation_text?: string
-  /** @deprecated — see citation_text note. */
-  edition?: string
-  /** @deprecated — see citation_text note. */
-  page?: string
-  /** @deprecated — see citation_text note. */
-  context?: string
 }
 
 type DbLinkCitationRow = {
@@ -136,22 +128,12 @@ export function dbLinkCitationToCitation(row: DbLinkCitationRow): LinkCitation {
   }
 }
 
-/**
- * Build a Link object with its citations array attached, and flat fields
- * mirrored from citations[0]. The mirror is read-only compat — mutations on
- * citation fields must go through the citation CRUD, not updateLinkRowById.
- */
 export function dbLinkToLink(row: DbLinkRow, citations: LinkCitation[] = []): Link {
-  const primary = citations[0]
   return {
     id: row.id,
     source: row.source_id ?? '',
     target: row.target_id ?? '',
     citations,
-    citation_text: primary?.citation_text ?? '',
-    edition: primary?.edition ?? '',
-    page: primary?.page ?? '',
-    context: primary?.context ?? '',
   }
 }
 

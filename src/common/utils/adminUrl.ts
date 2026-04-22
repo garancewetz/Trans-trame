@@ -23,5 +23,6 @@ export function tabFromAdminSegment(segment: string | undefined): TableTabId {
 export function drawerToolFromParam(value: string | null): DrawerTool {
   if (value === 'history') return 'history'
   if (value === 'review') return 'review'
+  if (value === 'subaxes') return 'subaxes'
   return null
 }

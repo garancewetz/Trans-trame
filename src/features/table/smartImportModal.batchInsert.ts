@@ -1,10 +1,10 @@
-import type { Author, Book, Link } from '@/types/domain'
+import type { Author, Book, CreateLinkInput } from '@/types/domain'
 import type { ParsedBook } from './parseSmartInput'
 import { isThenable, resolveOrCreateAuthors } from './smartImportModal.utils'
 
 type OnAddBook = (book: Partial<Book> & Pick<Book, 'id' | 'title'>) => void | PromiseLike<unknown>
-type OnAddLink = (link: Partial<Link> & Pick<Link, 'source' | 'target'>) => void
-type OnAddLinks = (links: Array<Partial<Link> & Pick<Link, 'source' | 'target'>>) => void
+type OnAddLink = (link: CreateLinkInput) => void
+type OnAddLinks = (links: CreateLinkInput[]) => void
 
 export async function runSmartImportBatchInsert(params: {
   parsed: ParsedBook[]

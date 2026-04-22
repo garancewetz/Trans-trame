@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Check, Link2, Trash2 } from 'lucide-react'
-import type { Book, BookId, Link } from '@/types/domain'
+import type { Book, BookId, CreateLinkInput } from '@/types/domain'
 import type { AuthorNode } from '@/common/utils/authorUtils'
 import { bookAuthorDisplay } from '@/common/utils/authorUtils'
 import { axesGradient } from '@/common/utils/categories'
@@ -36,7 +36,7 @@ type Props = {
   orphanConfirm: boolean
   setOrphanModal: (v: boolean) => void
   setOrphanConfirm: (v: boolean) => void
-  onAddLinks?: (links: Array<Partial<Link> & Pick<Link, 'source' | 'target'>>) => unknown
+  onAddLinks?: (links: CreateLinkInput[]) => unknown
 }
 
 export function TableOrphanModal({
@@ -91,10 +91,6 @@ export function TableOrphanModal({
     const linksToAdd = Array.from(checkedIds).map((id) => ({
       source: linkTarget.id,
       target: id,
-      citation_text: '',
-      edition: '',
-      page: '',
-      context: '',
     }))
     onAddLinks?.(linksToAdd)
     setCheckedIds(new Set())

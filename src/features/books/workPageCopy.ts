@@ -8,10 +8,6 @@ type CitationFieldsReader = {
   edition?: string
 }
 
-export function linkExcerpt(link: CitationFieldsReader) {
-  return (link.citation_text || link.context || '').trim()
-}
-
 export function citationMetaLine(src: CitationFieldsReader) {
   const parts: string[] = []
   if (src.page) parts.push(src.page)

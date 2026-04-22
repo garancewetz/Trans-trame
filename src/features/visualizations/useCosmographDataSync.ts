@@ -32,7 +32,7 @@ export function useCosmographDataSync({
 
   // Géométrie : positions, couleurs, tailles, images. Ne change que quand
   // graphData/authorsMap change (→ useCosmographBuffers rebuild). Indépendant
-  // du mode — un toggle Cosmograph ↔ Catégories ne doit pas re-binder les
+  // du mode — un toggle Transmissions ↔ Catégories ne doit pas re-binder les
   // buffers GPU des points.
   useEffect(() => {
     const g = graphRef.current

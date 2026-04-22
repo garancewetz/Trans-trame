@@ -44,7 +44,7 @@ export async function fetchAllPaginated<Row>(
 }
 
 export async function loadGraphDataFromSupabase() {
-  const [booksRes, authorsRes, linksRes, citationsRes] = await Promise.all([
+  const [booksRes, authorsRes, linksRes, citationsRes, notDupPairsRes] = await Promise.all([
     fetchAllPaginated(
       (from, to) => supabase
         .from('resources')
@@ -80,9 +80,16 @@ export async function loadGraphDataFromSupabase() {
         .range(from, to),
       'link_citations',
     ),
+    fetchAllPaginated(
+      (from, to) => supabase
+        .from('author_not_duplicate_pairs')
+        .select('author_a_id, author_b_id')
+        .range(from, to),
+      'author_not_duplicate_pairs',
+    ),
   ])
 
-  return { booksRes, authorsRes, linksRes, citationsRes }
+  return { booksRes, authorsRes, linksRes, citationsRes, notDupPairsRes }
 }
 
 export function insertResourceRow(row: TablesInsert<'resources'>) {
@@ -111,6 +118,30 @@ export function updateAuthorRowById(id: string, fields: TablesUpdate<'authors'>)
 
 export function deleteAuthorRowById(id: string) {
   return supabase.from('authors').update({ deleted_at: new Date().toISOString() }).eq('id', id)
+}
+
+// ── Author not-duplicate pairs (homonym false positives) ───────────────────
+// Canonical order: author_a_id < author_b_id is enforced both at insert time
+// (here) and at the DB level via CHECK constraint. Callers can pass any order.
+
+function canonicalPair(a: string, b: string): [string, string] {
+  return a < b ? [a, b] : [b, a]
+}
+
+export function insertAuthorNotDuplicatePair(a: string, b: string) {
+  const [author_a_id, author_b_id] = canonicalPair(a, b)
+  return supabase
+    .from('author_not_duplicate_pairs')
+    .insert({ author_a_id, author_b_id })
+}
+
+export function deleteAuthorNotDuplicatePair(a: string, b: string) {
+  const [author_a_id, author_b_id] = canonicalPair(a, b)
+  return supabase
+    .from('author_not_duplicate_pairs')
+    .delete()
+    .eq('author_a_id', author_a_id)
+    .eq('author_b_id', author_b_id)
 }
 
 export function insertLinkRow(row: TablesInsert<'links'>) {

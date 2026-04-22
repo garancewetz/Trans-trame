@@ -82,7 +82,7 @@ export function detectAnomalies(
   for (const l of links) {
     const srcId = normalizeEndpointId(l.source)
     const tgtId = normalizeEndpointId(l.target)
-    const citation = typeof l.citation_text === 'string' ? l.citation_text.trim() : ''
+    const citation = (l.citations?.[0]?.citation_text || '').trim()
     const citationSuffix = citation ? ` — « ${citation} »` : ''
 
     const sourceMissing = !srcId || !bookById.has(srcId)
