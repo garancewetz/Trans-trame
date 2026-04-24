@@ -35,9 +35,9 @@ export function Legend({
 
   return (
     <div
-      className="fixed top-[68px] left-3 z-20 flex flex-col rounded-[10px] border border-white/10 bg-bg-base/45 px-4 backdrop-blur-2xl backdrop-saturate-150 py-3"
+      className="fixed top-[68px] left-3 z-20 flex flex-col rounded-[10px] border border-border-default bg-bg-base/45 px-4 backdrop-blur-2xl backdrop-saturate-150 py-3"
     >
-      <div className="mb-2 space-y-1 border-b border-white/5 pb-3 text-caption leading-snug text-white/55">
+      <div className="mb-2 space-y-1 border-b border-border-subtle pb-3 text-caption leading-snug text-text-soft">
         <div><span className="text-white/75">Un point</span> · une œuvre</div>
         <div><span className="text-white/75">Un lien</span> · une œuvre qui en cite une autre</div>
       </div>
@@ -46,7 +46,7 @@ export function Legend({
         onClick={() => setCollapsed((v) => !v)}
         aria-expanded={!collapsed}
         aria-label={collapsed ? 'Développer les catégories' : 'Réduire les catégories'}
-        className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-md text-left text-micro font-bold uppercase tracking-[2px] text-white/30 outline-none transition-colors hover:text-white/45 focus-visible:ring-1 focus-visible:ring-white/20 min-h-9`}
+        className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-md text-left text-micro font-bold uppercase tracking-[2px] text-text-muted outline-none transition-colors hover:text-text-soft focus-visible:ring-1 focus-visible:ring-white/20 min-h-9`}
       >
         <span className="inline-flex min-w-0 items-center gap-1.5">
           <Tags size={12} className="shrink-0" />
@@ -54,7 +54,7 @@ export function Legend({
         </span>
         <ChevronDown
           size={12}
-          className={`shrink-0 text-white/25 transition-transform duration-200 ease-out ${collapsed ? '' : 'rotate-180'}`}
+          className={`shrink-0 text-text-dimmed transition-transform duration-200 ease-out ${collapsed ? '' : 'rotate-180'}`}
           aria-hidden
         />
       </Button>
@@ -74,7 +74,7 @@ export function Legend({
                   key={axis}
                   className={[
                     'flex cursor-pointer items-center gap-2.5 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-left text-label font-medium uppercase tracking-[0.5px] transition-all backdrop-blur-lg',
-                    isActive ? 'border-white/20 bg-white/10 text-white' : 'text-white/50 hover:bg-white/5 hover:text-white/80',
+                    isActive ? 'border-white/20 bg-white/10 text-white' : 'text-text-soft hover:bg-white/5 hover:text-white/80',
                   ].join(' ')}
                   onClick={() => toggleFilter(axis)}
                   onMouseEnter={() => setHoveredFilter(axis)}
@@ -93,7 +93,7 @@ export function Legend({
                     <Badge
                       variant="count"
                       count={axisCountsByAxis?.[axis] ?? 0}
-                      className="bg-white/10 px-[7px] py-px text-micro font-bold text-white/45 normal-case"
+                      className="bg-white/10 px-[7px] py-px text-micro font-bold text-text-soft normal-case"
                     />
                   </span>
                 </Button>

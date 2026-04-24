@@ -166,16 +166,16 @@ function ModeToggle({ mode, totalLinks, linkSearch, onList, onCreate }: {
   mode: Mode; totalLinks: number; linkSearch: string; onList: () => void; onCreate: () => void
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-1 border-b border-white/8 px-5 py-1.5">
+    <div className="flex shrink-0 items-center gap-1 border-b border-border-subtle px-5 py-1.5">
       <button type="button" onClick={onList}
         className={['rounded-md px-3 py-1.5 text-label font-semibold transition-all',
-          mode === 'list' ? 'bg-white/8 text-white/80' : 'text-white/35 hover:text-white/55'].join(' ')}>
+          mode === 'list' ? 'bg-white/8 text-white/80' : 'text-text-secondary hover:text-text-soft'].join(' ')}>
         Relations
-        {totalLinks > 0 && <span className="ml-1.5 text-micro font-normal text-white/25">{totalLinks}</span>}
+        {totalLinks > 0 && <span className="ml-1.5 text-micro font-normal text-text-dimmed">{totalLinks}</span>}
       </button>
       <button type="button" onClick={onCreate}
         className={['rounded-md px-3 py-1.5 text-label font-semibold transition-all',
-          mode === 'create' ? 'bg-cyan/10 text-cyan/80' : 'text-white/35 hover:text-cyan/60'].join(' ')}>
+          mode === 'create' ? 'bg-cyan/10 text-cyan/80' : 'text-text-secondary hover:text-cyan/60'].join(' ')}>
         + Tisser
       </button>
       {linkSearch && mode === 'list' && (
@@ -191,12 +191,12 @@ function FocusedBookBanner({ node, authorsMap, onTisser, onSmartImport, onClear 
   onTisser: () => void; onSmartImport?: () => void; onClear: () => void
 }) {
   return (
-    <div className="shrink-0 border-b border-white/8 px-5 py-3">
+    <div className="shrink-0 border-b border-border-subtle px-5 py-3">
       <div className="flex items-center gap-2 rounded-lg border border-cyan/15 bg-cyan/3 px-3 py-2.5">
         <AxesDot axes={node.axes || []} />
         <div className="min-w-0 flex-1">
           <span className="block truncate font-mono text-[0.88rem] font-semibold text-white/85">{node.title}</span>
-          <span className="block font-mono text-micro text-white/30">
+          <span className="block font-mono text-micro text-text-muted">
             {bookAuthorDisplay(node, authorsMap)}{node.year ? `, ${node.year}` : ''}
           </span>
         </div>
@@ -210,7 +210,7 @@ function FocusedBookBanner({ node, authorsMap, onTisser, onSmartImport, onClear 
             <Zap size={10} /> Import
           </button>
         )}
-        <button type="button" onClick={onClear} className="shrink-0 text-white/25 transition-colors hover:text-white/55">
+        <button type="button" onClick={onClear} className="shrink-0 text-text-dimmed transition-colors hover:text-text-soft">
           <X size={12} />
         </button>
       </div>
@@ -301,16 +301,16 @@ function LinkCreateMode({ nodes, authorsMap, linkSourceNode, setLinkSourceNode, 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Direction toggle + picker */}
-      <div className="shrink-0 border-b border-white/8 px-5 py-4">
+      <div className="shrink-0 border-b border-border-subtle px-5 py-4">
         <div className="mb-2 flex items-center gap-1">
           <button type="button" onClick={() => { setLinkDirection('source'); setLinkCheckedIds(new Set<BookId>()) }}
             className={['rounded-md px-2 py-1 text-micro font-semibold transition-all',
-              linkDirection === 'source' ? 'bg-cyan/12 text-cyan/80' : 'text-white/30 hover:text-white/55'].join(' ')}>
+              linkDirection === 'source' ? 'bg-cyan/12 text-cyan/80' : 'text-text-muted hover:text-text-soft'].join(' ')}>
             Livre source
           </button>
           <button type="button" onClick={() => { setLinkDirection('cited'); setLinkCheckedIds(new Set<BookId>()) }}
             className={['rounded-md px-2 py-1 text-micro font-semibold transition-all',
-              linkDirection === 'cited' ? 'bg-cyan/12 text-cyan/80' : 'text-white/30 hover:text-white/55'].join(' ')}>
+              linkDirection === 'cited' ? 'bg-cyan/12 text-cyan/80' : 'text-text-muted hover:text-text-soft'].join(' ')}>
             Livre cité
           </button>
         </div>
@@ -321,7 +321,7 @@ function LinkCreateMode({ nodes, authorsMap, linkSourceNode, setLinkSourceNode, 
         />
         {linkSourceNode && (
           <button type="button" onClick={() => { setLinkSourceNode(null); setLinkCheckedIds(new Set<BookId>()) }}
-            className="mt-1.5 inline-flex items-center gap-1 font-mono text-micro text-white/25 transition-colors hover:text-white/55">
+            className="mt-1.5 inline-flex items-center gap-1 font-mono text-micro text-text-dimmed transition-colors hover:text-text-soft">
             <X size={10} /> retirer
           </button>
         )}
@@ -330,16 +330,16 @@ function LinkCreateMode({ nodes, authorsMap, linkSourceNode, setLinkSourceNode, 
       {linkSourceNode ? (
         <>
           {/* Target checklist */}
-          <div className="shrink-0 border-b border-white/6 px-5 py-2">
+          <div className="shrink-0 border-b border-border-subtle px-5 py-2">
             <div className="relative max-w-sm">
               <Search size={11} className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-white/22" />
               <TextInput variant="table"
-                className="rounded-md border border-white/8 bg-white/4 py-1 pl-6 pr-2 text-label focus:border-cyan/[0.28]"
+                className="rounded-md border border-border-subtle bg-white/4 py-1 pl-6 pr-2 text-label focus:border-cyan/[0.28]"
                 placeholder={linkDirection === 'source' ? 'Filtrer les livres cités…' : 'Filtrer les livres sources…'}
                 value={checklistSearch} onChange={(e) => setChecklistSearch(e.target.value)}
               />
             </div>
-            <p className="mt-1 text-micro text-white/25">
+            <p className="mt-1 text-micro text-text-dimmed">
               {newLinksCount > 0
                 ? `${newLinksCount} nouveau${newLinksCount > 1 ? 'x' : ''} lien${newLinksCount > 1 ? 's' : ''} sélectionné${newLinksCount > 1 ? 's' : ''}`
                 : linkDirection === 'source' ? 'Cochez les livres cités' : 'Cochez les livres qui le citent'}
@@ -369,7 +369,7 @@ function LinkCreateMode({ nodes, authorsMap, linkSourceNode, setLinkSourceNode, 
                       <input type="checkbox" className="sr-only" checked={isChecked} disabled={existing} onChange={() => toggleChecklist(n.id)} />
                       <span className="min-w-0">
                         <span className="block truncate font-mono text-label text-white/75">{n.title}</span>
-                        <span className="block font-mono text-micro text-white/30">
+                        <span className="block font-mono text-micro text-text-muted">
                           {bookAuthorDisplay(n, authorsMap)}{n.year ? `, ${n.year}` : ''}{existing && ' · déjà lié'}
                         </span>
                       </span>
@@ -398,7 +398,7 @@ function LinkCreateMode({ nodes, authorsMap, linkSourceNode, setLinkSourceNode, 
           </div>
 
           {/* Tisser button */}
-          <div className="shrink-0 border-t border-white/8 px-5 py-3">
+          <div className="shrink-0 border-t border-border-subtle px-5 py-3">
             <Button type="button" onClick={handleTisser} disabled={newLinksCount === 0}
               className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-cyan/35 bg-cyan/10 py-2.5 text-[0.88rem] font-semibold text-cyan/85 transition-all hover:bg-cyan/18 disabled:cursor-not-allowed disabled:opacity-25">
               <Link2 size={14} />

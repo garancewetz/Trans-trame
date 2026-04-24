@@ -18,7 +18,7 @@ export function AnalysisDecades({ decades, activeHighlight, onHighlightChange }:
 
   return (
     <section className="mb-5">
-      <h3 className="mb-2 text-label font-semibold uppercase tracking-wide text-white/50">Décennies</h3>
+      <h3 className="mb-2 text-label font-semibold uppercase tracking-wide text-text-soft">Décennies</h3>
       <div className="flex flex-col gap-[3px]">
         {decades.map(({ decade, count, pct }) => {
           const isActive = activeHighlight?.kind === 'decade' && activeHighlight.decade === decade
@@ -32,7 +32,7 @@ export function AnalysisDecades({ decades, activeHighlight, onHighlightChange }:
                 isActive ? 'bg-white/10' : 'hover:bg-white/5',
               )}
             >
-              <span className={`w-10 shrink-0 text-right text-micro tabular-nums ${isActive ? 'text-white/80 font-semibold' : 'text-white/35'}`}>
+              <span className={`w-10 shrink-0 text-right text-micro tabular-nums ${isActive ? 'text-white/80 font-semibold' : 'text-text-secondary'}`}>
                 {decade}
               </span>
               <div className="h-[6px] flex-1 overflow-hidden rounded-full bg-white/5">
@@ -41,7 +41,7 @@ export function AnalysisDecades({ decades, activeHighlight, onHighlightChange }:
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <span className={`w-6 text-right text-micro tabular-nums ${isActive ? 'text-white/60' : 'text-white/30'}`}>{count}</span>
+              <span className={`w-6 text-right text-micro tabular-nums ${isActive ? 'text-white/60' : 'text-text-muted'}`}>{count}</span>
             </button>
           )
         })}

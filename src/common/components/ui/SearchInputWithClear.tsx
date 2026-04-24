@@ -37,14 +37,14 @@ export function SearchInputWithClear({
     <div className={clsx('relative flex items-center', className)}>
       <Search
         size={16}
-        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/25"
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-dimmed"
       />
       <input
         type="text"
         value={value}
         onChange={onChange}
         className={clsx(
-          'w-full rounded-[10px] border border-white/10 bg-white/5 px-9 py-[9px] text-body text-white outline-none backdrop-blur-lg transition-all placeholder:text-white/35 focus:bg-white/10',
+          'w-full rounded-[10px] border border-border-default bg-white/5 px-9 py-[9px] text-body text-white outline-none backdrop-blur-lg transition-all placeholder:text-text-secondary focus:bg-white/10',
           FOCUS_TONE[focusTone],
         )}
         {...props}

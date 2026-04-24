@@ -4,7 +4,7 @@ import { Button } from '@/common/components/ui/Button'
 import type { Book } from '@/types/domain'
 import type { Axis } from '@/common/utils/categories'
 import type { ParsedBook } from '../parseSmartInput.types'
-import type { AuthorMergeSuggestion } from '../smartImportModal.utils'
+import type { AuthorMergeSuggestion, IntraBatchMergeSuggestion } from '../smartImportModal.utils'
 import { SmartImportPreviewRow } from './SmartImportPreviewRow'
 
 type EditingCell = { id: string; field: string } | null
@@ -34,6 +34,11 @@ type Props = {
   authorMergeSuggestions: AuthorMergeSuggestion[]
   onAuthorMerge: (suggestion: AuthorMergeSuggestion) => void
   onDismissAuthorMerge: (id: string) => void
+  intraBatchSuggestions: IntraBatchMergeSuggestion[]
+  intraBatchCountByPrimary: Map<string, number>
+  onIntraBatchMerge: (suggestion: IntraBatchMergeSuggestion) => void
+  onIntraBatchUnmerge: (primaryId: string) => void
+  onDismissIntraBatchMerge: (id: string) => void
   masterNode: Book | null
   linkDirection: string
   selectedCount: number
@@ -67,6 +72,11 @@ export function SmartImportPreviewPhase({
   authorMergeSuggestions,
   onAuthorMerge,
   onDismissAuthorMerge,
+  intraBatchSuggestions,
+  intraBatchCountByPrimary,
+  onIntraBatchMerge,
+  onIntraBatchUnmerge,
+  onDismissIntraBatchMerge,
   masterNode,
   linkDirection,
   selectedCount,
@@ -107,6 +117,54 @@ export function SmartImportPreviewPhase({
         <span className="ml-auto text-caption text-white/22">Cliquer pour modifier</span>
       </div>
 
+      {/* Intra-batch duplicate suggestions — same work cited at multiple pages */}
+      {intraBatchSuggestions.length > 0 && (
+        <div className="mb-3 overflow-hidden rounded-xl border border-cyan/20 bg-cyan/3">
+          <div className="flex items-center gap-1.5 border-b border-cyan/10 px-3 py-1.5 text-micro font-semibold uppercase tracking-[1.3px] text-cyan/50">
+            <GitMerge size={10} />
+            Même œuvre à fusionner ?
+          </div>
+          {intraBatchSuggestions.map((s) => (
+            <div
+              key={s.id}
+              className="grid grid-cols-[1fr_auto] items-center gap-x-3 border-b border-cyan/8 px-3 py-1.5 last:border-0"
+            >
+              <div className="min-w-0">
+                <div className="font-mono text-label">
+                  <span className="font-semibold text-white/80">{s.title}</span>
+                  <span className="ml-1.5 text-text-soft">
+                    · {s.firstName} <span className="font-semibold">{s.lastName.toUpperCase()}</span>
+                  </span>
+                </div>
+                <div className="mt-0.5 text-micro text-white/40">
+                  {s.itemIds.length} lignes → 1 œuvre + {s.itemIds.length} lien{s.itemIds.length > 1 ? 's' : ''}
+                  {s.pages.length > 0 && (
+                    <span className="text-text-muted"> · pages : {s.pages.join(', ')}</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  type="button"
+                  onClick={() => onIntraBatchMerge(s)}
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-cyan/25 bg-cyan/8 px-2 py-0.5 text-micro font-semibold text-cyan/75 transition-all hover:bg-cyan/18 hover:text-cyan/95"
+                >
+                  <GitMerge size={9} /> Fusionner
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => onDismissIntraBatchMerge(s.id)}
+                  className="cursor-pointer rounded p-0.5 text-white/20 transition-colors hover:text-text-soft"
+                  title="Ignorer"
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Author initial-match suggestions */}
       {authorMergeSuggestions.length > 0 && (
         <div className="mb-3 overflow-hidden rounded-xl border border-violet/20 bg-violet/3">
@@ -121,7 +179,7 @@ export function SmartImportPreviewPhase({
             >
               {/* Initial author (left) */}
               <div className="min-w-0 font-mono text-label">
-                <span className="text-white/45">{s.initialAuthor.firstName}</span>
+                <span className="text-text-soft">{s.initialAuthor.firstName}</span>
                 {' '}
                 <span className="font-semibold text-white/65">{s.initialAuthor.lastName.toUpperCase()}</span>
                 <span className="ml-1.5 text-[0.7rem] text-white/20">
@@ -154,7 +212,7 @@ export function SmartImportPreviewPhase({
                 <button
                   type="button"
                   onClick={() => onDismissAuthorMerge(s.id)}
-                  className="cursor-pointer rounded p-0.5 text-white/20 transition-colors hover:text-white/50"
+                  className="cursor-pointer rounded p-0.5 text-white/20 transition-colors hover:text-text-soft"
                   title="Ignorer"
                 >
                   <X size={11} />
@@ -190,7 +248,7 @@ export function SmartImportPreviewPhase({
           <span />
           <span>Année</span>
         </div>
-        <div className="max-h-[min(55vh,480px)] overflow-y-auto">
+        <div className="max-h-[min(65vh,640px)] overflow-y-auto">
           {parsed.length === 0 && (
             <p className="p-4 text-center text-label text-white/50">Aucune ressource reconnue.</p>
           )}
@@ -200,6 +258,8 @@ export function SmartImportPreviewPhase({
                 item={item}
                 checked={checked}
                 mergedIds={mergedIds}
+                intraBatchCitations={intraBatchCountByPrimary.get(item.id) ?? 0}
+                onIntraBatchUnmerge={onIntraBatchUnmerge}
                 editingCell={editingCell}
                 editingValue={editingValue}
                 setEditingValue={setEditingValue}
@@ -234,7 +294,7 @@ export function SmartImportPreviewPhase({
             <p className="font-semibold text-amber/90">
               Aucune ressource-source sélectionné
             </p>
-            <p className="mt-0.5 text-caption text-white/55">
+            <p className="mt-0.5 text-caption text-text-soft">
               Les {selectedCount} ressource{selectedCount > 1 ? 's' : ''} importé{selectedCount > 1 ? 's' : ''} {selectedCount > 1 ? 'arriveront' : 'arrivera'} sans aucun lien — {selectedCount > 1 ? 'iels apparaîtront' : 'iel apparaîtra'} en orphelin{selectedCount > 1 ? 's' : ''} dans la galaxie. Reviens à l'étape précédente pour relier cette bibliographie à la ressource dont elle provient, ou confirme ci-dessous si c'est intentionnel (import catalogue).
             </p>
           </div>

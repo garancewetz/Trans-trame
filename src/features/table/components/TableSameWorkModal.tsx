@@ -74,7 +74,7 @@ export function TableSameWorkModal({
 
       <p className="text-[0.8rem] text-white/28">
         Titre original :{' '}
-        <strong className="text-white/55">
+        <strong className="text-text-soft">
           {selectedTitle || '—'}
         </strong>
       </p>

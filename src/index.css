@@ -26,6 +26,19 @@
   --text-ui: 0.85rem;
   --text-body: 0.92rem;
   --text-lead: 1.05rem;
+
+  /* Text opacity scale — 4 semantic tiers for muted/secondary text on dark bg.
+     Use these instead of raw text-white/NN values.
+     dimmed=placeholder/decorative, muted=hints/icons, secondary=labels/meta, soft=body-de-emphasized */
+  --color-text-dimmed: rgba(255, 255, 255, 0.25);
+  --color-text-muted: rgba(255, 255, 255, 0.30);
+  --color-text-secondary: rgba(255, 255, 255, 0.35);
+  --color-text-soft: rgba(255, 255, 255, 0.50);
+
+  /* Border opacity scale — 2 tiers for subtle/hairline vs standard component borders.
+     subtle=row dividers/inner hairlines, default=panel/card/input borders */
+  --color-border-subtle: rgba(255, 255, 255, 0.07);
+  --color-border-default: rgba(255, 255, 255, 0.10);
 }
 
 html, body, #root {

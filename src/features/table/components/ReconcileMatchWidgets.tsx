@@ -8,7 +8,7 @@ import type { Author, AuthorId, Book } from '@/types/domain'
 export const CONFIDENCE_STYLE = {
   high: 'border-green/40 bg-green/10 text-green/80',
   medium: 'border-amber/40 bg-amber/10 text-amber/80',
-  low: 'border-white/20 bg-white/5 text-white/50',
+  low: 'border-white/20 bg-white/5 text-text-soft',
 } as const
 
 export const CONFIDENCE_LABEL = { high: 'haute', medium: 'moyenne', low: 'faible' } as const
@@ -28,11 +28,11 @@ export function MatchTable<T>({
 }) {
   return (
     <div>
-      <h4 className="mb-2 text-[0.78rem] font-semibold uppercase tracking-wider text-white/35">{title}</h4>
-      <div className="rounded-lg border border-white/6">
+      <h4 className="mb-2 text-[0.78rem] font-semibold uppercase tracking-wider text-text-secondary">{title}</h4>
+      <div className="rounded-lg border border-border-subtle">
         <table className="w-full text-label">
           <thead>
-            <tr className="border-b border-white/8 text-left text-white/35">
+            <tr className="border-b border-border-subtle text-left text-text-secondary">
               <th className="w-8 px-3 py-2" />
               {columns.map((col) => (
                 <th key={col} className={clsx('px-2 py-2', col === 'Confiance' && 'w-20')}>{col}</th>
@@ -110,7 +110,7 @@ export function HintsPanel({
           <p className="text-[0.78rem] font-semibold text-amber/60">
             Pistes de recherche ({result.hints.length})
           </p>
-          <span className="ml-1 text-caption text-white/25">
+          <span className="ml-1 text-caption text-text-dimmed">
             — hypothèses non vérifiées, à utiliser comme amorces
           </span>
         </button>
@@ -148,7 +148,7 @@ export function HintsPanel({
                     chercher ↗
                   </a>
                 </div>
-                <span className="text-white/45">{h.hint}</span>
+                <span className="text-text-soft">{h.hint}</span>
               </li>
             )
           })}

@@ -16,6 +16,9 @@ type Props = {
   item: ParsedBook
   checked: Set<string>
   mergedIds: Set<string>
+  /** If >0, this row is the primary of an intra-batch merge of (1 + N) citations. */
+  intraBatchCitations?: number
+  onIntraBatchUnmerge?: (primaryId: string) => void
   editingCell: EditingCell
   editingValue: string
   setEditingValue: (value: string) => void
@@ -41,6 +44,8 @@ export function SmartImportPreviewRow({
   item,
   checked,
   mergedIds,
+  intraBatchCitations = 0,
+  onIntraBatchUnmerge,
   editingCell,
   editingValue,
   setEditingValue,
@@ -135,6 +140,24 @@ export function SmartImportPreviewRow({
               {item.title || <em className="text-white/30">Sans titre</em>}
               {item.parsedByLLM && (
                 <span className="ml-1.5 inline-block rounded bg-cyan/15 px-1 py-px align-middle font-sans text-[0.6rem] font-medium tracking-wide text-cyan/80" title="Enrichi par Gemini">AI</span>
+              )}
+              {intraBatchCitations > 0 && (
+                <span
+                  className="ml-1.5 inline-flex items-center gap-1 rounded border border-cyan/25 bg-cyan/8 px-1 py-px align-middle font-sans text-[0.6rem] font-medium tracking-wide text-cyan/75"
+                  title="Cette œuvre est citée plusieurs fois dans la source"
+                >
+                  {intraBatchCitations + 1}×
+                  {onIntraBatchUnmerge && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onIntraBatchUnmerge(item.id) }}
+                      className="cursor-pointer rounded text-cyan/55 transition-colors hover:text-cyan/95"
+                      title="Défusionner"
+                    >
+                      <X size={9} />
+                    </button>
+                  )}
+                </span>
               )}
             </span>
           )}

@@ -85,7 +85,7 @@ export function LoginModal() {
     >
       <div
         ref={dialogRef}
-        className="w-full max-w-sm rounded-2xl border border-white/10 bg-bg-overlay/98 p-8 shadow-[0_24px_80px_rgba(0,0,0,0.65)]"
+        className="w-full max-w-sm rounded-2xl border border-border-default bg-bg-overlay/98 p-8 shadow-[0_24px_80px_rgba(0,0,0,0.65)]"
       >
         <div className="mb-6 flex items-start justify-between">
           <div className="flex flex-col items-start gap-2">
@@ -123,7 +123,7 @@ export function LoginModal() {
                 onChange={(e) => setFirstName(e.target.value)}
                 aria-invalid={Boolean(error)}
                 aria-errormessage={error ? errorId : undefined}
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 outline-none transition placeholder:text-white/40 focus:border-violet/60 focus:ring-2 focus:ring-violet/60"
+                className="rounded-lg border border-border-default bg-white/5 px-3 py-2 text-sm text-white/90 outline-none transition placeholder:text-white/40 focus:border-violet/60 focus:ring-2 focus:ring-violet/60"
                 placeholder="Votre prénom"
                 autoFocus
               />
@@ -139,7 +139,7 @@ export function LoginModal() {
                 onChange={(e) => setLastName(e.target.value)}
                 aria-invalid={Boolean(error)}
                 aria-errormessage={error ? errorId : undefined}
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 outline-none transition placeholder:text-white/40 focus:border-violet/60 focus:ring-2 focus:ring-violet/60"
+                className="rounded-lg border border-border-default bg-white/5 px-3 py-2 text-sm text-white/90 outline-none transition placeholder:text-white/40 focus:border-violet/60 focus:ring-2 focus:ring-violet/60"
                 placeholder="Votre nom"
               />
             </label>
@@ -172,7 +172,7 @@ export function LoginModal() {
                   onChange={(e) => setEmail(e.target.value)}
                   aria-invalid={Boolean(error)}
                   aria-errormessage={error ? errorId : undefined}
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 outline-none transition placeholder:text-white/40 focus:border-violet/60 focus:ring-2 focus:ring-violet/60"
+                  className="rounded-lg border border-border-default bg-white/5 px-3 py-2 text-sm text-white/90 outline-none transition placeholder:text-white/40 focus:border-violet/60 focus:ring-2 focus:ring-violet/60"
                   placeholder="vous@exemple.com"
                 />
               </label>
@@ -191,7 +191,7 @@ export function LoginModal() {
                   onChange={(e) => setPassword(e.target.value)}
                   aria-invalid={Boolean(error)}
                   aria-errormessage={error ? errorId : undefined}
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 outline-none transition placeholder:text-white/40 focus:border-violet/60 focus:ring-2 focus:ring-violet/60"
+                  className="rounded-lg border border-border-default bg-white/5 px-3 py-2 text-sm text-white/90 outline-none transition placeholder:text-white/40 focus:border-violet/60 focus:ring-2 focus:ring-violet/60"
                   placeholder="8 caractères minimum"
                 />
               </label>

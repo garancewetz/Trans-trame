@@ -79,10 +79,10 @@ export function TableMergeAuthorsModal({
                 · {booksCount} ressource{booksCount > 1 ? 's' : ''}
               </span>
               {books.length > 0 && (
-                <ul className="mt-2 flex flex-col gap-0.5 font-mono text-caption text-white/45">
+                <ul className="mt-2 flex flex-col gap-0.5 font-mono text-caption text-text-soft">
                   {books.map((b) => (
                     <li key={b.id} className="flex items-baseline gap-1.5">
-                      <span className="text-white/30">·</span>
+                      <span className="text-text-muted">·</span>
                       <span className="text-white/70">{b.title || '(sans titre)'}</span>
                       {b.year != null && (
                         <span className="text-white/28">({b.year})</span>
@@ -98,7 +98,7 @@ export function TableMergeAuthorsModal({
 
       <p className="mb-4 text-[0.8rem] text-white/28">
         Conserver :{' '}
-        <strong className="text-white/55">
+        <strong className="text-text-soft">
           {(() => {
             const kept = authorsToMerge.find((a) => a.id === keepId)
             return kept ? authorName(kept) : '—'

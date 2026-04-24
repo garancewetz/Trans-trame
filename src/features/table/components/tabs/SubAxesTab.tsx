@@ -43,7 +43,7 @@ export function SubAxesTab({ books, links, onOpenWorkDetail }: Props) {
 
   if (stats.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center px-6 text-center text-caption text-white/35">
+      <div className="flex flex-1 items-center justify-center px-6 text-center text-caption text-text-secondary">
         Aucun sous-axe détecté dans le corpus. Les imports futurs avec un thème
         (philosophie, sociologie…) apparaîtront ici.
       </div>
@@ -53,8 +53,8 @@ export function SubAxesTab({ books, links, onOpenWorkDetail }: Props) {
   return (
     <div className="flex flex-1 flex-col overflow-y-auto px-5 py-4">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
-        <header className="flex flex-col gap-2 border-b border-white/8 pb-3">
-          <p className="text-caption leading-snug text-white/55">
+        <header className="flex flex-col gap-2 border-b border-border-subtle pb-3">
+          <p className="text-caption leading-snug text-text-soft">
             Ces œuvres sont citées par le corpus féministe sans en faire partie
             (philosophie, sociologie, psychanalyse, littérature…). Un sous-axe
             qui pèse lourd peut être <strong className="text-violet/90">référencé</strong> —
@@ -62,7 +62,7 @@ export function SubAxesTab({ books, links, onOpenWorkDetail }: Props) {
             "Autres disciplines" dans la vue Catégories, sans devenir un axe
             féministe à part entière.
           </p>
-          <div className="flex items-center gap-3 text-micro text-white/45 tabular-nums">
+          <div className="flex items-center gap-3 text-micro text-text-soft tabular-nums">
             <span><strong className="text-white/75">{stats.length}</strong> sous-axes</span>
             {SUB_CLUSTERS.length > 0 && (
               <>
@@ -117,7 +117,7 @@ function SubAxisRow({
       'rounded-lg border bg-white/3 transition-colors',
       referenced
         ? 'border-violet/25 bg-violet/5 hover:border-violet/40'
-        : 'border-white/8 hover:border-white/15',
+        : 'border-border-subtle hover:border-white/15',
     ].join(' ')}>
       <button
         type="button"
@@ -148,24 +148,24 @@ function SubAxisRow({
             {displayLabel}
           </span>
         </span>
-        <span className="inline-flex shrink-0 items-center gap-3 text-micro tabular-nums text-white/50">
+        <span className="inline-flex shrink-0 items-center gap-3 text-micro tabular-nums text-text-soft">
           <span title="Nombre d'œuvres">
             <strong className="text-white/80">{sub.bookCount}</strong>
-            <span className="ml-1 text-white/30">œuvres</span>
+            <span className="ml-1 text-text-muted">œuvres</span>
           </span>
           <span className="text-white/20">·</span>
           <span title="% du corpus total">{sub.pctOfCorpus}%</span>
           <span className="text-white/20">·</span>
           <span title="Citations reçues depuis le reste du corpus" className="inline-flex items-center gap-1">
-            <TrendingUp size={10} className="text-white/35" />
+            <TrendingUp size={10} className="text-text-secondary" />
             {sub.citedByCorpus}
           </span>
         </span>
       </button>
 
       {expanded && sub.topWorks.length > 0 && (
-        <ul className="border-t border-white/5 bg-bg-base/30 px-3 py-2">
-          <li className="mb-1 text-micro uppercase tracking-[1px] text-white/30">
+        <ul className="border-t border-border-subtle bg-bg-base/30 px-3 py-2">
+          <li className="mb-1 text-micro uppercase tracking-[1px] text-text-muted">
             Œuvres les plus citées
           </li>
           {sub.topWorks.map((w) => (
@@ -179,7 +179,7 @@ function SubAxisRow({
                   {w.title}
                 </span>
                 {w.year && (
-                  <span className="shrink-0 text-micro text-white/30 tabular-nums">
+                  <span className="shrink-0 text-micro text-text-muted tabular-nums">
                     {w.year}
                   </span>
                 )}

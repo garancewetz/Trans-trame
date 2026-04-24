@@ -11,6 +11,7 @@ import {
   deleteLinkRowById,
   deleteLinkRowsByIds,
   insertResourceAuthors,
+  reassignLinkCitationsByLinkId,
   updateLinkRowById,
   insertAuthorNotDuplicatePair,
   deleteAuthorNotDuplicatePair,
@@ -203,11 +204,8 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
     const intoBook = books.find((n) => n.id === intoNodeId)
     if (!fromBook || !intoBook) return false
 
-    const { remappedLinks, linksToUpdate, linkIdsToDelete } = planLinksAfterBookMerge(
-      links,
-      fromNodeId,
-      intoNodeId
-    )
+    const { remappedLinks, linksToUpdate, linkIdsToDelete, citationsToReassign } =
+      planLinksAfterBookMerge(links, fromNodeId, intoNodeId)
 
     // Transfer author associations from the deleted book to the kept book
     const fromAuthorIds = fromBook.authorIds ?? []
@@ -228,9 +226,15 @@ export function useGraphData({ axesColors }: { axesColors: AxesColorMap }) {
     // (avoids ON DELETE CASCADE wiping links before they are remapped)
     // Link deletes are batched into a single IN-query; updates stay per-row
     // because each carries distinct source/target values.
+    // Citations on collapsed links are transferred to the surviving link
+    // before the loser is soft-deleted; the plan guarantees UPDATE never
+    // targets an edge still claimed by an unchanged link.
     Promise.all([
       ...linksToUpdate.map(({ id, source_id, target_id }) =>
         updateLinkRowById(id, { source_id, target_id })
+      ),
+      ...citationsToReassign.map(({ fromLinkId, toLinkId }) =>
+        reassignLinkCitationsByLinkId(fromLinkId, toLinkId)
       ),
       deleteLinkRowsByIds(linkIdsToDelete),
       ...(newAuthorIds.length > 0 ? [insertResourceAuthors(intoNodeId, newAuthorIds)] : []),

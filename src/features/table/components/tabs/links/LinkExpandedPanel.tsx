@@ -31,14 +31,14 @@ export function LinkExpandedPanel({
   const primary = link.citations[0]
 
   return (
-    <div className="ml-5 mb-1 mt-1 rounded-lg border border-white/8 bg-white/2 p-3">
+    <div className="ml-5 mb-1 mt-1 rounded-lg border border-border-subtle bg-white/2 p-3">
       {/* Actions row */}
       {link.targetNode && onOpenWorkDetail && (
         <div className="mb-3 flex items-center gap-2">
           <button
             type="button"
             onClick={() => onOpenWorkDetail(link.targetNode!.id)}
-            className="inline-flex items-center gap-1 rounded border border-white/10 bg-white/4 px-2 py-1 text-micro text-white/45 transition-colors hover:border-violet/30 hover:bg-violet/8 hover:text-violet/90"
+            className="inline-flex items-center gap-1 rounded border border-border-default bg-white/4 px-2 py-1 text-micro text-text-soft transition-colors hover:border-violet/30 hover:bg-violet/8 hover:text-violet/90"
           >
             <Eye size={11} /> Graphe
           </button>
@@ -47,7 +47,7 @@ export function LinkExpandedPanel({
 
       {/* Citation */}
       <div className="mb-2">
-        <label className="mb-0.5 block text-micro font-semibold uppercase tracking-[1px] text-white/25">
+        <label className="mb-0.5 block text-micro font-semibold uppercase tracking-[1px] text-text-dimmed">
           Citation
         </label>
         {isEditCtx ? (
@@ -64,7 +64,7 @@ export function LinkExpandedPanel({
           <span
             className={clsx(
               'block cursor-text rounded px-2 py-1 font-mono text-[0.8rem] italic transition-colors hover:bg-white/5',
-              (primary?.citation_text || primary?.context) ? 'text-white/50' : 'text-white/18',
+              (primary?.citation_text || primary?.context) ? 'text-text-soft' : 'text-white/18',
             )}
             onClick={(e) => {
               e.stopPropagation()
@@ -80,7 +80,7 @@ export function LinkExpandedPanel({
       {/* Page + Edition */}
       <div className="flex gap-3">
         <div className="flex-1">
-          <label className="mb-0.5 block text-micro font-semibold uppercase tracking-[1px] text-white/25">
+          <label className="mb-0.5 block text-micro font-semibold uppercase tracking-[1px] text-text-dimmed">
             Page
           </label>
           {isEditPage ? (
@@ -100,7 +100,7 @@ export function LinkExpandedPanel({
             <span
               className={clsx(
                 'block cursor-text rounded px-2 py-1 font-mono text-[0.8rem] tabular-nums transition-colors hover:bg-white/5',
-                primary?.page ? 'text-white/50' : 'text-white/18',
+                primary?.page ? 'text-text-soft' : 'text-white/18',
               )}
               onClick={(e) => {
                 e.stopPropagation()
@@ -113,7 +113,7 @@ export function LinkExpandedPanel({
           )}
         </div>
         <div className="flex-1">
-          <label className="mb-0.5 block text-micro font-semibold uppercase tracking-[1px] text-white/25">
+          <label className="mb-0.5 block text-micro font-semibold uppercase tracking-[1px] text-text-dimmed">
             Edition
           </label>
           {isEditEdition ? (
@@ -133,7 +133,7 @@ export function LinkExpandedPanel({
             <span
               className={clsx(
                 'block cursor-text rounded px-2 py-1 font-mono text-[0.8rem] transition-colors hover:bg-white/5',
-                primary?.edition ? 'text-white/50' : 'text-white/18',
+                primary?.edition ? 'text-text-soft' : 'text-white/18',
               )}
               onClick={(e) => {
                 e.stopPropagation()

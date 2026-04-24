@@ -57,7 +57,7 @@ export function EnrichmentRow({
   return (
     <tr
       className={clsx(
-        'border-b border-white/4 transition-colors',
+        'border-b border-border-subtle transition-colors',
         e.acceptedFields.size > 0 ? 'bg-cyan/3' : 'opacity-40',
       )}
     >
@@ -82,7 +82,7 @@ export function EnrichmentRow({
         <div className="font-medium text-white/80">{e.book.title}</div>
         {authorNames && <div className="text-[0.78rem] text-white/40">{authorNames}</div>}
         {currentAxes.length > 0 && (
-          <div className="mt-0.5 text-micro text-white/25">{currentAxes.join(', ')}</div>
+          <div className="mt-0.5 text-micro text-text-dimmed">{currentAxes.join(', ')}</div>
         )}
       </td>
       <td className="px-2 py-2">
@@ -93,9 +93,9 @@ export function EnrichmentRow({
               <div key={d.field} className="flex items-center gap-1.5 text-[0.78rem]">
                 <FieldCheckbox accepted={accepted} onClick={() => onToggleField(e.bookId, d.field)} />
                 <span className={!accepted ? 'opacity-35' : ''}>
-                  <span className="text-white/35">{d.label} : </span>
+                  <span className="text-text-secondary">{d.label} : </span>
                   <span className="text-red/40 line-through">{d.current}</span>
-                  <span className="text-white/30"> → </span>
+                  <span className="text-text-muted"> → </span>
                   <span className="text-cyan/80">{d.proposed}</span>
                 </span>
               </div>
@@ -105,7 +105,7 @@ export function EnrichmentRow({
             <div className="flex items-center gap-1.5">
               <FieldCheckbox accepted={e.acceptedFields.has('axes')} onClick={() => onToggleField(e.bookId, 'axes')} />
               <div className={clsx('flex flex-wrap items-center gap-1', !e.acceptedFields.has('axes') && 'opacity-35')}>
-                <span className="text-micro text-white/35">Catégories :</span>
+                <span className="text-micro text-text-secondary">Catégories :</span>
                 {e.newAxes.map((a) => (
                   <span
                     key={a}
@@ -129,7 +129,7 @@ export function EnrichmentRow({
                 {e.suggestedThemes.map((theme) => (
                   <span
                     key={theme}
-                    className="rounded-full border border-dashed border-white/20 bg-white/4 px-2 py-0.5 text-micro text-white/50"
+                    className="rounded-full border border-dashed border-white/20 bg-white/4 px-2 py-0.5 text-micro text-text-soft"
                   >
                     {theme}
                   </span>

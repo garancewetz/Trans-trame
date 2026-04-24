@@ -7,7 +7,7 @@ type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
 }
 
 const BASE =
-  'w-full resize-none bg-transparent text-[1rem] font-mono italic text-white/80 placeholder:text-white/30 outline-none'
+  'w-full resize-none bg-transparent text-[1rem] font-mono italic text-white/80 placeholder:text-text-muted outline-none'
 
 export function TextareaInline({ className = '', ...props }: Props) {
   return <Textarea className={clsx(BASE, className)} {...props} />

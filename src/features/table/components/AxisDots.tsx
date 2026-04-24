@@ -65,7 +65,7 @@ export function AxisDots({
           type="button"
           ref={refs.setReference}
           {...getReferenceProps()}
-          className="inline-flex cursor-pointer items-center gap-1 rounded border border-white/12 bg-white/5 px-1.5 py-1 text-micro text-white/45 transition-all hover:border-white/25 hover:text-white/70"
+          className="inline-flex cursor-pointer items-center gap-1 rounded border border-border-default bg-white/5 px-1.5 py-1 text-micro text-text-soft transition-all hover:border-white/25 hover:text-white/70"
         >
           <Plus size={9} />
           {totalCount > 0 ? (
@@ -73,14 +73,14 @@ export function AxisDots({
           ) : (
             <span>Axe</span>
           )}
-          <ChevronDown size={9} className="text-white/25" />
+          <ChevronDown size={9} className="text-text-dimmed" />
         </button>
         {open && (
           <div
             ref={refs.setFloating}
             style={floatingStyles}
             {...getFloatingProps()}
-            className="z-50 flex flex-wrap gap-1 rounded-lg border border-white/10 bg-bg-overlay/98 p-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
+            className="z-50 flex flex-wrap gap-1 rounded-lg border border-border-default bg-bg-overlay/98 p-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
           >
             {AXES.map((axis) => {
               const active = axes.includes(axis)
@@ -91,7 +91,7 @@ export function AxisDots({
                   onClick={() => toggle(axis)}
                   className={[
                     'cursor-pointer rounded-full px-2 py-0.5 text-micro font-semibold transition-all',
-                    active ? 'text-black/75' : 'border border-white/15 bg-white/5 text-white/45 hover:bg-white/10',
+                    active ? 'text-black/75' : 'border border-white/15 bg-white/5 text-text-soft hover:bg-white/10',
                   ].join(' ')}
                   style={active ? { backgroundColor: AXES_COLORS[axis] } : {}}
                 >
@@ -142,7 +142,7 @@ export function AxisDots({
                 'cursor-pointer rounded-full border border-dashed px-1.5 py-0 text-[0.68rem] leading-[1.4] transition-all',
                 isPending
                   ? 'border-red/60 bg-red/15 text-red/85'
-                  : 'border-white/25 bg-white/5 text-white/55 hover:border-white/45 hover:bg-white/10 hover:text-white/80',
+                  : 'border-white/25 bg-white/5 text-text-soft hover:border-white/45 hover:bg-white/10 hover:text-white/80',
               ].join(' ')}
             >
               {theme}
@@ -154,7 +154,7 @@ export function AxisDots({
         type="button"
         ref={refs.setReference}
         {...getReferenceProps()}
-        className="inline-flex h-4 w-4 cursor-pointer items-center justify-center rounded-full border border-white/15 text-white/30 transition-colors hover:border-white/35 hover:text-white/60"
+        className="inline-flex h-4 w-4 cursor-pointer items-center justify-center rounded-full border border-white/15 text-text-muted transition-colors hover:border-white/35 hover:text-white/60"
       >
         <Plus size={8} />
       </button>
@@ -163,7 +163,7 @@ export function AxisDots({
           ref={refs.setFloating}
           style={floatingStyles}
           {...getFloatingProps()}
-          className="z-50 flex flex-wrap gap-1 rounded-lg border border-white/10 bg-bg-overlay/98 p-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
+          className="z-50 flex flex-wrap gap-1 rounded-lg border border-border-default bg-bg-overlay/98 p-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
         >
           {AXES.map((axis) => {
             const active = axes.includes(axis)
@@ -174,7 +174,7 @@ export function AxisDots({
                 onClick={() => toggle(axis)}
                 className={[
                   'cursor-pointer rounded-full px-2 py-0.5 text-micro font-semibold transition-all',
-                  active ? 'text-black/75' : 'border border-white/15 bg-white/5 text-white/45 hover:bg-white/10',
+                  active ? 'text-black/75' : 'border border-white/15 bg-white/5 text-text-soft hover:bg-white/10',
                 ].join(' ')}
                 style={active ? { backgroundColor: AXES_COLORS[axis] } : {}}
               >

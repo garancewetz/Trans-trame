@@ -26,10 +26,10 @@ export function AnalysisBridges({ bridges, authorsMap, activeHighlight, onHighli
 
   return (
     <section className="mb-5">
-      <h3 className="mb-2 inline-flex items-center gap-1.5 text-label font-semibold uppercase tracking-wide text-white/50">
+      <h3 className="mb-2 inline-flex items-center gap-1.5 text-label font-semibold uppercase tracking-wide text-text-soft">
         <Waypoints size={12} /> Ponts inter-axes
       </h3>
-      <p className="mb-2 text-micro text-white/35">
+      <p className="mb-2 text-micro text-text-secondary">
         Œuvres qui relient des axes différents — coutures de la trame.
       </p>
       <div className="flex flex-col gap-1.5">
@@ -43,12 +43,12 @@ export function AnalysisBridges({ bridges, authorsMap, activeHighlight, onHighli
               onClick={() => onHighlightChange(isActive ? null : { kind: 'book', bookId: node.id })}
               className={clsx(
                 'flex w-full cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-left backdrop-blur-xl transition-all',
-                isActive ? 'border-white/25 bg-white/12' : 'border-white/10 bg-white/5 hover:border-white/15 hover:bg-white/8',
+                isActive ? 'border-white/25 bg-white/12' : 'border-border-default bg-white/5 hover:border-white/15 hover:bg-white/8',
               )}
             >
               <div className="min-w-0 flex-1">
                 <p className={`truncate text-ui font-semibold ${isActive ? 'text-white' : 'text-white/85'}`}>{node.title}</p>
-                <p className="text-caption text-white/35">
+                <p className="text-caption text-text-secondary">
                   {bookAuthorDisplay(node, authorsMap)} — {node.bridges} lien{node.bridges > 1 ? 's' : ''} transversal{node.bridges > 1 ? 'aux' : ''} ({pct}%)
                 </p>
               </div>

@@ -23,7 +23,7 @@ export function TodoNotePopover({ note, onClear, iconClassName }: Props) {
               <Button
                 type="button"
                 onClick={onClear}
-                className="cursor-pointer text-caption text-white/45 underline-offset-2 hover:text-red/80 hover:underline"
+                className="cursor-pointer text-caption text-text-soft underline-offset-2 hover:text-red/80 hover:underline"
               >
                 Effacer la note
               </Button>

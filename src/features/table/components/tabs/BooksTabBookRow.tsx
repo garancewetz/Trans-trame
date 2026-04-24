@@ -18,7 +18,7 @@ import { splitBookAxes } from '@/common/utils/categories'
 import { ResourceTypePicker } from '../ResourceTypePicker'
 import type { Author, AuthorId, Book, BookId, EntityStatus } from '@/types/domain'
 
-const GRAPH_BTN = 'inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/4 px-2 py-0.5 text-caption font-semibold text-white/45 transition-all hover:border-violet/40 hover:bg-violet/10 hover:text-violet/95'
+const GRAPH_BTN = 'inline-flex cursor-pointer items-center gap-1 rounded-md border border-border-default bg-white/4 px-2 py-0.5 text-caption font-semibold text-text-soft transition-all hover:border-violet/40 hover:bg-violet/10 hover:text-violet/95'
 
 type Props = {
   node: Book
@@ -80,7 +80,7 @@ function BooksTabBookRowImpl({
       data-book-row-id={node.id}
       style={BOOKS_GRID_STYLE}
       className={clsx(
-        'group grid cursor-pointer items-center border-b border-white/4 transition-colors hover:bg-white/2.5',
+        'group grid cursor-pointer items-center border-b border-border-subtle transition-colors hover:bg-white/2.5',
         (justAdded || highlighted) && 'animate-flash-row',
         isSelected ? 'bg-green/2.5' : rowIndex % 2 === 0 ? 'bg-white/[0.003]' : '',
       )}
@@ -97,7 +97,7 @@ function BooksTabBookRowImpl({
             'flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded border transition-all',
             isSelected
               ? 'border-green bg-green/18 text-green'
-              : 'border-white/14 text-transparent hover:border-white/28',
+              : 'border-border-default text-transparent hover:border-white/28',
           )}
         >
           <Check size={9} />
@@ -244,7 +244,7 @@ function BooksTabBookRowImpl({
         />
       </div>
       <div className="px-3 py-2">
-        <span className="font-mono text-[0.78rem] tabular-nums text-white/30">
+        <span className="font-mono text-[0.78rem] tabular-nums text-text-muted">
           {node.created_at
             ? new Date(node.created_at as string).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })
             : '—'}

@@ -58,7 +58,7 @@ export function Popover({
           id={id}
           role="dialog"
           onClick={(e) => e.stopPropagation()}
-          className={`absolute left-[calc(100%+10px)] top-1/2 z-50 w-[min(560px,90vw)] -translate-y-1/2 whitespace-pre-wrap rounded-lg border border-white/10 bg-bg-overlay/95 px-5 py-4 text-body font-normal leading-relaxed text-white/85 shadow-[0_20px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl ${className ?? ''}`}
+          className={`absolute left-[calc(100%+10px)] top-1/2 z-50 w-[min(560px,90vw)] -translate-y-1/2 whitespace-pre-wrap rounded-lg border border-border-default bg-bg-overlay/95 px-5 py-4 text-body font-normal leading-relaxed text-white/85 shadow-[0_20px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl ${className ?? ''}`}
         >
           {content}
         </div>

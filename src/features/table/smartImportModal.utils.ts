@@ -13,6 +13,17 @@ export type AuthorMergeSuggestion = {
   affectedItemIds: string[]
 }
 
+export type IntraBatchMergeSuggestion = {
+  id: string
+  title: string
+  firstName: string
+  lastName: string
+  /** All parsed item IDs in this duplicate group (≥2). The first is the primary. */
+  itemIds: string[]
+  pages: string[]
+  editions: string[]
+}
+
 export function isThenable(v: unknown): v is PromiseLike<unknown> {
   if (v == null) return false
   const kind = typeof v
@@ -149,6 +160,40 @@ export function detectAuthorInitialMatches(
     }
   }
 
+  return suggestions
+}
+
+/**
+ * Group parsed items that share the same (title, lastName) after normalization.
+ * These are likely the same work cited at different pages within the source
+ * document. The LLM emits one ParsedBook per citation, so we surface the
+ * duplicates as merge proposals — accepting collapses them into 1 work + N links.
+ */
+export function detectIntraBatchDuplicates(parsed: ParsedBook[]): IntraBatchMergeSuggestion[] {
+  const groups = new Map<string, ParsedBook[]>()
+  for (const item of parsed) {
+    const titleKey = normStr(item.originalTitle || item.title)
+    const lastKey = normStr(item.lastName)
+    if (!titleKey || !lastKey) continue
+    const key = `${lastKey}|${titleKey}`
+    const bucket = groups.get(key)
+    if (bucket) bucket.push(item)
+    else groups.set(key, [item])
+  }
+  const suggestions: IntraBatchMergeSuggestion[] = []
+  for (const [key, items] of groups) {
+    if (items.length < 2) continue
+    const first = items[0]
+    suggestions.push({
+      id: key,
+      title: first.title,
+      firstName: first.firstName,
+      lastName: first.lastName,
+      itemIds: items.map((it) => it.id),
+      pages: items.map((it) => it.page).filter(Boolean),
+      editions: items.map((it) => it.edition).filter(Boolean),
+    })
+  }
   return suggestions
 }
 

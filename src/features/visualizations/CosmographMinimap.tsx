@@ -252,7 +252,7 @@ function CosmographMinimapImpl({ graphRef, containerRef, trackedIndices, onEnter
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
       onPointerEnter={() => onEnter?.()}
-      className="absolute bottom-20 right-3 z-20 cursor-pointer rounded-[10px] border border-white/10 bg-bg-base/45 p-1 backdrop-blur-2xl backdrop-saturate-150"
+      className="absolute bottom-20 right-3 z-20 cursor-pointer rounded-[10px] border border-border-default bg-bg-base/45 p-1 backdrop-blur-2xl backdrop-saturate-150"
       style={{ width: MINIMAP_W + 8, height: MINIMAP_H + 8 }}
       aria-label="Mini-carte du graphe"
     >

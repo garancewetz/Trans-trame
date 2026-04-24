@@ -10,4 +10,6 @@ export const PANEL_WIDTH = {
   book: 'w-[min(100vw,32rem)]',
   dual: 'w-[min(100vw,52rem)]',
   linkSource: 'w-[min(100vw,20rem)]',
+  /** Link detail overlay on narrow screens (<1200px) in dual panel mode */
+  linkDetail: 'w-[min(100vw,26rem)]',
 } as const

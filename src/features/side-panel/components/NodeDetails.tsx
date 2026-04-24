@@ -6,6 +6,7 @@ import { getResourceType } from '@/common/constants/resourceTypes'
 import { splitBookAxes, axisColor } from '@/common/utils/categories'
 import { Badge } from '@/common/components/ui/Badge'
 import { Button } from '@/common/components/ui/Button'
+import { Tooltip } from '@/common/components/ui/Tooltip'
 import { SectionHeading } from '@/common/components/ui/SectionHeading'
 import { ThemePill } from '@/common/components/ui/ThemePill'
 import { AuthorLinks } from '@/common/components/AuthorLinks'
@@ -76,7 +77,7 @@ export function NodeDetails() {
               )}
               {themes.length > 0 && (
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-micro font-medium uppercase tracking-[0.14em] text-white/35">
+                  <span className="text-micro font-medium uppercase tracking-[0.14em] text-text-secondary">
                     Sous-catégorie proposée
                   </span>
                   {themes.map((theme) => (
@@ -87,8 +88,8 @@ export function NodeDetails() {
             </div>
           )}
           <div className="mb-2 flex items-center gap-1.5">
-            <resourceType.icon size={12} className="text-white/35" />
-            <span className="font-mono text-caption uppercase tracking-[0.12em] text-white/35">
+            <resourceType.icon size={12} className="text-text-secondary" />
+            <span className="font-mono text-caption uppercase tracking-[0.12em] text-text-secondary">
               {resourceType.label}
             </span>
           </div>
@@ -98,37 +99,38 @@ export function NodeDetails() {
               <PanelWorkBadge siblings={workEditions} authorsMap={map} />
             )}
           </h2>
-          <p className="mt-3 text-[0.95rem] leading-relaxed text-white/55">
+          <p className="mt-3 text-[0.95rem] leading-relaxed text-text-soft">
             <AuthorLinks book={node} authors={map} />
             {node.year != null && (
               <span className="text-white/32"> · {node.year}</span>
             )}
           </p>
         </div>
-        <Button
-          variant="icon"
-          iconDensity="soft"
-          className="shrink-0"
-          onClick={() => {
-            if (!requireAuth()) return
-            navigate(`${ADMIN_ROUTE}?${ADMIN_QUERY_KEYS.focus}=${encodeURIComponent(node.id)}`)
-          }}
-          title="Éditer la fiche"
-          aria-label="Éditer la fiche"
-        >
-          <Pencil size={14} />
-        </Button>
+        <Tooltip placement="left" content="Éditer la fiche">
+          <Button
+            variant="icon"
+            iconDensity="soft"
+            className="shrink-0"
+            onClick={() => {
+              if (!requireAuth()) return
+              navigate(`${ADMIN_ROUTE}?${ADMIN_QUERY_KEYS.focus}=${encodeURIComponent(node.id)}`)
+            }}
+            aria-label="Éditer la fiche"
+          >
+            <Pencil size={14} />
+          </Button>
+        </Tooltip>
       </header>
 
       {node.description ? (
-        <p className="mb-10 text-[0.93rem] leading-[1.7] text-white/55">{node.description}</p>
+        <p className="mb-10 text-[0.93rem] leading-[1.7] text-text-soft">{node.description}</p>
       ) : null}
 
       {sameAuthorBooks.length > 0 && (
         <section className="mb-10">
           <SectionHeading>
             Même auteur·ice
-            <Badge variant="count" count={sameAuthorBooks.length} className="ml-1 text-micro font-normal tracking-normal text-white/25" />
+            <Badge variant="count" count={sameAuthorBooks.length} className="ml-1 text-micro font-normal tracking-normal text-text-dimmed" />
           </SectionHeading>
           <ul className="divide-y divide-white/5">
             {sameAuthorBooks.map((n: Book) => (
@@ -154,7 +156,7 @@ export function NodeDetails() {
           <section>
             <SectionHeading accent={LINK_CITED_BY_COLOR_STRONG}>
               Cité par
-              <Badge variant="count" count={incomingRefs.length} className="ml-1 text-micro font-normal tracking-normal text-white/30" />
+              <Badge variant="count" count={incomingRefs.length} className="ml-1 text-micro font-normal tracking-normal text-text-muted" />
             </SectionHeading>
             <CollapsibleRefList
               items={incomingRefs}
@@ -180,7 +182,7 @@ export function NodeDetails() {
           <section>
             <SectionHeading accent={LINK_CITES_COLOR_STRONG}>
               Références citées
-              <Badge variant="count" count={outgoingRefs.length} className="ml-1 text-micro font-normal tracking-normal text-white/30" />
+              <Badge variant="count" count={outgoingRefs.length} className="ml-1 text-micro font-normal tracking-normal text-text-muted" />
             </SectionHeading>
             <CollapsibleRefList
               items={outgoingRefs}

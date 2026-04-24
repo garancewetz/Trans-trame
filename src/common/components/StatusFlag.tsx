@@ -35,7 +35,7 @@ export function StatusFlag({
         'ml-1.5 inline-flex shrink-0 cursor-pointer items-center transition-opacity',
         isWarning
           ? 'text-amber/80 hover:text-amber'
-          : 'text-white/25 opacity-0 group-hover:opacity-100 hover:text-amber/70',
+          : 'text-text-dimmed opacity-0 group-hover:opacity-100 hover:text-amber/70',
       )}
     >
       <Flag size={size} className={isWarning ? 'fill-amber/40' : ''} />

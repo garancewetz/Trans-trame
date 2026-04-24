@@ -7,7 +7,7 @@ type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
 }
 
 const BASE =
-  'mb-4 h-52 w-full resize-none rounded-xl border border-white/10 bg-white/4 p-3 font-mono text-ui text-white outline-none placeholder:text-white/30 transition-all focus:border-cyan/[0.28] focus:bg-white/6'
+  'mb-4 h-52 w-full resize-none rounded-xl border border-border-default bg-white/4 p-3 font-mono text-ui text-white outline-none placeholder:text-text-muted transition-all focus:border-cyan/[0.28] focus:bg-white/6'
 
 export function TextareaImport({ className = '', ...props }: Props) {
   return <Textarea className={clsx(BASE, className)} {...props} />

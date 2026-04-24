@@ -67,7 +67,7 @@ export function NavbarCatalogueMenu({
         <span className="hidden sm:inline">Catalogue</span>
       </Button>
       {openGroup === 'catalogue' && (
-        <div className="absolute right-0 top-[calc(100%+6px)] z-50 flex min-w-[280px] flex-col gap-1 rounded-xl border border-white/10 bg-bg-overlay/95 p-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+        <div className="absolute right-0 top-[calc(100%+6px)] z-50 flex min-w-[280px] flex-col gap-1 rounded-xl border border-border-default bg-bg-overlay/95 p-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
           <Button
             variant="outline"
             frosted

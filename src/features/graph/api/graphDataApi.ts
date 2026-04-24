@@ -192,6 +192,13 @@ export function deleteLinkCitationRowById(id: string) {
   return supabase.from('link_citations').update({ deleted_at: new Date().toISOString() }).eq('id', id)
 }
 
+/** Moves every citation attached to `fromLinkId` onto `toLinkId`. Used when a
+ *  book merge produces two links on the same (src, tgt) edge — the surviving
+ *  link absorbs the other's citations before the loser is soft-deleted. */
+export function reassignLinkCitationsByLinkId(fromLinkId: string, toLinkId: string) {
+  return supabase.from('link_citations').update({ link_id: toLinkId }).eq('link_id', fromLinkId)
+}
+
 /** Soft-deletes all resources. Does NOT touch links or authors — callers must
  *  handle those separately or rely on the UI clearing local state. */
 export function deleteAllResources() {
@@ -260,9 +267,14 @@ export async function setResourceAuthors(resourceId: string, authorIds: string[]
 }
 
 export function insertResourceAuthors(resourceId: string, authorIds: string[]) {
-  if (authorIds.length === 0) return Promise.resolve({ data: null, error: null })
+  // Dedupe before insert: the smart-import LLM can emit the same author twice
+  // (co-authors listed in both variants, or two entries collapsing to the same
+  // existing DB author after a merge suggestion). The (resource_id, author_id)
+  // primary key rejects the bulk insert on any duplicate.
+  const unique = [...new Set(authorIds)]
+  if (unique.length === 0) return Promise.resolve({ data: null, error: null })
   return supabase.from('resource_authors').insert(
-    authorIds.map((author_id) => ({ resource_id: resourceId, author_id }))
+    unique.map((author_id) => ({ resource_id: resourceId, author_id }))
   ).select()
 }
 

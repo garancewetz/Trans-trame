@@ -40,7 +40,7 @@ export function HistoryTab({ onOpenAIOrphanReconcile }: HistoryTabProps = {}) {
 
   if (allEntries.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center text-white/30 text-sm">
+      <div className="flex flex-1 items-center justify-center text-text-muted text-sm">
         Aucun événement enregistré.
       </div>
     )
@@ -76,7 +76,7 @@ export function HistoryTab({ onOpenAIOrphanReconcile }: HistoryTabProps = {}) {
         ))}
 
         {filteredSessions.length === 0 && search && (
-          <div className="py-8 text-center text-sm text-white/30">
+          <div className="py-8 text-center text-sm text-text-muted">
             Aucun résultat pour « {search} »
           </div>
         )}

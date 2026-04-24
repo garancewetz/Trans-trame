@@ -30,7 +30,7 @@ export function SearchableSelect<T>({
   return (
     <div>
       <div className="relative flex items-center">
-        <div className="pointer-events-none absolute left-3 text-white/25">
+        <div className="pointer-events-none absolute left-3 text-text-dimmed">
           <Search size={14} />
         </div>
         <TextInput
@@ -42,7 +42,7 @@ export function SearchableSelect<T>({
         />
         {query && (
           <Button
-            className="absolute right-2 cursor-pointer bg-transparent px-1 py-0.5 text-white/30 hover:text-white"
+            className="absolute right-2 cursor-pointer bg-transparent px-1 py-0.5 text-text-muted hover:text-white"
             onClick={() => onQueryChange('')}
             type="button"
           >
@@ -54,12 +54,12 @@ export function SearchableSelect<T>({
       {query.trim() && (
         <div
           className={clsx(
-            'mt-1.5 overflow-y-auto rounded-lg border border-white/10 bg-white/5 p-1',
+            'mt-1.5 overflow-y-auto rounded-lg border border-border-default bg-white/5 p-1',
             maxHeight,
           )}
         >
           {results.length === 0 ? (
-            <p className="p-2 text-center text-[0.88rem] text-white/30">{emptyMessage}</p>
+            <p className="p-2 text-center text-[0.88rem] text-text-muted">{emptyMessage}</p>
           ) : (
             <ul className="flex list-none flex-col">
               {results.map((item) => (

@@ -91,7 +91,7 @@ export function Navbar({ viewMode, onViewChange }: NavbarProps) {
 
   return (
     <>
-    <header className="pointer-events-none fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-bg-overlay/75 px-4 backdrop-blur-xl *:pointer-events-auto">
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-40 border-b border-border-default bg-bg-overlay/75 px-4 backdrop-blur-xl *:pointer-events-auto">
       <div className="flex items-center justify-between gap-3 py-2">
         <div className="flex min-w-0 items-center gap-2.5">
           <h1 className="flex items-center gap-2 text-[0.95rem] font-semibold text-white/90">
@@ -102,10 +102,10 @@ export function Navbar({ viewMode, onViewChange }: NavbarProps) {
                 <Badge
                   variant="count"
                   count={graphData.nodes.length}
-                  className="bg-white/10 px-[7px] py-px text-caption font-bold text-white/50"
+                  className="bg-white/10 px-[7px] py-px text-caption font-bold text-text-soft"
                 />
               </span>
-              <span className="text-label font-semibold text-white/45">
+              <span className="text-label font-semibold text-text-soft">
                 {VIEW_MODE_LABELS[viewMode] ?? 'Transmissions'}
               </span>
             </span>
@@ -145,10 +145,10 @@ export function Navbar({ viewMode, onViewChange }: NavbarProps) {
 
             {/* Dropdown */}
             {searchFocused && globalSearch.trim() && (
-              <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-[300px] overflow-y-auto rounded-xl border border-white/10 bg-bg-overlay/95 p-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+              <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-[300px] overflow-y-auto rounded-xl border border-border-default bg-bg-overlay/95 p-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
                 {searchResults.length === 0 ? (
                   <div className="p-2">
-                    <p className="px-2 py-2 text-center text-[0.9rem] text-white/30">
+                    <p className="px-2 py-2 text-center text-[0.9rem] text-text-muted">
                       Aucun résultat trouvé
                     </p>
                     <Button
@@ -180,7 +180,7 @@ export function Navbar({ viewMode, onViewChange }: NavbarProps) {
                         >
                           <span className="min-w-0">
                             <strong className="truncate text-body font-semibold">{item.author}</strong>
-                            <span className="block text-label text-white/35">Auteur·ice</span>
+                            <span className="block text-label text-text-secondary">Auteur·ice</span>
                           </span>
                           <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[0.8rem] font-semibold text-white/60 tabular-nums">
                             {item.count}
@@ -205,7 +205,7 @@ export function Navbar({ viewMode, onViewChange }: NavbarProps) {
                         />
                         <span className="flex min-w-0 flex-col gap-px">
                           <strong className="truncate text-body font-semibold">{node.title}</strong>
-                          <span className="text-label text-white/35">
+                          <span className="text-label text-text-secondary">
                             {bookAuthorDisplay(node, authorsMap)}, {node.year}
                           </span>
                         </span>

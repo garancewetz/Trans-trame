@@ -52,7 +52,7 @@ export function KeyboardHints() {
 
   return (
     <div
-      className={`pointer-events-auto absolute top-[68px] right-6 z-20 flex select-none flex-col rounded-[10px] border border-white/10 bg-bg-base/45 px-4 backdrop-blur-2xl backdrop-saturate-150 py-3`}
+      className={`pointer-events-auto absolute top-[68px] right-6 z-20 flex select-none flex-col rounded-[10px] border border-border-default bg-bg-base/45 px-4 backdrop-blur-2xl backdrop-saturate-150 py-3`}
     >
       <Button
         type="button"
@@ -60,7 +60,7 @@ export function KeyboardHints() {
         aria-expanded={!collapsed}
         aria-controls={panelId}
         aria-label={collapsed ? 'Développer les raccourcis de déplacement' : 'Réduire les raccourcis de déplacement'}
-        className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-md text-left text-micro font-bold uppercase tracking-[2px] text-white/30 outline-none transition-colors hover:text-white/45 focus-visible:ring-1 focus-visible:ring-white/20 min-h-9`}
+        className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-md text-left text-micro font-bold uppercase tracking-[2px] text-text-muted outline-none transition-colors hover:text-text-soft focus-visible:ring-1 focus-visible:ring-white/20 min-h-9`}
       >
         <span className="inline-flex min-w-0 items-center gap-1.5">
           <Move size={12} className="shrink-0" />
@@ -68,7 +68,7 @@ export function KeyboardHints() {
         </span>
         <ChevronDown
           size={12}
-          className={`shrink-0 text-white/25 transition-transform duration-200 ease-out ${collapsed ? '' : 'rotate-180'}`}
+          className={`shrink-0 text-text-dimmed transition-transform duration-200 ease-out ${collapsed ? '' : 'rotate-180'}`}
           aria-hidden
         />
       </Button>

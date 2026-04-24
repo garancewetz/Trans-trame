@@ -95,7 +95,7 @@ export function AuthorsTab({
         <div className="flex shrink-0 items-center justify-between gap-4 border-b border-cyan/12 bg-cyan/4 px-5 py-3">
           <div className="flex items-center gap-2.5">
             <Sparkles size={13} className="shrink-0 text-cyan/65" />
-            <p className="text-label text-white/55">
+            <p className="text-label text-text-soft">
               <span className="font-semibold text-white/80">{legacyCount} ressource{legacyCount > 1 ? 's' : ''}</span>
               {' '}utilisent encore l'ancien format (auteur·ice intégré·e au livre).
               Lance la migration pour créer les entités auteur·ices correspondantes.
@@ -113,14 +113,14 @@ export function AuthorsTab({
       )}
       {legacyCount > 0 && (
         <div className="shrink-0 border-b border-cyan/8 bg-cyan/2 px-5 py-2.5">
-          <p className="mb-1.5 font-mono text-[0.7rem] font-semibold uppercase tracking-wider text-white/30">
+          <p className="mb-1.5 font-mono text-[0.7rem] font-semibold uppercase tracking-wider text-text-muted">
             Ressources concernés
           </p>
           <ul className="flex flex-col gap-1">
             {legacyBooks.map((b) => (
               <li key={b.id} className="flex items-baseline gap-2 font-mono text-caption">
-                <span className="text-white/55">{b.title || '(sans titre)'}</span>
-                <span className="text-white/25">—</span>
+                <span className="text-text-soft">{b.title || '(sans titre)'}</span>
+                <span className="text-text-dimmed">—</span>
                 <span className="text-amber/50">
                   {[b.firstName, b.lastName].filter(Boolean).join(' ') || '—'}
                 </span>
@@ -215,8 +215,8 @@ export function AuthorsTab({
                 {migrateResult.failures.map((f) => (
                   <li key={f.bookId} className="flex flex-col gap-0.5 font-mono text-caption">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-white/55">{f.title}</span>
-                      <span className="text-white/25">—</span>
+                      <span className="text-text-soft">{f.title}</span>
+                      <span className="text-text-dimmed">—</span>
                       <span className="text-amber/50">{f.author || '—'}</span>
                     </div>
                     <span className="text-[0.7rem] text-red/40">{f.error}</span>
@@ -229,7 +229,7 @@ export function AuthorsTab({
       )}
 
       {(authorDuplicateGroups.length > 0 || orphanedAuthorCount > 0) && (
-        <div className="flex shrink-0 items-center gap-2 border-b border-white/6 px-5 py-2">
+        <div className="flex shrink-0 items-center gap-2 border-b border-border-subtle px-5 py-2">
           {authorDuplicateGroups.length > 0 && (
             <Button
               variant="outline"
@@ -267,14 +267,14 @@ export function AuthorsTab({
 
       {/* Barre de sélection */}
       {selectedIds.size > 0 && (
-        <div className="flex shrink-0 items-center gap-3 border-b border-white/6 bg-white/1.5 px-5 py-2">
-          <span className="font-mono text-label text-white/45">
+        <div className="flex shrink-0 items-center gap-3 border-b border-border-subtle bg-white/1.5 px-5 py-2">
+          <span className="font-mono text-label text-text-soft">
             {selectedIds.size} sélectionné·e{selectedIds.size > 1 ? 's' : ''}
           </span>
           <Button
             type="button"
             onClick={() => setBatchInfoModal(true)}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/4 px-3 py-1.5 text-[0.8rem] font-semibold text-white/50 transition-all hover:bg-white/8"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/4 px-3 py-1.5 text-[0.8rem] font-semibold text-text-soft transition-all hover:bg-white/8"
           >
             <Info size={11} /> Informations
           </Button>
@@ -308,7 +308,7 @@ export function AuthorsTab({
           <Button
             type="button"
             onClick={() => { setSelectedIds(new Set()); setBulkConfirm(false) }}
-            className="cursor-pointer text-[0.8rem] text-white/25 hover:text-white/60"
+            className="cursor-pointer text-[0.8rem] text-text-dimmed hover:text-white/60"
           >
             Annuler
           </Button>
@@ -331,7 +331,7 @@ export function AuthorsTab({
         <div className="flex-1 overflow-auto">
           <table className="w-full border-collapse">
             <thead className="sticky top-0 z-20 bg-bg-overlay">
-              <tr className="border-b border-white/6">
+              <tr className="border-b border-border-subtle">
                 <th className="w-9 px-3 py-2.5">
                   <Button
                     type="button"
@@ -340,7 +340,7 @@ export function AuthorsTab({
                       'flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded border transition-all',
                       allSelected ? 'border-green bg-green/18 text-green'
                         : someSelected ? 'border-green/38 bg-green/[0.07] text-green/[0.55]'
-                        : 'border-white/14 text-transparent hover:border-white/28',
+                        : 'border-border-default text-transparent hover:border-white/28',
                     ].join(' ')}
                   >
                     <Check size={9} />

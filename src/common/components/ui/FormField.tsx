@@ -16,7 +16,7 @@ export function FormField({
 }: FormFieldProps) {
   return (
     <Tag className={clsx('flex flex-col gap-1.5', className)}>
-      <span className="text-caption font-semibold uppercase tracking-[1px] text-white/35">
+      <span className="text-caption font-semibold uppercase tracking-[1px] text-text-secondary">
         {label}
       </span>
       {children}

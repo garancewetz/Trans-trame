@@ -28,8 +28,8 @@ export function MasterNodeLinkSection({
   authorsMap,
 }: Props) {
   return (
-    <div className="mb-4 rounded-xl border border-white/8 bg-white/2 p-3">
-      <label className="mb-2 flex items-center gap-1.5 text-caption font-semibold uppercase tracking-[1.2px] text-white/35">
+    <div className="mb-4 rounded-xl border border-border-subtle bg-white/2 p-3">
+      <label className="mb-2 flex items-center gap-1.5 text-caption font-semibold uppercase tracking-[1.2px] text-text-secondary">
         <Link2 size={10} /> Créer des liens avec…
         <span className="ml-1 font-normal normal-case tracking-normal text-white/22">(optionnel)</span>
       </label>
@@ -47,7 +47,7 @@ export function MasterNodeLinkSection({
           <Button
             type="button"
             onClick={() => { setMasterNode(null); setMasterContext(''); setLinkDirection('master-cites-imported') }}
-            className="shrink-0 cursor-pointer rounded-lg p-1.5 text-white/30 transition-colors hover:text-white"
+            className="shrink-0 cursor-pointer rounded-lg p-1.5 text-text-muted transition-colors hover:text-white"
           >
             <X size={13} />
           </Button>

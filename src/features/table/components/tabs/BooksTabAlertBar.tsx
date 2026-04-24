@@ -27,7 +27,7 @@ export function BooksTabAlertBar({
   }
 
   return (
-    <div className="flex shrink-0 items-center gap-2 border-b border-white/6 px-5 py-2">
+    <div className="flex shrink-0 items-center gap-2 border-b border-border-subtle px-5 py-2">
       {todoCount > 0 && (
         <Button
           variant={todoOnly ? 'solid' : 'outline'}

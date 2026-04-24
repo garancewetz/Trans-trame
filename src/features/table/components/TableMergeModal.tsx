@@ -86,7 +86,7 @@ export function TableMergeModal({
 
       <p className="mb-4 text-[0.8rem] text-white/28">
         Conserver :{' '}
-        <strong className="text-white/55">
+        <strong className="text-text-soft">
           {(() => {
             const kept = mergeNodes.find((n) => n.id === mergeKeepId)
             return kept ? bookAuthorDisplay(kept, authorsMap) : '—'

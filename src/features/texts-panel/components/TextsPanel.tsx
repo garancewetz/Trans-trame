@@ -90,7 +90,7 @@ export function TextsPanel({
   return (
     <aside
       className={clsx(
-        `fixed left-0 top-0 z-50 h-screen ${PANEL_WIDTH.default} overflow-hidden border-r border-white/10 bg-bg-overlay/92 backdrop-blur-2xl transition-transform duration-300 ease-in-out`,
+        `fixed left-0 top-0 z-50 h-screen ${PANEL_WIDTH.default} overflow-hidden border-r border-border-default bg-bg-overlay/92 backdrop-blur-2xl transition-transform duration-300 ease-in-out`,
         open ? 'translate-x-0' : '-translate-x-[420px]',
       )}
     >
@@ -103,7 +103,7 @@ export function TextsPanel({
 
           <Button
             type="button"
-            className="cursor-pointer rounded-lg border border-white/10 bg-white/5 p-2 text-white/40 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+            className="cursor-pointer rounded-lg border border-border-default bg-white/5 p-2 text-white/40 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
             onClick={onClose}
             aria-label="Fermer"
           >
@@ -134,7 +134,7 @@ export function TextsPanel({
                     'mb-2 flex w-full items-stretch gap-1 rounded-lg border backdrop-blur-xl transition-all',
                     isPeeked
                       ? 'border-violet/45 bg-violet/10'
-                      : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/8',
+                      : 'border-border-default bg-white/5 hover:border-white/20 hover:bg-white/8',
                   )}
                 >
                   <Button
@@ -148,16 +148,16 @@ export function TextsPanel({
                     />
                     <div className="min-w-0">
                       <div className="truncate text-[0.95rem] font-semibold text-white/85">{n.title}</div>
-                      <div className="truncate text-label text-white/35">
+                      <div className="truncate text-label text-text-secondary">
                         {bookAuthorDisplay(n, authorsMap)}
                         {n.year ? ` — ${n.year}` : ''}
                       </div>
                     </div>
                   </Button>
-                  <div className="flex shrink-0 flex-col border-l border-white/10 sm:flex-row">
+                  <div className="flex shrink-0 flex-col border-l border-border-default sm:flex-row">
                     <Button
                       type="button"
-                      className="cursor-pointer px-2.5 py-2 text-white/35 transition-colors hover:bg-white/10 hover:text-violet/95 sm:py-0"
+                      className="cursor-pointer px-2.5 py-2 text-text-secondary transition-colors hover:bg-white/10 hover:text-violet/95 sm:py-0"
                       aria-label={`Voir ce nœud sur la carte (${n.title})`}
                       title="Voir le nœud sur la carte (aperçu)"
                       onClick={(e) => {
@@ -170,7 +170,7 @@ export function TextsPanel({
                     <Button
                       type="button"
                       title="Grande fiche ressource"
-                      className="inline-flex cursor-pointer items-center justify-center gap-1 border-t border-white/10 px-2 py-2 text-caption font-semibold text-white/40 transition-colors hover:bg-white/10 hover:text-violet/95 sm:border-l sm:border-t-0 sm:px-2.5"
+                      className="inline-flex cursor-pointer items-center justify-center gap-1 border-t border-border-default px-2 py-2 text-caption font-semibold text-white/40 transition-colors hover:bg-white/10 hover:text-violet/95 sm:border-l sm:border-t-0 sm:px-2.5"
                       onClick={(e) => {
                         e.stopPropagation()
                         onOpenWorkDetail(n.id)

@@ -139,7 +139,7 @@ export function useSmartImportModalLogic({
   const handleInject = async () => {
     setInserting(true)
     await runSmartImportBatchInsert({
-      parsed, checked, mergedIds: merge.mergedIds, existingAuthors,
+      parsed, checked, mergedIds: merge.mergedIds, intraBatchMerges: merge.intraBatchMerges, existingAuthors,
       onAddAuthor, onAddBook, onAddLink, onAddLinks, masterNode, linkDirection, masterContext,
       onQueued, onImportComplete,
     })
@@ -205,6 +205,11 @@ export function useSmartImportModalLogic({
     authorMergeSuggestions: merge.authorMergeSuggestions,
     handleAuthorMerge: merge.handleAuthorMerge,
     dismissAuthorMerge: merge.dismissAuthorMerge,
+    intraBatchSuggestions: merge.intraBatchSuggestions,
+    intraBatchCountByPrimary: merge.intraBatchCountByPrimary,
+    handleIntraBatchMerge: merge.handleIntraBatchMerge,
+    handleIntraBatchUnmerge: merge.handleIntraBatchUnmerge,
+    dismissIntraBatchMerge: merge.dismissIntraBatchMerge,
     handleClose,
     goBack,
     handleSubmit,

@@ -27,7 +27,7 @@ type BadgeProps = Omit<HTMLAttributes<HTMLSpanElement>, 'prefix'> & {
 }
 
 const PILL_BASE =
-  'inline-flex max-w-full items-center gap-1.5 truncate rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-label text-white/55'
+  'inline-flex max-w-full items-center gap-1.5 truncate rounded-full border border-border-default bg-white/5 px-2.5 py-1 text-label text-text-soft'
 
 const INLINE_BASE =
   'inline-flex items-center gap-1.5 rounded-full px-3 py-[3px] text-label font-bold uppercase tracking-[0.5px]'
@@ -39,7 +39,7 @@ const COUNT_BASE =
   'inline-flex items-center justify-center rounded-full tabular-nums'
 
 const OUTLINE_BASE =
-  'inline-flex items-center rounded-full border border-white/14 bg-white/6 px-1.5 py-px text-micro text-white/65'
+  'inline-flex items-center rounded-full border border-border-default bg-white/6 px-1.5 py-px text-micro text-white/65'
 
 const VARIANT_BASE: Record<BadgeVariant, string> = {
   pill: PILL_BASE,
@@ -91,7 +91,7 @@ export function Badge({
         <span
           className={clsx(
             'shrink-0',
-            variant === 'pill' && 'tabular-nums text-white/30',
+            variant === 'pill' && 'tabular-nums text-text-muted',
           )}
         >
           {suffix}

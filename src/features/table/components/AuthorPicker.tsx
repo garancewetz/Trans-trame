@@ -66,7 +66,7 @@ export function AuthorPicker({
     const firstName = parts.length > 1 ? parts.slice(0, -1).join(' ') : ''
     const lastName = parts.length > 1 ? parts[parts.length - 1] : parts[0]
     const newAuthor: Author = {
-      id: `auth_${crypto.randomUUID().slice(0, 8)}`,
+      id: crypto.randomUUID(),
       type: 'author',
       firstName,
       lastName,
@@ -80,17 +80,17 @@ export function AuthorPicker({
 
   return (
     <div ref={ref} className="relative">
-      <div className="flex min-h-[28px] flex-wrap items-center gap-1 rounded-md border border-white/12 bg-white/4 px-1.5 py-1">
+      <div className="flex min-h-[28px] flex-wrap items-center gap-1 rounded-md border border-border-default bg-white/4 px-1.5 py-1">
         {selectedAuthors.map((a) => (
           <span
             key={a.id}
-            className="inline-flex items-center gap-1 rounded-full border border-white/14 bg-white/8 px-1.5 py-px text-micro text-white/75"
+            className="inline-flex items-center gap-1 rounded-full border border-border-default bg-white/8 px-1.5 py-px text-micro text-white/75"
           >
             {authorName(a)}
             <Button
               type="button"
               onClick={() => removeAuthor(a.id)}
-              className="cursor-pointer leading-none text-white/35 hover:text-white/80"
+              className="cursor-pointer leading-none text-text-secondary hover:text-white/80"
             >
               ×
             </Button>
@@ -123,7 +123,7 @@ export function AuthorPicker({
         />
       </div>
       {open && (suggestions.length > 0 || canCreate) && (
-        <ul className="absolute left-0 right-0 top-[calc(100%+3px)] z-50 list-none rounded-lg border border-white/10 bg-bg-overlay/98 p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+        <ul className="absolute left-0 right-0 top-[calc(100%+3px)] z-50 list-none rounded-lg border border-border-default bg-bg-overlay/98 p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur-xl">
           {suggestions.map((a) => (
             <li key={a.id}>
               <Button

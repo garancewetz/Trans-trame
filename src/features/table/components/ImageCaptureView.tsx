@@ -52,7 +52,7 @@ export function ImageCaptureView({
     <>
       {cropImageUrl ? (
         <div className="mt-2 flex flex-col gap-2">
-          <div className="relative w-full overflow-hidden rounded-xl border border-white/10 bg-black" style={{ height: 300 }}>
+          <div className="relative w-full overflow-hidden rounded-xl border border-border-default bg-black" style={{ height: 300 }}>
             <Cropper
               image={cropImageUrl}
               crop={crop}
@@ -75,7 +75,7 @@ export function ImageCaptureView({
                   className={`flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-micro font-medium transition-all ${
                     cropShape === key
                       ? 'bg-white/12 text-white/80'
-                      : 'text-white/30 hover:text-white/55'
+                      : 'text-text-muted hover:text-text-soft'
                   }`}
                 >
                   <Icon size={12} /> {label}
@@ -83,7 +83,7 @@ export function ImageCaptureView({
               )
             })}
           </div>
-          <p className="text-center text-micro text-white/30">
+          <p className="text-center text-micro text-text-muted">
             Glisse pour déplacer, scroll pour zoomer
           </p>
           <div className="flex justify-center gap-2">
@@ -97,7 +97,7 @@ export function ImageCaptureView({
             <button
               type="button"
               onClick={cancelCrop}
-              className="flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.8rem] text-white/35 transition-colors hover:bg-white/5 hover:text-white/55"
+              className="flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.8rem] text-text-secondary transition-colors hover:bg-white/5 hover:text-text-soft"
             >
               <RotateCcw size={14} /> Reprendre
             </button>
@@ -110,7 +110,7 @@ export function ImageCaptureView({
             autoPlay
             playsInline
             muted
-            className="w-full aspect-video rounded-xl border border-white/10 object-contain bg-black"
+            className="w-full aspect-video rounded-xl border border-border-default object-contain bg-black"
           />
           <div className="flex gap-2">
             <button
@@ -123,7 +123,7 @@ export function ImageCaptureView({
             <button
               type="button"
               onClick={stopCamera}
-              className="flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.8rem] text-white/35 transition-colors hover:bg-white/5 hover:text-white/55"
+              className="flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.8rem] text-text-secondary transition-colors hover:bg-white/5 hover:text-text-soft"
             >
               <X size={14} /> Annuler
             </button>
@@ -133,7 +133,7 @@ export function ImageCaptureView({
         <button
           type="button"
           onClick={startCamera}
-          className="mt-2 flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.8rem] text-white/35 transition-colors hover:bg-white/5 hover:text-white/55"
+          className="mt-2 flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.8rem] text-text-secondary transition-colors hover:bg-white/5 hover:text-text-soft"
         >
           <Camera size={14} /> Prendre une photo
         </button>

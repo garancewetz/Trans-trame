@@ -43,7 +43,7 @@ export function TableTopbar({
     setDrawerTool(drawerTool === next ? null : next)
 
   return (
-    <div className="flex shrink-0 items-center gap-3 border-b border-white/8 px-5 py-2.5">
+    <div className="flex shrink-0 items-center gap-3 border-b border-border-subtle px-5 py-2.5">
       <Button
         variant="outline"
         outlineWeight="muted"
@@ -54,7 +54,7 @@ export function TableTopbar({
         Graph
       </Button>
 
-      <div className="flex rounded-lg border border-white/8 bg-white/3 p-0.5">
+      <div className="flex rounded-lg border border-border-subtle bg-white/3 p-0.5">
         {([
           { id: 'books' as const, label: 'Ressources', count: nodes.length },
           { id: 'authors' as const, label: 'Auteur·ices', count: authors.length },
@@ -71,7 +71,7 @@ export function TableTopbar({
             <span
               className={[
                 'ml-1.5 rounded-full px-1.5 py-px text-micro tabular-nums',
-                tab === t.id ? 'bg-white/15 text-white/75' : 'bg-white/5 text-white/30',
+                tab === t.id ? 'bg-white/15 text-white/75' : 'bg-white/5 text-text-muted',
               ].join(' ')}
             >
               {t.count}

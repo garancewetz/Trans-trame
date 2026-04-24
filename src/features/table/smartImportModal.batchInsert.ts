@@ -10,6 +10,8 @@ export async function runSmartImportBatchInsert(params: {
   parsed: ParsedBook[]
   checked: Set<string>
   mergedIds: Set<string>
+  /** secondaryItemId → primaryItemId. Secondaries only produce a link. */
+  intraBatchMerges?: Map<string, string>
   existingAuthors: Author[]
   onAddAuthor?: (author: Author) => unknown
   onAddBook?: OnAddBook
@@ -25,6 +27,7 @@ export async function runSmartImportBatchInsert(params: {
     parsed,
     checked,
     mergedIds,
+    intraBatchMerges,
     existingAuthors,
     onAddAuthor,
     onAddBook,
@@ -37,8 +40,16 @@ export async function runSmartImportBatchInsert(params: {
     onImportComplete,
   } = params
 
-  const toAdd = parsed.filter((r) => checked.has(r.id))
-  const newItems = toAdd.filter((r) => !mergedIds.has(r.id))
+  const intra = intraBatchMerges ?? new Map<string, string>()
+  // Drop any secondary whose primary isn't in `checked` — its link would point
+  // to a book that will never be created.
+  const toAdd = parsed.filter((r) => {
+    if (!checked.has(r.id)) return false
+    const primaryId = intra.get(r.id)
+    if (primaryId && !checked.has(primaryId)) return false
+    return true
+  })
+  const newItems = toAdd.filter((r) => !mergedIds.has(r.id) && !intra.has(r.id))
   const newIds: string[] = []
   const localAuthors: Author[] = [...existingAuthors]
 
@@ -98,7 +109,18 @@ export async function runSmartImportBatchInsert(params: {
   if (masterNode) {
     const linksToAdd = toAdd.map((r) => {
       const isMerged = mergedIds.has(r.id)
-      const bookId = isMerged ? r.existingNode?.id || r.id : r.id
+      const intraPrimaryId = intra.get(r.id)
+      let bookId: string
+      if (intraPrimaryId) {
+        // Secondary of an intra-batch merge: resolve to the primary's book id
+        // (which itself may be DB-merged, so follow that one level).
+        const primary = parsed.find((p) => p.id === intraPrimaryId)
+        bookId = primary && mergedIds.has(primary.id)
+          ? primary.existingNode?.id || primary.id
+          : intraPrimaryId
+      } else {
+        bookId = isMerged ? r.existingNode?.id || r.id : r.id
+      }
       const source = linkDirection === 'imported-cites-master' ? bookId : masterNode.id
       const target = linkDirection === 'imported-cites-master' ? masterNode.id : bookId
       return {

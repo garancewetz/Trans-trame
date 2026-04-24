@@ -36,7 +36,7 @@ export function ResourceTypePicker({
         type="button"
         ref={refs.setReference}
         {...getReferenceProps()}
-        className="inline-flex cursor-pointer items-center gap-1 rounded border border-white/12 bg-white/5 px-1.5 py-1 text-micro text-white/45 transition-all hover:border-white/25 hover:text-white/70"
+        className="inline-flex cursor-pointer items-center gap-1 rounded border border-border-default bg-white/5 px-1.5 py-1 text-micro text-text-soft transition-all hover:border-white/25 hover:text-white/70"
         title={hasSelection && rt ? rt.label : 'Type de ressource'}
       >
         {hasSelection && SelectedIcon ? (
@@ -44,14 +44,14 @@ export function ResourceTypePicker({
         ) : (
           <span className="min-w-9 text-center text-micro text-white/22">—</span>
         )}
-        <ChevronDown size={9} className="text-white/25" />
+        <ChevronDown size={9} className="text-text-dimmed" />
       </button>
       {open && (
         <div
           ref={refs.setFloating}
           style={floatingStyles}
           {...getFloatingProps()}
-          className="z-50 flex flex-col gap-0.5 rounded-lg border border-white/10 bg-bg-overlay/98 p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
+          className="z-50 flex flex-col gap-0.5 rounded-lg border border-border-default bg-bg-overlay/98 p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
         >
           {allowEmpty && (
             <button
@@ -61,7 +61,7 @@ export function ResourceTypePicker({
                 'inline-flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[0.8rem] font-medium transition-all',
                 !hasSelection
                   ? 'bg-cyan/12 text-cyan/90'
-                  : 'text-white/55 hover:bg-white/6 hover:text-white/85',
+                  : 'text-text-soft hover:bg-white/6 hover:text-white/85',
               ].join(' ')}
             >
               Non déterminé
@@ -76,7 +76,7 @@ export function ResourceTypePicker({
                 'inline-flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[0.8rem] font-medium transition-all',
                 v === value?.trim()
                   ? 'bg-cyan/12 text-cyan/90'
-                  : 'text-white/55 hover:bg-white/6 hover:text-white/85',
+                  : 'text-text-soft hover:bg-white/6 hover:text-white/85',
               ].join(' ')}
             >
               <Icon size={12} />

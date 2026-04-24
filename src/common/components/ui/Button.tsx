@@ -119,12 +119,12 @@ export function Button({
     classes = ''
   } else if (v === 'surface') {
     classes =
-      'flex-1 cursor-pointer rounded-lg border border-white/10 bg-white/4 px-4 py-2 text-ui font-semibold text-white/55 transition-all hover:text-white'
+      'flex-1 cursor-pointer rounded-lg border border-border-default bg-white/4 px-4 py-2 text-ui font-semibold text-text-soft transition-all hover:text-white'
   } else if (v === 'icon') {
     classes = clsx(
       iconDensity === 'soft'
-        ? 'shrink-0 cursor-pointer rounded-md p-1.5 text-white/55 transition-colors hover:bg-white/12 hover:text-white'
-        : 'inline-flex cursor-pointer items-center justify-center rounded-lg p-1 text-white/30 transition-colors hover:text-white'
+        ? 'shrink-0 cursor-pointer rounded-md p-1.5 text-text-soft transition-colors hover:bg-white/12 hover:text-white'
+        : 'inline-flex cursor-pointer items-center justify-center rounded-lg p-1 text-text-muted transition-colors hover:text-white'
     )
   } else if (v === 'outline' && frosted) {
     classes = size === 'sm' ? GLASS_SM : GLASS_MD
@@ -137,7 +137,7 @@ export function Button({
       } else if (t === 'mint' || !t || t === 'neutral') {
         classes = clsx(
           classes,
-          'border-white/10 bg-white/5 text-white/45 hover:border-white/20 hover:text-white/80'
+          'border-border-default bg-white/5 text-text-soft hover:border-white/20 hover:text-white/80'
         )
       }
     }
@@ -155,7 +155,7 @@ export function Button({
     if (outlineWeight === 'muted') {
       classes = clsx(
         classes,
-        'border-white/10 bg-white/4 text-white/50 hover:border-white/20 hover:text-white'
+        'border-border-default bg-white/4 text-text-soft hover:border-white/20 hover:text-white'
       )
     }
     if (outlineWeight === 'accent' && t === 'magic') {
@@ -169,15 +169,15 @@ export function Button({
         classes,
         emphasis
           ? 'border-amber/[0.28] text-amber/65 hover:bg-amber/8 hover:text-amber/90'
-          : 'cursor-default border-white/5 text-white/18'
+          : 'cursor-default border-border-subtle text-white/18'
       )
     }
     if (outlineWeight === 'faint' && t === 'orphan') {
       classes = clsx(
         classes,
         emphasis
-          ? 'border-white/10 text-white/40 hover:border-amber/[0.28] hover:text-amber/75'
-          : 'cursor-default border-white/5 text-white/18'
+          ? 'border-border-default text-white/40 hover:border-amber/[0.28] hover:text-amber/75'
+          : 'cursor-default border-border-subtle text-white/18'
       )
     }
     if (outlineWeight === 'strong' && t === 'merge') {
@@ -193,14 +193,14 @@ export function Button({
         classes,
         active
           ? 'border-red/60 bg-red/15 text-red/95 hover:bg-red/25'
-          : 'border-white/10 bg-transparent text-white/30 hover:border-red/30 hover:text-red/70'
+          : 'border-border-default bg-transparent text-text-muted hover:border-red/30 hover:text-red/70'
       )
     }
   } else if (v === 'ghost') {
     if (layout === 'inline') {
       classes = clsx(
         'inline-flex cursor-pointer items-center justify-center bg-transparent transition-colors',
-        t === 'muted' ? 'text-white/22 hover:text-white' : 'px-1.5 py-0.5 text-white/30 hover:text-white'
+        t === 'muted' ? 'text-white/22 hover:text-white' : 'px-1.5 py-0.5 text-text-muted hover:text-white'
       )
     } else if (layout === 'row') {
       classes = clsx(
@@ -216,7 +216,7 @@ export function Button({
   } else if (v === 'chip') {
     classes = clsx(
       'cursor-pointer rounded-md px-3 py-1 text-label font-semibold transition-all',
-      selected ? 'bg-white/10 text-white shadow-sm' : 'text-white/38 hover:text-white/70'
+      selected ? 'bg-white/10 text-white shadow-sm' : 'text-text-secondary hover:text-white/70'
     )
   }
 

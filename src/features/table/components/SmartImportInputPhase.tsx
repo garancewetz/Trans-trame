@@ -89,7 +89,7 @@ export function SmartImportInputPhase({
           className={`flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-[0.8rem] font-medium transition-all ${
             inputMode === 'text'
               ? 'bg-white/12 text-white/80'
-              : 'text-white/35 hover:text-white/55'
+              : 'text-text-secondary hover:text-text-soft'
           }`}
         >
           <Type size={13} /> Texte
@@ -100,7 +100,7 @@ export function SmartImportInputPhase({
           className={`flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-[0.8rem] font-medium transition-all ${
             inputMode === 'image'
               ? 'bg-white/12 text-white/80'
-              : 'text-white/35 hover:text-white/55'
+              : 'text-text-secondary hover:text-text-soft'
           }`}
         >
           <ImageIcon size={13} /> Image
@@ -135,10 +135,10 @@ export function SmartImportInputPhase({
             className={`flex h-40 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all ${
               dragOver
                 ? 'border-cyan/50 bg-cyan/5'
-                : 'border-white/12 bg-white/2 hover:border-white/25 hover:bg-white/4'
+                : 'border-border-default bg-white/2 hover:border-white/25 hover:bg-white/4'
             }`}
           >
-            <Upload size={24} className="mb-2 text-white/25" />
+            <Upload size={24} className="mb-2 text-text-dimmed" />
             <p className="text-label text-white/40">
               Glisse une image ici ou clique pour en sélectionner
             </p>
@@ -165,7 +165,7 @@ export function SmartImportInputPhase({
                   <img
                     src={src}
                     alt={`Page ${i + 1}`}
-                    className="h-24 w-auto rounded-lg border border-white/10 object-cover"
+                    className="h-24 w-auto rounded-lg border border-border-default object-cover"
                   />
                   <button
                     type="button"

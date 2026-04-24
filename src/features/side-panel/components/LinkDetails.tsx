@@ -138,25 +138,25 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
   return (
     <div className="px-6 pb-8 pt-12">
       {linkContextNode && !isContextPanel && (
-        <p className="mb-3 text-[0.74rem] font-semibold tracking-[0.3px] text-white/45">
-          Ressources <span className="mx-1 text-white/25">{'>'}</span> {linkContextNode.title}{' '}
-          <span className="mx-1 text-white/25">{'>'}</span> Citation
+        <p className="mb-3 text-[0.74rem] font-semibold tracking-[0.3px] text-text-soft">
+          Ressources <span className="mx-1 text-text-dimmed">{'>'}</span> {linkContextNode.title}{' '}
+          <span className="mx-1 text-text-dimmed">{'>'}</span> Citation
         </p>
       )}
       <Badge variant="inline" className={`mb-3 ${relationBadgeClass}`}>
         <LinkIcon size={11} /> {relationBadgeLabel}
       </Badge>
       {source && target && (
-        <div className="mb-4 rounded-md border border-white/8 bg-white/2 px-2.5 py-2">
+        <div className="mb-4 rounded-md border border-border-subtle bg-white/2 px-2.5 py-2">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-micro font-semibold uppercase tracking-[1px] text-white/30">Source</span>
+            <span className="text-micro font-semibold uppercase tracking-[1px] text-text-muted">Source</span>
             <span className="min-w-0 truncate text-[0.74rem] font-mono text-white/85">
               {source.title}
               {source.year ? `, ${source.year}` : ''}
             </span>
           </div>
           <div className="mt-0.5 flex items-center justify-between gap-2">
-            <span className="text-micro font-semibold uppercase tracking-[1px] text-white/30">Cité</span>
+            <span className="text-micro font-semibold uppercase tracking-[1px] text-text-muted">Cité</span>
             <span className="min-w-0 truncate text-[0.74rem] font-mono text-white/85">
               {target.title}
               {target.year ? `, ${target.year}` : ''}
@@ -167,7 +167,7 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
       {isContextPanel ? (
         <>
           <h2 className="mb-1 text-lead font-bold leading-snug text-white">{relatedNode?.title}</h2>
-          <p className="mb-3 text-[0.83rem] text-white/50">
+          <p className="mb-3 text-[0.83rem] text-text-soft">
             {relatedNode && (
               <AuthorLinks book={relatedNode} authors={authorsMap || []} />
             )}
@@ -176,14 +176,14 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
         </>
       ) : (
         <>
-          <p className="mb-2 text-[0.88rem] text-white/55">
-            Lecture simple: <strong className="text-orange/90">ressource qui cite</strong> <ArrowRight size={12} className="mx-1 inline text-white/35" />
+          <p className="mb-2 text-[0.88rem] text-text-soft">
+            Lecture simple: <strong className="text-orange/90">ressource qui cite</strong> <ArrowRight size={12} className="mx-1 inline text-text-secondary" />
             <strong className="text-cyan/90">ressource cité</strong>
           </p>
           <h2 className="mb-1 flex items-center gap-2 text-[1.1rem] font-bold leading-snug text-white">
             {source?.title} <ArrowRight size={16} className="shrink-0 text-white/40" /> {target?.title}
           </h2>
-          <p className="mb-5 text-[0.95rem] text-white/45">
+          <p className="mb-5 text-[0.95rem] text-text-soft">
             {source && <AuthorLinks book={source} authors={authorsMap || []} />}
             {' '}&mdash;{' '}
             {target && <AuthorLinks book={target} authors={authorsMap || []} />}
@@ -242,11 +242,11 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
 
       <div className="mb-3 flex items-center justify-between">
         <span className="text-micro font-semibold uppercase tracking-[1px] text-white/40">
-          Citations {citations.length > 0 && <span className="ml-1 text-white/30">({citations.length})</span>}
+          Citations {citations.length > 0 && <span className="ml-1 text-text-muted">({citations.length})</span>}
         </span>
         <Button
           type="button"
-          className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-white/55 transition-all hover:border-red-400/40 hover:bg-red-400/8 hover:text-red-300"
+          className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-border-default bg-white/5 p-2 text-text-soft transition-all hover:border-red-400/40 hover:bg-red-400/8 hover:text-red-300"
           onClick={confirmDeleteLink}
           aria-label="Supprimer le lien"
           title={deletingLinkConfirm ? 'Confirmer la suppression du lien' : 'Supprimer le lien (et toutes ses citations)'}
@@ -256,7 +256,7 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
       </div>
 
       {citations.length === 0 && !addingCitation && (
-        <p className="mb-4 rounded-md border border-dashed border-white/10 px-3 py-3 text-center text-[0.88rem] italic text-white/35">
+        <p className="mb-4 rounded-md border border-dashed border-border-default px-3 py-3 text-center text-[0.88rem] italic text-text-secondary">
           Aucune citation enregistrée pour ce lien.
         </p>
       )}
@@ -300,7 +300,7 @@ export function LinkDetails({ showBackButton = true }: LinkDetailsProps) {
       {!addingCitation && (
         <Button
           type="button"
-          className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border border-dashed border-white/15 bg-white/2 py-2 text-label font-semibold text-white/55 transition-all hover:border-cyan/35 hover:bg-cyan/5 hover:text-cyan/80"
+          className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border border-dashed border-white/15 bg-white/2 py-2 text-label font-semibold text-text-soft transition-all hover:border-cyan/35 hover:bg-cyan/5 hover:text-cyan/80"
           onClick={() => setAddingCitation(true)}
         >
           <Plus size={12} />
@@ -339,7 +339,7 @@ function CitationEditor({
   const excerpt = (citation.citation_text || citation.context || '').trim()
 
   return (
-    <div className="rounded-md border border-white/8 bg-white/2 p-3">
+    <div className="rounded-md border border-border-subtle bg-white/2 p-3">
       <div className="flex items-start justify-between gap-2">
         <blockquote
           className="group/cite flex-1 rounded-md border-l-4 border-l-white/20 bg-white/5 px-4 py-3 font-serif text-lead italic leading-relaxed text-white/85 backdrop-blur-md"
@@ -362,10 +362,10 @@ function CitationEditor({
                 }}
                 placeholder="Ajouter le texte de la citation…"
               />
-              <div className="mt-2 flex items-center justify-end gap-1.5 border-t border-white/10 pt-2 font-sans not-italic">
+              <div className="mt-2 flex items-center justify-end gap-1.5 border-t border-border-default pt-2 font-sans not-italic">
                 <Button
                   type="button"
-                  className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-caption font-semibold text-white/60 transition-all hover:border-white/20 hover:text-white"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border-default bg-white/5 px-2.5 py-1 text-caption font-semibold text-white/60 transition-all hover:border-white/20 hover:text-white"
                   onClick={cancelEdit}
                   title="Annuler (Échap)"
                 >
@@ -385,11 +385,11 @@ function CitationEditor({
             </>
           ) : (
             <span className="flex items-start gap-2">
-              <span className="flex-1">{excerpt || <span className="text-white/30">—</span>}</span>
+              <span className="flex-1">{excerpt || <span className="text-text-muted">—</span>}</span>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); startEdit('citation_text') }}
-                className="shrink-0 rounded p-1 text-white/25 opacity-0 transition-all hover:text-white group-hover/cite:opacity-100"
+                className="shrink-0 rounded p-1 text-text-dimmed opacity-0 transition-all hover:text-white group-hover/cite:opacity-100"
                 title="Modifier le texte"
                 aria-label="Modifier le texte"
               >
@@ -405,7 +405,7 @@ function CitationEditor({
           className={`shrink-0 inline-flex cursor-pointer items-center justify-center rounded-md p-1.5 transition-colors ${
             isDeleting
               ? 'bg-red-400/15 text-red-300'
-              : 'text-white/25 hover:bg-red-400/10 hover:text-red-300'
+              : 'text-text-dimmed hover:bg-red-400/10 hover:text-red-300'
           }`}
           title={isDeleting ? 'Confirmer la suppression' : 'Supprimer la citation'}
           aria-label={isDeleting ? 'Confirmer la suppression' : 'Supprimer la citation'}
@@ -414,9 +414,9 @@ function CitationEditor({
         </button>
       </div>
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/6 pt-2 font-sans text-caption text-white/45">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border-subtle pt-2 font-sans text-caption text-text-soft">
         <span className="inline-flex items-center gap-1.5">
-          <span className="text-micro font-semibold uppercase tracking-[0.5px] text-white/30">Passage</span>
+          <span className="text-micro font-semibold uppercase tracking-[0.5px] text-text-muted">Passage</span>
           <InlineEditField
             editing={isEditing === 'page'}
             value={draftValue}
@@ -429,7 +429,7 @@ function CitationEditor({
           />
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <BookCopy size={11} className="text-white/30" />
+          <BookCopy size={11} className="text-text-muted" />
           <InlineEditField
             editing={isEditing === 'edition'}
             value={draftValue}
@@ -484,31 +484,31 @@ function NewCitationForm({
         }}
         placeholder="Texte de la citation…"
       />
-      <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-white/10 pt-2 text-label text-white/55">
+      <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-border-default pt-2 text-label text-text-soft">
         <label className="inline-flex items-center gap-1.5">
-          <span className="text-micro font-semibold uppercase tracking-[0.5px] text-white/30">Passage</span>
+          <span className="text-micro font-semibold uppercase tracking-[0.5px] text-text-muted">Passage</span>
           <input
             type="text"
             value={page}
             onChange={(e) => setPage(e.target.value)}
             placeholder="p. —"
-            className="w-24 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-label text-white/80 focus:border-cyan/35 focus:outline-none"
+            className="w-24 rounded-md border border-border-default bg-white/5 px-2 py-1 text-label text-white/80 focus:border-cyan/35 focus:outline-none"
           />
         </label>
         <label className="inline-flex items-center gap-1.5">
-          <BookCopy size={11} className="text-white/30" />
+          <BookCopy size={11} className="text-text-muted" />
           <input
             type="text"
             value={edition}
             onChange={(e) => setEdition(e.target.value)}
             placeholder="éd.—"
-            className="w-32 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-label text-white/80 focus:border-cyan/35 focus:outline-none"
+            className="w-32 rounded-md border border-border-default bg-white/5 px-2 py-1 text-label text-white/80 focus:border-cyan/35 focus:outline-none"
           />
         </label>
         <div className="ml-auto flex items-center gap-1.5">
           <Button
             type="button"
-            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-caption font-semibold text-white/60 transition-all hover:border-white/20 hover:text-white"
+            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border-default bg-white/5 px-2.5 py-1 text-caption font-semibold text-white/60 transition-all hover:border-white/20 hover:text-white"
             onClick={onCancel}
           >
             <XIcon size={12} />

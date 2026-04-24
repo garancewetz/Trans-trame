@@ -158,7 +158,7 @@ export function useAuthorsTabState({
 
   const handleAddAuthor = () => {
     if (!inputLastName.trim()) return
-    const newId = `auth_${crypto.randomUUID().slice(0, 8)}`
+    const newId = crypto.randomUUID()
     onAddAuthor({
       id: newId,
       type: 'author',

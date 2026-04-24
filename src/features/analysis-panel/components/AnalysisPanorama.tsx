@@ -23,7 +23,7 @@ export function AnalysisPanorama({ panorama }: AnalysisPanoramaProps) {
       ].map(({ icon: Icon, label, value }) => (
         <div
           key={label}
-          className="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 backdrop-blur-xl"
+          className="rounded-lg border border-border-default bg-white/5 px-3 py-2.5 backdrop-blur-xl"
         >
           <div className="mb-0.5 flex items-center gap-1.5 text-white/40">
             <Icon size={12} />

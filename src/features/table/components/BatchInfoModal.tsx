@@ -97,7 +97,7 @@ export function BatchInfoModal({
     <Modal
       open={open}
       title="Informations"
-      titleIcon={<Info size={14} className="text-white/50" />}
+      titleIcon={<Info size={14} className="text-text-soft" />}
       onClose={onClose}
       maxWidth="max-w-2xl"
     >
@@ -111,11 +111,11 @@ export function BatchInfoModal({
           return (
             <div
               key={item.data.id}
-              className="rounded-lg border border-white/8 bg-white/2 p-4"
+              className="rounded-lg border border-border-subtle bg-white/2 p-4"
             >
               {/* Item header */}
               <div className="mb-2 flex items-baseline gap-2">
-                <span className="rounded bg-white/8 px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wider text-white/30">
+                <span className="rounded bg-white/8 px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wider text-text-muted">
                   {item.type === 'book' ? 'Ressource' : 'Auteur·ice'}
                 </span>
                 <span className="font-medium text-white/80">
@@ -126,11 +126,11 @@ export function BatchInfoModal({
               </div>
 
               {/* Created at */}
-              <p className="text-label text-white/50">
+              <p className="text-label text-text-soft">
                 {ts ? (
                   <>Ajouté·e le <span className="font-medium text-white/70">{formatDateTime(ts)}</span></>
                 ) : (
-                  <span className="text-white/30">Date d'ajout inconnue</span>
+                  <span className="text-text-muted">Date d'ajout inconnue</span>
                 )}
               </p>
 
@@ -138,7 +138,7 @@ export function BatchInfoModal({
               {item.type === 'book' && (item.data as Book).importSourceId && (() => {
                 const sourceBook = allBooks.find((b) => b.id === (item.data as Book).importSourceId)
                 return sourceBook ? (
-                  <p className="mt-1 text-label text-white/50">
+                  <p className="mt-1 text-label text-text-soft">
                     Importé·e pour la bibliographie de{' '}
                     <span className="font-medium text-white/70">
                       {bookDisplayName(sourceBook, authorsMap)}
@@ -149,17 +149,17 @@ export function BatchInfoModal({
 
               {/* Siblings from same batch */}
               {siblings.length > 0 && (
-                <div className="mt-3 border-t border-white/6 pt-3">
-                  <p className="mb-2 text-caption font-medium text-white/35">
+                <div className="mt-3 border-t border-border-subtle pt-3">
+                  <p className="mb-2 text-caption font-medium text-text-secondary">
                     {siblings.length} autre{siblings.length > 1 ? 's' : ''} ajouté·e{siblings.length > 1 ? 's' : ''} au même moment
                   </p>
                   <ul className="flex flex-col gap-1">
                     {siblings.slice(0, SAMPLE_LIMIT).map((s) => (
                       <li key={s.data.id} className="flex items-baseline gap-2 text-caption">
-                        <span className="shrink-0 rounded bg-white/6 px-1 py-px text-[0.6rem] uppercase tracking-wider text-white/25">
+                        <span className="shrink-0 rounded bg-white/6 px-1 py-px text-[0.6rem] uppercase tracking-wider text-text-dimmed">
                           {s.type === 'book' ? 'livre' : 'auteur·ice'}
                         </span>
-                        <span className="text-white/55">
+                        <span className="text-text-soft">
                           {s.type === 'book'
                             ? bookDisplayName(s.data as Book, authorsMap)
                             : authorDisplayName(s.data as Author)}
@@ -167,7 +167,7 @@ export function BatchInfoModal({
                       </li>
                     ))}
                     {siblings.length > SAMPLE_LIMIT && (
-                      <li className="text-caption text-white/25">
+                      <li className="text-caption text-text-dimmed">
                         … et {siblings.length - SAMPLE_LIMIT} autre{siblings.length - SAMPLE_LIMIT > 1 ? 's' : ''}
                       </li>
                     )}
@@ -176,7 +176,7 @@ export function BatchInfoModal({
               )}
 
               {siblings.length === 0 && ts && (
-                <p className="mt-2 text-caption text-white/25">
+                <p className="mt-2 text-caption text-text-dimmed">
                   Aucun autre élément ajouté à la même heure.
                 </p>
               )}

@@ -43,7 +43,7 @@ export function AuthorBooksBadge({ bookCount, books }: Props) {
       onMouseEnter={show}
       onMouseLeave={hide}
     >
-      <span className="inline-flex items-center gap-1.5 font-mono text-ui tabular-nums text-white/35">
+      <span className="inline-flex items-center gap-1.5 font-mono text-ui tabular-nums text-text-secondary">
         {bookCount > 0 ? (
           <span className={hasBooks ? 'cursor-help rounded px-1 transition-colors hover:bg-white/5 hover:text-white/75' : undefined}>
             {bookCount}
@@ -57,11 +57,11 @@ export function AuthorBooksBadge({ bookCount, books }: Props) {
       </span>
       {open && hasBooks && (
         <div
-          className="absolute left-0 top-[calc(100%+4px)] z-50 min-w-72 max-w-md rounded-lg border border-white/10 bg-bg-overlay/95 p-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
+          className="absolute left-0 top-[calc(100%+4px)] z-50 min-w-72 max-w-md rounded-lg border border-border-default bg-bg-overlay/95 p-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
           onMouseEnter={() => { if (timerRef.current) clearTimeout(timerRef.current) }}
           onMouseLeave={hide}
         >
-          <p className="mb-1.5 text-[0.68rem] font-semibold uppercase tracking-widest text-white/35">
+          <p className="mb-1.5 text-[0.68rem] font-semibold uppercase tracking-widest text-text-secondary">
             Ressources ({sortedBooks.length})
           </p>
           <ul className="flex flex-col gap-1">
@@ -70,7 +70,7 @@ export function AuthorBooksBadge({ bookCount, books }: Props) {
                 <span className="mt-0.5 shrink-0 text-cyan/45">•</span>
                 <span className="text-white/75">
                   {b.title}
-                  {b.year && <span className="ml-1.5 font-mono text-[0.7rem] text-white/30">{b.year}</span>}
+                  {b.year && <span className="ml-1.5 font-mono text-[0.7rem] text-text-muted">{b.year}</span>}
                 </span>
               </li>
             ))}

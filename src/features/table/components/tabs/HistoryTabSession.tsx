@@ -55,7 +55,7 @@ export function HistoryTabSession({
   const toneColor = OP_CONFIG[dominantOp]?.color ?? 'text-white/60'
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-lg border border-white/10 bg-white/4">
+    <div className="flex flex-col overflow-hidden rounded-lg border border-border-default bg-white/4">
       <div
         role="button"
         tabIndex={0}
@@ -114,7 +114,7 @@ export function HistoryTabSession({
       </div>
 
       {expanded && (
-        <div className="flex flex-col gap-1.5 border-t border-white/5 bg-black/15 p-2">
+        <div className="flex flex-col gap-1.5 border-t border-border-subtle bg-black/15 p-2">
           {session.entries.map((entry) => (
             <HistoryTabEntryRow
               key={entry.id}
@@ -166,7 +166,7 @@ function SessionCounters({
         </span>
       ))}
       {(ops.INSERT > 0 || ops.UPDATE > 0 || ops.DELETE > 0 || ops.RESTORE > 0) && (
-        <span className="inline-flex items-center gap-1.5 border-l border-white/10 pl-2">
+        <span className="inline-flex items-center gap-1.5 border-l border-border-default pl-2">
           {ops.INSERT > 0 && <span className="text-green/60">+{ops.INSERT}</span>}
           {ops.UPDATE > 0 && <span className="text-cyan/60">~{ops.UPDATE}</span>}
           {ops.DELETE > 0 && <span className="text-red/60">-{ops.DELETE}</span>}

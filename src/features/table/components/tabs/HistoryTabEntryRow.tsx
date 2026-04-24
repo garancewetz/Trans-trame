@@ -37,7 +37,7 @@ export function HistoryTabEntryRow({
   const diffs = changedFields(entry)
 
   return (
-    <div className="group flex gap-3 rounded-lg border border-white/8 bg-white/3 px-4 py-3 transition-colors hover:bg-white/5">
+    <div className="group flex gap-3 rounded-lg border border-border-subtle bg-white/3 px-4 py-3 transition-colors hover:bg-white/5">
       <div className={clsx('mt-0.5 shrink-0', config.color)}>
         <Icon size={14} />
       </div>
@@ -51,7 +51,7 @@ export function HistoryTabEntryRow({
           <EntityBadge entityType={entry.entity_type} />
         </div>
 
-        <div className="text-[0.8rem] font-medium text-white/55">
+        <div className="text-[0.8rem] font-medium text-text-soft">
           {entityTitle(entry, entityNamesMap, bookAuthorsMap)}
         </div>
 
@@ -113,8 +113,8 @@ function DiffList({ diffs, entityNamesMap, bookAuthorsMap }: DiffListProps) {
   return (
     <div className="mt-1 flex flex-col gap-0.5 text-caption">
       {diffs.slice(0, 5).map((d) => (
-        <div key={d.field} className="flex flex-wrap items-baseline gap-1 text-white/35">
-          <span className="font-mono text-white/25">{d.field}</span>
+        <div key={d.field} className="flex flex-wrap items-baseline gap-1 text-text-secondary">
+          <span className="font-mono text-text-dimmed">{d.field}</span>
           <span className="text-red/50 line-through break-all">
             {resolveVal(d.from)}
           </span>

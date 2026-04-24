@@ -46,7 +46,7 @@ export function TypeFilterTH({
           ? (sortDir === 'asc'
             ? <ChevronUp size={13} strokeWidth={2.5} className="text-green" />
             : <ChevronDown size={13} strokeWidth={2.5} className="text-green" />)
-          : <ChevronUp size={13} strokeWidth={2.5} className="text-white/45" />}
+          : <ChevronUp size={13} strokeWidth={2.5} className="text-text-soft" />}
       </button>
       <button
         ref={refs.setReference}
@@ -65,12 +65,12 @@ export function TypeFilterTH({
           ref={refs.setFloating}
           style={floatingStyles}
           {...getFloatingProps()}
-          className="z-50 grid max-h-72 min-w-[160px] grid-cols-1 gap-0.5 overflow-auto rounded-lg border border-white/10 bg-bg-overlay/95 p-1.5 font-sans text-[0.78rem] normal-case tracking-normal shadow-xl backdrop-blur-xl"
+          className="z-50 grid max-h-72 min-w-[160px] grid-cols-1 gap-0.5 overflow-auto rounded-lg border border-border-default bg-bg-overlay/95 p-1.5 font-sans text-[0.78rem] normal-case tracking-normal shadow-xl backdrop-blur-xl"
         >
           {active && (
             <button
               type="button"
-              className="rounded px-2.5 py-1.5 text-left text-[0.78rem] text-white/50 transition-colors hover:bg-white/8 hover:text-white/80"
+              className="rounded px-2.5 py-1.5 text-left text-[0.78rem] text-text-soft transition-colors hover:bg-white/8 hover:text-white/80"
               onClick={() => { onSelect(null); setOpen(false) }}
             >
               Tous les types

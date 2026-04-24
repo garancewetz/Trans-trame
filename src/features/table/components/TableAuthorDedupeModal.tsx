@@ -118,7 +118,7 @@ export function TableAuthorDedupeModal({
           </span>{' '}
           de doublons détectés ({totalToRemove} auteur·ice{totalToRemove > 1 ? 's' : ''} à
           supprimer).{' '}
-          <span className="text-white/50">
+          <span className="text-text-soft">
             Cliquez pour conserver · décochez pour exclure.
           </span>
         </>
@@ -137,12 +137,12 @@ export function TableAuthorDedupeModal({
         </>
       }
     >
-      <div className="mb-4 max-h-[min(50vh,420px)] overflow-y-auto rounded-xl border border-white/8 bg-white/1.5 text-[0.8rem] backdrop-blur-sm">
+      <div className="mb-4 max-h-[min(50vh,420px)] overflow-y-auto rounded-xl border border-border-subtle bg-white/1.5 text-[0.8rem] backdrop-blur-sm">
         {duplicateGroups.map((group, i) => {
           const keepId = choices.get(i)
           return (
-            <div key={i} className="border-b border-white/5 px-3 py-2.5 last:border-0">
-              <div className="mb-1.5 flex items-center gap-2 text-[0.65rem] uppercase tracking-[0.15em] text-white/30">
+            <div key={i} className="border-b border-border-subtle px-3 py-2.5 last:border-0">
+              <div className="mb-1.5 flex items-center gap-2 text-[0.65rem] uppercase tracking-[0.15em] text-text-muted">
                 <span>Groupe {i + 1}</span>
                 <span className="h-px flex-1 bg-white/8" />
                 {onMarkGroupNotDuplicate && (
@@ -152,7 +152,7 @@ export function TableAuthorDedupeModal({
                       onMarkGroupNotDuplicate(i)
                       setConfirm(false)
                     }}
-                    className="flex items-center gap-1 rounded border border-white/10 px-1.5 py-0.5 text-[0.6rem] font-semibold text-white/55 transition-colors hover:border-white/25 hover:bg-white/5 hover:text-white/85"
+                    className="flex items-center gap-1 rounded border border-border-default px-1.5 py-0.5 text-[0.6rem] font-semibold text-text-soft transition-colors hover:border-white/25 hover:bg-white/5 hover:text-white/85"
                     title="Marquer ce groupe comme non-doublons (ne réapparaîtra plus)"
                   >
                     <X size={10} strokeWidth={2.5} />
@@ -170,8 +170,8 @@ export function TableAuthorDedupeModal({
                   const rowClasses = isKept
                     ? 'border-green/25 bg-green/[0.06]'
                     : isExcluded
-                    ? 'border-white/5 bg-transparent hover:border-white/10 hover:bg-white/[0.02]'
-                    : 'border-white/8 bg-white/[0.02] hover:border-white/15 hover:bg-white/[0.04]'
+                    ? 'border-border-subtle bg-transparent hover:border-border-default hover:bg-white/[0.02]'
+                    : 'border-border-subtle bg-white/[0.02] hover:border-white/15 hover:bg-white/[0.04]'
                   const checkboxClasses = isKept
                     ? 'border-green/50 bg-green/20 text-green cursor-not-allowed'
                     : isExcluded
@@ -180,8 +180,8 @@ export function TableAuthorDedupeModal({
                   const nameClasses = isKept
                     ? 'text-white/90'
                     : isExcluded
-                    ? 'text-white/30'
-                    : 'text-white/55 line-through decoration-white/15'
+                    ? 'text-text-muted'
+                    : 'text-text-soft line-through decoration-white/15'
                   return (
                     <div
                       key={author.id}
@@ -217,19 +217,19 @@ export function TableAuthorDedupeModal({
                               Conservé
                             </span>
                           )}
-                          <span className="text-[0.68rem] text-white/25">
+                          <span className="text-[0.68rem] text-text-dimmed">
                             {booksCount} ressource{booksCount !== 1 ? 's' : ''}
                           </span>
                         </button>
                       </div>
                       {books.length > 0 && (
-                        <ul className="ml-6.5 flex flex-col gap-0.5 text-[0.7rem] text-white/45">
+                        <ul className="ml-6.5 flex flex-col gap-0.5 text-[0.7rem] text-text-soft">
                           {books.map((b) => (
                             <li key={b.id} className="flex items-baseline gap-1.5">
-                              <span className="text-white/25">·</span>
+                              <span className="text-text-dimmed">·</span>
                               <span className="text-white/65">{b.title || '(sans titre)'}</span>
                               {b.year != null && (
-                                <span className="text-white/25">({b.year})</span>
+                                <span className="text-text-dimmed">({b.year})</span>
                               )}
                             </li>
                           ))}

@@ -44,9 +44,9 @@ export function PanelWorkBadge({
           ref={refs.setFloating}
           style={floatingStyles}
           {...getFloatingProps()}
-          className="z-50 min-w-80 max-w-md rounded-lg border border-white/10 bg-bg-base/95 p-3.5 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
+          className="z-50 min-w-80 max-w-md rounded-lg border border-border-default bg-bg-base/95 p-3.5 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
         >
-          <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-widest text-white/35">
+          <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-widest text-text-secondary">
             Éditions de cette œuvre ({siblings.length})
           </p>
           <ul className="flex flex-col gap-1.5">
@@ -57,11 +57,11 @@ export function PanelWorkBadge({
                   <span className="text-white/75">
                     {s.title}
                     {s.year != null && (
-                      <span className="ml-1.5 font-mono text-micro text-white/30">{s.year}</span>
+                      <span className="ml-1.5 font-mono text-micro text-text-muted">{s.year}</span>
                     )}
                   </span>
                   {(s.authorIds?.length ?? 0) > 0 && (
-                    <span className="text-micro text-white/25">
+                    <span className="text-micro text-text-dimmed">
                       {bookAuthorDisplay(s, authorsMap)}
                     </span>
                   )}

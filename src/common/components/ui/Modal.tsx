@@ -118,7 +118,7 @@ export function Modal({
         {titleIcon}
         <h3 id={titleId} className="font-semibold text-white">{title}</h3>
         {step && step.total > 1 && (
-          <span className="ml-2 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-caption font-semibold text-white/60 tabular-nums">
+          <span className="ml-2 rounded-full border border-border-default bg-white/5 px-2 py-0.5 text-caption font-semibold text-white/60 tabular-nums">
             Étape {step.current}/{step.total}
           </span>
         )}
@@ -141,7 +141,7 @@ export function Modal({
   )
 
   const containerCls = clsx(
-    'w-full max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl border border-white/10 bg-bg-overlay/98 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.65)]',
+    'w-full max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl border border-border-default bg-bg-overlay/98 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.65)]',
     maxWidth,
     containerClassName,
   )
@@ -221,7 +221,7 @@ function ConfirmDialog({
     >
       <div
         ref={ref}
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-bg-overlay/98 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.65)]"
+        className="w-full max-w-md rounded-2xl border border-border-default bg-bg-overlay/98 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.65)]"
       >
         <h3 id={titleId} className="mb-3 font-semibold text-white">Confirmer</h3>
         <p className="mb-5 text-white/70">{message}</p>

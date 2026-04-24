@@ -20,8 +20,8 @@ export function ViewSelector({ currentView, onViewChange, inline = false, discre
     <div className={inline ? '' : 'fixed left-5 top-[66px] z-30'}>
       <div
         className={[
-          'flex items-center gap-1 rounded-[8px] border border-white/10 p-1 backdrop-blur-md',
-          inline && discreet ? 'border-white/5 bg-transparent p-0.5' : inline ? 'bg-white/5' : 'bg-bg-overlay/90',
+          'flex items-center gap-1 rounded-[8px] border border-border-default p-1 backdrop-blur-md',
+          inline && discreet ? 'border-border-subtle bg-transparent p-0.5' : inline ? 'bg-white/5' : 'bg-bg-overlay/90',
         ].join(' ')}
       >
         {VIEWS.map((item) => {
@@ -43,7 +43,7 @@ export function ViewSelector({ currentView, onViewChange, inline = false, discre
                     ? inline && discreet
                       ? 'bg-violet/30 text-white ring-1 ring-violet/50'
                       : 'bg-[rgba(109,95,255,0.6)] text-white'
-                    : 'text-white/50 hover:text-white/80 hover:bg-white/5',
+                    : 'text-text-soft hover:text-white/80 hover:bg-white/5',
                 ].join(' ')}
               >
                 <Icon size={13} />

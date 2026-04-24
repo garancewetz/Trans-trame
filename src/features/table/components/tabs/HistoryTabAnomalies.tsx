@@ -209,7 +209,7 @@ export function HistoryTabAnomalies() {
               <AnomalyIcon kind={a.kind} />
               <div className="min-w-0 flex-1">
                 <div className="wrap-break-word">{a.label}</div>
-                {a.details && <div className="text-micro text-white/30">{a.details}</div>}
+                {a.details && <div className="text-micro text-text-muted">{a.details}</div>}
               </div>
               {a.action?.kind === 'delete-link' && (
                 <Button
@@ -230,7 +230,7 @@ export function HistoryTabAnomalies() {
             </li>
           ))}
           {anomalies.length > 50 && (
-            <li className="text-white/30">+ {anomalies.length - 50} autre(s)</li>
+            <li className="text-text-muted">+ {anomalies.length - 50} autre(s)</li>
           )}
         </ul>
       )}

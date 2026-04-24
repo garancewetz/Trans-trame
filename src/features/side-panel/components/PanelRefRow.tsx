@@ -45,7 +45,7 @@ function SingleCitationBlock({ citation }: { citation: LinkCitation }) {
   return (
     <>
       {meta ? (
-        <span className="mt-1.5 block text-[0.8rem] tracking-wide text-white/45">{meta}</span>
+        <span className="mt-1.5 block text-[0.8rem] tracking-wide text-text-soft">{meta}</span>
       ) : null}
       {excerpt ? (
         <p className="mt-2.5 text-[0.9rem] italic leading-relaxed text-white/58">{excerpt}</p>
@@ -72,14 +72,14 @@ function MultiCitationList({
           <li key={c.id}>
             <button
               type="button"
-              className="group/cite block w-full cursor-pointer rounded-md border border-white/6 bg-white/2 px-3 py-2 text-left transition-colors hover:border-(--cite-accent) hover:bg-white/5 focus:outline-none focus-visible:ring-1 focus-visible:ring-white/20"
+              className="group/cite block w-full cursor-pointer rounded-md border border-border-subtle bg-white/2 px-3 py-2 text-left transition-colors hover:border-(--cite-accent) hover:bg-white/5 focus:outline-none focus-visible:ring-1 focus-visible:ring-white/20"
               style={{ ['--cite-accent' as string]: accentStrong }}
               onClick={(e) => {
                 e.stopPropagation()
                 onSelect(c)
               }}
             >
-              <span className="flex items-center gap-2 text-micro font-semibold uppercase tracking-[1px] text-white/35 transition-colors group-hover/cite:text-white/60">
+              <span className="flex items-center gap-2 text-micro font-semibold uppercase tracking-[1px] text-text-secondary transition-colors group-hover/cite:text-white/60">
                 <span style={{ color: accentStrong }}>·</span>
                 Citation {i + 1}
                 {meta ? <span className="font-normal normal-case tracking-wide text-white/40">{meta}</span> : null}
@@ -123,7 +123,7 @@ export function PanelRefRow({
         {title ?? '—'}
       </span>
       {meta ? (
-        <span className="mt-1.5 block text-[0.8rem] tracking-wide text-white/45">{meta}</span>
+        <span className="mt-1.5 block text-[0.8rem] tracking-wide text-text-soft">{meta}</span>
       ) : null}
       {isSingle && singleCitation ? <SingleCitationBlock citation={singleCitation} /> : null}
       {!isSingle ? (
@@ -198,7 +198,7 @@ export function CollapsibleRefList<T>({
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="group inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/8 bg-white/1.5 px-3.5 py-1.5 text-micro font-medium uppercase tracking-[0.14em] text-white/45 transition-colors hover:border-white/20 hover:bg-white/5 hover:text-white/85"
+            className="group inline-flex cursor-pointer items-center gap-2 rounded-full border border-border-subtle bg-white/1.5 px-3.5 py-1.5 text-micro font-medium uppercase tracking-[0.14em] text-text-soft transition-colors hover:border-white/20 hover:bg-white/5 hover:text-white/85"
           >
             {expanded ? (
               'Réduire'

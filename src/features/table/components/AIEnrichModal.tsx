@@ -53,7 +53,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
           <p className="text-[0.9rem] text-white/60">
             Analyser {books.length} ressource{books.length > 1 ? 's' : ''} avec Gemini.
           </p>
-          <div className="flex flex-col gap-2 rounded-lg border border-white/8 bg-white/2 px-4 py-3">
+          <div className="flex flex-col gap-2 rounded-lg border border-border-subtle bg-white/2 px-4 py-3">
             <p className="text-caption text-white/40">Champs à proposer</p>
             <div className="grid grid-cols-2 gap-x-5 gap-y-1.5">
               {ENRICHABLE_FIELDS.map(({ key, label }) => {
@@ -100,7 +100,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
                 />
               </div>
             </div>
-            <p className="text-[0.78rem] text-white/30">
+            <p className="text-[0.78rem] text-text-muted">
               {books.length} ressource{books.length > 1 ? 's' : ''} — estimation {estimate}
             </p>
           </div>
@@ -110,46 +110,46 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
       {phase === 'applying' && (
         <div className="flex flex-col items-center gap-3 py-8">
           <Loader2 size={20} className="animate-spin text-cyan/60" />
-          <p className="text-ui text-white/50">Application des modifications…</p>
+          <p className="text-ui text-text-soft">Application des modifications…</p>
         </div>
       )}
 
       {phase === 'review' && (
         <div className="flex max-h-[70vh] flex-col gap-3">
           <div className="flex shrink-0 items-center justify-between">
-            <p className="text-label text-white/45">
+            <p className="text-label text-text-soft">
               {enrichments.length} enrichissement{enrichments.length > 1 ? 's' : ''}
               {unchangedCount > 0 && (
-                <span className="text-white/25"> · {unchangedCount} ressource{unchangedCount > 1 ? 's' : ''} déjà complet{unchangedCount > 1 ? 's' : ''}</span>
+                <span className="text-text-dimmed"> · {unchangedCount} ressource{unchangedCount > 1 ? 's' : ''} déjà complet{unchangedCount > 1 ? 's' : ''}</span>
               )}
             </p>
             <button
               type="button"
               onClick={toggleAll}
-              className="cursor-pointer text-[0.78rem] text-white/35 transition-colors hover:text-white/60"
+              className="cursor-pointer text-[0.78rem] text-text-secondary transition-colors hover:text-white/60"
             >
               {allChecked ? 'Tout décocher' : 'Tout cocher'}
             </button>
           </div>
 
           {sortedThemes.length > 0 && (
-            <div className="shrink-0 rounded-lg border border-dashed border-white/10 bg-white/2 px-4 py-2.5">
-              <p className="mb-1.5 text-caption font-medium text-white/35">Thématiques émergentes</p>
+            <div className="shrink-0 rounded-lg border border-dashed border-border-default bg-white/2 px-4 py-2.5">
+              <p className="mb-1.5 text-caption font-medium text-text-secondary">Thématiques émergentes</p>
               <div className="flex flex-wrap gap-1.5">
                 {sortedThemes.map(([theme, count]) => (
                   <span key={theme} className="rounded-full border border-dashed border-white/20 bg-white/5 px-2.5 py-0.5 text-[0.78rem] text-white/60">
                     {theme}
-                    {count > 1 && <span className="ml-1 text-[0.7rem] text-white/30">{count}</span>}
+                    {count > 1 && <span className="ml-1 text-[0.7rem] text-text-muted">{count}</span>}
                   </span>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-white/6">
+          <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-border-subtle">
             <table className="w-full text-label">
               <thead className="sticky top-0 z-10 bg-[#1a1a2e]">
-                <tr className="border-b border-white/8 text-left text-white/35">
+                <tr className="border-b border-border-subtle text-left text-text-secondary">
                   <th className="w-8 px-3 py-2" />
                   <th className="px-2 py-2">Ressource</th>
                   <th className="px-2 py-2">Propositions AI</th>
@@ -190,7 +190,7 @@ export function AIEnrichModal({ open, books, authorsMap, onClose, onUpdateBook, 
       {phase === 'done' && (
         <div className="flex flex-col items-center gap-3 py-6">
           {enrichments.length === 0 ? (
-            <p className="text-[0.9rem] text-white/50">
+            <p className="text-[0.9rem] text-text-soft">
               {books.some((b) => !b.authorIds || b.authorIds.length === 0)
                 ? 'Aucun enrichissement trouvé — l\'IA n\'a pas pu identifier les auteur·ices manquant·es.'
                 : 'Aucun enrichissement trouvé — les ressources sont déjà complets.'}

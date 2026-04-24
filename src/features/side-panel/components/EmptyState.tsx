@@ -21,7 +21,7 @@ export function EmptyState({
   const resolvedIcon =
     icon === null
       ? null
-      : icon ?? <MousePointerClick size={28} className="text-white/25" aria-hidden />
+      : icon ?? <MousePointerClick size={28} className="text-text-dimmed" aria-hidden />
 
   return (
     <div
@@ -29,8 +29,8 @@ export function EmptyState({
       role="status"
     >
       {resolvedIcon}
-      <p className="text-[1rem] text-white/55">{title}</p>
-      {description && <p className="text-label text-white/35">{description}</p>}
+      <p className="text-[1rem] text-text-soft">{title}</p>
+      {description && <p className="text-label text-text-secondary">{description}</p>}
       {action && <div className="mt-1">{action}</div>}
     </div>
   )

@@ -59,8 +59,8 @@ export function BookFormEditDangerZone({
   }
 
   return (
-    <div className="mt-4 rounded-xl border border-white/8 bg-white/2 p-4">
-      <h4 className="mb-4 text-label font-semibold uppercase tracking-[1.5px] text-white/25">
+    <div className="mt-4 rounded-xl border border-border-subtle bg-white/2 p-4">
+      <h4 className="mb-4 text-label font-semibold uppercase tracking-[1.5px] text-text-dimmed">
         Zone dangereuse
       </h4>
 
@@ -86,7 +86,7 @@ export function BookFormEditDangerZone({
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: axesGradient(n.axes) }} />
                 <span className="min-w-0">
                   <strong className="block text-body font-semibold text-white">{n.title}</strong>
-                  <span className="mt-0.5 block text-label text-white/35">
+                  <span className="mt-0.5 block text-label text-text-secondary">
                     {bookAuthorDisplay(n, authorsMap)}
                     {n.year ? `, ${n.year}` : ''}
                   </span>
@@ -96,7 +96,7 @@ export function BookFormEditDangerZone({
           />
         ) : (
           <div className="flex items-center gap-2">
-            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-border-default bg-white/5 px-3 py-2">
               <span
                 className="h-2 w-2 shrink-0 rounded-full"
                 style={{ background: axesGradient(mergeTarget.axes) }}

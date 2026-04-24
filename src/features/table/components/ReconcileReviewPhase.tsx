@@ -12,9 +12,9 @@ function ImportSourceHint({ book, bookById }: { book: Book | undefined; bookById
   if (!source) return null
   const sourceTitle = source.title || '(sans titre)'
   return (
-    <div className="mt-0.5 text-caption text-white/35">
-      Importé·e pour la biblio. de <span className="text-white/55">{sourceTitle}</span>
-      {source.year && <span className="text-white/25"> ({source.year})</span>}
+    <div className="mt-0.5 text-caption text-text-secondary">
+      Importé·e pour la biblio. de <span className="text-text-soft">{sourceTitle}</span>
+      {source.year && <span className="text-text-dimmed"> ({source.year})</span>}
     </div>
   )
 }
@@ -52,7 +52,7 @@ export function ReviewPhase({
 
   return (
     <div className="flex max-h-[calc(100vh-10rem)] flex-col gap-4">
-      <p className="shrink-0 text-label text-white/45">
+      <p className="shrink-0 text-label text-text-soft">
         {authorMatches.length + sourceMatches.length} suggestion{authorMatches.length + sourceMatches.length > 1 ? 's' : ''}
       </p>
 
@@ -67,11 +67,11 @@ export function ReviewPhase({
               const book = bookById.get(m.bookId)
               const accepted = acceptedAuthorMatches.has(matchKey(m))
               return (
-                <tr key={matchKey(m)} className={clsx('border-b border-white/4 transition-colors', accepted ? 'bg-cyan/3' : 'opacity-40')}>
+                <tr key={matchKey(m)} className={clsx('border-b border-border-subtle transition-colors', accepted ? 'bg-cyan/3' : 'opacity-40')}>
                   <td className="px-3 py-2 align-top"><MatchCheckbox accepted={accepted} onClick={() => onToggleAuthor(m)} /></td>
                   <td className="px-2 py-2 align-top font-medium text-white/75">{author ? [author.firstName, author.lastName].filter(Boolean).join(' ') : m.authorId}</td>
                   <td className="px-2 py-2 align-top text-white/65">
-                    <div>{book?.title || m.bookId}{book?.year && <span className="ml-1 text-white/30">({book.year})</span>}</div>
+                    <div>{book?.title || m.bookId}{book?.year && <span className="ml-1 text-text-muted">({book.year})</span>}</div>
                     <ImportSourceHint book={book} bookById={bookById} />
                   </td>
                   <td className="px-2 py-2 align-top"><ConfidenceBadge confidence={m.confidence} /></td>
@@ -92,7 +92,7 @@ export function ReviewPhase({
               const sourceBook = bookById.get(m.sourceBookId)
               const accepted = acceptedSourceMatches.has(sourceKey(m))
               return (
-                <tr key={sourceKey(m)} className={clsx('border-b border-white/4 transition-colors', accepted ? 'bg-cyan/3' : 'opacity-40')}>
+                <tr key={sourceKey(m)} className={clsx('border-b border-border-subtle transition-colors', accepted ? 'bg-cyan/3' : 'opacity-40')}>
                   <td className="px-3 py-2 align-top"><MatchCheckbox accepted={accepted} onClick={() => onToggleSource(m)} /></td>
                   <td className="px-2 py-2 align-top text-white/65">
                     <div>{orphanBook?.title || m.orphanBookId}</div>

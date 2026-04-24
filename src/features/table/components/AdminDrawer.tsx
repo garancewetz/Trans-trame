@@ -43,8 +43,8 @@ export function AdminDrawer({
   const { icon: Icon, label } = TOOL_CONFIG[tool]
 
   return (
-    <aside className="flex w-[460px] shrink-0 flex-col overflow-hidden border-l border-white/8 bg-bg-overlay/70">
-      <header className="flex shrink-0 items-center gap-2 border-b border-white/8 px-4 py-3">
+    <aside className="flex w-[460px] shrink-0 flex-col overflow-hidden border-l border-border-subtle bg-bg-overlay/70">
+      <header className="flex shrink-0 items-center gap-2 border-b border-border-subtle px-4 py-3">
         <Icon size={14} className="text-white/60" />
         <h2 className="text-ui font-medium text-white/80">{label}</h2>
         <span className="flex-1" />

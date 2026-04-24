@@ -64,7 +64,7 @@ export function AIOrphanReconcileModal({
             )}
             {' '}avec Gemini pour identifier les associations manquantes.
           </p>
-          <p className="max-w-md text-center text-caption text-white/35">
+          <p className="max-w-md text-center text-caption text-text-secondary">
             L'IA utilise le contexte temporel (éléments importés au même moment) et le graphe de citations existant pour inférer les liens.
           </p>
           <Button
@@ -94,7 +94,7 @@ export function AIOrphanReconcileModal({
               />
             </div>
           </div>
-          <p className="text-[0.78rem] text-white/30">
+          <p className="text-[0.78rem] text-text-muted">
             {state.reconcileBooks.length + orphanedAuthors.length} éléments à réconcilier
           </p>
         </div>
@@ -103,7 +103,7 @@ export function AIOrphanReconcileModal({
       {state.phase === 'applying' && (
         <div className="flex flex-col items-center gap-3 py-8">
           <Loader2 size={20} className="animate-spin text-cyan/60" />
-          <p className="text-ui text-white/50">Application des modifications…</p>
+          <p className="text-ui text-text-soft">Application des modifications…</p>
         </div>
       )}
 
@@ -137,11 +137,11 @@ export function AIOrphanReconcileModal({
               </p>
             </>
           ) : state.result && (state.result.authorToBook.length > 0 || state.result.bookToSource.length > 0) ? (
-            <p className="text-[0.9rem] text-white/50">
+            <p className="text-[0.9rem] text-text-soft">
               Aucune suggestion n'a été acceptée.
             </p>
           ) : (
-            <p className="text-[0.9rem] text-white/50">
+            <p className="text-[0.9rem] text-text-soft">
               Aucune correspondance trouvée — le contexte d'import ne permet pas d'identifier les associations.
             </p>
           )}
@@ -150,7 +150,7 @@ export function AIOrphanReconcileModal({
               <summary className="cursor-pointer text-ui text-amber/80">
                 {state.applyOutcome.skipped} match{state.applyOutcome.skipped > 1 ? 's' : ''} ignoré{state.applyOutcome.skipped > 1 ? 's' : ''}
               </summary>
-              <ul className="mt-2 flex flex-col gap-1 text-caption text-white/55">
+              <ul className="mt-2 flex flex-col gap-1 text-caption text-text-soft">
                 {state.applyOutcome.skippedReasons.map((r, i) => (
                   <li key={i}>• {r}</li>
                 ))}

@@ -53,19 +53,19 @@ export function SourceGroup({
         <ChevronDown
           size={12}
           className={[
-            'shrink-0 text-white/30 transition-transform duration-150',
+            'shrink-0 text-text-muted transition-transform duration-150',
             isOpen ? '' : '-rotate-90',
           ].join(' ')}
         />
         <AxesDot axes={group.sourceNode?.axes || []} />
         <span className="min-w-0 flex-1 truncate font-mono text-[0.88rem] font-semibold text-white/85">
           {group.sourceNode?.title || '[ressource supprimée]'}
-          <span className="ml-1.5 font-normal text-caption text-white/30">
+          <span className="ml-1.5 font-normal text-caption text-text-muted">
             {group.sourceNode ? bookAuthorDisplay(group.sourceNode, authorsMap) : ''}
             {group.sourceNode?.year ? `, ${group.sourceNode.year}` : ''}
           </span>
         </span>
-        <span className="shrink-0 rounded-full bg-white/6 px-2 py-px font-mono text-micro text-white/30">
+        <span className="shrink-0 rounded-full bg-white/6 px-2 py-px font-mono text-micro text-text-muted">
           {group.links.length}
         </span>
         {onTisserFrom && (
@@ -92,7 +92,7 @@ export function SourceGroup({
 
       {/* Target links — visible only when open */}
       {isOpen && (
-        <div className="ml-4 flex flex-col border-l border-white/8 pl-3 pb-2">
+        <div className="ml-4 flex flex-col border-l border-border-subtle pl-3 pb-2">
           {group.links.map((link) => (
             <LinkRow
               key={link.id}

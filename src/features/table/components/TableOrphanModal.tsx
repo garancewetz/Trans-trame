@@ -120,8 +120,8 @@ export function TableOrphanModal({
       }
     >
       {/* Link section */}
-      <div className="mb-3 rounded-xl border border-white/8 bg-white/2.5 p-3">
-        <p className="mb-2 text-[0.78rem] font-semibold text-white/50">
+      <div className="mb-3 rounded-xl border border-border-subtle bg-white/2.5 p-3">
+        <p className="mb-2 text-[0.78rem] font-semibold text-text-soft">
           Relier comme livre cité dans :
         </p>
         <NodeSearch
@@ -134,7 +134,7 @@ export function TableOrphanModal({
         />
         {linkTarget && (
           <div className="mt-2 flex items-center justify-between">
-            <p className="text-caption text-white/35">
+            <p className="text-caption text-text-secondary">
               {checkedIds.size} orphelin·e{checkedIds.size > 1 ? 's' : ''} sélectionné·e{checkedIds.size > 1 ? 's' : ''}
             </p>
             <ConfirmButton
@@ -151,7 +151,7 @@ export function TableOrphanModal({
       </div>
 
       {/* Orphan list with design-system checkboxes */}
-      <div className="mb-4 max-h-[min(50vh,360px)] overflow-y-auto rounded-xl border border-white/8 bg-white/2.5 p-1.5">
+      <div className="mb-4 max-h-[min(50vh,360px)] overflow-y-auto rounded-xl border border-border-subtle bg-white/2.5 p-1.5">
         {/* Select all */}
         <label className="mb-0.5 flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 font-mono text-micro text-white/40 transition-colors hover:bg-white/4">
           <input
@@ -184,7 +184,7 @@ export function TableOrphanModal({
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: axesGradient(n.axes) }} />
               <span className="min-w-0">
                 <span className="block truncate font-mono text-label text-white/75">{n.title}</span>
-                <span className="block font-mono text-micro text-white/30">
+                <span className="block font-mono text-micro text-text-muted">
                   {bookAuthorDisplay(n, authorsMap)}{n.year ? `, ${n.year}` : ''}
                 </span>
               </span>

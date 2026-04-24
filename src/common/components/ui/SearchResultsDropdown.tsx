@@ -41,7 +41,7 @@ export function SearchResultsDropdown<T extends ResultItem>({
   return (
     <div
       className={clsx(
-        'overflow-y-auto rounded-[10px] border border-white/10 bg-white/5 p-1',
+        'overflow-y-auto rounded-[10px] border border-border-default bg-white/5 p-1',
         maxHeight,
         className,
       )}
@@ -74,7 +74,7 @@ export function SearchResultsDropdown<T extends ResultItem>({
                         {item.title}
                       </strong>
                       {item.meta && (
-                        <span className="mt-0.5 block text-ui text-white/35">{item.meta}</span>
+                        <span className="mt-0.5 block text-ui text-text-secondary">{item.meta}</span>
                       )}
                     </span>
                   </>

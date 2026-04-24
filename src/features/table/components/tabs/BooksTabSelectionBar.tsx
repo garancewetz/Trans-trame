@@ -44,8 +44,8 @@ export function BooksTabSelectionBar({
   }
 
   return (
-    <div className="flex shrink-0 items-center gap-3 border-b border-white/6 bg-white/1.5 px-5 py-2">
-      <span className="font-mono text-label text-white/45">
+    <div className="flex shrink-0 items-center gap-3 border-b border-border-subtle bg-white/1.5 px-5 py-2">
+      <span className="font-mono text-label text-text-soft">
         {selectedCount} sélectionné{selectedCount > 1 ? 's' : ''}
       </span>
       {showSameWork && (
@@ -83,7 +83,7 @@ export function BooksTabSelectionBar({
           <Button
             type="button"
             onClick={onShowInfo}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/4 px-3 py-1.5 text-[0.8rem] font-semibold text-white/50 transition-all hover:bg-white/8"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/15 bg-white/4 px-3 py-1.5 text-[0.8rem] font-semibold text-text-soft transition-all hover:bg-white/8"
           >
             <Info size={11} /> Informations
           </Button>
@@ -117,7 +117,7 @@ export function BooksTabSelectionBar({
       <Button
         type="button"
         onClick={onCancelSelection}
-        className="cursor-pointer text-[0.8rem] text-white/25 hover:text-white/60"
+        className="cursor-pointer text-[0.8rem] text-text-dimmed hover:text-white/60"
       >
         Annuler
       </Button>

@@ -22,6 +22,7 @@ type Args = {
   prevModeRef: MutableRefObject<CosmographMode>
   drawOverlay: () => void
   onSimulationEndExtraRef: MutableRefObject<(() => void) | null>
+  onSimulationStateChange?: (running: boolean) => void
 }
 
 /**

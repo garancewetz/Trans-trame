@@ -75,7 +75,7 @@ export function NodeSearch({
         onFocus={() => { setIsSearching(true); setOpen(true) }}
       />
       {open && results.length > 0 && (
-        <div className="absolute left-0 right-0 top-[calc(100%+3px)] z-50 max-h-[180px] overflow-y-auto rounded-lg border border-white/10 bg-bg-overlay/98 p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+        <div className="absolute left-0 right-0 top-[calc(100%+3px)] z-50 max-h-[180px] overflow-y-auto rounded-lg border border-border-default bg-bg-overlay/98 p-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl">
           {results.map((n) => (
             <Button
               key={n.id}
@@ -86,7 +86,7 @@ export function NodeSearch({
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: axesGradient(n.axes) }} />
               <span>
                 <strong className="block font-mono text-ui text-white">{n.title}</strong>
-                <span className="font-mono text-micro text-white/30">
+                <span className="font-mono text-micro text-text-muted">
                   {bookAuthorDisplay(n, authorsMap || new Map())}{n.year ? `, ${n.year}` : ''}
                 </span>
               </span>

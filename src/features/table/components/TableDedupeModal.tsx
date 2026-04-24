@@ -62,7 +62,7 @@ export function TableDedupeModal({
         </>
       }
     >
-      <div className="mb-4 max-h-[min(40vh,320px)] overflow-y-auto rounded-xl border border-white/8 text-[0.8rem]">
+      <div className="mb-4 max-h-[min(40vh,320px)] overflow-y-auto rounded-xl border border-border-subtle text-[0.8rem]">
         {duplicateGroups.map((group) => {
           const ref = group.books[0]
           const author = bookAuthorDisplay(ref, authorsMap)
@@ -73,7 +73,7 @@ export function TableDedupeModal({
               null
             : null
           return (
-            <div key={ref.id} className="border-b border-white/5 px-3 py-2 last:border-0">
+            <div key={ref.id} className="border-b border-border-subtle px-3 py-2 last:border-0">
               {isCanonical ? (
                 <>
                   <div className="flex flex-wrap items-baseline gap-2">
@@ -83,11 +83,11 @@ export function TableDedupeModal({
                     >
                       via œuvre
                     </span>
-                    <span className="text-white/30">×{group.books.length}</span>
+                    <span className="text-text-muted">×{group.books.length}</span>
                   </div>
                   {sharedOriginalTitle ? (
                     <div className="mt-1.5 leading-snug">
-                      <span className="text-[0.65rem] font-medium uppercase tracking-wide text-white/35">
+                      <span className="text-[0.65rem] font-medium uppercase tracking-wide text-text-secondary">
                         Titre original (œuvre)
                       </span>
                       <div className="mt-0.5 font-mono text-label text-cyan-100/90">
@@ -104,12 +104,12 @@ export function TableDedupeModal({
                       vérifie les fiches ou le dernier import.
                     </p>
                   )}
-                  <ul className="mt-2 space-y-1 border-l border-white/10 pl-2.5">
+                  <ul className="mt-2 space-y-1 border-l border-border-default pl-2.5">
                     {group.books.map((b) => (
                       <li key={b.id} className="text-micro">
                         <span className="text-white/75">{b.title}</span>
                         {b.year != null && (
-                          <span className="ml-1.5 font-mono text-[0.65rem] text-white/35">{b.year}</span>
+                          <span className="ml-1.5 font-mono text-[0.65rem] text-text-secondary">{b.year}</span>
                         )}
                       </li>
                     ))}
@@ -119,14 +119,14 @@ export function TableDedupeModal({
                 <>
                   <div className="flex items-baseline gap-2">
                     <span className="font-mono text-white/70">{ref.title}</span>
-                    <span className="text-white/30">×{group.books.length}</span>
+                    <span className="text-text-muted">×{group.books.length}</span>
                   </div>
-                  <p className="mt-1 text-[0.68rem] text-white/35">
+                  <p className="mt-1 text-[0.68rem] text-text-secondary">
                     Même titre affiché et même auteur — doublon strict.
                   </p>
                   {group.books.some((b) => String(b.originalTitle ?? '').trim()) && (
-                    <div className="mt-1.5 text-micro text-white/45">
-                      <span className="text-white/30">Titre original (si renseigné) : </span>
+                    <div className="mt-1.5 text-micro text-text-soft">
+                      <span className="text-text-muted">Titre original (si renseigné) : </span>
                       <span className="font-mono text-white/60">
                         « {String(ref.originalTitle ?? '').trim() || '—'} »
                       </span>
@@ -136,7 +136,7 @@ export function TableDedupeModal({
                             String(b.originalTitle ?? '').trim() !==
                             String(ref.originalTitle ?? '').trim(),
                         ) && (
-                          <span className="ml-1 text-white/30">
+                          <span className="ml-1 text-text-muted">
                             (plusieurs valeurs — ouvre le détail de chaque fiche)
                           </span>
                         )}

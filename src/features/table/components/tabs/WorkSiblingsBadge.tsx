@@ -41,11 +41,11 @@ export function WorkSiblingsBadge({ siblings, authorsMap }: Props) {
       </Tooltip>
       {open && (
         <div
-          className="absolute left-0 top-[calc(100%+4px)] z-50 min-w-72 max-w-md rounded-lg border border-white/10 bg-bg-overlay/95 p-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
+          className="absolute left-0 top-[calc(100%+4px)] z-50 min-w-72 max-w-md rounded-lg border border-border-default bg-bg-overlay/95 p-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
           onMouseEnter={() => { if (timerRef.current) clearTimeout(timerRef.current) }}
           onMouseLeave={hide}
         >
-          <p className="mb-1.5 text-[0.68rem] font-semibold uppercase tracking-widest text-white/35">
+          <p className="mb-1.5 text-[0.68rem] font-semibold uppercase tracking-widest text-text-secondary">
             Même œuvre ({siblings.length + 1})
           </p>
           <ul className="flex flex-col gap-1">
@@ -55,10 +55,10 @@ export function WorkSiblingsBadge({ siblings, authorsMap }: Props) {
                 <div className="flex flex-col">
                   <span className="text-white/75">
                     {s.title}
-                    {s.year && <span className="ml-1.5 font-mono text-[0.7rem] text-white/30">{s.year}</span>}
+                    {s.year && <span className="ml-1.5 font-mono text-[0.7rem] text-text-muted">{s.year}</span>}
                   </span>
                   {(s.authorIds?.length ?? 0) > 0 && (
-                    <span className="text-[0.7rem] text-white/25">{bookAuthorDisplay(s, authorsMap)}</span>
+                    <span className="text-[0.7rem] text-text-dimmed">{bookAuthorDisplay(s, authorsMap)}</span>
                   )}
                 </div>
               </li>

@@ -84,7 +84,7 @@ export function AuthorsPanel({
   return (
     <aside
       className={clsx(
-        `fixed left-0 top-0 z-50 h-screen ${PANEL_WIDTH.default} overflow-hidden border-r border-white/10 bg-bg-overlay/92 backdrop-blur-2xl transition-transform duration-300 ease-in-out`,
+        `fixed left-0 top-0 z-50 h-screen ${PANEL_WIDTH.default} overflow-hidden border-r border-border-default bg-bg-overlay/92 backdrop-blur-2xl transition-transform duration-300 ease-in-out`,
         open ? 'translate-x-0' : '-translate-x-[420px]',
       )}
     >
@@ -132,7 +132,7 @@ export function AuthorsPanel({
                       'flex w-full items-center gap-1 rounded-lg border px-2 py-1.5 backdrop-blur-xl transition-all',
                       isSelected
                         ? 'border-peach/35 bg-peach/12'
-                        : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/8',
+                        : 'border-border-default bg-white/5 hover:border-white/20 hover:bg-white/8',
                     )}
                   >
                     <Button
@@ -146,13 +146,13 @@ export function AuthorsPanel({
                       <span className={clsx('truncate text-[0.95rem] font-semibold', isSelected ? 'text-peach/95' : 'text-white/85')}>
                         {a.name}
                       </span>
-                      <span className={clsx('shrink-0 rounded-full px-2 py-0.5 text-[0.8rem] font-bold tabular-nums', isSelected ? 'bg-peach/20 text-peach/80' : 'bg-white/10 text-white/50')}>
+                      <span className={clsx('shrink-0 rounded-full px-2 py-0.5 text-[0.8rem] font-bold tabular-nums', isSelected ? 'bg-peach/20 text-peach/80' : 'bg-white/10 text-text-soft')}>
                         {a.books.length}
                       </span>
                     </Button>
                     <Button
                       type="button"
-                      className="shrink-0 cursor-pointer rounded-md border border-white/10 bg-white/5 p-2 text-peach/80 transition-colors hover:border-peach/40 hover:bg-peach/12 hover:text-white"
+                      className="shrink-0 cursor-pointer rounded-md border border-border-default bg-white/5 p-2 text-peach/80 transition-colors hover:border-peach/40 hover:bg-peach/12 hover:text-white"
                       aria-label={`Ajouter une ressource pour ${a.name}`}
                       title="Ajouter une ressource pour cet·te auteur·ice"
                       onClick={(e) => {
@@ -166,7 +166,7 @@ export function AuthorsPanel({
 
                   {/* Show books when author is selected */}
                   {isSelected && (
-                    <div className="ml-3 mt-1 space-y-1 border-l border-white/8 pl-3">
+                    <div className="ml-3 mt-1 space-y-1 border-l border-border-subtle pl-3">
                       {a.books
                         .slice()
                         .sort((x, y) => (x.year || 0) - (y.year || 0))
@@ -179,7 +179,7 @@ export function AuthorsPanel({
                               className="h-2 w-2 shrink-0 rounded-full"
                               style={{ background: axesGradient(n.axes) }}
                             />
-                            <span className="truncate text-ui text-white/55">
+                            <span className="truncate text-ui text-text-soft">
                               {n.title}
                               {n.year ? ` (${n.year})` : ''}
                             </span>

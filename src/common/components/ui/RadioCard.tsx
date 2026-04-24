@@ -14,7 +14,7 @@ export function RadioCard({ checked, onChange, children }: RadioCardProps) {
         'flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-all',
         checked
           ? 'border-green/40 bg-green/6'
-          : 'border-white/8 bg-white/3 hover:border-white/15',
+          : 'border-border-subtle bg-white/3 hover:border-white/15',
       )}
     >
       <span

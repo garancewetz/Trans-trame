@@ -109,12 +109,12 @@ export function TableFilterBar({
   }
 
   return (
-    <div className="flex shrink-0 items-center gap-3 border-b border-white/6 bg-white/1.5 px-5 py-2">
+    <div className="flex shrink-0 items-center gap-3 border-b border-border-subtle bg-white/1.5 px-5 py-2">
       <div className="relative w-72">
         <Search size={12} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-white/22" />
         <TextInput
           variant="table"
-          className="rounded-lg border-white/8 bg-white/4 py-1.5 pl-7 pr-6 text-ui focus:border-cyan/[0.28] focus:bg-white/6"
+          className="rounded-lg border-border-subtle bg-white/4 py-1.5 pl-7 pr-6 text-ui focus:border-cyan/[0.28] focus:bg-white/6"
           placeholder={placeholder}
           value={value}
           onChange={(e) => setValue(e.target.value)}

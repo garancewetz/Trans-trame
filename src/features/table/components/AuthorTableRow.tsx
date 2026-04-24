@@ -51,7 +51,7 @@ export function AuthorTableRow({
     <tr
       data-author-row-id={author.id}
       className={clsx(
-        'group cursor-pointer border-b border-white/4 transition-colors',
+        'group cursor-pointer border-b border-border-subtle transition-colors',
         justAdded && 'animate-flash-row',
         focusAuthorId === author.id && 'bg-cyan/8 ring-1 ring-cyan/45',
         isSelected ? 'bg-green/[0.025]' : index % 2 === 0 ? 'bg-white/[0.003]' : '',
@@ -71,7 +71,7 @@ export function AuthorTableRow({
             'flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded border transition-all',
             isSelected
               ? 'border-green bg-green/18 text-green'
-              : 'border-white/14 text-transparent hover:border-white/28',
+              : 'border-border-default text-transparent hover:border-white/28',
           )}
         >
           <Check size={9} />
@@ -139,7 +139,7 @@ export function AuthorTableRow({
           />
         ) : (
           <span
-            className="block min-h-[1.2em] cursor-text px-0.5 text-white/55 hover:text-white"
+            className="block min-h-[1.2em] cursor-text px-0.5 text-text-soft hover:text-white"
             onClick={(e) => {
               e.stopPropagation()
               setEditingCell({ authorId: author.id, field: 'firstName' })
@@ -158,7 +158,7 @@ export function AuthorTableRow({
 
       {/* Date d'ajout */}
       <td className="px-3 py-2">
-        <span className="font-mono text-[0.78rem] tabular-nums text-white/30">
+        <span className="font-mono text-[0.78rem] tabular-nums text-text-muted">
           {author.created_at
             ? new Date(author.created_at as string).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })
             : '—'}
@@ -172,7 +172,7 @@ export function AuthorTableRow({
             type="button"
             title={`Ajouter une ressource pour ${authorName(author)}`}
             onClick={() => onAddBookForAuthor(author)}
-            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/8 px-1.5 py-0.5 text-micro font-semibold text-white/65 opacity-100 transition-all hover:border-cyan/35 hover:text-cyan/85"
+            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border-subtle px-1.5 py-0.5 text-micro font-semibold text-white/65 opacity-100 transition-all hover:border-cyan/35 hover:text-cyan/85"
           >
             <BookPlus size={10} /> Ressource
           </Button>

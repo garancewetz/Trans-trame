@@ -66,7 +66,7 @@ export function LinkRow({
         <span className="min-w-0 flex-1 truncate font-mono text-ui text-white/75">
           {link.targetNode?.title || '[ressource supprim\u00e9]'}
           {link.targetNode && (
-            <span className="ml-1.5 text-white/30">
+            <span className="ml-1.5 text-text-muted">
               — {bookAuthorDisplay(link.targetNode, authorsMap)}
               {link.targetNode.year ? `, ${link.targetNode.year}` : ''}
             </span>
@@ -75,7 +75,7 @@ export function LinkRow({
 
         {/* Inline meta preview (collapsed) */}
         {!isExpanded && hasMeta && primary && (
-          <span className="hidden shrink-0 items-center gap-2 font-mono text-micro text-white/25 sm:flex">
+          <span className="hidden shrink-0 items-center gap-2 font-mono text-micro text-text-dimmed sm:flex">
             {primary.page && <span className="tabular-nums">{primary.page}</span>}
             {primary.edition && (
               <span className="flex items-center gap-0.5"><BookCopy size={8} />{primary.edition}</span>
@@ -109,7 +109,7 @@ export function LinkRow({
       {!isExpanded && primary && (primary.citation_text || primary.context) && (
         <div className="ml-7 mb-1 flex items-start gap-1.5 px-2">
           <Quote size={10} className="mt-0.5 shrink-0 text-white/20" />
-          <p className="whitespace-pre-wrap font-mono text-caption italic leading-relaxed text-white/30">
+          <p className="whitespace-pre-wrap font-mono text-caption italic leading-relaxed text-text-muted">
             {primary.citation_text || primary.context}
           </p>
         </div>

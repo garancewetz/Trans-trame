@@ -137,7 +137,7 @@ export function migrateData(
     if (!author) {
       // Créer un nouvel auteur
       author = {
-        id: `auth_${crypto.randomUUID()}`,
+        id: crypto.randomUUID(),
         type: 'author',
         firstName: fn,
         lastName: ln,

@@ -39,18 +39,18 @@ export function AuthorOrphanReviewList({
   onToggle,
 }: Props) {
   return (
-    <div className="mb-4 max-h-[min(55vh,480px)] overflow-y-auto rounded-xl border border-white/8 bg-white/1.5 text-[0.8rem] backdrop-blur-sm">
+    <div className="mb-4 max-h-[min(55vh,480px)] overflow-y-auto rounded-xl border border-border-subtle bg-white/1.5 text-[0.8rem] backdrop-blur-sm">
       {withMatches.map((entry) => {
         const selectedSet = selections.get(entry.author.id)
         return (
-          <div key={entry.author.id} className="border-b border-white/5 px-3 py-2.5 last:border-0">
+          <div key={entry.author.id} className="border-b border-border-subtle px-3 py-2.5 last:border-0">
             {/* Author header */}
             <div className="mb-1.5 flex items-center gap-2">
               <span className="font-mono font-semibold text-white/80">
                 {authorName(entry.author)}
               </span>
               <span className="h-px flex-1 bg-white/8" />
-              <span className="text-[0.65rem] uppercase tracking-[0.12em] text-white/30">
+              <span className="text-[0.65rem] uppercase tracking-[0.12em] text-text-muted">
                 {entry.matches.length} candidat{entry.matches.length > 1 ? 's' : ''}
               </span>
             </div>
@@ -71,7 +71,7 @@ export function AuthorOrphanReviewList({
                       'flex cursor-pointer items-center gap-3 rounded-lg border px-2.5 py-1.5 text-left font-mono transition-all',
                       isSelected
                         ? 'border-green/25 bg-green/[0.06]'
-                        : 'border-white/8 bg-white/[0.02] hover:border-white/15 hover:bg-white/[0.04]',
+                        : 'border-border-subtle bg-white/[0.02] hover:border-white/15 hover:bg-white/[0.04]',
                     )}
                   >
                     <span
@@ -91,11 +91,11 @@ export function AuthorOrphanReviewList({
                           {match.book.title || '(sans titre)'}
                         </span>
                         {match.book.year && (
-                          <span className="text-[0.7rem] text-white/25">{match.book.year}</span>
+                          <span className="text-[0.7rem] text-text-dimmed">{match.book.year}</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[0.68rem] text-white/30">{match.reason}</span>
+                        <span className="text-[0.68rem] text-text-muted">{match.reason}</span>
                         {hasExistingAuthors && (
                           <span className="text-[0.68rem] text-amber/50">
                             (déjà lié à {existingAuthors})
@@ -115,9 +115,9 @@ export function AuthorOrphanReviewList({
 
       {/* Orphans without any match */}
       {withoutMatches.length > 0 && (
-        <div className="border-t border-white/5 px-3 py-2.5">
-          <div className="mb-1.5 flex items-center gap-2 text-[0.65rem] uppercase tracking-[0.12em] text-white/30">
-            <AlertTriangle size={11} className="text-white/25" />
+        <div className="border-t border-border-subtle px-3 py-2.5">
+          <div className="mb-1.5 flex items-center gap-2 text-[0.65rem] uppercase tracking-[0.12em] text-text-muted">
+            <AlertTriangle size={11} className="text-text-dimmed" />
             <span>Sans correspondance ({withoutMatches.length})</span>
             <span className="h-px flex-1 bg-white/8" />
           </div>
@@ -125,7 +125,7 @@ export function AuthorOrphanReviewList({
             {withoutMatches.map((e) => (
               <span
                 key={e.author.id}
-                className="rounded-md border border-white/8 bg-white/[0.02] px-2 py-1 font-mono text-[0.75rem] text-white/35"
+                className="rounded-md border border-border-subtle bg-white/[0.02] px-2 py-1 font-mono text-[0.75rem] text-text-secondary"
               >
                 {authorName(e.author)}
               </span>

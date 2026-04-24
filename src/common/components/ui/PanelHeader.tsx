@@ -40,7 +40,7 @@ export function PanelHeader({
               onClick={onClose}
               aria-label={closeLabel}
               title={closeLabel}
-              className="cursor-pointer rounded-lg border border-white/10 bg-white/5 p-2 text-white/40 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+              className="cursor-pointer rounded-lg border border-border-default bg-white/5 p-2 text-white/40 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
             >
               <X size={18} />
             </Button>

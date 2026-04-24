@@ -72,7 +72,7 @@ export function BookForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-[18px]">
-      <h3 className="border-b border-white/10 pb-2.5 text-body font-bold uppercase tracking-[2px] text-white/50">
+      <h3 className="border-b border-border-default pb-2.5 text-body font-bold uppercase tracking-[2px] text-text-soft">
         {mode === 'edit' ? 'Modifier la ressource' : 'Nouvelle ressource'}
       </h3>
 
@@ -91,7 +91,7 @@ export function BookForm({
                     'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.8rem] font-semibold transition-all',
                     field.value === value
                       ? 'border-cyan/50 bg-cyan/12 text-cyan/90'
-                      : 'border-white/12 text-white/40 hover:border-white/25 hover:text-white/65',
+                      : 'border-border-default text-white/40 hover:border-white/25 hover:text-white/65',
                   )}
                 >
                   <Icon size={11} />
@@ -160,8 +160,8 @@ export function BookForm({
                   )}
                 />
               </Button>
-              <span className="inline-flex items-center gap-1.5 text-ui text-white/50 transition-colors">
-                <Pin size={11} className={value ? 'text-green' : 'text-white/30'} />
+              <span className="inline-flex items-center gap-1.5 text-ui text-text-soft transition-colors">
+                <Pin size={11} className={value ? 'text-green' : 'text-text-muted'} />
                 Garder les auteur·ices pour la suite
               </span>
             </label>
@@ -201,7 +201,7 @@ export function BookForm({
 
       {mode === 'book' && recentQueue && recentQueue.length > 0 && (
         <div className="flex flex-col gap-2">
-          <span className="text-caption font-semibold uppercase tracking-[1.5px] text-white/25">
+          <span className="text-caption font-semibold uppercase tracking-[1.5px] text-text-dimmed">
             Ajouté·es cette session
           </span>
           <div className="flex flex-wrap gap-1.5">

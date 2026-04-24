@@ -73,7 +73,7 @@ function SortCell({ col, activeCol, dir, onSort, children }: {
         ? (dir === 'asc'
           ? <ChevronUp size={13} strokeWidth={2.5} className="text-green" />
           : <ChevronDown size={13} strokeWidth={2.5} className="text-green" />)
-        : <ChevronUp size={13} strokeWidth={2.5} className="text-white/45" />}
+        : <ChevronUp size={13} strokeWidth={2.5} className="text-text-soft" />}
     </button>
   )
 }
@@ -125,14 +125,17 @@ export function BooksTabBooksTable({
     if (!focusBookId) return
     const index = sortedNodes.findIndex((n) => n.id === focusBookId)
     if (index < 0) return
-    virtuosoRef.current?.scrollToIndex({ index, align: 'center', behavior: 'smooth' })
+    const id = requestAnimationFrame(() => {
+      virtuosoRef.current?.scrollToIndex({ index, align: 'center', behavior: 'smooth' })
+    })
+    return () => cancelAnimationFrame(id)
   }, [focusBookId, sortedNodes])
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="shrink-0 bg-bg-overlay">
         <div
-          className="grid items-center border-b border-white/6"
+          className="grid items-center border-b border-border-subtle"
           style={BOOKS_GRID_STYLE}
         >
           <div className="flex items-center justify-center px-3 py-2.5">
@@ -143,7 +146,7 @@ export function BooksTabBooksTable({
                 'flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded border transition-all',
                 allSelected ? 'border-green bg-green/18 text-green'
                   : someSelected ? 'border-green/38 bg-green/[0.07] text-green/[0.55]'
-                  : 'border-white/14 text-transparent hover:border-white/28',
+                  : 'border-border-default text-transparent hover:border-white/28',
               )}
             >
               <Check size={9} />

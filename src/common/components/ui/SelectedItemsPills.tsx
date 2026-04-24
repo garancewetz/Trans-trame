@@ -34,7 +34,7 @@ export function SelectedItemsPills<T extends PillItem>({
           <Button
             type="button"
             onClick={() => onRemove(item.id)}
-            className="ml-0.5 shrink-0 cursor-pointer rounded-full bg-transparent p-0.5 text-white/35 transition-colors hover:bg-white/15 hover:text-white"
+            className="ml-0.5 shrink-0 cursor-pointer rounded-full bg-transparent p-0.5 text-text-secondary transition-colors hover:bg-white/15 hover:text-white"
             aria-label={`Retirer ${item.title}`}
           >
             <X size={11} />

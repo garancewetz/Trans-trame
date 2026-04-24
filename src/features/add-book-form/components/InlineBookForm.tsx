@@ -75,7 +75,7 @@ export function InlineBookForm({
         <Button
           type="button"
           onClick={onCancel}
-          className="cursor-pointer text-white/30 transition-colors hover:text-white/60"
+          className="cursor-pointer text-text-muted transition-colors hover:text-white/60"
         >
           <X size={14} />
         </Button>
@@ -84,7 +84,7 @@ export function InlineBookForm({
       <FormField label="Titre">
         <TextInput
           variant="default"
-          className="w-full rounded-[8px] border border-white/10 bg-white/5 px-3 py-2 text-[0.88rem] text-white outline-none placeholder:text-white/35 focus:border-cyan/40 focus:bg-white/10"
+          className="w-full rounded-[8px] border border-border-default bg-white/5 px-3 py-2 text-[0.88rem] text-white outline-none placeholder:text-text-secondary focus:border-cyan/40 focus:bg-white/10"
           placeholder="Titre de la ressource"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -106,7 +106,7 @@ export function InlineBookForm({
       <FormField label="Année">
         <TextInput
           variant="default"
-          className="w-full rounded-[8px] border border-white/10 bg-white/5 px-3 py-2 text-[0.88rem] text-white outline-none placeholder:text-white/35 focus:border-cyan/40 focus:bg-white/10"
+          className="w-full rounded-[8px] border border-border-default bg-white/5 px-3 py-2 text-[0.88rem] text-white outline-none placeholder:text-text-secondary focus:border-cyan/40 focus:bg-white/10"
           type="number"
           placeholder="1984"
           value={year}
@@ -128,7 +128,7 @@ export function InlineBookForm({
         <Button
           type="button"
           onClick={onCancel}
-          className="cursor-pointer rounded-[8px] border border-white/10 bg-white/5 px-4 py-2.5 text-ui text-white/50 transition-all hover:bg-white/10 hover:text-white/70"
+          className="cursor-pointer rounded-[8px] border border-border-default bg-white/5 px-4 py-2.5 text-ui text-text-soft transition-all hover:bg-white/10 hover:text-white/70"
         >
           Annuler
         </Button>
